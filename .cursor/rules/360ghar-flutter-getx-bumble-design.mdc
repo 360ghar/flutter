@@ -1,0 +1,568 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 360ghar - Flutter GetX Real Estate App (Bumble-Inspired Design)
+
+## Project Overview
+360ghar is a Flutter application using GetX for state management that transforms real estate browsing into an engaging, dating-app-like experience similar to Bumble. Users can swipe through properties with 360° virtual tours, exact location mapping, and detailed property information.
+
+**Package Name**: `ghar360` (changed from "360ghar" as Dart package names cannot start with numbers)
+
+## Implementation Status ✅
+- **Complete Project Structure**: All modules, controllers, and bindings implemented
+- **Mock API Integration**: JSON-based mock data with 6 diverse properties
+- **Navigation**: Bottom navigation with 5 tabs fully functional
+- **Property Listings**: Cards with images, pricing, bed/bath/sqft info
+- **Favorites System**: Add/remove properties with reactive state management
+- **Property Details**: Full details view with image gallery, amenities, agent info
+- **360° Tour Integration**: WebView placeholder for virtual tours
+- **Platform Support**: iOS and Android with proper configuration
+- **Theme System**: Complete Bumble-inspired theme implementation
+
+## Design Philosophy
+- **Bumble-Inspired UI/UX**: Clean, modern, card-based interface with swiping mechanics
+- **Color Psychology**: Warm, inviting colors that build trust for real estate decisions
+- **Mobile-First**: Thumb-friendly navigation optimized for one-handed use
+- **Gamification**: Make property hunting exciting and engaging
+
+## Color Palette (Bumble-Inspired)
+```dart
+// Primary Colors - Implemented in [lib/app/utils/theme.dart](mdc:lib/app/utils/theme.dart)
+static const Color primaryYellow = Color(0xFFFFBC05);    // Bumble's signature yellow
+static const Color primaryYellowDark = Color(0xFFE3AA04); // Darker yellow variant
+static const Color primaryYellowLight = Color(0xFFFCC937); // Lighter yellow variant
+
+// Secondary Colors
+static const Color accentOrange = Color(0xFFFF6B35);     // Real estate accent
+static const Color accentBlue = Color(0xFF4A90E2);       // Trust and reliability
+static const Color accentGreen = Color(0xFF50C878);      // Success/available properties
+
+// Neutral Colors
+static const Color backgroundWhite = Color(0xFFFFFFFF);
+static const Color backgroundGray = Color(0xFFF8F9FA);
+static const Color textDark = Color(0xFF2C2C2C);
+static const Color textGray = Color(0xFF666666);
+static const Color textLight = Color(0xFF999999);
+static const Color cardShadow = Color(0x1A000000);
+
+// Status Colors
+static const Color successGreen = Color(0xFF28A745);
+static const Color warningAmber = Color(0xFFFFC107);
+static const Color errorRed = Color(0xFFDC3545);
+```
+
+## Implemented Project Structure
+```
+lib/
+├── app/
+│   ├── bindings/
+│   │   ├── initial_binding.dart          ✅ Dependency injection setup
+│   │   └── property_binding.dart         ✅ Property-specific bindings
+│   ├── controllers/
+│   │   ├── property_controller.dart      ✅ Property state management
+│   │   ├── user_controller.dart          ✅ User profile management
+│   │   ├── explore_controller.dart       ✅ Map and location features
+│   │   └── swipe_controller.dart         🚧 In progress - swipe mechanics
+│   ├── data/
+│   │   ├── models/
+│   │   │   ├── property_model.dart       ✅ Complete with JSON serialization
+│   │   │   └── user_model.dart           ✅ User profile model
+│   │   ├── providers/
+│   │   │   └── mock_api_provider.dart    ✅ JSON-based mock API
+│   │   └── repositories/
+│   │       ├── property_repository.dart  ✅ Property data access layer
+│   │       └── user_repository.dart      ✅ User data access layer
+│   ├── modules/
+│   │   ├── splash/                       ✅ App launch screen
+│   │   ├── home/                         ✅ Property listings (needs swipe UI)
+│   │   ├── auth/                         ✅ Login/signup placeholders
+│   │   ├── property_details/             ✅ Full property details view
+│   │   ├── favourites/                   ✅ Liked properties management
+│   │   ├── profile/                      ✅ User profile and preferences
+│   │   ├── visits/                       ✅ Appointments and agent info
+│   │   └── explore/                      ✅ Map view with property markers
+│   ├── routes/
+│   │   ├── app_pages.dart               ✅ Route definitions
+│   │   └── app_routes.dart              ✅ Route constants
+│   └── utils/
+│       ├── constants.dart               ✅ App constants
+│       ├── theme.dart                   ✅ Complete theme system
+│       └── helpers.dart                 ✅ Utility functions
+├── widgets/
+│   ├── common/
+│   │   ├── custom_button.dart           ✅ Reusable button component
+│   │   ├── loading_indicator.dart       ✅ Loading states
+│   │   └── custom_app_bar.dart          ✅ App bar component
+│   └── property/
+│       ├── property_card.dart           ✅ Property display cards
+│       └── property_swipe_stack.dart    🚧 Needs implementation
+├── assets/
+│   └── mock_api/
+│       ├── properties.json              ✅ 6 diverse properties with real images
+│       ├── user.json                    ✅ User profile data
+│       └── favourites.json              ✅ Favorites tracking
+└── main.dart                            ✅ App entry point
+```
+
+## Mock Data Implementation ✅
+
+### Properties Data Structure
+Located in [assets/mock_api/properties.json](mdc:assets/mock_api/properties.json):
+- **6 Diverse Properties**: Apartments, condos, houses, penthouse, Victorian, loft
+- **Price Range**: $320K - $1.2M
+- **Real Images**: High-quality Unsplash property photos
+- **Complete Details**: Bedrooms, bathrooms, square footage, amenities
+- **Agent Information**: Names, photos, contact details
+- **360° Tour URLs**: Placeholder virtual tour links
+- **Location Data**: Addresses in major US cities
+
+### Sample Property Structure
+```json
+{
+  "id": "prop_001",
+  "title": "Modern Downtown Apartment",
+  "address": "123 Main St, New York, NY 10001",
+  "price": 850000,
+  "bedrooms": 2,
+  "bathrooms": 2,
+  "area": 1200,
+  "propertyType": "Apartment",
+  "images": ["https://images.unsplash.com/photo-1..."],
+  "tour360Url": "https://example.com/tour/prop_001",
+  "amenities": ["Gym", "Pool", "Parking", "Balcony"],
+  "agent": {
+    "id": "agent_001",
+    "name": "Sarah Johnson",
+    "phone": "+1-555-0101",
+    "email": "sarah@realestate.com",
+    "photo": "https://images.unsplash.com/photo-..."
+  }
+}
+```
+
+## Navigation Implementation ✅
+
+### Bottom Navigation (Bumble-Inspired)
+Order: **Profile → Discover → Properties → Liked → Visits**
+- **Profile**: User management and preferences
+- **Discover**: Map view with property markers  
+- **Properties**: Main swipe interface (center/home position)
+- **Liked**: Favorited properties
+- **Visits**: Agent appointments and scheduled tours
+
+Implementation in [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart)
+
+## Design Components
+
+### 1. Property Cards (Bumble-Style) 🚧
+**Current**: List-based cards
+**Target**: Full-screen swipeable cards matching Bumble UI
+- **Card Dimensions**: Full-screen cards with rounded corners (16px)
+- **Property Images**: High-quality hero images with gradient overlays
+- **Property Info Overlay**: Bottom overlay with key details
+- **Swipe Actions**: Visual indicators for like/pass actions
+- **Card Stack**: 5-card stack with subtle parallax effect
+
+### 2. Swipe Mechanics 🚧
+**Status**: Needs implementation in PropertySwipeStack widget
+- **Swipe Right**: Add to favorites/interested
+- **Swipe Left**: Pass/not interested  
+- **Swipe Up**: Quick view details
+- **Double Tap**: Super like/priority interest
+- **Visual Feedback**: Card rotation, scaling, and color hints
+
+### 3. Typography ✅
+Implemented in [lib/app/utils/theme.dart](mdc:lib/app/utils/theme.dart):
+```dart
+// Typography Scale (SF Pro / Circular-inspired)
+static const TextStyle headlineLarge = TextStyle(
+  fontSize: 32,
+  fontWeight: FontWeight.bold,
+  color: textDark,
+  letterSpacing: -0.5,
+);
+
+static const TextStyle headlineMedium = TextStyle(
+  fontSize: 24,
+  fontWeight: FontWeight.bold,
+  color: textDark,
+  letterSpacing: -0.25,
+);
+
+static const TextStyle titleLarge = TextStyle(
+  fontSize: 20,
+  fontWeight: FontWeight.w600,
+  color: textDark,
+);
+
+static const TextStyle bodyLarge = TextStyle(
+  fontSize: 16,
+  fontWeight: FontWeight.normal,
+  color: textDark,
+  height: 1.5,
+);
+
+static const TextStyle bodyMedium = TextStyle(
+  fontSize: 14,
+  fontWeight: FontWeight.normal,
+  color: textGray,
+  height: 1.4,
+);
+```
+
+## GetX Implementation ✅
+
+### 1. Controllers
+All controllers implemented with reactive state management:
+- **PropertyController**: Property listings, favorites, filtering
+- **UserController**: User profile and preferences
+- **ExploreController**: Map functionality and location services
+- **SwipeController**: 🚧 Needs implementation for swipe mechanics
+
+### 2. Bindings
+Dependency injection setup:
+- **InitialBinding**: App-wide dependencies
+- **PropertyBinding**: Property-specific controllers
+- Module-specific bindings for each screen
+
+### 3. Routes ✅
+Complete route management in [lib/app/routes/](mdc:lib/app/routes):
+- Named routes with GetX
+- Route guards for authentication
+- Proper navigation flow
+
+## Technical Solutions Implemented ✅
+
+### 1. Package Naming Issue
+**Problem**: Dart packages cannot start with numbers
+**Solution**: Changed from "360ghar" to "ghar360"
+
+### 2. Environment Configuration
+**Problem**: EmptyEnvFileError on startup
+**Solution**: Added [.env.development](mdc:.env.development) and [.env.production](mdc:.env.production) files
+
+### 3. Theme Issues
+**Problem**: CardTheme vs CardThemeData conflicts
+**Solution**: Updated theme configuration in [lib/app/utils/theme.dart](mdc:lib/app/utils/theme.dart)
+
+### 4. iOS Platform Support
+**Problem**: Missing iOS configuration
+**Solution**: Added iOS platform files, CocoaPods setup, iOS 14.0 deployment target
+
+### 5. JSON Serialization
+**Problem**: Model serialization errors
+**Solution**: Regenerated with `flutter packages pub run build_runner build`
+
+## Real Estate Specific Features ✅
+
+### 1. Property Model
+Complete implementation in [lib/app/data/models/property_model.dart](mdc:lib/app/data/models/property_model.dart):
+```dart
+class PropertyModel {
+  final String id;
+  final String title;
+  final String address;
+  final double price;
+  final int bedrooms;
+  final int bathrooms;
+  final double area;
+  final String propertyType;
+  final List<String> images;
+  final String tour360Url;
+  final AgentModel agent;
+  final List<String> amenities;
+  final bool isAvailable;
+  final DateTime listedDate;
+  final String description;
+}
+```
+
+### 2. 360° Tour Integration ✅
+- WebView implementation for virtual tours
+- Placeholder URLs in mock data
+- Ready for real tour service integration
+
+### 3. Location Features ✅
+- Map integration in Explore module
+- Property location markers
+- Address display and mapping
+
+### 4. Favorites System ✅
+- Add/remove properties from favorites
+- Reactive state management with GetX
+- Persistent storage ready
+
+## Current Development Status
+
+### ✅ Completed Features
+1. **Project Setup**: Complete Flutter GetX architecture
+2. **Mock API**: JSON-based data with 6 diverse properties
+3. **Navigation**: 5-tab bottom navigation fully functional
+4. **Property Listings**: Basic card-based property display
+5. **Property Details**: Full details view with image gallery
+6. **Favorites**: Add/remove functionality with state management
+7. **User Profile**: Profile management and preferences
+8. **Map Integration**: Explore view with property markers
+9. **Theme System**: Complete Bumble-inspired design system
+10. **Platform Support**: iOS and Android configuration
+
+### 🚧 In Progress
+1. **Swipe Interface**: Converting home view to Bumble-style swipe cards
+2. **PropertySwipeStack Widget**: Core swipe component needs implementation
+3. **Swipe Animations**: Card rotation, scaling, and gesture handling
+
+### 📋 Next Steps
+1. Implement PropertySwipeStack widget for Bumble-style swiping
+2. Add swipe gesture recognition and animations
+3. Implement card stack with parallax effects
+4. Add visual feedback for swipe actions
+5. Integrate swipe actions with favorites system
+
+## UI/UX Guidelines
+
+### 1. Onboarding (Bumble-Style)
+- Progressive disclosure of features
+- Visual preference setup
+- Location permission request
+- Push notification setup
+- Profile completion progress
+
+### 2. Animation Guidelines
+- Use Flutter's built-in animations
+- Implement smooth card transitions
+- Add micro-interactions for feedback
+- Use Hero animations for navigation
+- Implement spring animations for swipe gestures
+
+### 3. Accessibility
+- Semantic labels for screen readers
+- Sufficient color contrast ratios
+- Touch target sizes (minimum 44px)
+- Focus management for keyboard navigation
+
+### 4. Performance Optimization
+- Image caching and optimization
+- Lazy loading for property lists
+- Efficient memory management
+- Background data fetching
+
+## Development Best Practices ✅
+
+### Core Development Principles
+Follow these principles across the entire 360ghar application:
+
+✅ **DRY Principle (Don't Repeat Yourself)**
+- No code duplication across pages, widgets, or components
+- Reusable widgets in `lib/widgets/` directory
+- Shared utilities in `lib/app/utils/`
+- Common controllers for cross-cutting concerns
+- Example: `CustomBottomNavigationBar` used across all main screens
+
+✅ **Maintainability**
+- Single source of truth for business logic
+- Centralized state management with GetX controllers
+- Consistent file naming and folder structure
+- Easy to update and modify without breaking changes
+- Example: Navigation logic centralized in one reusable widget
+
+✅ **Consistency**
+- Uniform styling across all pages using AppTheme
+- Consistent behavior patterns (loading states, error handling)
+- Standardized UI components and interactions
+- Same design patterns throughout the app
+- Example: All pages use same bottom navigation styling and behavior
+
+✅ **Complete Coverage**
+- All main features properly implemented
+- Navigation available from every relevant screen
+- Proper error states and loading indicators
+- Offline capability considerations
+- Cross-platform compatibility (iOS/Android)
+
+✅ **Better UX (User Experience)**
+- Intuitive navigation flow
+- Quick access to all app sections
+- Responsive and performant interactions
+- Accessibility considerations
+- Example: Users can navigate from any page, including discover/map view
+
+✅ **Scalability**
+- Modular architecture supports easy feature additions
+- Clean separation of concerns
+- Extensible widget system
+- Future-proof state management patterns
+
+✅ **Code Quality**
+- Proper TypeScript-like typing with Dart
+- Comprehensive error handling
+- Clean, readable code with meaningful names
+- Documentation through comments and README files
+
+### 1. Code Organization
+- Clean Architecture principles implemented
+- Business logic separated from UI
+- Repository pattern for data access
+- Proper error handling throughout
+- Modular structure with clear separation of concerns
+
+### 2. State Management
+- GetX reactive programming with `.obs`
+- Proper loading states implemented
+- Error states handled gracefully
+- Data caching in controllers
+- Centralized state for cross-cutting concerns
+
+### 3. API Integration
+- Mock API provider for development
+- Proper error handling structure
+- Ready for real API integration
+- Offline capability with local storage
+- Consistent data fetching patterns
+
+### 4. Widget Reusability
+- Custom widgets in dedicated directories
+- Parameterized components for flexibility
+- Consistent prop interfaces
+- Theme-aware styling
+- Example: CustomBottomNavigationBar used across all screens
+
+### 5. Performance Optimization
+- Lazy loading where appropriate
+- Efficient memory management
+- Image caching and optimization
+- Minimal rebuilds with GetX reactivity
+- Background data processing
+
+### 6. Implementation Guidelines
+
+#### When Adding New Features:
+- **Always check for existing similar components** before creating new ones
+- **Follow the established folder structure** in `lib/app/modules/`
+- **Create reusable widgets** in `lib/widgets/` if they'll be used in multiple places
+- **Use GetX controllers** for state management, never StatefulWidget for complex state
+- **Implement proper error handling** with user-friendly messages
+- **Add loading states** for all async operations
+- **Follow the Bumble-inspired design system** with colors from AppTheme
+- **Test on both iOS and Android** platforms
+
+#### Widget Creation Standards:
+- **Parameterize everything** that might change (colors, sizes, callbacks)
+- **Use AppTheme colors** instead of hardcoded values
+- **Add proper documentation** with clear parameter descriptions
+- **Make widgets responsive** to different screen sizes
+- **Include error states** and loading indicators where appropriate
+- **Follow naming conventions**: PascalCase for classes, camelCase for variables
+
+#### Code Review Checklist:
+✅ No hardcoded strings or colors  
+✅ Proper error handling implemented  
+✅ Loading states for async operations  
+✅ Consistent with existing code patterns  
+✅ Reusable components placed in correct directories  
+✅ GetX reactivity used properly with `.obs`  
+✅ Navigation follows established patterns  
+✅ Accessibility considerations included  
+✅ Performance optimizations applied  
+✅ Cross-platform compatibility verified  
+
+#### Example Implementation Pattern:
+```dart
+// ✅ Good: Reusable, parameterized, theme-aware
+class CustomPropertyCard extends StatelessWidget {
+  final PropertyModel property;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
+  final VoidCallback? onTap;
+  
+  const CustomPropertyCard({
+    Key? key,
+    required this.property,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
+    this.onTap,
+  }) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundWhite,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppTheme.cardShadow],
+      ),
+      // ... implementation
+    );
+  }
+}
+
+// ❌ Bad: Hardcoded values, not reusable
+class PropertyCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white, // Should use AppTheme
+      // Hardcoded property data, not parameterized
+    );
+  }
+}
+```
+
+## Gamification Elements
+
+### 1. Progress Tracking
+- Profile completion percentage
+- Property viewing streaks
+- Monthly browsing goals
+- Achievement badges
+
+### 2. Engagement Features
+- Daily property recommendations
+- "Hot properties" section
+- Agent response time indicators
+- Property match percentage
+
+### 3. Social Elements
+- Share favorite properties
+- Property comparison features
+- Community reviews/ratings
+- Wishlist sharing
+
+## Security & Privacy
+
+### 1. User Data Protection
+- Secure authentication (OAuth/ Backend)
+- Encrypted local storage
+- Privacy-compliant location tracking
+- GDPR compliance for EU users
+
+### 2. Real Estate Specific Security
+- Verified property listings
+- Authenticated agent profiles
+- Photo authenticity verification
+
+## Key Files Reference
+
+### Core Architecture
+- [lib/main.dart](mdc:lib/main.dart) - App entry point
+- [lib/app/utils/theme.dart](mdc:lib/app/utils/theme.dart) - Complete theme system
+- [lib/app/routes/app_pages.dart](mdc:lib/app/routes/app_pages.dart) - Route definitions
+- [lib/app/bindings/initial_binding.dart](mdc:lib/app/bindings/initial_binding.dart) - Dependency injection
+
+### Data Layer
+- [lib/app/data/models/property_model.dart](mdc:lib/app/data/models/property_model.dart) - Property data model
+- [lib/app/data/providers/mock_api_provider.dart](mdc:lib/app/data/providers/mock_api_provider.dart) - Mock API implementation
+- [assets/mock_api/properties.json](mdc:assets/mock_api/properties.json) - Property mock data
+
+### Controllers
+- [lib/app/controllers/property_controller.dart](mdc:lib/app/controllers/property_controller.dart) - Property state management
+- [lib/app/controllers/user_controller.dart](mdc:lib/app/controllers/user_controller.dart) - User management
+- [lib/app/controllers/explore_controller.dart](mdc:lib/app/controllers/explore_controller.dart) - Map functionality
+
+### Views
+- [lib/app/modules/home/views/home_view.dart](mdc:lib/app/modules/home/views/home_view.dart) - Main property listings (needs swipe UI)
+- [lib/app/modules/property_details/views/property_details_view.dart](mdc:lib/app/modules/property_details/views/property_details_view.dart) - Property details
+- [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart) - Bottom navigation
+
+This comprehensive guide ensures the 360ghar app delivers a polished, Bumble-inspired experience while maintaining the functionality and trust required for real estate applications. The project is currently functional with all major features implemented, with the main remaining task being the conversion of the property listings to a Bumble-style swipe interface.

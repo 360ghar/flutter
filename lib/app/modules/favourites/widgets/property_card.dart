@@ -1,0 +1,1 @@
+export '../../home/widgets/property_card.dart'; 
