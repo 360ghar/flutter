@@ -4,6 +4,7 @@ import '../data/repositories/property_repository.dart';
 import '../data/repositories/user_repository.dart';
 import '../controllers/property_controller.dart';
 import '../controllers/user_controller.dart';
+import '../controllers/localization_controller.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -25,6 +26,9 @@ class InitialBinding extends Bindings {
     );
     Get.put<UserController>(
       UserController(Get.find<UserRepository>()),
+    );
+    Get.put<LocalizationController>(
+      LocalizationController(),
     );
   }
 } 

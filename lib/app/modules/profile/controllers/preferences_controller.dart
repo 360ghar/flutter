@@ -1,10 +1,12 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../controllers/theme_controller.dart';
+import '../../../controllers/localization_controller.dart';
 
 class PreferencesController extends GetxController {
   final GetStorage _storage = GetStorage();
   late final ThemeController _themeController;
+  late final LocalizationController _localizationController;
 
   // Property Preferences
   final RxBool pushNotifications = true.obs;
@@ -30,6 +32,7 @@ class PreferencesController extends GetxController {
   void onInit() {
     super.onInit();
     _themeController = Get.find<ThemeController>();
+    _localizationController = Get.find<LocalizationController>();
     _loadPreferences();
   }
 
@@ -59,6 +62,14 @@ class PreferencesController extends GetxController {
     _themeController.setTheme(isDark);
   }
 
+  void changeLanguage(String languageCode, String countryCode) {
+    _localizationController.changeLanguage(languageCode, countryCode);
+  }
+
+  String getCurrentLanguage() {
+    return _localizationController.getCurrentLanguageName();
+  }
+
   void savePreferences() {
     try {
       // Property Preferences
@@ -82,16 +93,16 @@ class PreferencesController extends GetxController {
       _storage.write('personalizedAds', personalizedAds.value);
 
       Get.snackbar(
-        'Success',
-        'Preferences saved successfully',
+        'success'.tr,
+        'preferences_saved'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Get.theme.primaryColor,
         colorText: Get.theme.colorScheme.onPrimary,
       );
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Failed to save preferences',
+        'error'.tr,
+        'preferences_save_error'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Get.theme.colorScheme.error,
         colorText: Get.theme.colorScheme.onError,

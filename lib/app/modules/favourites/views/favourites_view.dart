@@ -21,7 +21,7 @@ class FavouritesView extends GetView<PropertyController> {
           backgroundColor: AppColors.appBarBackground,
           elevation: 0,
           title: Text(
-            'My Properties',
+            'my_favorites'.tr,
             style: TextStyle(
               color: AppColors.appBarText,
               fontSize: 24,
@@ -46,9 +46,9 @@ class FavouritesView extends GetView<PropertyController> {
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
-            tabs: const [
-              Tab(text: 'Liked'),
-              Tab(text: 'Passed'),
+            tabs: [
+              Tab(text: 'liked'.tr),
+              Tab(text: 'passed'.tr),
             ],
           ),
         ),
@@ -78,8 +78,8 @@ class FavouritesView extends GetView<PropertyController> {
       if (filteredProperties.isEmpty) {
         return _buildEmptyState(
           icon: Icons.favorite_border,
-          title: 'No Liked Properties',
-          subtitle: 'Properties you like will appear here.\nStart swiping to find your dream home!',
+          title: 'no_favorites'.tr,
+          subtitle: 'no_favorites_message'.tr,
         );
       }
 

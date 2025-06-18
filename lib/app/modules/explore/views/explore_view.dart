@@ -105,7 +105,7 @@ class ExploreView extends GetView<ExploreController> {
                           controller: controller.searchController,
                           style: TextStyle(color: AppColors.textPrimary),
                           decoration: InputDecoration(
-                            hintText: 'Search location...',
+                            hintText: 'search_hint'.tr,
                             hintStyle: TextStyle(color: AppColors.searchHint),
                             prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
                             border: InputBorder.none,
@@ -163,7 +163,7 @@ class ExploreView extends GetView<ExploreController> {
                     // Current Location Button
                     _buildControlButton(
                       icon: Icons.my_location,
-                      label: 'My Location',
+                      label: 'my_location'.tr,
                       onTap: controller.goToCurrentLocation,
                       backgroundColor: AppColors.surface,
                     ),
@@ -176,8 +176,8 @@ class ExploreView extends GetView<ExploreController> {
                           ? Icons.light_mode 
                           : Icons.dark_mode,
                       label: themeController.isDarkMode.value 
-                          ? 'Light' 
-                          : 'Dark',
+                          ? 'light'.tr 
+                          : 'dark'.tr,
                       onTap: themeController.toggleTheme,
                       backgroundColor: AppColors.surface,
                     )),

@@ -18,7 +18,7 @@ class VisitsView extends GetView<VisitsController> {
           backgroundColor: AppColors.appBarBackground,
           elevation: 0,
           title: Text(
-            'My Visits',
+            'my_visits'.tr,
             style: TextStyle(
               color: AppColors.appBarText,
               fontSize: 24,
@@ -43,7 +43,7 @@ class VisitsView extends GetView<VisitsController> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Upcoming'),
+                    Text('scheduled_visits'.tr),
                     const SizedBox(width: 8),
                     Obx(() => controller.upcomingVisits.isNotEmpty
                         ? Container(
@@ -69,7 +69,7 @@ class VisitsView extends GetView<VisitsController> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Past'),
+                    Text('past_visits'.tr),
                     const SizedBox(width: 8),
                     Obx(() => controller.pastVisits.isNotEmpty
                         ? Container(
@@ -132,7 +132,7 @@ class VisitsView extends GetView<VisitsController> {
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             Get.snackbar(
-              'Schedule Visit',
+              'schedule_visit'.tr,
               'Visit scheduling feature coming soon',
               backgroundColor: AppColors.snackbarBackground,
               colorText: AppColors.snackbarText,
@@ -156,7 +156,7 @@ class VisitsView extends GetView<VisitsController> {
           Obx(() {
             if (controller.upcomingVisits.isEmpty) {
               return _buildEmptyState(
-                'No upcoming visits',
+                'no_visits'.tr,
                 'Book a property visit to see it here',
                 Icons.calendar_today_outlined,
                 AppColors.primaryYellow,
@@ -183,7 +183,7 @@ class VisitsView extends GetView<VisitsController> {
           Obx(() {
             if (controller.pastVisits.isEmpty) {
               return _buildEmptyState(
-                'No past visits',
+                'no_visits'.tr,
                 'Your completed visits will appear here',
                 Icons.history,
                 AppColors.iconColor,

@@ -17,7 +17,7 @@ class ProfileView extends GetView<UserController> {
         backgroundColor: AppColors.appBarBackground,
         elevation: 0,
         title: Text(
-          'Profile',
+          'profile'.tr,
           style: TextStyle(
             color: AppColors.appBarText,
             fontSize: 24,
@@ -66,13 +66,13 @@ class ProfileView extends GetView<UserController> {
               // Menu Items
               _buildMenuItem(
                 icon: Icons.person_outline,
-                title: 'Edit Profile',
+                title: 'edit_profile'.tr,
                 subtitle: 'Update your personal information',
                 onTap: () => Get.toNamed('/edit-profile'),
               ),
               _buildMenuItem(
                 icon: Icons.favorite_outline,
-                title: 'My Preferences',
+                title: 'my_preferences'.tr,
                 subtitle: 'Property preferences and filters',
                 onTap: () => Get.toNamed('/preferences'),
               ),
@@ -84,7 +84,7 @@ class ProfileView extends GetView<UserController> {
               ),
               _buildMenuItem(
                 icon: Icons.notifications,
-                title: 'Notifications',
+                title: 'notifications'.tr,
                 subtitle: 'Manage notification settings',
                 onTap: () => Get.toNamed('/notifications'),
               ),
@@ -96,13 +96,13 @@ class ProfileView extends GetView<UserController> {
               ),
               _buildMenuItem(
                 icon: Icons.help_outline,
-                title: 'Help & Support',
+                title: 'help'.tr,
                 subtitle: 'Get help and contact support',
                 onTap: () => Get.toNamed('/help'),
               ),
               _buildMenuItem(
                 icon: Icons.info_outline,
-                title: 'About',
+                title: 'about'.tr,
                 subtitle: 'App version and information',
                 onTap: () => Get.toNamed('/about'),
               ),

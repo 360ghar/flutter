@@ -32,7 +32,7 @@ class PropertyDetailsView extends StatelessWidget {
             onPressed: () => Get.back(),
           ),
           title: Text(
-            'Property Details',
+            'property_details'.tr,
             style: TextStyle(
               color: AppColors.appBarText, 
               fontWeight: FontWeight.bold,
@@ -112,7 +112,7 @@ class PropertyDetailsView extends StatelessWidget {
                   icon: const Icon(Icons.share, color: Colors.white),
                   onPressed: () {
                     Get.snackbar(
-                      'Share',
+                      'share_property'.tr,
                       'Sharing ${safeProperty.title}',
                       snackPosition: SnackPosition.TOP,
                       backgroundColor: AppColors.snackbarBackground,

@@ -20,7 +20,7 @@ class HomeView extends GetView<PropertyController> {
         backgroundColor: AppColors.appBarBackground,
         elevation: 0,
         title: Text(
-          '360Ghar',
+          'app_name'.tr,
           style: TextStyle(
             color: AppColors.appBarText,
             fontSize: 24,
@@ -58,7 +58,7 @@ class HomeView extends GetView<PropertyController> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Something went wrong',
+                  'error'.tr,
                   style: TextStyle(
                     fontSize: 18,
                     color: AppColors.textSecondary,
@@ -71,7 +71,7 @@ class HomeView extends GetView<PropertyController> {
                     backgroundColor: AppColors.buttonBackground,
                     foregroundColor: AppColors.buttonText,
                   ),
-                  child: const Text('Retry'),
+                  child: Text('retry'.tr),
                 ),
               ],
             ),
