@@ -5,6 +5,7 @@ import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 import 'app/utils/theme.dart';
 import 'app/bindings/initial_binding.dart';
+import 'app/controllers/theme_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,15 +21,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    // Initialize ThemeController
+    final ThemeController themeController = Get.put(ThemeController());
+    
+    return Obx(() => GetMaterialApp(
       title: '360ghar',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeController.themeMode,
       initialRoute: AppRoutes.splash,
       getPages: AppPages.routes,
       initialBinding: InitialBinding(),
       debugShowCheckedModeBanner: false,
-    );
+    ));
   }
 } 

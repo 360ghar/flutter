@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/filters_controller.dart';
-import '../../../utils/theme.dart';
+import '../../../utils/app_colors.dart';
+import '../../../mixins/theme_mixin.dart';
 
-class FiltersView extends GetView<FiltersController> {
+class FiltersView extends GetView<FiltersController> with ThemeMixin {
   const FiltersView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.appBarBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: Icon(Icons.close, color: AppColors.appBarIcon),
           onPressed: () => Get.back(),
         ),
-        title: const Text(
+        title: Text(
           'Filters',
           style: TextStyle(
-            color: Colors.black,
+            color: AppColors.appBarText,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -28,10 +29,10 @@ class FiltersView extends GetView<FiltersController> {
         actions: [
           TextButton(
             onPressed: () => controller.clearAllFilters(),
-            child: const Text(
+            child: Text(
               'Clear All',
               style: TextStyle(
-                color: AppTheme.primaryYellow,
+                color: AppColors.primaryYellow,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -114,10 +115,10 @@ class FiltersView extends GetView<FiltersController> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: AppColors.shadowColor,
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -129,16 +130,16 @@ class FiltersView extends GetView<FiltersController> {
               child: OutlinedButton(
                 onPressed: () => controller.clearAllFilters(),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppTheme.primaryYellow),
+                  side: BorderSide(color: AppColors.primaryYellow),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Reset',
                   style: TextStyle(
-                    color: AppTheme.primaryYellow,
+                    color: AppColors.primaryYellow,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -151,8 +152,8 @@ class FiltersView extends GetView<FiltersController> {
               child: ElevatedButton(
                 onPressed: () => controller.applyFilters(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryYellow,
-                  foregroundColor: Colors.black,
+                  backgroundColor: AppColors.primaryYellow,
+                  foregroundColor: AppColors.buttonText,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -176,10 +177,10 @@ class FiltersView extends GetView<FiltersController> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: Colors.black,
+        color: AppColors.textPrimary,
       ),
     );
   }
@@ -197,17 +198,17 @@ class FiltersView extends GetView<FiltersController> {
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryYellow : Colors.grey[100],
+                color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isSelected ? AppTheme.primaryYellow : Colors.grey[300]!,
+                  color: isSelected ? AppColors.primaryYellow : AppColors.border,
                 ),
               ),
               child: Text(
                 purpose,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: isSelected ? Colors.black : Colors.grey[600],
+                  color: isSelected ? Colors.black : AppColors.textSecondary,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   fontSize: 16,
                 ),
@@ -256,16 +257,16 @@ class FiltersView extends GetView<FiltersController> {
           min: controller.getBudgetMin(),
           max: controller.getBudgetMax(),
           divisions: 20,
-          activeColor: AppTheme.primaryYellow,
-          inactiveColor: Colors.grey[300],
+          activeColor: AppColors.primaryYellow,
+          inactiveColor: AppColors.inputBackground,
           labels: RangeLabels(minLabel, maxLabel),
           onChanged: (values) => controller.setBudgetRange(values.start, values.end),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(minLabel, style: const TextStyle(color: Colors.grey)),
-            Text(maxLabel, style: const TextStyle(color: Colors.grey)),
+            Text(minLabel, style: TextStyle(color: AppColors.textSecondary)),
+            Text(maxLabel, style: TextStyle(color: AppColors.textSecondary)),
           ],
         ),
       ],
@@ -298,16 +299,16 @@ class FiltersView extends GetView<FiltersController> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryYellow : Colors.grey[100],
+              color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppTheme.primaryYellow : Colors.grey[300]!,
+                color: isSelected ? AppColors.primaryYellow : AppColors.border,
               ),
             ),
             child: Text(
               type,
               style: TextStyle(
-                color: isSelected ? Colors.black : Colors.grey[600],
+                color: isSelected ? Colors.black : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -330,16 +331,16 @@ class FiltersView extends GetView<FiltersController> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryYellow : Colors.grey[100],
+              color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppTheme.primaryYellow : Colors.grey[300]!,
+                color: isSelected ? AppColors.primaryYellow : AppColors.border,
               ),
             ),
             child: Text(
               bedroom,
               style: TextStyle(
-                color: isSelected ? Colors.black : Colors.grey[600],
+                color: isSelected ? Colors.black : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -362,16 +363,16 @@ class FiltersView extends GetView<FiltersController> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryYellow : Colors.grey[100],
+              color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppTheme.primaryYellow : Colors.grey[300]!,
+                color: isSelected ? AppColors.primaryYellow : AppColors.border,
               ),
             ),
             child: Text(
               bathroom,
               style: TextStyle(
-                color: isSelected ? Colors.black : Colors.grey[600],
+                color: isSelected ? Colors.black : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -392,7 +393,7 @@ class FiltersView extends GetView<FiltersController> {
           min: 500,
           max: 5000,
           divisions: 18,
-          activeColor: AppTheme.primaryYellow,
+          activeColor: AppColors.primaryYellow,
           inactiveColor: Colors.grey[300],
           labels: RangeLabels(
             '${controller.minArea.value.toInt()}',
@@ -405,11 +406,11 @@ class FiltersView extends GetView<FiltersController> {
           children: [
             Text(
               '${controller.minArea.value.toInt()} sq ft',
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             Text(
               '${controller.maxArea.value.toInt()} sq ft',
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -441,16 +442,16 @@ class FiltersView extends GetView<FiltersController> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryYellow : Colors.grey[100],
+              color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppTheme.primaryYellow : Colors.grey[300]!,
+                color: isSelected ? AppColors.primaryYellow : AppColors.border,
               ),
             ),
             child: Text(
               amenity,
               style: TextStyle(
-                color: isSelected ? Colors.black : Colors.grey[600],
+                color: isSelected ? Colors.black : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -464,12 +465,12 @@ class FiltersView extends GetView<FiltersController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.location_on, color: Colors.grey),
+          Icon(Icons.location_on, color: AppColors.textSecondary),
           const SizedBox(width: 12),
           Expanded(
             child: Obx(() => Text(
@@ -484,7 +485,7 @@ class FiltersView extends GetView<FiltersController> {
               ),
             )),
           ),
-          const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+          Icon(Icons.arrow_forward_ios, color: AppColors.textSecondary, size: 16),
         ],
       ),
     );

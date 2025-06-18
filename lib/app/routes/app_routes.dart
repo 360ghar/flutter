@@ -12,4 +12,10 @@ abstract class AppRoutes {
   static const explore = '/explore';
   static const tour = '/tour';
   static const filters = '/filters';
+  static const preferences = '/preferences';
+  static const searchHistory = '/search-history';
+  static const notifications = '/notifications';
+  static const privacy = '/privacy';
+  static const help = '/help';
+  static const about = '/about';
 } 

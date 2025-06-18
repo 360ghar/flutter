@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../../controllers/property_controller.dart';
 import '../../../controllers/visits_controller.dart';
 import '../../../data/models/property_model.dart';
-import '../../../utils/theme.dart';
+import '../../../utils/app_colors.dart';
 
 class PropertyDetailsView extends StatelessWidget {
   const PropertyDetailsView({super.key});
@@ -23,23 +23,29 @@ class PropertyDetailsView extends StatelessWidget {
 
     if (property == null) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.scaffoldBackground,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.appBarBackground,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: Icon(Icons.arrow_back, color: AppColors.appBarIcon),
             onPressed: () => Get.back(),
           ),
-          title: const Text(
+          title: Text(
             'Property Details',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: AppColors.appBarText, 
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-        body: const Center(
+        body: Center(
           child: Text(
             'Property not found',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 18, 
+              color: AppColors.textSecondary,
+            ),
           ),
         ),
       );
@@ -52,14 +58,14 @@ class PropertyDetailsView extends StatelessWidget {
     final PropertyModel safeProperty = property;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.scaffoldBackground,
       body: CustomScrollView(
         slivers: [
           // App Bar with Image
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
-            backgroundColor: Colors.white,
+            backgroundColor: AppColors.appBarBackground,
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -84,7 +90,7 @@ class PropertyDetailsView extends StatelessWidget {
                         ? Icons.favorite
                         : Icons.favorite_border,
                     color: controller.isFavourite(safeProperty.id)
-                        ? Colors.red
+                        ? AppColors.favoriteActive
                         : Colors.white,
                   ),
                   onPressed: () {
@@ -109,6 +115,8 @@ class PropertyDetailsView extends StatelessWidget {
                       'Share',
                       'Sharing ${safeProperty.title}',
                       snackPosition: SnackPosition.TOP,
+                      backgroundColor: AppColors.snackbarBackground,
+                      colorText: AppColors.snackbarText,
                     );
                   },
                 ),
@@ -123,8 +131,12 @@ class PropertyDetailsView extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                        color: AppColors.inputBackground,
+                        child: Icon(
+                          Icons.image, 
+                          size: 50, 
+                          color: AppColors.disabledColor,
+                        ),
                       );
                     },
                   );
@@ -135,254 +147,277 @@ class PropertyDetailsView extends StatelessWidget {
           
           // Property Details Content
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Price and Title
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '₹${safeProperty.price.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryYellow,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              safeProperty.title,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
+            child: Container(
+              color: AppColors.scaffoldBackground,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Price and Title
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: AppColors.getCardShadow(),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryYellow,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          safeProperty.propertyType,
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  // Address
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.grey, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          safeProperty.address,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Property Features
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildFeature(Icons.bed, '${safeProperty.bedrooms}', 'Bedrooms'),
-                        _buildFeature(Icons.bathtub_outlined, '${safeProperty.bathrooms}', 'Bathrooms'),
-                        _buildFeature(Icons.square_foot, '${safeProperty.area.toInt()}', 'Sq Ft'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Description
-                  const Text(
-                    'Description',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    safeProperty.description,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Amenities
-                  const Text(
-                    'Amenities',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: safeProperty.amenities.map((amenity) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryYellow.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppTheme.primaryYellow.withOpacity(0.3)),
-                        ),
-                        child: Text(
-                          amenity,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // 360° Tour Button
-                  if (safeProperty.tour360Url != null && safeProperty.tour360Url!.isNotEmpty)
-                    Column(
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Get.toNamed('/tour', arguments: safeProperty.tour360Url);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.accentBlue,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '₹${safeProperty.price.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.propertyCardPrice,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  safeProperty.title,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ],
                             ),
-                            icon: const Icon(Icons.threesixty),
-                            label: const Text(
-                              'View 360° Tour',
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryYellow,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              safeProperty.propertyType,
                               style: TextStyle(
-                                fontSize: 16,
+                                color: AppColors.buttonText,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                        ],
+                      ),
                     ),
-                  
-                  // Agent Information
-                  const Text(
-                    'Property Agent',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: AppTheme.primaryYellow,
-                          backgroundImage: safeProperty.agentImage.isNotEmpty
-                              ? NetworkImage(safeProperty.agentImage)
-                              : null,
-                          child: safeProperty.agentImage.isEmpty
-                              ? Text(
-                                  safeProperty.agentName.isNotEmpty 
-                                      ? safeProperty.agentName[0].toUpperCase() 
-                                      : 'A',
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                safeProperty.agentName,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                safeProperty.agentPhone,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
+                    const SizedBox(height: 20),
+                    
+                    // Address and Location
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: AppColors.getCardShadow(),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.location_on, 
+                            color: AppColors.iconColor, 
+                            size: 20,
                           ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            Get.snackbar(
-                              'Call Agent',
-                              'Calling ${safeProperty.agentName}',
-                              snackPosition: SnackPosition.TOP,
-                            );
-                          },
-                          icon: const Icon(Icons.phone, color: AppTheme.accentGreen),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              safeProperty.address,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 100), // Space for bottom buttons
-                ],
+                    const SizedBox(height: 20),
+                    
+                    // Property Features
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildFeature(Icons.bed, '${safeProperty.bedrooms}', 'Bedrooms'),
+                          _buildFeature(Icons.bathtub_outlined, '${safeProperty.bathrooms}', 'Bathrooms'),
+                          _buildFeature(Icons.square_foot, '${safeProperty.area.toInt()}', 'Sq Ft'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                                         // Description
+                     Text(
+                       'Description',
+                       style: TextStyle(
+                         fontSize: 20,
+                         fontWeight: FontWeight.bold,
+                         color: AppColors.textPrimary,
+                       ),
+                     ),
+                     const SizedBox(height: 12),
+                     Text(
+                       safeProperty.description,
+                       style: TextStyle(
+                         fontSize: 16,
+                         color: AppColors.textSecondary,
+                         height: 1.5,
+                       ),
+                     ),
+                     const SizedBox(height: 24),
+                     
+                     // Amenities
+                     Text(
+                       'Amenities',
+                       style: TextStyle(
+                         fontSize: 20,
+                         fontWeight: FontWeight.bold,
+                         color: AppColors.textPrimary,
+                       ),
+                     ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: safeProperty.amenities.map((amenity) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryYellow.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
+                          ),
+                                                     child: Text(
+                             amenity,
+                             style: TextStyle(
+                               color: AppColors.textPrimary,
+                               fontWeight: FontWeight.w500,
+                             ),
+                           ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // 360° Tour Button
+                    if (safeProperty.tour360Url != null && safeProperty.tour360Url!.isNotEmpty)
+                      Column(
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Get.toNamed('/tour', arguments: safeProperty.tour360Url);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accentBlue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: const Icon(Icons.threesixty),
+                              label: const Text(
+                                'View 360° Tour',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    
+                                         // Agent Information
+                     Text(
+                       'Property Agent',
+                       style: TextStyle(
+                         fontSize: 20,
+                         fontWeight: FontWeight.bold,
+                         color: AppColors.textPrimary,
+                       ),
+                     ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: AppColors.primaryYellow,
+                            backgroundImage: safeProperty.agentImage.isNotEmpty
+                                ? NetworkImage(safeProperty.agentImage)
+                                : null,
+                            child: safeProperty.agentImage.isEmpty
+                                ? Text(
+                                    safeProperty.agentName.isNotEmpty 
+                                        ? safeProperty.agentName[0].toUpperCase() 
+                                        : 'A',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                                                 Text(
+                                   safeProperty.agentName,
+                                   style: TextStyle(
+                                     fontSize: 18,
+                                     fontWeight: FontWeight.bold,
+                                     color: AppColors.textPrimary,
+                                   ),
+                                 ),
+                                 const SizedBox(height: 4),
+                                 Text(
+                                   safeProperty.agentPhone,
+                                   style: TextStyle(
+                                     fontSize: 14,
+                                     color: AppColors.textSecondary,
+                                   ),
+                                 ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              Get.snackbar(
+                                'Call Agent',
+                                'Calling ${safeProperty.agentName}',
+                                snackPosition: SnackPosition.TOP,
+                              );
+                            },
+                            icon: const Icon(Icons.phone, color: AppColors.accentGreen),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 100), // Space for bottom buttons
+                  ],
+                ),
               ),
             ),
           ),
@@ -393,10 +428,10 @@ class PropertyDetailsView extends StatelessWidget {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: AppColors.shadowColor,
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -414,17 +449,17 @@ class PropertyDetailsView extends StatelessWidget {
                   );
                 },
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppTheme.primaryYellow),
+                  side: const BorderSide(color: AppColors.primaryYellow),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: const Icon(Icons.message, color: AppTheme.primaryYellow),
+                icon: const Icon(Icons.message, color: AppColors.primaryYellow),
                 label: const Text(
                   'Contact',
                   style: TextStyle(
-                    color: AppTheme.primaryYellow,
+                    color: AppColors.primaryYellow,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -436,7 +471,7 @@ class PropertyDetailsView extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () => _showBookVisitDialog(context, safeProperty, visitsController),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryYellow,
+                  backgroundColor: AppColors.primaryYellow,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -462,7 +497,7 @@ class PropertyDetailsView extends StatelessWidget {
   Widget _buildFeature(IconData icon, String value, String label) {
     return Column(
       children: [
-        Icon(icon, size: 24, color: AppTheme.primaryYellow),
+        Icon(icon, size: 24, color: AppColors.primaryYellow),
         const SizedBox(height: 8),
         Text(
           value,
@@ -490,7 +525,11 @@ class PropertyDetailsView extends StatelessWidget {
     
     Get.dialog(
       AlertDialog(
-        title: const Text('Book Property Visit'),
+        backgroundColor: AppColors.surface,
+        title: Text(
+          'Book Property Visit',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
         content: StatefulBuilder(
           builder: (context, setState) {
             return Column(
@@ -498,15 +537,24 @@ class PropertyDetailsView extends StatelessWidget {
               children: [
                 Text(
                   'Schedule a visit to ${safeProperty.title}',
-                  style: const TextStyle(fontSize: 16),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 
                 // Date Selection
                 ListTile(
-                  leading: const Icon(Icons.calendar_today, color: AppTheme.primaryYellow),
-                  title: const Text('Date'),
-                  subtitle: Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
+                  leading: const Icon(Icons.calendar_today, color: AppColors.primaryYellow),
+                  title: Text(
+                    'Date',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
+                  subtitle: Text(
+                    '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                   onTap: () async {
                     final DateTime? picked = await showDatePicker(
                       context: context,
@@ -524,9 +572,15 @@ class PropertyDetailsView extends StatelessWidget {
                 
                 // Time Selection
                 ListTile(
-                  leading: const Icon(Icons.access_time, color: AppTheme.primaryYellow),
-                  title: const Text('Time'),
-                  subtitle: Text(selectedTime.format(context)),
+                  leading: const Icon(Icons.access_time, color: AppColors.primaryYellow),
+                  title: Text(
+                    'Time',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
+                  subtitle: Text(
+                    selectedTime.format(context),
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                   onTap: () async {
                     final TimeOfDay? picked = await showTimePicker(
                       context: context,
@@ -546,7 +600,10 @@ class PropertyDetailsView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -565,13 +622,13 @@ class PropertyDetailsView extends StatelessWidget {
                 'Visit Booked!',
                 'Your visit to ${safeProperty.title} is scheduled for ${selectedDate.day}/${selectedDate.month} at ${selectedTime.format(context)}',
                 snackPosition: SnackPosition.TOP,
-                backgroundColor: AppTheme.accentGreen,
+                backgroundColor: AppColors.accentGreen,
                 colorText: Colors.white,
                 duration: const Duration(seconds: 3),
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryYellow,
+              backgroundColor: AppColors.primaryYellow,
               foregroundColor: Colors.black,
             ),
             child: const Text('Book Visit'),

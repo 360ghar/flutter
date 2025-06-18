@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/visits_controller.dart';
 import '../../../data/models/visit_model.dart';
-import '../../../utils/theme.dart';
+import '../../../utils/app_colors.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
 
 class VisitsView extends GetView<VisitsController> {
@@ -13,23 +13,23 @@ class VisitsView extends GetView<VisitsController> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.scaffoldBackground,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.appBarBackground,
           elevation: 0,
-          title: const Text(
-            'Visits',
+          title: Text(
+            'My Visits',
             style: TextStyle(
-              color: Colors.black,
+              color: AppColors.appBarText,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
           bottom: TabBar(
-            indicatorColor: AppTheme.primaryYellow,
+            indicatorColor: AppColors.primaryYellow,
             indicatorWeight: 3,
-            labelColor: AppTheme.primaryYellow,
-            unselectedLabelColor: Colors.grey,
+            labelColor: AppColors.primaryYellow,
+            unselectedLabelColor: AppColors.tabUnselected,
             labelStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -49,13 +49,13 @@ class VisitsView extends GetView<VisitsController> {
                         ? Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryYellow,
+                              color: AppColors.primaryYellow,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               '${controller.upcomingVisits.length}',
-                              style: const TextStyle(
-                                color: Colors.black,
+                              style: TextStyle(
+                                color: AppColors.buttonText,
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -75,13 +75,13 @@ class VisitsView extends GetView<VisitsController> {
                         ? Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.grey[300],
+                              color: AppColors.inputBackground,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               '${controller.pastVisits.length}',
-                              style: const TextStyle(
-                                color: Colors.black,
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -96,9 +96,9 @@ class VisitsView extends GetView<VisitsController> {
         ),
         body: Obx(() {
           if (controller.isLoading.value) {
-            return const Center(
+            return Center(
               child: CircularProgressIndicator(
-                color: AppTheme.primaryYellow,
+                color: AppColors.loadingIndicator,
               ),
             );
           }
@@ -107,7 +107,7 @@ class VisitsView extends GetView<VisitsController> {
             children: [
               // Relationship Manager Section - Always visible
               Container(
-                color: Colors.white,
+                color: AppColors.scaffoldBackground,
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: _buildRelationshipManagerCard(),
@@ -129,6 +129,19 @@ class VisitsView extends GetView<VisitsController> {
             ],
           );
         }),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Get.snackbar(
+              'Schedule Visit',
+              'Visit scheduling feature coming soon',
+              backgroundColor: AppColors.snackbarBackground,
+              colorText: AppColors.snackbarText,
+            );
+          },
+          backgroundColor: AppColors.primaryYellow,
+          foregroundColor: AppColors.buttonText,
+          child: const Icon(Icons.add),
+        ),
         bottomNavigationBar: const CustomBottomNavigationBar(currentIndex: 4),
       ),
     );
@@ -146,7 +159,7 @@ class VisitsView extends GetView<VisitsController> {
                 'No upcoming visits',
                 'Book a property visit to see it here',
                 Icons.calendar_today_outlined,
-                AppTheme.primaryYellow,
+                AppColors.primaryYellow,
               );
             }
             
@@ -173,7 +186,7 @@ class VisitsView extends GetView<VisitsController> {
                 'No past visits',
                 'Your completed visits will appear here',
                 Icons.history,
-                Colors.grey,
+                AppColors.iconColor,
               );
             }
             
@@ -196,15 +209,15 @@ class VisitsView extends GetView<VisitsController> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppTheme.primaryYellow.withOpacity(0.1),
-              AppTheme.primaryYellow.withOpacity(0.05),
+              AppColors.primaryYellow.withOpacity(0.1),
+              AppColors.primaryYellow.withOpacity(0.05),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.primaryYellow.withOpacity(0.2),
+            color: AppColors.primaryYellow.withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -215,16 +228,16 @@ class VisitsView extends GetView<VisitsController> {
               children: [
                 Icon(
                   Icons.support_agent,
-                  color: AppTheme.primaryYellow,
+                  color: AppColors.primaryYellow,
                   size: 24,
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Your Relationship Manager',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
@@ -237,7 +250,7 @@ class VisitsView extends GetView<VisitsController> {
                   backgroundImage: NetworkImage(agent.image),
                   onBackgroundImageError: (_, __) {},
                   child: agent.image.isEmpty
-                      ? const Icon(Icons.person, size: 30, color: Colors.grey)
+                      ? Icon(Icons.person, size: 30, color: AppColors.iconColor)
                       : null,
                 ),
                 const SizedBox(width: 16),
@@ -247,18 +260,18 @@ class VisitsView extends GetView<VisitsController> {
                     children: [
                       Text(
                         agent.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         agent.specialization,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -267,31 +280,31 @@ class VisitsView extends GetView<VisitsController> {
                           Icon(
                             Icons.star,
                             size: 16,
-                            color: Colors.amber,
+                            color: AppColors.primaryYellow,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             agent.rating.toString(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black,
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Icon(
                             Icons.work_outline,
                             size: 16,
-                            color: Colors.grey,
+                            color: AppColors.iconColor,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            agent.experience,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
+                                                  Text(
+                          agent.experience,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary,
                           ),
+                        ),
                         ],
                       ),
                     ],
@@ -310,8 +323,8 @@ class VisitsView extends GetView<VisitsController> {
                     icon: const Icon(Icons.phone, size: 18),
                     label: const Text('Call'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryYellow,
-                      side: const BorderSide(color: AppTheme.primaryYellow),
+                      foregroundColor: AppColors.primaryYellow,
+                      side: BorderSide(color: AppColors.primaryYellow),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -328,8 +341,8 @@ class VisitsView extends GetView<VisitsController> {
                     icon: const Icon(Icons.message, size: 18),
                     label: const Text('WhatsApp'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accentGreen,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.accentGreen,
+                      foregroundColor: AppColors.buttonText,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -350,16 +363,9 @@ class VisitsView extends GetView<VisitsController> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppColors.getCardShadow(),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,8 +383,8 @@ class VisitsView extends GetView<VisitsController> {
                     return Container(
                       width: 60,
                       height: 60,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.image, color: Colors.grey),
+                      color: AppColors.inputBackground,
+                      child: Icon(Icons.image, color: AppColors.iconColor),
                     );
                   },
                 ),
@@ -390,10 +396,10 @@ class VisitsView extends GetView<VisitsController> {
                   children: [
                     Text(
                       visit.propertyTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: AppColors.textPrimary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -401,23 +407,23 @@ class VisitsView extends GetView<VisitsController> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                        Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
                         Text(
                           controller.formatVisitDate(visit.visitDateTime),
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                        Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
                         Text(
                           controller.formatVisitTime(visit.visitDateTime),
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -432,9 +438,9 @@ class VisitsView extends GetView<VisitsController> {
             const SizedBox(height: 12),
             Text(
               visit.notes,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Colors.black87,
+                color: AppColors.textSecondary,
               ),
             ),
           ],
@@ -446,16 +452,16 @@ class VisitsView extends GetView<VisitsController> {
                   child: OutlinedButton(
                     onPressed: () => _showRescheduleDialog(visit),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppTheme.primaryYellow),
+                      side: BorderSide(color: AppColors.primaryYellow),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Reschedule',
                       style: TextStyle(
-                        color: AppTheme.primaryYellow,
+                        color: AppColors.primaryYellow,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -466,16 +472,16 @@ class VisitsView extends GetView<VisitsController> {
                   child: OutlinedButton(
                     onPressed: () => _showCancelDialog(visit),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
+                      side: BorderSide(color: AppColors.errorRed),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Cancel',
                       style: TextStyle(
-                        color: Colors.red,
+                        color: AppColors.errorRed,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -495,15 +501,15 @@ class VisitsView extends GetView<VisitsController> {
     
     switch (status) {
       case VisitStatus.upcoming:
-        color = AppTheme.accentBlue;
+        color = AppColors.accentBlue;
         text = 'Upcoming';
         break;
       case VisitStatus.completed:
-        color = AppTheme.accentGreen;
+        color = AppColors.accentGreen;
         text = 'Completed';
         break;
       case VisitStatus.cancelled:
-        color = Colors.red;
+        color = AppColors.errorRed;
         text = 'Cancelled';
         break;
     }
@@ -539,18 +545,18 @@ class VisitsView extends GetView<VisitsController> {
           const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.grey,
+              color: AppColors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -579,7 +585,7 @@ class VisitsView extends GetView<VisitsController> {
                 
                 // Date Selection
                 ListTile(
-                  leading: const Icon(Icons.calendar_today, color: AppTheme.primaryYellow),
+                  leading: Icon(Icons.calendar_today, color: AppColors.primaryYellow),
                   title: const Text('Date'),
                   subtitle: Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
                   onTap: () async {
@@ -599,7 +605,7 @@ class VisitsView extends GetView<VisitsController> {
                 
                 // Time Selection
                 ListTile(
-                  leading: const Icon(Icons.access_time, color: AppTheme.primaryYellow),
+                  leading: Icon(Icons.access_time, color: AppColors.primaryYellow),
                   title: const Text('Time'),
                   subtitle: Text(selectedTime.format(context)),
                   onTap: () async {
@@ -637,8 +643,8 @@ class VisitsView extends GetView<VisitsController> {
               Get.back();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryYellow,
-              foregroundColor: Colors.black,
+              backgroundColor: AppColors.primaryYellow,
+              foregroundColor: AppColors.buttonText,
             ),
             child: const Text('Reschedule'),
           ),
@@ -663,7 +669,7 @@ class VisitsView extends GetView<VisitsController> {
               Get.back();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.errorRed,
               foregroundColor: Colors.white,
             ),
             child: const Text('Yes, Cancel'),
@@ -672,6 +678,4 @@ class VisitsView extends GetView<VisitsController> {
       ),
     );
   }
-
-
 } 

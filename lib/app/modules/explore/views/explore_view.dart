@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import '../../../controllers/explore_controller.dart';
+import '../../../controllers/theme_controller.dart';
 import '../../../data/models/property_model.dart';
-import '../../../utils/theme.dart';
+import '../../../utils/app_colors.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/property_filter_widget.dart';
 
@@ -13,6 +14,8 @@ class ExploreView extends GetView<ExploreController> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeController themeController = Get.find<ThemeController>();
+    
     return Scaffold(
       body: Stack(
         children: [
@@ -32,13 +35,17 @@ class ExploreView extends GetView<ExploreController> {
             children: [
               // OpenStreetMap tile layer
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: Get.isDarkMode 
+                    ? 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png'
+                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.ghar360',
                 maxZoom: 19,
                 tileBuilder: (context, tileWidget, tile) {
                   return ColorFiltered(
                     colorFilter: ColorFilter.mode(
-                      Colors.white.withOpacity(0.1),
+                      Get.isDarkMode 
+                          ? Colors.black.withValues(alpha: 0.2)
+                          : Colors.white.withValues(alpha: 0.1),
                       BlendMode.color,
                     ),
                     child: tileWidget,
@@ -87,43 +94,42 @@ class ExploreView extends GetView<ExploreController> {
                 // Search Bar
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: AppColors.getCardShadow(),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: controller.searchController,
-                          decoration: const InputDecoration(
+                          style: TextStyle(color: AppColors.textPrimary),
+                          decoration: InputDecoration(
                             hintText: 'Search location...',
-                            prefixIcon: Icon(Icons.search, color: Colors.grey),
+                            hintStyle: TextStyle(color: AppColors.searchHint),
+                            prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           ),
                           onSubmitted: controller.searchLocation,
                         ),
                       ),
                       Obx(() => controller.searchQuery.value.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear, color: Colors.grey),
+                              icon: Icon(Icons.clear, color: AppColors.iconColor),
                               onPressed: controller.clearSearch,
                             )
                           : const SizedBox.shrink()),
                       Obx(() => controller.isSearching.value
-                          ? const Padding(
-                              padding: EdgeInsets.all(12),
+                          ? Padding(
+                              padding: const EdgeInsets.all(12),
                               child: SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.loadingIndicator),
+                                ),
                               ),
                             )
                           : const SizedBox.shrink()),
@@ -139,15 +145,9 @@ class ExploreView extends GetView<ExploreController> {
                     // Filters Button
                     Container(
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryYellow,
+                        color: AppColors.buttonBackground,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        boxShadow: AppColors.getCardShadow(),
                       ),
                       child: PropertyFilterWidget(
                         pageType: 'explore',
@@ -165,8 +165,22 @@ class ExploreView extends GetView<ExploreController> {
                       icon: Icons.my_location,
                       label: 'My Location',
                       onTap: controller.goToCurrentLocation,
-                      backgroundColor: Colors.white,
+                      backgroundColor: AppColors.surface,
                     ),
+                    
+                    const SizedBox(width: 12),
+                    
+                    // Theme Toggle Button
+                    Obx(() => _buildControlButton(
+                      icon: themeController.isDarkMode.value 
+                          ? Icons.light_mode 
+                          : Icons.dark_mode,
+                      label: themeController.isDarkMode.value 
+                          ? 'Light' 
+                          : 'Dark',
+                      onTap: themeController.toggleTheme,
+                      backgroundColor: AppColors.surface,
+                    )),
                     
                     const Spacer(),
                     
@@ -174,22 +188,16 @@ class ExploreView extends GetView<ExploreController> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        boxShadow: AppColors.getCardShadow(),
                       ),
                       child: Obx(() => Text(
                         '${controller.visiblePropertyCount} • ${controller.radiusText}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: AppColors.textPrimary,
                         ),
                       )),
                     ),
@@ -202,10 +210,10 @@ class ExploreView extends GetView<ExploreController> {
           // Loading Indicator
           Obx(() => controller.isLoadingLocation.value
               ? Container(
-                  color: Colors.black.withOpacity(0.3),
-                  child: const Center(
+                  color: AppColors.shadowColor.withValues(alpha: 0.3),
+                  child: Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryYellow),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.loadingIndicator),
                     ),
                   ),
                 )
@@ -227,13 +235,13 @@ class ExploreView extends GetView<ExploreController> {
             right: 16,
             child: Obx(() => FloatingActionButton(
               mini: true,
-              backgroundColor: AppTheme.primaryYellow,
+              backgroundColor: AppColors.buttonBackground,
               onPressed: controller.togglePropertyList,
               child: Icon(
                 controller.showPropertyList.value 
                     ? Icons.keyboard_arrow_down 
                     : Icons.keyboard_arrow_up,
-                color: Colors.black,
+                color: AppColors.buttonText,
               ),
             )),
           ),
@@ -256,13 +264,7 @@ class ExploreView extends GetView<ExploreController> {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: AppColors.getCardShadow(),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -270,7 +272,9 @@ class ExploreView extends GetView<ExploreController> {
             Icon(
               icon,
               size: 18,
-              color: backgroundColor == AppTheme.primaryYellow ? Colors.black : Colors.grey[700],
+              color: backgroundColor == AppColors.buttonBackground 
+                  ? AppColors.buttonText 
+                  : AppColors.textSecondary,
             ),
             const SizedBox(width: 6),
             Text(
@@ -278,7 +282,9 @@ class ExploreView extends GetView<ExploreController> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: backgroundColor == AppTheme.primaryYellow ? Colors.black : Colors.grey[700],
+                color: backgroundColor == AppColors.buttonBackground 
+                    ? AppColors.buttonText 
+                    : AppColors.textSecondary,
               ),
             ),
           ],
@@ -290,19 +296,13 @@ class ExploreView extends GetView<ExploreController> {
   Widget _buildPropertyList() {
     return Container(
       height: 280,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, -2),
-          ),
-        ],
+        boxShadow: AppColors.getCardShadow(),
       ),
       child: Column(
         children: [
@@ -312,7 +312,7 @@ class ExploreView extends GetView<ExploreController> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: AppColors.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -324,15 +324,15 @@ class ExploreView extends GetView<ExploreController> {
               children: [
                 Obx(() => Text(
                   '${controller.visiblePropertyCount} Properties Found',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: AppColors.textPrimary,
                   ),
                 )),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
+                  icon: Icon(Icons.close, color: AppColors.iconColor),
                   onPressed: controller.togglePropertyList,
                 ),
               ],
@@ -342,15 +342,15 @@ class ExploreView extends GetView<ExploreController> {
           // Property List
           Expanded(
             child: Obx(() => controller.visibleProperties.isEmpty
-                ? const Center(
+                ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.home_outlined, size: 48, color: Colors.grey),
-                        SizedBox(height: 8),
+                        Icon(Icons.home_outlined, size: 48, color: AppColors.iconColor),
+                        const SizedBox(height: 8),
                         Text(
                           'No properties found in this area',
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
                         ),
                       ],
                     ),
@@ -376,13 +376,13 @@ class ExploreView extends GetView<ExploreController> {
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: controller.selectedPropertyId.value == property.id
-              ? AppTheme.primaryYellow.withOpacity(0.1)
-              : Colors.white,
+              ? AppColors.primaryYellow.withValues(alpha: 0.1)
+              : AppColors.propertyCardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: controller.selectedPropertyId.value == property.id
-                ? AppTheme.primaryYellow
-                : Colors.grey[200]!,
+                ? AppColors.primaryYellow
+                : AppColors.border,
             width: controller.selectedPropertyId.value == property.id ? 2 : 1,
           ),
         ),
@@ -401,8 +401,8 @@ class ExploreView extends GetView<ExploreController> {
                   errorBuilder: (context, error, stackTrace) => Container(
                     width: 80,
                     height: 80,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.home, color: Colors.grey),
+                    color: AppColors.inputBackground,
+                    child: Icon(Icons.home, color: AppColors.iconColor),
                   ),
                 ),
               ),
@@ -416,10 +416,10 @@ class ExploreView extends GetView<ExploreController> {
                   children: [
                     Text(
                       property.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: AppColors.propertyCardText,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -431,7 +431,7 @@ class ExploreView extends GetView<ExploreController> {
                       '${property.address}, ${property.city}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: AppColors.propertyCardSubtext,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -458,10 +458,10 @@ class ExploreView extends GetView<ExploreController> {
                 children: [
                   Text(
                     property.formattedPrice,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryYellow,
+                      color: AppColors.propertyCardPrice,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -469,7 +469,7 @@ class ExploreView extends GetView<ExploreController> {
                     property.propertyType,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: AppColors.propertyCardSubtext,
                     ),
                   ),
                 ],
@@ -485,13 +485,13 @@ class ExploreView extends GetView<ExploreController> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.grey[600]),
+        Icon(icon, size: 14, color: AppColors.propertyFeatureIcon),
         const SizedBox(width: 2),
         Text(
           value,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: AppColors.propertyFeatureText,
           ),
         ),
       ],

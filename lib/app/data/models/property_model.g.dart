@@ -23,7 +23,6 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) =>
       images:
           (json['images'] as List<dynamic>).map((e) => e as String).toList(),
       tour360Url: json['tour360Url'] as String?,
-      youtubeVideoUrl: json['youtubeVideoUrl'] as String?,
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
       amenities:
@@ -53,7 +52,6 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
       'propertyType': instance.propertyType,
       'images': instance.images,
       'tour360Url': instance.tour360Url,
-      'youtubeVideoUrl': instance.youtubeVideoUrl,
       'latitude': instance.latitude,
       'longitude': instance.longitude,
       'amenities': instance.amenities,

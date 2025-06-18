@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../../controllers/property_controller.dart';
 import '../../../controllers/swipe_controller.dart';
 import '../widgets/property_swipe_card.dart';
-import '../../../utils/theme.dart';
+import '../../../utils/app_colors.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/property_filter_widget.dart';
 
@@ -15,14 +15,14 @@ class HomeView extends GetView<PropertyController> {
     final SwipeController swipeController = Get.find<SwipeController>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.appBarBackground,
         elevation: 0,
-        title: const Text(
+        title: Text(
           '360Ghar',
           style: TextStyle(
-            color: Colors.black,
+            color: AppColors.appBarText,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -39,9 +39,9 @@ class HomeView extends GetView<PropertyController> {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(
+          return Center(
             child: CircularProgressIndicator(
-              color: AppTheme.primaryYellow,
+              color: AppColors.loadingIndicator,
             ),
           );
         }
@@ -51,22 +51,26 @@ class HomeView extends GetView<PropertyController> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.error_outline,
                   size: 64,
-                  color: Colors.grey,
+                  color: AppColors.textSecondary,
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Something went wrong',
                   style: TextStyle(
                     fontSize: 18,
-                    color: Colors.grey,
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: () => controller.fetchProperties(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.buttonBackground,
+                    foregroundColor: AppColors.buttonText,
+                  ),
                   child: const Text('Retry'),
                 ),
               ],

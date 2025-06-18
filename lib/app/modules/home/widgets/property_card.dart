@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/property_model.dart';
-import '../../../utils/theme.dart';
+import '../../../utils/app_colors.dart';
 
 class PropertyCard extends StatelessWidget {
   final PropertyModel property;
@@ -21,6 +21,8 @@ class PropertyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
+      color: AppColors.propertyCardBackground,
+      shadowColor: AppColors.shadowColor,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -38,27 +40,38 @@ class PropertyCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       height: 200,
-                      color: Colors.grey[300],
-                      child: const Center(
-                        child: CircularProgressIndicator(),
+                      color: AppColors.inputBackground,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.loadingIndicator,
+                        ),
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
                       height: 200,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.error),
+                      color: AppColors.inputBackground,
+                      child: Icon(
+                        Icons.error,
+                        color: AppColors.iconColor,
+                      ),
                     ),
                   ),
                 ),
                 Positioned(
                   top: 8,
                   right: 8,
-                  child: IconButton(
-                    icon: Icon(
-                      isFavourite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavourite ? AppTheme.errorRed : Colors.white,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
                     ),
-                    onPressed: onFavouriteToggle,
+                    child: IconButton(
+                      icon: Icon(
+                        isFavourite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavourite ? AppColors.favoriteActive : Colors.white,
+                      ),
+                      onPressed: onFavouriteToggle,
+                    ),
                   ),
                 ),
               ],
@@ -74,24 +87,33 @@ class PropertyCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           property.title,
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.propertyCardText,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Text(
                         property.formattedPrice,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: AppTheme.primaryYellow,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.propertyCardPrice,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
                     property.fullAddress,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.propertyCardSubtext,
+                      height: 1.4,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -99,19 +121,16 @@ class PropertyCard extends StatelessWidget {
                   Row(
                     children: [
                       _buildFeature(
-                        context,
                         Icons.bed,
                         '${property.bedrooms} Beds',
                       ),
                       const SizedBox(width: 16),
                       _buildFeature(
-                        context,
                         Icons.bathtub_outlined,
                         '${property.bathrooms} Baths',
                       ),
                       const SizedBox(width: 16),
                       _buildFeature(
-                        context,
                         Icons.square_foot,
                         '${property.area} sqft',
                       ),
@@ -126,14 +145,22 @@ class PropertyCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFeature(BuildContext context, IconData icon, String label) {
+  Widget _buildFeature(IconData icon, String label) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppTheme.textGray),
+        Icon(
+          icon, 
+          size: 20, 
+          color: AppColors.propertyFeatureIcon,
+        ),
         const SizedBox(width: 4),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.propertyFeatureText,
+            height: 1.4,
+          ),
         ),
       ],
     );

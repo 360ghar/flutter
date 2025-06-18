@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/user_controller.dart';
 import '../../../utils/theme.dart';
+import '../../../utils/app_colors.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
+import '../../../../widgets/common/theme_toggle_button.dart';
 
 class ProfileView extends GetView<UserController> {
   const ProfileView({super.key});
@@ -10,38 +12,42 @@ class ProfileView extends GetView<UserController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.appBarBackground,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Profile',
           style: TextStyle(
-            color: Colors.black,
+            color: AppColors.appBarText,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
+          const ThemeToggleButton(),
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.black),
-            onPressed: () => Get.toNamed('/settings'),
+            icon: Icon(Icons.settings, color: AppColors.appBarIcon),
+            onPressed: () => Get.toNamed('/preferences'),
           ),
         ],
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(
+          return Center(
             child: CircularProgressIndicator(
-              color: AppTheme.primaryYellow,
+              color: AppColors.loadingIndicator,
             ),
           );
         }
 
         final user = controller.user.value;
         if (user == null) {
-          return const Center(
-            child: Text('No user data available'),
+          return Center(
+            child: Text(
+              'No user data available',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           );
         }
 
@@ -117,8 +123,9 @@ class ProfileView extends GetView<UserController> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.primaryYellow.withOpacity(0.1),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: AppColors.getCardShadow(),
       ),
       child: Column(
         children: [
@@ -127,17 +134,17 @@ class ProfileView extends GetView<UserController> {
             children: [
               CircleAvatar(
                 radius: 50,
-                backgroundColor: AppTheme.primaryYellow,
+                backgroundColor: AppColors.primaryYellow,
                 backgroundImage: user.profileImage != null && user.profileImage!.isNotEmpty
                     ? NetworkImage(user.profileImage!)
                     : null,
                 child: user.profileImage == null || user.profileImage!.isEmpty
                     ? Text(
                         user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: AppColors.buttonText,
                         ),
                       )
                     : null,
@@ -147,14 +154,18 @@ class ProfileView extends GetView<UserController> {
                 right: 0,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.primaryYellow,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryYellow,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.surface,
+                      width: 2,
+                    ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.camera_alt,
                     size: 16,
-                    color: Colors.black,
+                    color: AppColors.buttonText,
                   ),
                 ),
               ),
@@ -165,10 +176,10 @@ class ProfileView extends GetView<UserController> {
           // Name
           Text(
             user.name.isNotEmpty ? user.name : 'User Name',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
@@ -176,9 +187,9 @@ class ProfileView extends GetView<UserController> {
           // Email
           Text(
             user.email.isNotEmpty ? user.email : 'user@example.com',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: Colors.grey,
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -187,9 +198,9 @@ class ProfileView extends GetView<UserController> {
           if (user.phone.isNotEmpty)
             Text(
               user.phone,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey,
+                color: AppColors.textTertiary,
               ),
             ),
         ],
@@ -201,8 +212,9 @@ class ProfileView extends GetView<UserController> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: AppColors.getCardShadow(),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,20 +222,20 @@ class ProfileView extends GetView<UserController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Profile Completion',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: AppColors.textPrimary,
                 ),
               ),
               Obx(() => Text(
                 '${controller.profileCompletionPercentage.value}%',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryYellow,
+                  color: AppColors.primaryYellow,
                 ),
               )),
             ],
@@ -231,15 +243,15 @@ class ProfileView extends GetView<UserController> {
           const SizedBox(height: 8),
           Obx(() => LinearProgressIndicator(
             value: controller.profileCompletionPercentage.value / 100,
-            backgroundColor: Colors.grey[300],
-            valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryYellow),
+            backgroundColor: AppColors.inputBackground,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
           )),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Complete your profile to get better property recommendations',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey,
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -260,40 +272,40 @@ class ProfileView extends GetView<UserController> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryYellow.withOpacity(0.1),
+            color: AppColors.primaryYellow.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: AppTheme.primaryYellow,
+            color: AppColors.primaryYellow,
             size: 24,
           ),
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.black,
+            color: AppColors.textPrimary,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Colors.grey,
+            color: AppColors.textSecondary,
           ),
         ),
-        trailing: const Icon(
+        trailing: Icon(
           Icons.arrow_forward_ios,
           size: 16,
-          color: Colors.grey,
+          color: AppColors.iconColor,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        tileColor: Colors.grey[50],
+        tileColor: AppColors.surface,
       ),
     );
   }
@@ -304,16 +316,16 @@ class ProfileView extends GetView<UserController> {
       child: OutlinedButton(
         onPressed: () => _showLogoutDialog(),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.red),
+          side: BorderSide(color: AppColors.errorRed),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: const Text(
+        child: Text(
           'Logout',
           style: TextStyle(
-            color: Colors.red,
+            color: AppColors.errorRed,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -325,21 +337,31 @@ class ProfileView extends GetView<UserController> {
   void _showLogoutDialog() {
     Get.dialog(
       AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        backgroundColor: AppColors.surface,
+        title: Text(
+          'Logout',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
+        content: Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           TextButton(
             onPressed: () {
               Get.back();
               controller.logout();
             },
-            child: const Text(
+            child: Text(
               'Logout',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: AppColors.errorRed),
             ),
           ),
         ],

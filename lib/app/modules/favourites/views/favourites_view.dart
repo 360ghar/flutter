@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../controllers/property_controller.dart';
 import '../../../data/models/property_model.dart';
-import '../../../utils/theme.dart';
+import '../../../utils/app_colors.dart';
 import '../../../../widgets/property/compact_property_card.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/property_filter_widget.dart';
@@ -16,14 +16,14 @@ class FavouritesView extends GetView<PropertyController> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.scaffoldBackground,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.appBarBackground,
           elevation: 0,
-          title: const Text(
+          title: Text(
             'My Properties',
             style: TextStyle(
-              color: Colors.black,
+              color: AppColors.appBarText,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -37,16 +37,16 @@ class FavouritesView extends GetView<PropertyController> {
               },
             ),
           ],
-          bottom: const TabBar(
-            labelColor: AppTheme.primaryYellow,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: AppTheme.primaryYellow,
+          bottom: TabBar(
+            labelColor: AppColors.tabSelected,
+            unselectedLabelColor: AppColors.tabUnselected,
+            indicatorColor: AppColors.tabIndicator,
             indicatorWeight: 3,
-            labelStyle: TextStyle(
+            labelStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
-            tabs: [
+            tabs: const [
               Tab(text: 'Liked'),
               Tab(text: 'Passed'),
             ],
@@ -68,9 +68,9 @@ class FavouritesView extends GetView<PropertyController> {
       final filteredProperties = controller.getFilteredFavourites();
       
       if (controller.isLoading.value) {
-        return const Center(
+        return Center(
           child: CircularProgressIndicator(
-            color: AppTheme.primaryYellow,
+            color: AppColors.loadingIndicator,
           ),
         );
       }
@@ -84,7 +84,8 @@ class FavouritesView extends GetView<PropertyController> {
       }
 
       return RefreshIndicator(
-        color: AppTheme.primaryYellow,
+        color: AppColors.loadingIndicator,
+        backgroundColor: AppColors.surface,
         onRefresh: () => controller.fetchFavouriteProperties(),
         child: GridView.builder(
           padding: const EdgeInsets.all(16),
@@ -106,8 +107,8 @@ class FavouritesView extends GetView<PropertyController> {
                   'Removed',
                   'Property removed from liked list',
                   snackPosition: SnackPosition.TOP,
-                  backgroundColor: AppTheme.primaryYellow,
-                  colorText: Colors.white,
+                  backgroundColor: AppColors.snackbarBackground,
+                  colorText: AppColors.snackbarText,
                   duration: const Duration(seconds: 2),
                 );
               },
@@ -123,9 +124,9 @@ class FavouritesView extends GetView<PropertyController> {
       final filteredProperties = controller.getFilteredPassed();
       
       if (controller.isLoading.value) {
-        return const Center(
+        return Center(
           child: CircularProgressIndicator(
-            color: AppTheme.primaryYellow,
+            color: AppColors.loadingIndicator,
           ),
         );
       }
@@ -139,7 +140,8 @@ class FavouritesView extends GetView<PropertyController> {
       }
 
       return RefreshIndicator(
-        color: AppTheme.primaryYellow,
+        color: AppColors.loadingIndicator,
+        backgroundColor: AppColors.surface,
         onRefresh: () => controller.fetchPassedProperties(),
         child: GridView.builder(
           padding: const EdgeInsets.all(16),
@@ -162,8 +164,8 @@ class FavouritesView extends GetView<PropertyController> {
                   'Added to Liked',
                   'Property moved to liked list',
                   snackPosition: SnackPosition.TOP,
-                  backgroundColor: AppTheme.primaryYellow,
-                  colorText: Colors.white,
+                  backgroundColor: AppColors.snackbarBackground,
+                  colorText: AppColors.snackbarText,
                   duration: const Duration(seconds: 2),
                 );
               },
@@ -206,7 +208,7 @@ class FavouritesView extends GetView<PropertyController> {
                     color: Colors.grey[200],
                     child: const Center(
                       child: CircularProgressIndicator(
-                        color: AppTheme.primaryYellow,
+                        color: AppColors.primaryYellow,
                       ),
                     ),
                   ),
@@ -297,10 +299,10 @@ class FavouritesView extends GetView<PropertyController> {
                             duration: const Duration(seconds: 2),
                           );
                         },
-                        icon: const Icon(Icons.refresh, color: AppTheme.primaryYellow),
+                        icon: const Icon(Icons.refresh, color: AppColors.primaryYellow),
                         label: const Text(
                           'Give Another Chance',
-                          style: TextStyle(color: AppTheme.primaryYellow),
+                          style: TextStyle(color: AppColors.primaryYellow),
                         ),
                       ),
                   ],
@@ -348,7 +350,7 @@ class FavouritesView extends GetView<PropertyController> {
                       Get.toNamed('/property-details', arguments: property);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryYellow,
+                      backgroundColor: AppColors.primaryYellow,
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
@@ -434,24 +436,24 @@ class FavouritesView extends GetView<PropertyController> {
             Icon(
               icon,
               size: 80,
-              color: Colors.grey[300],
+              color: AppColors.disabledColor,
             ),
             const SizedBox(height: 24),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 12),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey,
+                color: AppColors.textSecondary,
                 height: 1.5,
               ),
             ),

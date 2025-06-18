@@ -45,11 +45,12 @@ class EditProfileController extends GetxController {
       // Load additional fields from preferences if available
       final prefs = user.preferences;
       if (prefs.containsKey('location')) {
-        locationController.text = prefs['location'] ?? '';
+        final location = prefs['location'];
+        locationController.text = location is String ? location : '';
       }
       if (prefs.containsKey('dateOfBirth')) {
         final dobString = prefs['dateOfBirth'];
-        if (dobString != null) {
+        if (dobString is String) {
           try {
             dateOfBirth.value = DateTime.parse(dobString);
           } catch (e) {

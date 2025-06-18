@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../app/utils/theme.dart';
+import '../../app/utils/app_colors.dart';
 import '../../app/controllers/property_controller.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
@@ -16,7 +16,7 @@ class PropertyFilterWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.tune, color: Colors.black),
+      icon: Icon(Icons.tune, color: AppColors.iconColor),
       onPressed: () => _showFilterBottomSheet(context),
     );
   }
@@ -119,9 +119,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -157,18 +157,18 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey, width: 0.2)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'Filter Properties',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppTheme.textDark,
+              color: AppColors.textPrimary,
             ),
           ),
           IconButton(
@@ -184,12 +184,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Purpose',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textDark,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 15),
@@ -214,10 +214,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.primaryYellow : Colors.grey.shade100,
+                  color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
-                    color: isSelected ? AppTheme.primaryYellow : Colors.grey.shade300,
+                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
                     width: 2,
                   ),
                 ),
@@ -225,7 +225,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   purpose,
                   style: TextStyle(
                     fontSize: 16,
-                    color: isSelected ? Colors.white : AppTheme.textDark,
+                    color: isSelected ? AppColors.surface : AppColors.textPrimary,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
@@ -249,10 +249,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           priceLabel,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textDark,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 15),
@@ -282,8 +282,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               : _selectedPurpose == 'Rent' ? 5000000.0 
               : 150000000.0,
           divisions: 100,
-          activeColor: AppTheme.primaryYellow,
-          inactiveColor: AppTheme.primaryYellow.withOpacity(0.2),
+          activeColor: AppColors.primaryYellow,
+          inactiveColor: AppColors.primaryYellow.withOpacity(0.2),
           labels: RangeLabels(
             '₹${_formatPrice(_minPrice)}',
             '₹${_formatPrice(_maxPrice)}',
@@ -300,18 +300,18 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
           children: [
             Text(
               '₹${_formatPrice(_minPrice)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textDark,
+                color: AppColors.textPrimary,
               ),
             ),
             Text(
               '₹${_formatPrice(_maxPrice)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textDark,
+                color: AppColors.textPrimary,
               ),
             ),
           ],
@@ -324,12 +324,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Bedrooms',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textDark,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 15),
@@ -339,12 +339,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Min Bedrooms',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.normal,
-                      color: AppTheme.textGray,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -353,7 +353,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.grey),
+                        borderSide: BorderSide(color: AppColors.border),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
@@ -380,12 +380,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Max Bedrooms',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.normal,
-                      color: AppTheme.textGray,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -394,7 +394,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.grey),
+                        borderSide: BorderSide(color: AppColors.border),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
@@ -427,12 +427,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Property Type',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textDark,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 15),
@@ -450,17 +450,17 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.primaryYellow : Colors.grey.shade100,
+                  color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: isSelected ? AppTheme.primaryYellow : Colors.grey.shade300,
+                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
                   ),
                 ),
                 child: Text(
                   type,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isSelected ? Colors.white : AppTheme.textDark,
+                    color: isSelected ? AppColors.surface : AppColors.textPrimary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -476,12 +476,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Amenities',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textDark,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 15),
@@ -503,10 +503,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.primaryYellow.withOpacity(0.1) : Colors.grey.shade50,
+                  color: isSelected ? AppColors.primaryYellow.withOpacity(0.1) : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? AppTheme.primaryYellow : Colors.grey.shade300,
+                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
                   ),
                 ),
                 child: Row(
@@ -516,14 +516,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                       const Icon(
                         Icons.check_circle,
                         size: 16,
-                        color: AppTheme.primaryYellow,
+                        color: AppColors.primaryYellow,
                       ),
                     if (isSelected) const SizedBox(width: 6),
                     Text(
                       amenity,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isSelected ? AppTheme.primaryYellow : AppTheme.textDark,
+                        color: isSelected ? AppColors.primaryYellow : AppColors.textPrimary,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
@@ -540,8 +540,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   Widget _buildActionButtons() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.grey, width: 0.2)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.border, width: 0.2)),
       ),
       child: Row(
         children: [
@@ -550,16 +550,16 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               onPressed: _clearFilters,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: AppTheme.primaryYellow),
+                side: BorderSide(color: AppColors.primaryYellow),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Clear All',
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppTheme.primaryYellow,
+                  color: AppColors.primaryYellow,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -571,17 +571,17 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
             child: ElevatedButton(
               onPressed: _applyFilters,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryYellow,
+                backgroundColor: AppColors.primaryYellow,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Apply Filters',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white,
+                  color: AppColors.surface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -626,8 +626,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       'Filters Applied',
       'Properties filtered based on your preferences',
       snackPosition: SnackPosition.TOP,
-      backgroundColor: AppTheme.primaryYellow,
-      colorText: Colors.white,
+      backgroundColor: AppColors.primaryYellow,
+      colorText: AppColors.surface,
       duration: const Duration(seconds: 2),
     );
   }
