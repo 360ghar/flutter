@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../../controllers/property_controller.dart';
 import '../../../controllers/visits_controller.dart';
 import '../../../data/models/property_model.dart';
@@ -309,37 +310,78 @@ class PropertyDetailsView extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     
-                    // 360° Tour Button
-                    if (safeProperty.tour360Url != null && safeProperty.tour360Url!.isNotEmpty)
-                      Column(
+                    // 360° Tour Embedded Section
+                    if (safeProperty.tour360Url != null && safeProperty.tour360Url!.isNotEmpty) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                Get.toNamed('/tour', arguments: safeProperty.tour360Url);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.accentBlue,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.threesixty,
+                                size: 24,
+                                color: AppColors.primaryYellow,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '360° Virtual Tour',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
-                              icon: const Icon(Icons.threesixty),
-                              label: const Text(
-                                'View 360° Tour',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            ],
+                          ),
+                          InkWell(
+                            onTap: () {
+                              Get.toNamed('/tour', arguments: safeProperty.tour360Url);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryYellow.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.fullscreen,
+                                    size: 16,
+                                    color: AppColors.primaryYellow,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Fullscreen View',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.primaryYellow,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
                         ],
                       ),
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 450,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                          boxShadow: AppColors.getCardShadow(),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: _Embedded360TourDetails(tourUrl: safeProperty.tour360Url!),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                     
                                          // Agent Information
                      Text(
@@ -635,6 +677,114 @@ class PropertyDetailsView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _Embedded360TourDetails extends StatefulWidget {
+  final String tourUrl;
+  
+  const _Embedded360TourDetails({required this.tourUrl});
+  
+  @override
+  State<_Embedded360TourDetails> createState() => _Embedded360TourDetailsState();
+}
+
+class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
+  late final WebViewController controller;
+  bool isLoading = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (String url) {
+            if (mounted) {
+              setState(() {
+                isLoading = false;
+              });
+            }
+          },
+          onWebResourceError: (WebResourceError error) {
+            if (mounted) {
+              setState(() {
+                isLoading = false;
+              });
+            }
+          },
+        ),
+      );
+    
+    // Create optimized HTML for embedded Kuula tour
+    final htmlContent = '''
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { 
+            margin: 0; 
+            padding: 0; 
+            background: #f0f0f0;
+            overflow: hidden;
+          }
+          iframe { 
+            width: 100vw; 
+            height: 100vh; 
+            border: none;
+            display: block;
+          }
+        </style>
+      </head>
+      <body>
+        <iframe class="ku-embed" 
+                frameborder="0" 
+                allow="xr-spatial-tracking; gyroscope; accelerometer" 
+                allowfullscreen 
+                scrolling="no" 
+                src="${widget.tourUrl}">
+        </iframe>
+      </body>
+      </html>
+    ''';
+    
+    controller.loadHtmlString(htmlContent);
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        WebViewWidget(controller: controller),
+        if (isLoading)
+          Container(
+            color: AppColors.inputBackground,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: AppColors.primaryYellow,
+                    strokeWidth: 3,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Loading 360° Tour...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 } 

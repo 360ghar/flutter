@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
 import '../../app/data/models/property_model.dart';
 import '../../app/utils/app_colors.dart';
-import '../../app/routes/app_routes.dart';
 
 class CompactPropertyCard extends StatelessWidget {
   final PropertyModel property;
