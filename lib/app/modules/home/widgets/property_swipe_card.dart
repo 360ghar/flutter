@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../data/models/property_model.dart';
 import '../../../utils/theme.dart';
+import 'dart:math' as math;
 
 class PropertySwipeCard extends StatelessWidget {
   final PropertyModel property;
@@ -608,31 +609,56 @@ class PropertySwipeStack extends StatefulWidget {
 }
 
 class _PropertySwipeStackState extends State<PropertySwipeStack>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late List<PropertyModel> _properties;
-  late AnimationController _animationController;
+  late AnimationController _swipeAnimationController;
+  late AnimationController _sparklesAnimationController;
+  late Animation<double> _swipeAnimation;
+  late Animation<double> _sparklesAnimation;
+  
   Offset _dragStart = Offset.zero;
   Offset _dragPosition = Offset.zero;
   bool _isDragging = false;
   double _rotation = 0;
+  bool _showSparkles = false;
+  bool _isSwipingRight = false;
 
   @override
   void initState() {
     super.initState();
     _properties = List.from(widget.properties);
-    _animationController = AnimationController(
+    
+    // Animation for the swipe out effect
+    _swipeAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 400),
+    );
+    _swipeAnimation = CurvedAnimation(
+      parent: _swipeAnimationController,
+      curve: Curves.easeInOut,
     );
     
-    _animationController.addStatusListener((status) {
+    // Animation for sparkles effect
+    _sparklesAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _sparklesAnimation = CurvedAnimation(
+      parent: _sparklesAnimationController,
+      curve: Curves.easeOut,
+    );
+    
+    _swipeAnimationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (_properties.isNotEmpty) {
           _properties.removeAt(0);
         }
-        _animationController.reset();
+        _swipeAnimationController.reset();
+        _sparklesAnimationController.reset();
         _dragPosition = Offset.zero;
         _rotation = 0;
+        _showSparkles = false;
+        _isSwipingRight = false;
         setState(() {});
       }
     });
@@ -640,8 +666,83 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _swipeAnimationController.dispose();
+    _sparklesAnimationController.dispose();
     super.dispose();
+  }
+
+  double _calculateRotation(Offset dragPosition, Size screenSize) {
+    // Calculate rotation based on horizontal drag
+    // The card rotates from the bottom center like a hinge
+    final horizontalRatio = dragPosition.dx / (screenSize.width * 0.5);
+    // Limit rotation to a maximum of 45 degrees (π/4 radians)
+    final maxRotation = 0.785398; // 45 degrees in radians
+    return horizontalRatio * maxRotation * 0.7; // Reduce sensitivity
+  }
+
+  void _handlePanEnd(DragEndDetails details, Size screenSize) {
+    setState(() {
+      _isDragging = false;
+    });
+
+    final dragDistance = _dragPosition.dx;
+    final dragThreshold = screenSize.width * 0.25;
+    final rotationThreshold = 0.3; // About 17 degrees
+
+    // Check if we should trigger a swipe
+    if (dragDistance.abs() > dragThreshold || _rotation.abs() > rotationThreshold) {
+      if (dragDistance > 0 || _rotation > 0) {
+        // Swipe right - like with sparkles
+        _isSwipingRight = true;
+        _showSparkles = true;
+        _sparklesAnimationController.forward();
+        widget.onSwipeRight(_properties[0]);
+      } else {
+        // Swipe left - pass
+        widget.onSwipeLeft(_properties[0]);
+      }
+      _swipeAnimationController.forward();
+    } else {
+      // Snap back with smooth animation
+      _snapBack();
+    }
+  }
+
+  void _snapBack() {
+    final snapController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    
+    final positionTween = Tween<Offset>(
+      begin: _dragPosition,
+      end: Offset.zero,
+    );
+    
+    final rotationTween = Tween<double>(
+      begin: _rotation,
+      end: 0,
+    );
+    
+    final snapAnimation = CurvedAnimation(
+      parent: snapController,
+      curve: Curves.elasticOut,
+    );
+    
+    snapController.addListener(() {
+      setState(() {
+        _dragPosition = positionTween.evaluate(snapAnimation);
+        _rotation = rotationTween.evaluate(snapAnimation);
+      });
+    });
+    
+    snapController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        snapController.dispose();
+      }
+    });
+    
+    snapController.forward();
   }
 
   @override
@@ -677,6 +778,8 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
       );
     }
 
+    final screenSize = MediaQuery.of(context).size;
+
     return GestureDetector(
       onPanStart: (details) {
         setState(() {
@@ -687,44 +790,22 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
       onPanUpdate: (details) {
         setState(() {
           _dragPosition = details.localPosition - _dragStart;
-          _rotation = _dragPosition.dx * 0.01;
+          _rotation = _calculateRotation(_dragPosition, screenSize);
         });
       },
-      onPanEnd: (details) {
-        setState(() {
-          _isDragging = false;
-        });
-
-        final screenWidth = MediaQuery.of(context).size.width;
-        final dragDistance = _dragPosition.dx;
-        final dragThreshold = screenWidth * 0.25;
-
-        if (dragDistance.abs() > dragThreshold) {
-          if (dragDistance > 0) {
-            // Swipe right - like
-            widget.onSwipeRight(_properties[0]);
-          } else {
-            // Swipe left - pass
-            widget.onSwipeLeft(_properties[0]);
-          }
-          _animationController.forward();
-        } else {
-          // Snap back
-          setState(() {
-            _dragPosition = Offset.zero;
-            _rotation = 0;
-          });
-        }
-      },
+      onPanEnd: (details) => _handlePanEnd(details, screenSize),
       child: Stack(
         children: [
-          // Background cards
+          // Background cards with subtle scaling
           if (_properties.length > 1)
             Positioned.fill(
               child: Transform.scale(
                 scale: 0.95,
-                child: PropertySwipeCard(
-                  property: _properties[1],
+                child: Opacity(
+                  opacity: 0.8,
+                  child: PropertySwipeCard(
+                    property: _properties[1],
+                  ),
                 ),
               ),
             ),
@@ -732,27 +813,155 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
             Positioned.fill(
               child: Transform.scale(
                 scale: 0.9,
-                child: PropertySwipeCard(
-                  property: _properties[2],
+                child: Opacity(
+                  opacity: 0.6,
+                  child: PropertySwipeCard(
+                    property: _properties[2],
+                  ),
                 ),
               ),
             ),
           
-          // Top card
+          // Top card with realistic rotation
           Positioned.fill(
-            child: Transform.translate(
-              offset: _isDragging ? _dragPosition : Offset.zero,
-              child: Transform.rotate(
-                angle: _isDragging ? _rotation : 0,
-                child: PropertySwipeCard(
-                  property: _properties[0],
-                ),
-              ),
+            child: AnimatedBuilder(
+              animation: _swipeAnimation,
+              builder: (context, child) {
+                final swipeOffset = _isDragging 
+                    ? _dragPosition 
+                    : Offset(
+                        _dragPosition.dx * (1 + _swipeAnimation.value * 2),
+                        _dragPosition.dy * (1 + _swipeAnimation.value),
+                      );
+                
+                final swipeRotation = _isDragging 
+                    ? _rotation 
+                    : _rotation * (1 + _swipeAnimation.value * 2);
+
+                return Transform.translate(
+                  offset: swipeOffset,
+                  child: Transform(
+                    alignment: Alignment.bottomCenter, // Rotate from bottom center like a hinge
+                    transform: Matrix4.identity()
+                      ..setEntry(3, 2, 0.001) // Add perspective
+                      ..rotateZ(swipeRotation),
+                    child: Opacity(
+                      opacity: _swipeAnimationController.isAnimating 
+                          ? (1 - _swipeAnimation.value) 
+                          : 1.0,
+                      child: PropertySwipeCard(
+                        property: _properties[0],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
+          
+          // Sparkles animation for right swipe
+          if (_showSparkles && _isSwipingRight)
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _sparklesAnimation,
+                builder: (context, child) {
+                  return IgnorePointer(
+                    child: SparklesWidget(
+                      animation: _sparklesAnimation,
+                    ),
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );
+  }
+}
+
+// Sparkles widget for the enthusiasm animation
+class SparklesWidget extends StatelessWidget {
+  final Animation<double> animation;
+  
+  const SparklesWidget({
+    super.key,
+    required this.animation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: SparklesPainter(animation.value),
+      size: Size.infinite,
+    );
+  }
+}
+
+class SparklesPainter extends CustomPainter {
+  final double animationValue;
+  
+  SparklesPainter(this.animationValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppTheme.primaryYellow.withOpacity(0.8)
+      ..style = PaintingStyle.fill;
+
+    // Create sparkles at various positions
+    final sparklePositions = [
+      Offset(size.width * 0.2, size.height * 0.3),
+      Offset(size.width * 0.8, size.height * 0.2),
+      Offset(size.width * 0.6, size.height * 0.5),
+      Offset(size.width * 0.3, size.height * 0.7),
+      Offset(size.width * 0.7, size.height * 0.8),
+      Offset(size.width * 0.1, size.height * 0.6),
+      Offset(size.width * 0.9, size.height * 0.4),
+      Offset(size.width * 0.4, size.height * 0.2),
+    ];
+
+    for (int i = 0; i < sparklePositions.length; i++) {
+      final position = sparklePositions[i];
+      final delay = i * 0.1;
+      final sparkleAnimation = ((animationValue - delay) / (1 - delay)).clamp(0.0, 1.0);
+      
+      if (sparkleAnimation > 0) {
+        final sparkleSize = 8.0 * sparkleAnimation * (1 - sparkleAnimation * 0.5);
+        final sparkleOpacity = (1 - sparkleAnimation).clamp(0.0, 1.0);
+        
+        paint.color = AppTheme.primaryYellow.withOpacity(sparkleOpacity * 0.8);
+        
+        // Draw sparkle as a star shape
+        _drawStar(canvas, paint, position, sparkleSize);
+      }
+    }
+  }
+  
+  void _drawStar(Canvas canvas, Paint paint, Offset center, double size) {
+    final path = Path();
+    final outerRadius = size;
+    final innerRadius = size * 0.4;
+    
+    for (int i = 0; i < 8; i++) {
+      final angle = (i * 45) * (3.14159 / 180);
+      final radius = i.isEven ? outerRadius : innerRadius;
+      final x = center.dx + radius * math.cos(angle);
+      final y = center.dy + radius * math.sin(angle);
+      
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(SparklesPainter oldDelegate) {
+    return oldDelegate.animationValue != animationValue;
   }
 }
 

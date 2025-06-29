@@ -383,80 +383,6 @@ class PropertyDetailsView extends StatelessWidget {
                       const SizedBox(height: 24),
                     ],
                     
-                                         // Agent Information
-                     Text(
-                       'Property Agent',
-                       style: TextStyle(
-                         fontSize: 20,
-                         fontWeight: FontWeight.bold,
-                         color: AppColors.textPrimary,
-                       ),
-                     ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundColor: AppColors.primaryYellow,
-                            backgroundImage: safeProperty.agentImage.isNotEmpty
-                                ? NetworkImage(safeProperty.agentImage)
-                                : null,
-                            child: safeProperty.agentImage.isEmpty
-                                ? Text(
-                                    safeProperty.agentName.isNotEmpty 
-                                        ? safeProperty.agentName[0].toUpperCase() 
-                                        : 'A',
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                                                 Text(
-                                   safeProperty.agentName,
-                                   style: TextStyle(
-                                     fontSize: 18,
-                                     fontWeight: FontWeight.bold,
-                                     color: AppColors.textPrimary,
-                                   ),
-                                 ),
-                                 const SizedBox(height: 4),
-                                 Text(
-                                   safeProperty.agentPhone,
-                                   style: TextStyle(
-                                     fontSize: 14,
-                                     color: AppColors.textSecondary,
-                                   ),
-                                 ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              Get.snackbar(
-                                'Call Agent',
-                                'Calling ${safeProperty.agentName}',
-                                snackPosition: SnackPosition.TOP,
-                              );
-                            },
-                            icon: const Icon(Icons.phone, color: AppColors.accentGreen),
-                          ),
-                        ],
-                      ),
-                    ),
                     const SizedBox(height: 100), // Space for bottom buttons
                   ],
                 ),
@@ -479,58 +405,27 @@ class PropertyDetailsView extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Get.snackbar(
-                    'Contact Agent',
-                    'Contacting ${safeProperty.agentName}',
-                    snackPosition: SnackPosition.TOP,
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primaryYellow),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.message, color: AppColors.primaryYellow),
-                label: const Text(
-                  'Contact',
-                  style: TextStyle(
-                    color: AppColors.primaryYellow,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _showBookVisitDialog(context, safeProperty, visitsController),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryYellow,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton.icon(
-                onPressed: () => _showBookVisitDialog(context, safeProperty, visitsController),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryYellow,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.calendar_today),
-                label: const Text(
-                  'Book Visit',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+            icon: const Icon(Icons.calendar_today),
+            label: const Text(
+              'Book Visit',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

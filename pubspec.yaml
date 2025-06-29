@@ -21,8 +21,8 @@ dependencies:
   cached_network_image: ^3.3.0
   flutter_svg: ^2.0.9
   intl: ^0.20.2
-  geolocator: ^10.1.0
-  flutter_map: ^6.1.0
+  geolocator: ^14.0.1
+  flutter_map: ^8.1.1
   latlong2: ^0.9.0
   flutter_rating_bar: ^4.0.1
   shimmer: ^3.0.0
@@ -31,7 +31,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^6.0.0
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
 
