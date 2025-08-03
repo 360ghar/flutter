@@ -349,21 +349,21 @@ class SwipeController extends GetxController {
 
       // Price filter (adjusted based on purpose)
       final adjustedPrice = _getAdjustedPrice(property);
-      if (adjustedPrice < _propertyController.minPrice.value || 
-          adjustedPrice > _propertyController.maxPrice.value) {
+      if (adjustedPrice < _propertyController.minPrice || 
+          adjustedPrice > _propertyController.maxPrice) {
         return false;
       }
 
       // Bedrooms filter (skip for Stay mode)
-      if (_propertyController.selectedPurpose.value != 'Stay') {
-        if (property.bedrooms != null && (property.bedrooms! < _propertyController.minBedrooms.value || 
-            property.bedrooms! > _propertyController.maxBedrooms.value)) {
+      if (_propertyController.selectedPurpose != 'Stay') {
+        if (property.bedrooms != null && (property.bedrooms! < _propertyController.minBedrooms || 
+            property.bedrooms! > _propertyController.maxBedrooms)) {
           return false;
         }
       }
 
       // Property type filter
-      if (_propertyController.propertyType.value != 'All' && 
+      if (_propertyController.propertyType != 'All' && 
           !_matchesPropertyType(property)) {
         return false;
       }
@@ -376,7 +376,7 @@ class SwipeController extends GetxController {
   }
 
   bool _matchesPurpose(PropertyCardModel property) {
-    switch (_propertyController.selectedPurpose.value) {
+    switch (_propertyController.selectedPurpose) {
       case 'Stay':
         return property.purpose == PropertyPurpose.shortStay ||
                property.propertyType == PropertyType.apartment ||
@@ -390,7 +390,7 @@ class SwipeController extends GetxController {
   }
 
   double _getAdjustedPrice(PropertyCardModel property) {
-    switch (_propertyController.selectedPurpose.value) {
+    switch (_propertyController.selectedPurpose) {
       case 'Stay':
         return property.basePrice / 30; // Daily rate approximation
       case 'Rent':
@@ -402,9 +402,9 @@ class SwipeController extends GetxController {
   }
 
   bool _matchesPropertyType(PropertyCardModel property) {
-    final selectedType = _propertyController.propertyType.value;
+    final selectedType = _propertyController.propertyType;
     
-    if (_propertyController.selectedPurpose.value == 'Stay') {
+    if (_propertyController.selectedPurpose == 'Stay') {
       // For Stay mode, map property types differently
       switch (selectedType) {
         case 'Hotel':

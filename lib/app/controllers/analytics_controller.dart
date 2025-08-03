@@ -5,10 +5,6 @@ import 'auth_controller.dart';
 class AnalyticsController extends GetxController {
   late final ApiService _apiService;
   late final AuthController _authController;
-
-  final RxMap<String, dynamic> dashboardData = <String, dynamic>{}.obs;
-  final RxList<Map<String, dynamic>> searchHistory = <Map<String, dynamic>>[].obs;
-  final RxBool isLoading = false.obs;
   
   // Session tracking
   String? _sessionId;
@@ -22,22 +18,6 @@ class AnalyticsController extends GetxController {
     
     // Always initialize session (even for non-authenticated users)
     _initializeSession();
-    
-    // Listen to authentication state changes
-    ever(_authController.isLoggedIn, (bool isLoggedIn) {
-      if (isLoggedIn) {
-        // User is logged in, safe to fetch data
-        _loadAnalyticsData();
-      } else {
-        // User logged out, clear all data
-        _clearAllData();
-      }
-    });
-    
-    // If already logged in, load analytics data
-    if (_authController.isLoggedIn.value) {
-      _loadAnalyticsData();
-    }
   }
 
   void _initializeSession() {
@@ -50,33 +30,6 @@ class AnalyticsController extends GetxController {
     });
   }
 
-  Future<void> _loadAnalyticsData() async {
-    if (!_authController.isAuthenticated) return;
-
-    try {
-      isLoading.value = true;
-      
-      // Load dashboard data and search history concurrently
-      final results = await Future.wait([
-        _apiService.getAnalyticsDashboard(),
-        _apiService.getSearchHistory(),
-      ]);
-      
-      dashboardData.value = results[0] as Map<String, dynamic>;
-      searchHistory.value = results[1] as List<Map<String, dynamic>>;
-      
-    } catch (e) {
-      print('Error loading analytics data: $e');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-  
-  void _clearAllData() {
-    dashboardData.clear();
-    searchHistory.clear();
-    // Keep session data as it's not user-specific
-  }
 
   Future<void> trackEvent(String eventType, Map<String, dynamic> eventData) async {
     try {
@@ -245,37 +198,6 @@ class AnalyticsController extends GetxController {
     });
   }
 
-  // Analytics dashboard getters
-  int get totalViews => dashboardData['total_views'] ?? 0;
-  int get totalLikes => dashboardData['total_likes'] ?? 0;
-  int get totalVisitsScheduled => dashboardData['total_visits_scheduled'] ?? 0;
-  double get conversionRate => dashboardData['conversion_rate']?.toDouble() ?? 0.0;
-  
-  List<String> get preferredLocations {
-    final locations = dashboardData['preferred_locations'];
-    if (locations is List) {
-      return List<String>.from(locations);
-    }
-    return [];
-  }
-
-  Map<String, dynamic> get activitySummary => dashboardData['activity_summary'] ?? {};
-
-  // Search history methods
-  Future<void> refreshSearchHistory() async {
-    if (!_authController.isAuthenticated) return;
-
-    try {
-      final history = await _apiService.getSearchHistory();
-      searchHistory.value = history;
-    } catch (e) {
-      print('Error refreshing search history: $e');
-    }
-  }
-
-  void clearSearchHistory() {
-    searchHistory.clear();
-  }
 
   // Session management
   void endSession() {

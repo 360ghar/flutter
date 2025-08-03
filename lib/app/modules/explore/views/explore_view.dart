@@ -234,6 +234,7 @@ class ExploreView extends GetView<ExploreController> {
             bottom: 100,
             right: 16,
             child: Obx(() => FloatingActionButton(
+              heroTag: "explore_fab",
               mini: true,
               backgroundColor: AppColors.buttonBackground,
               onPressed: controller.togglePropertyList,

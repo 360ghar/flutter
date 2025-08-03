@@ -4,6 +4,9 @@ import '../data/providers/api_service.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/location_controller.dart';
 import '../controllers/localization_controller.dart';
+import '../controllers/theme_controller.dart';
+import '../controllers/analytics_controller.dart';
+import '../controllers/filter_controller.dart';
 import '../utils/debug_logger.dart';
 
 class InitialBinding extends Bindings {
@@ -55,7 +58,14 @@ class InitialBinding extends Bindings {
       Get.put<LocalizationController>(LocalizationController(), permanent: true);
       DebugLogger.success('✅ LocalizationController registered');
       
-      // Note: AnalyticsController moved to lazy loading to prevent unauthorized API calls
+      Get.put<ThemeController>(ThemeController(), permanent: true);
+      DebugLogger.success('✅ ThemeController registered');
+      
+      Get.put<AnalyticsController>(AnalyticsController(), permanent: true);
+      DebugLogger.success('✅ AnalyticsController registered');
+      
+      Get.put<PropertyFilterController>(PropertyFilterController(), permanent: true);
+      DebugLogger.success('✅ PropertyFilterController registered');
     } catch (e) {
       DebugLogger.error('💥 Error initializing core controllers: $e');
       rethrow;

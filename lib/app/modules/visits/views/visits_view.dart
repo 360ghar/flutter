@@ -134,6 +134,7 @@ class VisitsView extends GetView<VisitsController> {
           );
         }),
         floatingActionButton: FloatingActionButton(
+          heroTag: "visits_fab",
           onPressed: () {
             Get.snackbar(
               'schedule_visit'.tr,

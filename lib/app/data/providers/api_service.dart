@@ -1056,7 +1056,20 @@ class ApiService extends getx.GetConnect {
   Future<List<Map<String, dynamic>>> getSearchHistory() async {
     return await _makeRequest(
       '/analytics/search-history',
-      (json) => (json as List).cast<Map<String, dynamic>>(),
+      (json) {
+        // Handle both List and Map responses from backend
+        if (json is List) {
+          return (json as List).cast<Map<String, dynamic>>();
+        } else if (json is Map<String, dynamic>) {
+          // If response is a Map, extract the data array or return empty list
+          final data = json['data'] ?? json['history'] ?? json['results'];
+          if (data is List) {
+            return (data as List).cast<Map<String, dynamic>>();
+          }
+        }
+        // Return empty list if parsing fails
+        return <Map<String, dynamic>>[];
+      },
       operationName: 'Get Search History',
     );
   }

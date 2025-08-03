@@ -5,6 +5,9 @@ import '../data/models/property_card_model.dart';
 import '../data/repositories/property_repository.dart';
 import '../data/providers/api_service.dart';
 import 'auth_controller.dart';
+import 'location_controller.dart';
+import 'filter_controller.dart';
+import 'analytics_controller.dart';
 import '../utils/debug_logger.dart';
 import '../utils/reactive_state_monitor.dart';
 
@@ -12,6 +15,9 @@ class PropertyController extends GetxController {
   final PropertyRepository _repository;
   late final ApiService _apiService;
   late final AuthController _authController;
+  late final LocationController _locationController;
+  late final PropertyFilterController _filterController;
+  late final AnalyticsController _analyticsController;
   
   final RxList<PropertyCardModel> properties = <PropertyCardModel>[].obs;
   final RxList<PropertyCardModel> discoverProperties = <PropertyCardModel>[].obs;
@@ -32,19 +38,8 @@ class PropertyController extends GetxController {
   final RxBool hasMoreDiscoverProperties = true.obs;
   final RxBool hasMoreNearbyProperties = true.obs;
   
-  // User location
-  final Rxn<Position> userPosition = Rxn<Position>();
-  final RxBool isLocationPermissionGranted = false.obs;
-
-  // Filter properties
+  // Legacy filter properties - kept for backward compatibility
   final RxMap<String, dynamic> filters = <String, dynamic>{}.obs;
-  final RxString selectedPurpose = 'Buy'.obs; // Buy, Rent, Stay
-  final RxDouble minPrice = 0.0.obs;
-  final RxDouble maxPrice = 150000000.0.obs; // ₹15Cr to accommodate all properties
-  final RxInt minBedrooms = 0.obs;
-  final RxInt maxBedrooms = 10.obs;
-  final RxString propertyType = 'All'.obs;
-  final RxList<String> selectedAmenities = <String>[].obs;
 
   PropertyController(this._repository);
 
@@ -53,6 +48,9 @@ class PropertyController extends GetxController {
     super.onInit();
     _apiService = Get.find<ApiService>();
     _authController = Get.find<AuthController>();
+    _locationController = Get.find<LocationController>();
+    _filterController = Get.find<PropertyFilterController>();
+    _analyticsController = Get.find<AnalyticsController>();
     
     // Setup reactive state monitoring for debugging
     ReactiveStateMonitor.monitorPropertyController(this, 'PropertyController');
@@ -68,6 +66,9 @@ class PropertyController extends GetxController {
       }
     });
     
+    // Listen to filter changes for automatic refresh
+    ever(_filterController.selectedPurpose, (_) => _onFiltersChanged());
+    
     // If already logged in, initialize immediately
     if (_authController.isLoggedIn.value) {
       _initializeController();
@@ -75,10 +76,14 @@ class PropertyController extends GetxController {
   }
 
   Future<void> _initializeController() async {
-    await _requestLocationPermission();
-    await _getCurrentLocation();
+    // Location is now handled by LocationController
     // Only load essential data on init - other data will be loaded lazily when needed
     await fetchDiscoverProperties();
+  }
+  
+  void _onFiltersChanged() {
+    // React to filter changes - could trigger data refresh
+    DebugLogger.info('🔄 Filters changed, properties may need refresh');
   }
   
   void _clearAllData() {
@@ -97,72 +102,16 @@ class PropertyController extends GetxController {
     hasMoreNearbyProperties.value = true;
   }
 
-  // Location methods
-  Future<void> _requestLocationPermission() async {
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        isLocationPermissionGranted.value = false;
-        Get.snackbar(
-          'Location Permission',
-          'Location access is permanently denied. Please enable it in settings.',
-          snackPosition: SnackPosition.TOP,
-        );
-        return;
-      }
-      
-      if (permission == LocationPermission.denied) {
-        isLocationPermissionGranted.value = false;
-        Get.snackbar(
-          'Location Permission',
-          'Location access is required for nearby properties.',
-          snackPosition: SnackPosition.TOP,
-        );
-        return;
-      }
-      
-      isLocationPermissionGranted.value = true;
-    } catch (e) {
-      print('Error requesting location permission: $e');
-    }
-  }
-
-  Future<void> _getCurrentLocation() async {
-    if (!isLocationPermissionGranted.value) return;
-    
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      userPosition.value = position;
-      
-      // Update user location in backend
-      if (_authController.isAuthenticated) {
-        await _authController.updateUserLocation(
-          position.latitude,
-          position.longitude,
-        );
-      }
-      
-      // Load nearby properties
-      await fetchNearbyProperties();
-    } catch (e) {
-      print('Error getting current location: $e');
-    }
-  }
-
+  // Helper method to get current location from LocationController
   Future<Position> _getCurrentLocationSync() async {
-    if (userPosition.value != null) {
-      return userPosition.value!;
+    if (_locationController.hasLocation) {
+      return _locationController.currentPosition.value!;
     }
     
-    await _getCurrentLocation();
+    // Try to get current location
+    await _locationController.getCurrentLocation();
     
-    return userPosition.value ?? Position(
+    return _locationController.currentPosition.value ?? Position(
       latitude: 19.0760,
       longitude: 72.8777,
       timestamp: DateTime.now(),
@@ -290,7 +239,7 @@ class PropertyController extends GetxController {
     int limit = 20,
     bool loadMore = false,
   }) async {
-    if (userPosition.value == null) {
+    if (!_locationController.hasLocation) {
       DebugLogger.warning('⚠️ No user position available for nearby properties');
       return;
     }
@@ -309,8 +258,8 @@ class PropertyController extends GetxController {
       DebugLogger.info('🔍 Fetching nearby properties - Page: ${loadMore ? currentNearbyPage.value : 1}, Radius: ${radiusKm}km, LoadMore: $loadMore');
       
       final response = await _apiService.exploreProperties(
-        latitude: userPosition.value!.latitude,
-        longitude: userPosition.value!.longitude,
+        latitude: _locationController.currentLatitude!,
+        longitude: _locationController.currentLongitude!,
         radiusKm: radiusKm,
         limit: limit,
         page: loadMore ? currentNearbyPage.value : 1,
@@ -332,8 +281,8 @@ class PropertyController extends GetxController {
       await _apiService.trackEvent('nearby_properties_loaded', {
         'count': response.properties.length,
         'radius_km': radiusKm,
-        'latitude': userPosition.value!.latitude,
-        'longitude': userPosition.value!.longitude,
+        'latitude': _locationController.currentLatitude!,
+        'longitude': _locationController.currentLongitude!,
         'total_available': response.total,
         'timestamp': DateTime.now().toIso8601String(),
       });
@@ -401,9 +350,9 @@ class PropertyController extends GetxController {
         });
       } else {
         DebugLogger.warning('⚠️ User not authenticated, using local filtering');
-        // For non-authenticated users, repository already returns PropertyCardModel
+        // For non-authenticated users, use FilterController to filter results
         final allProps = await _repository.getProperties();
-        final filtered = _applyCardFilters(allProps);
+        final filtered = _filterController.applyFilters(allProps);
         properties.assignAll(filtered);
         
         DebugLogger.info('📱 Local search completed: ${filtered.length} results');
@@ -430,12 +379,8 @@ class PropertyController extends GetxController {
         
         DebugLogger.success('✅ Property details loaded: ${property.title}');
         
-        // Track property view
-        await _apiService.trackEvent('property_view', {
-          'property_id': int.parse(propertyId),
-          'source': 'property_details',
-          'timestamp': DateTime.now().toIso8601String(),
-        });
+        // Track property view using AnalyticsController
+        await _analyticsController.trackPropertyView(propertyId, source: 'property_details');
         
         return property;
       } else {
@@ -474,14 +419,13 @@ class PropertyController extends GetxController {
       
       DebugLogger.success('✅ Availability check completed');
       
-      // Track availability check
-      await _apiService.trackEvent('property_availability_check', {
+      // Track availability check using AnalyticsController
+      await _analyticsController.trackEvent('property_availability_check', {
         'property_id': int.parse(propertyId),
         'check_in_date': checkInDate,
         'check_out_date': checkOutDate,
         'guests': guests,
         'available': availability['available'] ?? false,
-        'timestamp': DateTime.now().toIso8601String(),
       });
       
       // Show availability result to user
@@ -520,14 +464,8 @@ class PropertyController extends GetxController {
       
       DebugLogger.success('✅ Interest shown successfully');
       
-      // Track interest
-      await _apiService.trackEvent('property_interest', {
-        'property_id': int.parse(propertyId),
-        'interest_type': interestType,
-        'has_message': message != null,
-        'has_preferred_time': preferredTime != null,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
+      // Track interest using AnalyticsController
+      await _analyticsController.trackPropertyInterest(propertyId, interestType);
       
       Get.snackbar(
         'Interest Recorded',
@@ -718,56 +656,21 @@ class PropertyController extends GetxController {
     }
   }
 
-  // Filter methods
+  // Filter methods - now using FilterController
   List<PropertyCardModel> getFilteredFavourites() {
     DebugLogger.info('🔍 Filtering ${favouriteProperties.length} favourite properties');
-    final filtered = _applyCardFilters(favouriteProperties);
+    final filtered = _filterController.applyFilters(favouriteProperties);
     DebugLogger.info('✅ After filtering: ${filtered.length} properties');
     return filtered;
   }
 
   List<PropertyCardModel> getFilteredPassed() {
-    return _applyCardFilters(passedProperties);
+    return _filterController.applyFilters(passedProperties);
   }
 
+  // Deprecated: Use FilterController.applyFilters instead
   List<PropertyCardModel> _applyCardFilters(List<PropertyCardModel> propertyList) {
-    DebugLogger.info('🔍 Applying filters to ${propertyList.length} properties');
-    DebugLogger.info('📋 Purpose: ${selectedPurpose.value}');
-    DebugLogger.info('💰 Price range: ${minPrice.value} - ${maxPrice.value}');
-    DebugLogger.info('🛏️ Bedrooms range: ${minBedrooms.value} - ${maxBedrooms.value}');
-    DebugLogger.info('🏠 Property type: ${propertyType.value}');
-    
-    return propertyList.where((property) {
-      // Purpose filter
-      if (!_matchesCardPurpose(property)) {
-        DebugLogger.info('❌ Property ${property.id} (${property.title}) filtered out by purpose');
-        return false;
-      }
-
-      // Price filter (adjusted based on purpose)
-      final adjustedPrice = _getCardAdjustedPrice(property);
-      if (adjustedPrice < minPrice.value || adjustedPrice > maxPrice.value) {
-        DebugLogger.info('❌ Property ${property.id} (${property.title}) filtered out by price: $adjustedPrice');
-        return false;
-      }
-
-      // Bedrooms filter (skip for Stay mode if less than 1 bedroom)
-      if (selectedPurpose.value != 'Stay') {
-        if (property.bedrooms != null && (property.bedrooms! < minBedrooms.value || property.bedrooms! > maxBedrooms.value)) {
-          DebugLogger.info('❌ Property ${property.id} (${property.title}) filtered out by bedrooms: ${property.bedrooms}');
-          return false;
-        }
-      }
-
-      // Property type filter
-      if (propertyType.value != 'All' && !_matchesCardPropertyType(property)) {
-        DebugLogger.info('❌ Property ${property.id} (${property.title}) filtered out by type: ${property.propertyTypeString}');
-        return false;
-      }
-
-      DebugLogger.info('✅ Property ${property.id} (${property.title}) passed all filters');
-      return true;
-    }).toList();
+    return _filterController.applyFilters(propertyList);
   }
 
   // Helper method to convert PropertyModel to PropertyCardModel
@@ -793,57 +696,8 @@ class PropertyController extends GetxController {
     );
   }
 
-  bool _matchesCardPurpose(PropertyCardModel property) {
-    switch (selectedPurpose.value) {
-      case 'Stay':
-        // Stay properties should match the purpose or be suitable for short stays
-        return property.purpose == PropertyPurpose.shortStay ||
-               property.propertyType == PropertyType.apartment ||
-               property.basePrice < 5000000; // Less than 50L for stay properties
-      case 'Rent':
-        // Rent properties - match purpose or suitable for rent
-        return property.purpose == PropertyPurpose.rent || property.purpose == PropertyPurpose.shortStay;
-      case 'Buy':
-      default:
-        // Buy properties - all properties available for purchase
-        return property.purpose == PropertyPurpose.buy;
-    }
-  }
-
-  double _getCardAdjustedPrice(PropertyCardModel property) {
-    switch (selectedPurpose.value) {
-      case 'Stay':
-        // Convert property price to estimated per-night rate
-        return (property.basePrice / 365 / 100).clamp(500.0, 50000.0); // Rough estimate
-      case 'Rent':
-        // Convert property price to estimated monthly rent
-        return (property.basePrice * 0.001).clamp(5000.0, 500000.0); // Rough 0.1% of property value per month
-      case 'Buy':
-      default:
-        return property.basePrice;
-    }
-  }
-
-  bool _matchesCardPropertyType(PropertyCardModel property) {
-    final selectedType = propertyType.value;
-    
-    if (selectedPurpose.value == 'Stay') {
-      // For Stay mode, map property types differently
-      switch (selectedType) {
-        case 'Hotel':
-          return property.propertyType == PropertyType.apartment ||
-                 property.propertyType == PropertyType.room;
-        case 'Resort':
-          return property.propertyType == PropertyType.house ||
-                 property.propertyType == PropertyType.builderFloor;
-        default:
-          return property.propertyTypeString == selectedType;
-      }
-    }
-    
-    return property.propertyTypeString == selectedType;
-  }
-
+  // Deprecated filter helper methods - now delegated to FilterController
+  
   void updateFilters({
     String? selectedPurposeValue,
     double? minPriceValue,
@@ -853,96 +707,39 @@ class PropertyController extends GetxController {
     String? propertyTypeValue,
     List<String>? selectedAmenitiesValue,
   }) {
-    if (selectedPurposeValue != null) {
-      selectedPurpose.value = selectedPurposeValue;
-      _updatePriceRangeForPurpose();
-    }
-    if (minPriceValue != null) minPrice.value = minPriceValue;
-    if (maxPriceValue != null) maxPrice.value = maxPriceValue;
-    if (minBedroomsValue != null) minBedrooms.value = minBedroomsValue;
-    if (maxBedroomsValue != null) maxBedrooms.value = maxBedroomsValue;
-    if (propertyTypeValue != null) propertyType.value = propertyTypeValue;
-    if (selectedAmenitiesValue != null) selectedAmenities.value = selectedAmenitiesValue;
+    _filterController.updateFilters(
+      selectedPurposeValue: selectedPurposeValue,
+      minPriceValue: minPriceValue,
+      maxPriceValue: maxPriceValue,
+      minBedroomsValue: minBedroomsValue,
+      maxBedroomsValue: maxBedroomsValue,
+      propertyTypeValue: propertyTypeValue,
+      selectedAmenitiesValue: selectedAmenitiesValue,
+    );
   }
 
   void clearFilters() {
-    selectedPurpose.value = 'Buy';
-    _updatePriceRangeForPurpose();
-    minBedrooms.value = 0;
-    maxBedrooms.value = 10;
-    propertyType.value = 'All';
-    selectedAmenities.clear();
-  }
-
-  void _updatePriceRangeForPurpose() {
-    double newMin, newMax;
-    
-    switch (selectedPurpose.value) {
-      case 'Stay':
-        newMin = 500.0; // ₹500 per night
-        newMax = 50000.0; // ₹50K per night
-        break;
-      case 'Rent':
-        newMin = 5000.0; // ₹5K per month
-        newMax = 5000000.0; // ₹50L per month
-        break;
-      case 'Buy':
-      default:
-        newMin = 500000.0; // ₹5L
-        newMax = 150000000.0; // ₹15Cr
-        break;
-    }
-    
-    // Clamp current values to ensure they're within the new range
-    minPrice.value = minPrice.value.clamp(newMin, newMax);
-    maxPrice.value = maxPrice.value.clamp(newMin, newMax);
-    
-    // If both values are the same after clamping, reset to full range
-    if (minPrice.value == maxPrice.value) {
-      minPrice.value = newMin;
-      maxPrice.value = newMax;
-    }
-    
-    // Ensure minPrice <= maxPrice
-    if (minPrice.value > maxPrice.value) {
-      minPrice.value = newMin;
-      maxPrice.value = newMax;
-    }
+    _filterController.clearFilters();
   }
 
   double getPriceMin() {
-    switch (selectedPurpose.value) {
-      case 'Stay':
-        return 500.0;
-      case 'Rent':
-        return 5000.0;
-      case 'Buy':
-      default:
-        return 500000.0;
-    }
+    return _filterController.getPriceMin();
   }
 
   double getPriceMax() {
-    switch (selectedPurpose.value) {
-      case 'Stay':
-        return 50000.0;
-      case 'Rent':
-        return 5000000.0;
-      case 'Buy':
-      default:
-        return 150000000.0;
-    }
+    return _filterController.getPriceMax();
   }
 
   String getPriceLabel() {
-    switch (selectedPurpose.value) {
-      case 'Stay':
-        return 'Price per night';
-      case 'Rent':
-        return 'Price per month';
-      case 'Buy':
-      default:
-        return 'Property price';
-    }
+    return _filterController.getPriceLabel();
   }
+  
+  // Getter delegation for backward compatibility
+  String get selectedPurpose => _filterController.selectedPurpose.value;
+  double get minPrice => _filterController.minPrice.value;
+  double get maxPrice => _filterController.maxPrice.value;
+  int get minBedrooms => _filterController.minBedrooms.value;
+  int get maxBedrooms => _filterController.maxBedrooms.value;
+  String get propertyType => _filterController.propertyType.value;
+  List<String> get selectedAmenities => _filterController.selectedAmenities;
 } 

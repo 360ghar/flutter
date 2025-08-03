@@ -583,10 +583,11 @@ class SplashView extends GetView<SplashController> {
           ),
           padding: const EdgeInsets.all(20),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Property image placeholder
               Container(
-                height: 100,
+                height: 95,
                 decoration: BoxDecoration(
                   color: AppTheme.backgroundGray,
                   borderRadius: BorderRadius.circular(12),
@@ -599,11 +600,11 @@ class SplashView extends GetView<SplashController> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               // Property details with checkmarks
               ...List.generate(4, (index) {
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     children: [
                       Container(

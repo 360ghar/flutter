@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app/utils/webview_helper.dart';
@@ -11,10 +12,12 @@ import 'app/bindings/initial_binding.dart';
 import 'app/controllers/theme_controller.dart';
 import 'app/controllers/localization_controller.dart';
 import 'app/translations/app_translations.dart';
-import 'app/utils/dependency_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize GetStorage before any controllers that depend on it
+  await GetStorage.init();
   
   // Initialize WebView platform
   WebViewHelper.ensureInitialized();
@@ -41,6 +44,9 @@ void main() async {
     print('💡 Continuing without Supabase');
   }
   
+  // Initialize dependencies before running the app
+  InitialBinding().dependencies();
+  
   runApp(const MyApp());
 }
 
@@ -49,16 +55,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize Controllers safely
-    final ThemeController themeController = DependencyManager.safeInit<ThemeController>(
-      () => ThemeController(),
-      permanent: true,
-    ) ?? ThemeController();
-    
-    final LocalizationController localizationController = DependencyManager.safeInit<LocalizationController>(
-      () => LocalizationController(),
-      permanent: true,
-    ) ?? LocalizationController();
+    // Access pre-initialized controllers from InitialBinding
+    final ThemeController themeController = Get.find<ThemeController>();
+    final LocalizationController localizationController = Get.find<LocalizationController>();
     
     return Obx(() => GetMaterialApp(
       title: 'app_name'.tr,
@@ -76,7 +75,6 @@ class MyApp extends StatelessWidget {
       ],
       initialRoute: AppRoutes.splash,
       getPages: AppPages.routes,
-      initialBinding: InitialBinding(),
       debugShowCheckedModeBanner: false,
       // Add proper lifecycle management
       routingCallback: (routing) {

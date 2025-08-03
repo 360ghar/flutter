@@ -108,14 +108,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   void _initializeFilters() {
-    _selectedPurpose = propertyController.selectedPurpose.value;
+    _selectedPurpose = propertyController.selectedPurpose;
     // Clamp values to ensure they're within the slider range
     final maxRange = propertyController.getPriceMax();
-    _minPrice = propertyController.minPrice.value.clamp(0.0, maxRange);
-    _maxPrice = propertyController.maxPrice.value.clamp(0.0, maxRange);
-    _minBedrooms = propertyController.minBedrooms.value.clamp(0, 10);
-    _maxBedrooms = propertyController.maxBedrooms.value.clamp(0, 10);
-    _propertyType = propertyController.propertyType.value;
+    _minPrice = propertyController.minPrice.clamp(0.0, maxRange);
+    _maxPrice = propertyController.maxPrice.clamp(0.0, maxRange);
+    _minBedrooms = propertyController.minBedrooms.clamp(0, 10);
+    _maxBedrooms = propertyController.maxBedrooms.clamp(0, 10);
+    _propertyType = propertyController.propertyType;
     _selectedAmenities = List<String>.from(propertyController.selectedAmenities);
   }
 
@@ -209,8 +209,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   // Update controller purpose first
                   propertyController.updateFilters(selectedPurposeValue: purpose);
                   // Then get the updated price range
-                  _minPrice = propertyController.minPrice.value;
-                  _maxPrice = propertyController.maxPrice.value;
+                  _minPrice = propertyController.minPrice;
+                  _maxPrice = propertyController.maxPrice;
                   // Reset property type
                   _propertyType = 'All';
                 });
