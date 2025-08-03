@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../../controllers/user_controller.dart';
 import '../../../utils/theme.dart';
 import '../../../utils/app_colors.dart';
-import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/theme_toggle_button.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 
@@ -116,7 +115,6 @@ class ProfileView extends GetView<UserController> {
           ),
         );
       }),
-      bottomNavigationBar: const CustomBottomNavigationBar(currentIndex: 0),
     );
   }
 

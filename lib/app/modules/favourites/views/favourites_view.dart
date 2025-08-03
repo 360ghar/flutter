@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../../widgets/safe_get_view.dart';
 import '../../../utils/app_colors.dart';
 import '../../../../widgets/property/compact_property_card.dart';
-import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/property_filter_widget.dart';
 import '../../../../widgets/common/paginated_grid_view.dart';
 
@@ -74,7 +73,6 @@ class FavouritesView extends SafePropertyView {
             _buildPassedPropertiesTab(),
           ],
         ),
-        bottomNavigationBar: const CustomBottomNavigationBar(currentIndex: 3),
       ),
     );
   }

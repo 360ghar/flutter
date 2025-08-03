@@ -5,7 +5,6 @@ import '../../../controllers/explore_controller.dart';
 import '../../../controllers/theme_controller.dart';
 import '../../../data/models/property_model.dart';
 import '../../../utils/app_colors.dart';
-import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/property_filter_widget.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 
@@ -248,7 +247,6 @@ class ExploreView extends GetView<ExploreController> {
           ),
         ],
       ),
-      bottomNavigationBar: const CustomBottomNavigationBar(currentIndex: 1),
     );
   }
 

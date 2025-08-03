@@ -4,7 +4,6 @@ import '../../../controllers/swipe_controller.dart';
 import '../../../widgets/safe_get_view.dart';
 import '../widgets/property_swipe_card.dart';
 import '../../../utils/app_colors.dart';
-import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/property_filter_widget.dart';
 
 class HomeView extends SafePropertyView {
@@ -89,7 +88,6 @@ class HomeView extends SafePropertyView {
           ),
         );
       }),
-      bottomNavigationBar: const CustomBottomNavigationBar(currentIndex: 2),
     );
   }
 }

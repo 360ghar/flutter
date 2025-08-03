@@ -188,8 +188,8 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
         // Check if user profile is loaded and complete
         if (currentUser != null) {
           if (_isProfileComplete(currentUser)) {
-            // Profile is complete, go to home (middleware will handle auth check)
-            Get.offAllNamed(AppRoutes.home);
+            // Profile is complete, go to dashboard (middleware will handle auth check)
+            Get.offAllNamed(AppRoutes.dashboard);
           } else {
             // Need to complete profile
             Get.offAllNamed(AppRoutes.profileCompletion);
@@ -198,7 +198,7 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
           // User is authenticated but profile not loaded, wait a bit
           await Future.delayed(const Duration(milliseconds: 1000));
           if (authController.currentUser.value != null) {
-            Get.offAllNamed(AppRoutes.home);
+            Get.offAllNamed(AppRoutes.dashboard);
           } else {
             // Profile loading failed, might need to complete profile
             Get.offAllNamed(AppRoutes.profileCompletion);

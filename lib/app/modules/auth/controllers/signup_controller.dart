@@ -213,7 +213,7 @@ class SignupController extends GetxController {
 
       // Navigate to home or profile completion
       if (authController.currentUser.value != null) {
-        Get.offAllNamed(AppRoutes.home);
+        Get.offAllNamed(AppRoutes.dashboard);
       } else {
         Get.offAllNamed(AppRoutes.profileCompletion);
       }

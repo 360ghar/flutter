@@ -8,6 +8,8 @@ import '../modules/auth/bindings/profile_completion_binding.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/signup_view.dart';
 import '../modules/auth/views/profile_completion_view.dart';
+import '../modules/dashboard/bindings/dashboard_binding.dart';
+import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/property_details/bindings/property_details_binding.dart';
@@ -69,6 +71,12 @@ class AppPages {
       name: AppRoutes.profileCompletion,
       page: () => const ProfileCompletionView(),
       binding: ProfileCompletionBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.dashboard,
+      page: () => const DashboardView(),
+      binding: DashboardBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.home,

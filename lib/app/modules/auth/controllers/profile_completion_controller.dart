@@ -315,7 +315,7 @@ class ProfileCompletionController extends GetxController {
       );
       
       // Navigate to home
-      Get.offAllNamed(AppRoutes.home);
+      Get.offAllNamed(AppRoutes.dashboard);
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -330,7 +330,7 @@ class ProfileCompletionController extends GetxController {
   }
 
   void skipToHome() {
-    Get.offAllNamed(AppRoutes.home);
+    Get.offAllNamed(AppRoutes.dashboard);
   }
 
   @override

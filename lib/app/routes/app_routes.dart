@@ -5,6 +5,7 @@ abstract class AppRoutes {
   static const register = '/register';
   static const otpVerification = '/otp-verification';
   static const profileCompletion = '/profile-completion';
+  static const dashboard = '/dashboard';
   static const home = '/home';
   static const propertyDetails = '/property-details';
   static const profile = '/profile';

@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../../controllers/visits_controller.dart';
 import '../../../data/models/visit_model.dart';
 import '../../../utils/app_colors.dart';
-import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 import '../widgets/visits_skeleton_loaders.dart';
 
@@ -147,7 +146,6 @@ class VisitsView extends GetView<VisitsController> {
           foregroundColor: AppColors.buttonText,
           child: const Icon(Icons.add),
         ),
-        bottomNavigationBar: const CustomBottomNavigationBar(currentIndex: 4),
       ),
     );
   }

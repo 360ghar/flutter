@@ -4,10 +4,12 @@ import '../../app/utils/app_colors.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
+  final Function(int)? onTap;
   
   const CustomBottomNavigationBar({
     Key? key,
     required this.currentIndex,
+    this.onTap,
   }) : super(key: key);
 
   @override
@@ -51,22 +53,28 @@ class CustomBottomNavigationBar extends StatelessWidget {
     // Prevent unnecessary navigation if already on the same page
     if (index == currentIndex) return;
     
-    switch (index) {
-      case 0:
-        Get.offNamed('/profile');
-        break;
-      case 1:
-        Get.offNamed('/explore');
-        break;
-      case 2:
-        Get.offNamed('/home');
-        break;
-      case 3:
-        Get.offNamed('/favourites');
-        break;
-      case 4:
-        Get.offNamed('/visits');
-        break;
+    // Use custom onTap if provided, otherwise use default navigation
+    if (onTap != null) {
+      onTap!(index);
+    } else {
+      // Fallback to old navigation for backward compatibility
+      switch (index) {
+        case 0:
+          Get.offNamed('/profile');
+          break;
+        case 1:
+          Get.offNamed('/explore');
+          break;
+        case 2:
+          Get.offNamed('/home');
+          break;
+        case 3:
+          Get.offNamed('/favourites');
+          break;
+        case 4:
+          Get.offNamed('/visits');
+          break;
+      }
     }
   }
 } 

@@ -53,9 +53,9 @@ class AuthController extends GetxController {
             isLoggedIn.value = true;
             errorMessage.value = '';
             _loadUserProfile().then((_) {
-              // Only navigate if not already on home screen
-              if (Get.currentRoute != AppRoutes.home) {
-                Get.offAllNamed(AppRoutes.home);
+              // Only navigate if not already on dashboard screen
+              if (Get.currentRoute != AppRoutes.dashboard) {
+                Get.offAllNamed(AppRoutes.dashboard);
               }
             });
           }
@@ -137,7 +137,7 @@ class AuthController extends GetxController {
           currentSupabaseUser.value = response.user;
           isLoggedIn.value = true;
           await _loadUserProfile();
-          Get.offAllNamed(AppRoutes.home);
+          Get.offAllNamed(AppRoutes.dashboard);
         } else {
           DebugLogger.info('📧 Email verification required');
           Get.toNamed(AppRoutes.login);
