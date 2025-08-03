@@ -8,34 +8,49 @@ part of 'user_model.dart';
 
 UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
       id: json['id'] as String,
-      email: json['email'] as String,
-      name: json['name'] as String,
+      supabaseUserId: json['supabase_user_id'] as String? ?? '',
+      email: json['email'] as String? ?? 'unknown@example.com',
+      fullName: json['full_name'] as String?,
       phone: json['phone'] as String?,
-      profileImage: json['profileImage'] as String?,
-      savedProperties: (json['savedProperties'] as List<dynamic>)
-          .map((e) => e as String)
+      dateOfBirth: json['date_of_birth'] as String?,
+      isActive: json['is_active'] as bool? ?? true,
+      isVerified: json['is_verified'] as bool? ?? false,
+      profileImageUrl: json['profile_image_url'] as String?,
+      preferences: json['preferences'] as Map<String, dynamic>?,
+      currentLatitude: json['current_latitude'] as String?,
+      currentLongitude: json['current_longitude'] as String?,
+      preferredLocations: (json['preferred_locations'] as List<dynamic>?)
+          ?.map((e) => e as String)
           .toList(),
-      viewedProperties: (json['viewedProperties'] as List<dynamic>)
-          .map((e) => e as String)
-          .toList(),
-      preferences: json['preferences'] as Map<String, dynamic>,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      lastLogin: DateTime.parse(json['lastLogin'] as String),
-      isVerified: json['isVerified'] as bool,
+      notificationSettings:
+          (json['notification_settings'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as bool),
+      ),
+      privacySettings: json['privacy_settings'] as Map<String, dynamic>?,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: json['updated_at'] == null
+          ? null
+          : DateTime.parse(json['updated_at'] as String),
       fcmToken: json['fcmToken'] as String?,
     );
 
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
       'id': instance.id,
+      'supabase_user_id': instance.supabaseUserId,
       'email': instance.email,
-      'name': instance.name,
+      'full_name': instance.fullName,
       'phone': instance.phone,
-      'profileImage': instance.profileImage,
-      'savedProperties': instance.savedProperties,
-      'viewedProperties': instance.viewedProperties,
+      'date_of_birth': instance.dateOfBirth,
+      'is_active': instance.isActive,
+      'is_verified': instance.isVerified,
+      'profile_image_url': instance.profileImageUrl,
       'preferences': instance.preferences,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'lastLogin': instance.lastLogin.toIso8601String(),
-      'isVerified': instance.isVerified,
+      'current_latitude': instance.currentLatitude,
+      'current_longitude': instance.currentLongitude,
+      'preferred_locations': instance.preferredLocations,
+      'notification_settings': instance.notificationSettings,
+      'privacy_settings': instance.privacySettings,
+      'created_at': instance.createdAt.toIso8601String(),
+      'updated_at': instance.updatedAt?.toIso8601String(),
       'fcmToken': instance.fcmToken,
     };

@@ -25,6 +25,18 @@ class ExploreController extends GetxController {
   final RxList<PropertyModel> visibleProperties = <PropertyModel>[].obs;
   final RxList<PropertyModel> filteredProperties = <PropertyModel>[].obs;
   
+  // Helper to convert PropertyCardModel to PropertyModel
+  Future<PropertyModel?> _getFullPropertyModel(int propertyId) async {
+    try {
+      // Get full property details from API or repository
+      final propertyData = await _propertyController.getPropertyDetails(propertyId.toString());
+      return propertyData;
+    } catch (e) {
+      // Error logged, return null
+      return null;
+    }
+  }
+  
   // Search functionality
   final TextEditingController searchController = TextEditingController();
   final RxString searchQuery = ''.obs;
@@ -96,15 +108,15 @@ class ExploreController extends GetxController {
   }
 
   Future<void> _initializeLocation() async {
-    print('_initializeLocation started');
+    // Initialize location
     try {
       isLoadingLocation.value = true;
       
       // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      print('Location services enabled: $serviceEnabled');
+      // Check location services
       if (!serviceEnabled) {
-        print('Location services not enabled, showing dialog');
+        // Location services disabled
         hasLocationPermission.value = false;
         _showLocationDialog();
         _setDefaultLocation();
@@ -131,7 +143,10 @@ class ExploreController extends GetxController {
         try {
           // Get current position with timeout
           Position position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high,
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10,
+            ),
             timeLimit: const Duration(seconds: 10),
           );
           
@@ -142,7 +157,7 @@ class ExploreController extends GetxController {
             mapController!.move(currentLocation.value, currentZoom.value);
           }
         } catch (e) {
-          print('Error getting current position: $e');
+          // Error getting position, using default
           _setDefaultLocation();
         }
       } else {
@@ -150,7 +165,7 @@ class ExploreController extends GetxController {
         _setDefaultLocation();
       }
     } catch (e) {
-      print('Error initializing location: $e');
+      // Error initializing location
       hasLocationPermission.value = false;
       _setDefaultLocation();
     } finally {
@@ -191,18 +206,32 @@ class ExploreController extends GetxController {
     );
   }
 
-  void _updateMarkersAndVisibleProperties() {
-    final allProperties = _propertyController.properties;
+  void _updateMarkersAndVisibleProperties() async {
+    final allPropertyCards = _propertyController.properties;
     final center = currentLocation.value;
     final radius = mapRadius.value;
     
+    // Convert PropertyCardModel to PropertyModel for map functionality
+    final List<PropertyModel> allProperties = [];
+    for (final propertyCard in allPropertyCards) {
+      final fullProperty = await _getFullPropertyModel(propertyCard.id);
+      if (fullProperty != null) {
+        allProperties.add(fullProperty);
+      }
+    }
+    
     // Filter properties within radius
     final propertiesInRadius = allProperties.where((property) {
+      // Skip properties without location data
+      if (property.latitude == null || property.longitude == null) {
+        return false;
+      }
+      
       final distance = Geolocator.distanceBetween(
         center.latitude,
         center.longitude,
-        property.latitude,
-        property.longitude,
+        property.latitude!,
+        property.longitude!,
       ) / 1000; // Convert to kilometers
       
       return distance <= radius;
@@ -237,8 +266,8 @@ class ExploreController extends GetxController {
 
       // Bedrooms filter (skip for Stay mode)
       if (_propertyController.selectedPurpose.value != 'Stay') {
-        if (property.bedrooms < _propertyController.minBedrooms.value || 
-            property.bedrooms > _propertyController.maxBedrooms.value) {
+        if (property.bedrooms != null && (property.bedrooms! < _propertyController.minBedrooms.value || 
+            property.bedrooms! > _propertyController.maxBedrooms.value)) {
           return false;
         }
       }
@@ -252,7 +281,7 @@ class ExploreController extends GetxController {
       // Amenities filter
       if (_propertyController.selectedAmenities.isNotEmpty) {
         final hasAllAmenities = _propertyController.selectedAmenities
-            .every((amenity) => property.amenities.contains(amenity));
+            .every((amenity) => property.amenities?.contains(amenity) ?? false);
         if (!hasAllAmenities) {
           return false;
         }
@@ -265,26 +294,27 @@ class ExploreController extends GetxController {
   bool _matchesPurpose(PropertyModel property) {
     switch (_propertyController.selectedPurpose.value) {
       case 'Stay':
-        return property.propertyType.toLowerCase().contains('apartment') ||
-               property.propertyType.toLowerCase().contains('studio') ||
-               property.price < 5000000;
+        return property.purpose == PropertyPurpose.shortStay ||
+               property.propertyType == PropertyType.apartment ||
+               property.propertyType == PropertyType.room ||
+               property.basePrice < 5000000;
       case 'Rent':
-        return true;
+        return property.purpose == PropertyPurpose.rent || property.purpose == PropertyPurpose.shortStay;
       case 'Buy':
       default:
-        return true;
+        return property.purpose == PropertyPurpose.buy;
     }
   }
 
   double _getAdjustedPrice(PropertyModel property) {
     switch (_propertyController.selectedPurpose.value) {
       case 'Stay':
-        return (property.price / 365 / 100).clamp(500.0, 50000.0);
+        return (property.getEffectivePrice() / 365 / 100).clamp(500.0, 50000.0);
       case 'Rent':
-        return (property.price * 0.001).clamp(5000.0, 500000.0);
+        return (property.getEffectivePrice() * 0.001).clamp(5000.0, 500000.0);
       case 'Buy':
       default:
-        return property.price;
+        return property.getEffectivePrice();
     }
   }
 
@@ -294,32 +324,54 @@ class ExploreController extends GetxController {
     if (_propertyController.selectedPurpose.value == 'Stay') {
       switch (selectedType) {
         case 'Hotel':
-          return property.propertyType.toLowerCase().contains('apartment') ||
-                 property.propertyType.toLowerCase().contains('studio');
+          return property.propertyType == PropertyType.apartment ||
+                 property.propertyType == PropertyType.room;
         case 'Resort':
-          return property.propertyType.toLowerCase().contains('villa') ||
-                 property.propertyType.toLowerCase().contains('penthouse');
+          return property.propertyType == PropertyType.house ||
+                 property.propertyType == PropertyType.builderFloor;
         default:
-          return property.propertyType == selectedType;
+          return _propertyTypeMatches(property.propertyType, selectedType);
       }
     }
     
-    return property.propertyType == selectedType;
+    return _propertyTypeMatches(property.propertyType, selectedType);
+  }
+
+  bool _propertyTypeMatches(PropertyType propertyType, String selectedType) {
+    if (selectedType == 'All') return true;
+    
+    switch (propertyType) {
+      case PropertyType.house:
+        return selectedType == 'House';
+      case PropertyType.apartment:
+        return selectedType == 'Apartment';
+      case PropertyType.builderFloor:
+        return selectedType == 'Builder Floor';
+      case PropertyType.room:
+        return selectedType == 'Room';
+      default:
+        return false;
+    }
   }
 
   void _updateMarkers(List<PropertyModel> properties) {
     final newMarkers = <Marker>[];
     
     for (final property in properties) {
+      // Skip properties without location data
+      if (property.latitude == null || property.longitude == null) {
+        continue;
+      }
+      
       final marker = Marker(
         width: 40.0,
         height: 40.0,
-        point: LatLng(property.latitude, property.longitude),
+        point: LatLng(property.latitude!, property.longitude!),
         child: GestureDetector(
-          onTap: () => selectProperty(property.id),
+          onTap: () => selectProperty(property.id.toString()),
           child: Container(
             decoration: BoxDecoration(
-              color: selectedPropertyId.value == property.id 
+              color: selectedPropertyId.value == property.id.toString() 
                   ? const Color(0xFFFFBC05) // Yellow for selected
                   : const Color(0xFFFF6B35), // Orange for unselected
               shape: BoxShape.circle,
@@ -349,7 +401,7 @@ class ExploreController extends GetxController {
   }
 
   void onMapReady() {
-    print('Map ready');
+    // Map ready
     
     // Move to current location if available
     if (hasLocationPermission.value) {
@@ -360,10 +412,10 @@ class ExploreController extends GetxController {
     }
   }
 
-  void onPositionChanged(MapPosition position, bool hasGesture) {
+  void onPositionChanged(MapCamera camera, bool hasGesture) {
     if (hasGesture) {
-      currentLocation.value = position.center!;
-      currentZoom.value = position.zoom!;
+      currentLocation.value = camera.center;
+      currentZoom.value = camera.zoom;
     }
   }
 
@@ -392,16 +444,33 @@ class ExploreController extends GetxController {
       isSearching.value = true;
       searchQuery.value = query;
       
-      // In a real app, you would use a geocoding service
-      // For now, we'll simulate a search by checking if query matches any city
-      final properties = _propertyController.properties;
-      final matchingProperty = properties.firstWhereOrNull(
-        (p) => p.city.toLowerCase().contains(query.toLowerCase()) ||
-               p.address.toLowerCase().contains(query.toLowerCase()),
-      );
+      // Search in visible properties first
+      PropertyModel? matchingProperty;
+      for (final property in visibleProperties) {
+        if ((property.city?.toLowerCase() ?? "").contains(query.toLowerCase()) ||
+            property.addressDisplay.toLowerCase().contains(query.toLowerCase())) {
+          matchingProperty = property;
+          break;
+        }
+      }
       
-      if (matchingProperty != null) {
-        final newLocation = LatLng(matchingProperty.latitude, matchingProperty.longitude);
+      // If not found in visible properties, search through all property cards
+      if (matchingProperty == null) {
+        final propertyCards = _propertyController.properties;
+        for (final propertyCard in propertyCards) {
+          if ((propertyCard.city?.toLowerCase() ?? "").contains(query.toLowerCase()) ||
+              (propertyCard.fullAddress?.toLowerCase() ?? "").contains(query.toLowerCase())) {
+            // Get full property details
+            matchingProperty = await _getFullPropertyModel(propertyCard.id);
+            break;
+          }
+        }
+      }
+      
+      if (matchingProperty != null && 
+          matchingProperty.latitude != null && 
+          matchingProperty.longitude != null) {
+        final newLocation = LatLng(matchingProperty.latitude!, matchingProperty.longitude!);
         currentLocation.value = newLocation;
         
         if (mapController != null) {
@@ -449,7 +518,10 @@ class ExploreController extends GetxController {
     try {
       isLoadingLocation.value = true;
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10,
+        ),
       );
       
       final newLocation = LatLng(position.latitude, position.longitude);
@@ -502,7 +574,7 @@ class ExploreController extends GetxController {
   CircleMarker get radiusCircle => CircleMarker(
     point: currentLocation.value,
     radius: mapRadius.value * 1000, // Convert km to meters
-    color: const Color(0xFFFFBC05).withOpacity(0.1),
+    color: const Color(0xFFFFBC05).withValues(alpha: 0.1),
     borderColor: const Color(0xFFFFBC05),
     borderStrokeWidth: 2.0,
     useRadiusInMeter: true,

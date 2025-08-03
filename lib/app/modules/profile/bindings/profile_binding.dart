@@ -1,11 +1,13 @@
 import 'package:get/get.dart';
-import '../../../controllers/user_controller.dart';
+import '../../../utils/controller_helper.dart';
 import '../controllers/edit_profile_controller.dart';
 
 class ProfileBinding extends Bindings {
   @override
   void dependencies() {
-    Get.find<UserController>();
+    // Ensure UserController is available
+    ControllerHelper.ensureUserController();
+    
     Get.lazyPut<EditProfileController>(() => EditProfileController());
   }
 } 

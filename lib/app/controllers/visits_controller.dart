@@ -2,111 +2,354 @@ import 'package:get/get.dart';
 import '../data/models/property_model.dart';
 import '../data/models/visit_model.dart';
 import '../data/models/agent_model.dart';
+import '../data/providers/api_service.dart';
+import 'auth_controller.dart';
+import '../utils/debug_logger.dart'; // Added missing import
 
 class VisitsController extends GetxController {
-  final RxList<VisitModel> visits = <VisitModel>[].obs;
-  final RxBool isLoading = false.obs;
-  final RxString error = ''.obs;
+  late final ApiService _apiService;
+  late final AuthController _authController;
   
-  // Relationship Manager (Agent) info
-  final Rx<AgentModel> relationshipManager = AgentModel(
-    id: 'rm_001',
-    name: 'Priya Sharma',
-    phone: '+91 98765 43210',
-    email: 'priya.sharma@360ghar.com',
-    image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-    rating: 4.8,
-    experience: '5+ years',
-    specialization: 'Residential Properties',
-  ).obs;
+  final RxList<VisitModel> visits = <VisitModel>[].obs;
+  final RxList<VisitModel> upcomingVisitsList = <VisitModel>[].obs;
+  final RxBool isLoading = false.obs;
+  final RxBool isLoadingAgent = false.obs;
+  final RxBool isBookingVisit = false.obs;
+  final RxString error = ''.obs;
+  final Rxn<RelationshipManagerModel> relationshipManagerData = Rxn<RelationshipManagerModel>();
+  final Rxn<AgentModel> relationshipManager = Rxn<AgentModel>();
+  
+  // Track if data has been loaded to prevent infinite loops
+  final RxBool hasLoadedVisits = false.obs;
+  final RxBool hasLoadedAgent = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    _loadMockVisits();
+    _apiService = Get.find<ApiService>();
+    _authController = Get.find<AuthController>();
+    
+    // Listen to authentication state changes
+    ever(_authController.isLoggedIn, (bool isLoggedIn) {
+      if (isLoggedIn) {
+        // User is logged in, safe to fetch data
+        _initializeController();
+      } else {
+        // User logged out, clear all data
+        _clearAllData();
+      }
+    });
+    
+    // If already logged in, initialize immediately
+    if (_authController.isLoggedIn.value) {
+      _initializeController();
+    }
   }
 
-  void _loadMockVisits() {
-    // Add some mock visits for demonstration
-    visits.addAll([
-      VisitModel(
-        id: 'visit_001',
-        propertyId: 'prop_001',
-        propertyTitle: 'Luxury Villa in Gurgaon',
-        propertyImage: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=300&h=200&fit=crop',
-        visitDateTime: DateTime.now().add(const Duration(days: 2)),
-        status: VisitStatus.upcoming,
-        agentName: 'Priya Sharma',
-        agentPhone: '+91 98765 43210',
-        notes: 'First visit to check the property layout and amenities',
-      ),
-      VisitModel(
-        id: 'visit_002',
-        propertyId: 'prop_002',
-        propertyTitle: 'Modern Apartment in Mumbai',
-        propertyImage: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=300&h=200&fit=crop',
-        visitDateTime: DateTime.now().subtract(const Duration(days: 5)),
-        status: VisitStatus.completed,
-        agentName: 'Priya Sharma',
-        agentPhone: '+91 98765 43210',
-        notes: 'Great property, considering for purchase',
-      ),
-    ]);
+  Future<void> _initializeController() async {
+    // Don't eagerly load data - let views request it when needed
+    // await loadVisits();
+    // await loadRelationshipManager();
+  }
+  
+  void _clearAllData() {
+    visits.clear();
+    upcomingVisitsList.clear();
+    relationshipManagerData.value = null;
+    relationshipManager.value = null;
+    error.value = '';
+    hasLoadedVisits.value = false;
+    hasLoadedAgent.value = false;
   }
 
-  void bookVisit(PropertyModel property, DateTime visitDateTime) {
+  // Lazy loading methods - only fetch when actually needed
+  Future<void> loadVisitsLazy() async {
+    if (hasLoadedVisits.value || isLoading.value) return; // Prevent infinite loop
+    hasLoadedVisits.value = true;
+    await loadVisits();
+  }
+
+  Future<void> loadRelationshipManagerLazy() async {
+    if (hasLoadedAgent.value || isLoadingAgent.value) return; // Prevent infinite loop
+    hasLoadedAgent.value = true;
+    await loadRelationshipManager();
+  }
+
+  Future<void> loadVisits() async {
+    if (!_authController.isAuthenticated) {
+      error.value = 'User not authenticated';
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+      error.value = '';
+      
+      final visitResponse = await _apiService.getMyVisits();
+      final List<VisitModel> visitsData = visitResponse.visits;
+      
+      // Categorize visits based on status and date
+      final List<VisitModel> upcomingVisits = [];
+      
+      for (final visit in visitsData) {
+        // Categorize visits based on status and date
+        if (visit.isUpcoming && visit.scheduledDate.isAfter(DateTime.now())) {
+          upcomingVisits.add(visit);
+        }
+      }
+      
+      // Update reactive variables
+      visits.assignAll(visitsData);
+      upcomingVisitsList.assignAll(upcomingVisits);
+      
+      // Sort visits by date
+      _sortVisits();
+      
+      DebugLogger.success('✅ Visits loaded successfully: ${visitsData.length} total, ${upcomingVisits.length} upcoming');
+    } catch (e) {
+      error.value = 'Failed to load visits: ${e.toString()}';
+      DebugLogger.error('❌ Error loading visits: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+
+
+
+  Future<void> loadRelationshipManager() async {
+    if (!_authController.isAuthenticated) return;
+
+    try {
+      isLoadingAgent.value = true;
+      final rmData = await _apiService.getRelationshipManager();
+      relationshipManagerData.value = rmData;
+      
+      // Update the AgentModel for backward compatibility
+      relationshipManager.value = AgentModel(
+        id: rmData.id.toString(),
+        name: rmData.name,
+        phone: rmData.phone,
+        email: rmData.email,
+        image: rmData.profileImageUrl ?? 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+        rating: rmData.customerRating != null ? double.tryParse(rmData.customerRating!) ?? 4.5 : 4.5,
+        experience: '${rmData.experienceYears ?? 3}+ years',
+        specialization: rmData.department,
+      );
+      
+      DebugLogger.success('✅ Relationship manager loaded successfully: ${rmData.name}');
+    } catch (e) {
+      DebugLogger.error('❌ Error loading relationship manager: $e');
+      error.value = 'Failed to load relationship manager';
+    } finally {
+      isLoadingAgent.value = false;
+    }
+  }
+
+  Future<bool> bookVisit(
+    dynamic property, // Can be PropertyModel or PropertyCardModel
+    DateTime visitDateTime, {
+    String visitType = 'physical',
+    String? notes,
+    String contactPreference = 'phone',
+    int guestsCount = 1,
+  }) async {
+    if (!_authController.isAuthenticated) {
+      Get.snackbar(
+        'Authentication Required',
+        'Please login to book property visits',
+        snackPosition: SnackPosition.TOP,
+      );
+      return false;
+    }
+
+    try {
+      isBookingVisit.value = true;
+      error.value = '';
+      
+      // Extract property ID based on type
+      final int propertyId = property is PropertyModel 
+          ? int.tryParse(property.id.toString()) ?? 0
+          : property.id as int;
+      final String propertyTitle = property is PropertyModel 
+          ? property.title 
+          : property.title as String;
+      
+      final visitResponse = await _apiService.scheduleVisit(
+        propertyId: propertyId,
+        visitDate: visitDateTime.toIso8601String().split('T')[0],
+        visitTime: '${visitDateTime.hour.toString().padLeft(2, '0')}:${visitDateTime.minute.toString().padLeft(2, '0')}:00',
+        visitType: visitType,
+        notes: notes ?? 'Property visit scheduled through 360ghar app',
+        contactPreference: contactPreference,
+        guestsCount: guestsCount,
+      );
+      
+      DebugLogger.success('✅ Visit scheduled successfully: ${visitResponse['id']}');
+      
+      // The API returns the complete visit model, no need to reconstruct
+      // Just reload visits to get the updated list
+      await loadVisits();
+      
+      // Track analytics
+      await _apiService.trackVisitScheduling(
+        propertyId: propertyId,
+        visitType: visitType,
+        visitDate: visitDateTime.toIso8601String().split('T')[0],
+        additionalData: {
+          'guests_count': guestsCount,
+          'contact_preference': contactPreference,
+        },
+      );
+      
+      Get.snackbar(
+        'Visit Scheduled',
+        'Your visit to $propertyTitle has been scheduled for ${formatVisitDate(visitDateTime)} at ${formatVisitTime(visitDateTime)}',
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 4),
+      );
+      
+      return true;
+    } catch (e) {
+      error.value = e.toString();
+      DebugLogger.error('Error booking visit: $e');
+      
+      Get.snackbar(
+        'Booking Failed',
+        'Failed to schedule visit: ${e.toString()}',
+        snackPosition: SnackPosition.TOP,
+      );
+      
+      return false;
+    } finally {
+      isBookingVisit.value = false;
+    }
+  }
+
+  // Fallback method for non-authenticated users
+  void bookVisitLocal(dynamic property, DateTime visitDateTime) {
+    final int propertyId = property is PropertyModel 
+        ? int.tryParse(property.id.toString()) ?? 0
+        : property.id as int;
+    final String propertyTitle = property is PropertyModel 
+        ? property.title 
+        : property.title as String;
+        
     final visit = VisitModel(
-      id: 'visit_${DateTime.now().millisecondsSinceEpoch}',
-      propertyId: property.id,
-      propertyTitle: property.title,
-      propertyImage: property.images.isNotEmpty ? property.images.first : '',
-      visitDateTime: visitDateTime,
-      status: VisitStatus.upcoming,
-      agentName: relationshipManager.value.name,
-      agentPhone: relationshipManager.value.phone,
-      notes: 'Property visit scheduled through 360ghar app',
+      id: DateTime.now().millisecondsSinceEpoch,
+      userId: 1, // Default user ID
+      propertyId: propertyId,
+      scheduledDate: visitDateTime,
+      visitorName: 'Current User',
+      visitorPhone: '',
+      status: VisitStatus.scheduled,
+      visitNotes: 'Property visit scheduled through 360ghar app',
+      createdAt: DateTime.now(),
     );
     
     visits.insert(0, visit);
+    upcomingVisitsList.insert(0, visit);
     _sortVisits();
+    
+    Get.snackbar(
+      'Visit Scheduled',
+      'Your visit to $propertyTitle has been scheduled for ${formatVisitDate(visitDateTime)} at ${formatVisitTime(visitDateTime)}',
+      snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 4),
+    );
   }
 
-  void cancelVisit(String visitId) {
-    final visitIndex = visits.indexWhere((visit) => visit.id == visitId);
-    if (visitIndex != -1) {
-      final visit = visits[visitIndex];
-      if (visit.status == VisitStatus.upcoming) {
-        visits[visitIndex] = visit.copyWith(status: VisitStatus.cancelled);
-        Get.snackbar(
-          'Visit Cancelled',
-          'Your visit to ${visit.propertyTitle} has been cancelled',
-          snackPosition: SnackPosition.TOP,
-        );
+  Future<bool> cancelVisit(dynamic visitId, {String? reason}) async {
+    final visitIdInt = visitId is int ? visitId : int.tryParse(visitId.toString()) ?? 0;
+    final visitIndex = visits.indexWhere((visit) => visit.id == visitIdInt);
+    if (visitIndex == -1) return false;
+    
+    final visit = visits[visitIndex];
+    if (!visit.isUpcoming) return false;
+
+    try {
+      if (_authController.isAuthenticated) {
+        await _apiService.cancelVisit(visitIdInt, reason: reason);
+        
+        // Track analytics
+        await _apiService.trackEvent('visit_cancelled', {
+          'visit_id': visitIdInt,
+          'property_id': visit.propertyId,
+          'reason': reason ?? 'user_cancelled',
+        });
       }
+      
+      // Reload visits to get updated state from server
+      await loadVisits();
+      
+      Get.snackbar(
+        'Visit Cancelled',
+        'Your visit has been cancelled',
+        snackPosition: SnackPosition.TOP,
+      );
+      
+      return true;
+    } catch (e) {
+      DebugLogger.error('Error cancelling visit: $e');
+      Get.snackbar(
+        'Cancellation Failed',
+        'Failed to cancel visit: ${e.toString()}',
+        snackPosition: SnackPosition.TOP,
+      );
+      return false;
     }
   }
 
-  void rescheduleVisit(String visitId, DateTime newDateTime) {
-    final visitIndex = visits.indexWhere((visit) => visit.id == visitId);
-    if (visitIndex != -1) {
-      final visit = visits[visitIndex];
-      if (visit.status == VisitStatus.upcoming) {
-        visits[visitIndex] = visit.copyWith(
-          visitDateTime: newDateTime,
-          status: VisitStatus.upcoming,
+  Future<bool> rescheduleVisit(dynamic visitId, DateTime newDateTime, {String? reason}) async {
+    final visitIdInt = visitId is int ? visitId : int.tryParse(visitId.toString()) ?? 0;
+    final visitIndex = visits.indexWhere((visit) => visit.id == visitIdInt);
+    if (visitIndex == -1) return false;
+    
+    final visit = visits[visitIndex];
+    if (!visit.isUpcoming) return false;
+
+    try {
+      if (_authController.isAuthenticated) {
+        await _apiService.rescheduleVisit(
+          visitIdInt,
+          newDateTime.toIso8601String(),
+          reason: reason,
         );
-        _sortVisits();
-        Get.snackbar(
-          'Visit Rescheduled',
-          'Your visit to ${visit.propertyTitle} has been rescheduled',
-          snackPosition: SnackPosition.TOP,
-        );
+        
+        // Track analytics
+        await _apiService.trackEvent('visit_rescheduled', {
+          'visit_id': visitIdInt,
+          'property_id': visit.propertyId,
+          'new_date': newDateTime.toIso8601String(),
+          'reason': reason ?? 'user_rescheduled',
+        });
       }
+      
+      // Reload visits to get updated state from server
+      await loadVisits();
+      
+      Get.snackbar(
+        'Visit Rescheduled',
+        'Your visit has been rescheduled to ${formatVisitDate(newDateTime)} at ${formatVisitTime(newDateTime)}',
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 4),
+      );
+      
+      return true;
+    } catch (e) {
+      DebugLogger.error('Error rescheduling visit: $e');
+      Get.snackbar(
+        'Reschedule Failed',
+        'Failed to reschedule visit: ${e.toString()}',
+        snackPosition: SnackPosition.TOP,
+      );
+      return false;
     }
   }
 
-  void markVisitCompleted(String visitId) {
-    final visitIndex = visits.indexWhere((visit) => visit.id == visitId);
+  void markVisitCompleted(dynamic visitId) {
+    final visitIdInt = visitId is int ? visitId : int.tryParse(visitId.toString()) ?? 0;
+    final visitIndex = visits.indexWhere((visit) => visit.id == visitIdInt);
     if (visitIndex != -1) {
       visits[visitIndex] = visits[visitIndex].copyWith(status: VisitStatus.completed);
     }
@@ -115,24 +358,24 @@ class VisitsController extends GetxController {
   void _sortVisits() {
     visits.sort((a, b) {
       // Upcoming visits first, then by date
-      if (a.status == VisitStatus.upcoming && b.status != VisitStatus.upcoming) {
+      if (a.isUpcoming && !b.isUpcoming) {
         return -1;
-      } else if (a.status != VisitStatus.upcoming && b.status == VisitStatus.upcoming) {
+      } else if (!a.isUpcoming && b.isUpcoming) {
         return 1;
       } else {
-        return b.visitDateTime.compareTo(a.visitDateTime);
+        return b.scheduledDate.compareTo(a.scheduledDate);
       }
     });
   }
 
   List<VisitModel> get upcomingVisits {
-    return visits.where((visit) => visit.status == VisitStatus.upcoming).toList();
+    return visits.where((visit) => visit.isUpcoming).toList();
   }
 
   List<VisitModel> get pastVisits {
     return visits.where((visit) => 
-      visit.status == VisitStatus.completed || 
-      visit.status == VisitStatus.cancelled
+      visit.isCompleted || 
+      visit.isCancelled
     ).toList();
   }
 

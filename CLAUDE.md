@@ -28,13 +28,16 @@ flutter run --flavor production
 ### Code Generation
 ```bash
 # Generate model files (after modifying JSON serializable models)
-flutter packages pub run build_runner build
+dart run build_runner build
 
 # Watch for changes and auto-generate
-flutter packages pub run build_runner watch
+dart run build_runner watch
 
 # Clean generated files
-flutter packages pub run build_runner clean
+dart run build_runner clean
+
+# Force regenerate with conflict resolution
+dart run build_runner build --delete-conflicting-outputs
 ```
 
 ### Testing and Quality
@@ -44,6 +47,12 @@ flutter test
 
 # Run specific test file
 flutter test test/widget_test.dart
+
+# Run tests with coverage
+flutter test --coverage
+
+# Generate coverage report
+genhtml coverage/lcov.info -o coverage/html
 
 # Analyze code for issues
 flutter analyze
@@ -70,6 +79,18 @@ flutter build ios --release
 flutter build web
 ```
 
+### Platform-Specific Setup
+```bash
+# iOS setup after dependency changes
+cd ios && pod install
+
+# Clean Flutter build cache
+flutter clean
+
+# Get all dependencies
+flutter pub get
+```
+
 ## Architecture Overview
 
 ### GetX Clean Architecture Pattern
@@ -80,10 +101,22 @@ lib/
 ├── app/
 │   ├── bindings/          # Dependency injection
 │   ├── controllers/       # Business logic and state management
+│   │   ├── auth_controller.dart         # Authentication management
+│   │   ├── analytics_controller.dart    # User behavior tracking
+│   │   ├── booking_controller.dart      # Property booking system
+│   │   ├── location_controller.dart     # Location services
+│   │   ├── localization_controller.dart # Multi-language support
+│   │   ├── property_controller.dart     # Property listings
+│   │   ├── theme_controller.dart        # Theme management (light/dark)
+│   │   ├── user_controller.dart         # User profile
+│   │   ├── explore_controller.dart      # Map functionality
+│   │   ├── swipe_controller.dart        # Swipe mechanics
+│   │   └── visits_controller.dart       # Scheduled visits
 │   ├── data/
 │   │   ├── models/        # Data models with JSON serialization
 │   │   ├── providers/     # API clients and data sources
 │   │   └── repositories/  # Data access layer
+│   ├── middlewares/       # Route guards and interceptors
 │   ├── modules/           # Feature modules (views + bindings)
 │   ├── routes/            # Navigation configuration
 │   └── utils/             # Theme, constants, helpers
@@ -94,14 +127,28 @@ lib/
 ### Key Architecture Components
 
 #### 1. Controllers (GetX State Management)
+- **AuthController**: User authentication and session management
 - **PropertyController**: Manages property listings, favorites, filtering
 - **UserController**: Handles user profile and preferences
 - **ExploreController**: Map functionality and location services
 - **SwipeController**: Swipe mechanics for Bumble-style interface
+- **BookingController**: Property booking and scheduling
+- **VisitsController**: Manages property visits and appointments
+- **AnalyticsController**: Tracks user behavior and app usage
+- **LocationController**: Handles location permissions and services
+- **LocalizationController**: Multi-language support and localization
+- **ThemeController**: Light/dark theme management and user preferences
 
 #### 2. Data Layer
 - **Models**: JSON serializable with `json_annotation`
-- **Providers**: Mock API provider using local JSON files
+  - PropertyModel, PropertyCardModel, PropertyImageModel
+  - UserModel with authentication details
+  - BookingModel, VisitModel for scheduling
+  - UnifiedPropertyResponse for API responses
+  - AnalyticsModels for tracking events
+- **Providers**: 
+  - ApiService: Real API integration with error handling
+  - ApiProvider: Legacy API provider (still in use)
 - **Repositories**: Abstraction layer between controllers and data sources
 
 #### 3. Module Structure
@@ -118,9 +165,12 @@ module_name/
 
 ### Navigation System
 - **GetX routing** with named routes
+- **AuthMiddleware** for protected routes
 - **Bottom navigation** with 5 tabs: Profile → Discover → Properties → Liked → Visits
 - **Route definitions** in `app/routes/app_routes.dart`
 - **Page configuration** in `app/routes/app_pages.dart`
+- **Deep linking** support for sharing properties and direct navigation
+- **Localized navigation** with multi-language support
 
 ## Theme and Design System
 
@@ -131,35 +181,84 @@ Defined in `lib/app/utils/theme.dart`:
 - **Background**: `Color(0xFFFFFFFF)` and `Color(0xFFF8F9FA)`
 - **Text**: Dark `Color(0xFF2C2C2C)`, Gray `Color(0xFF666666)`
 
+### Dark Theme Support
+Complete dark theme implementation with:
+- **Dark backgrounds**: `Color(0xFF000000)` and `Color(0xFF1C1C1E)`
+- **Dark surfaces**: `Color(0xFF2C2C2E)` for cards and components
+- **Adaptive text**: `Color(0xFFFFFFFF)` primary, `Color(0xFFE5E5E7)` secondary
+- **Consistent accent colors**: Primary yellow maintained across themes
+
 ### Typography
-- **Google Fonts** integration
+- **Google Fonts Inter** integration
 - **Responsive text scales** for different screen sizes
 - **Consistent spacing** and letter spacing
+- **Dark theme aware** text colors
 
-## Mock Data System
+## API Integration
 
-### JSON Data Sources
-Located in `assets/mock_api/`:
-- **properties.json**: 6 diverse properties with complete details
-- **user.json**: User profile data
-- **favourites.json**: Favorites tracking
+### Backend Services
+The app supports multiple backend integrations:
+- **Real API**: Production backend with full CRUD operations
+- **Development**: Environment-based configuration switching
+- **Error Handling**: Centralized error management with user-friendly messages
+- **Authentication**: Token-based authentication system
 
-### Property Data Structure
-```dart
-class PropertyModel {
-  final String id;
-  final String title;
-  final double price;
-  final String address;
-  final int bedrooms, bathrooms;
-  final double area;
-  final String propertyType;
-  final List<String> images;
-  final String? tour360Url;
-  final List<String> amenities;
-  final AgentModel agent;
-}
+### API Service Architecture
+Located in `lib/app/data/providers/api_service.dart`:
+- Centralized error handling with comprehensive exception types
+- Response wrapper with type-safe responses
+- Authentication token management
+- Retry logic for failed requests
+- Environment-based endpoint configuration
+
+## Environment Configuration
+
+### Environment Files
+- **`.env.development`**: Development environment variables
+- **`.env.production`**: Production environment variables
+- **Loaded in main.dart**: `await dotenv.load(fileName: ".env.development");`
+
+### Required Environment Variables
 ```
+API_BASE_URL=your_api_base_url
+API_TOKEN=your_api_token
+DATABASE_URL=your_database_url
+STORAGE_BUCKET=your_storage_bucket
+```
+
+### Platform Support
+- **iOS**: Minimum deployment target iOS 14.0
+- **Android**: Minimum SDK version 21
+- **Web**: Chrome support enabled
+
+## Key Dependencies
+
+### Core Framework
+- **flutter**: SDK framework
+- **get**: ^4.6.6 - State management and routing
+- **json_annotation/json_serializable**: Model serialization
+- **http**: ^1.1.0 - HTTP client for API calls
+- **get_storage**: ^2.1.1 - Local data persistence
+
+### UI/UX
+- **google_fonts**: ^6.1.0 - Typography (Inter font family)
+- **cached_network_image**: ^3.3.0 - Image caching and optimization
+- **flutter_svg**: ^2.0.9 - SVG icon support
+- **shimmer**: ^3.0.0 - Loading animations and skeletons
+- **flutter_rating_bar**: ^4.0.1 - Property ratings
+- **cupertino_icons**: ^1.0.2 - iOS-style icons
+
+### Functionality
+- **geolocator**: ^14.0.1 - Location services and GPS
+- **geocoding**: ^3.0.0 - Address geocoding
+- **flutter_map**: ^8.1.1 - Interactive map integration
+- **latlong2**: ^0.9.0 - Latitude/longitude calculations
+- **webview_flutter**: ^4.4.2 - 360° tour viewing
+- **connectivity_plus**: ^5.0.2 - Network connectivity status
+- **flutter_localizations**: Internationalization support
+- **intl**: ^0.20.2 - Date/time formatting and localization
+- **shared_preferences**: ^2.2.2 - Platform-specific persistent storage
+- **flutter_dotenv**: ^5.1.0 - Environment variable management
 
 ## Development Guidelines
 
@@ -202,41 +301,27 @@ void loadProperties() async {
 - **Make widgets responsive** to different screen sizes
 - **Follow naming conventions**: PascalCase for classes, camelCase for variables
 
-## Environment Configuration
+### Error Handling
+The app uses centralized error handling:
+- **ErrorHandler** utility in `lib/app/utils/error_handler.dart`
+- **Custom exceptions** for different error types
+- **User-friendly error messages** with Get.snackbar
+- **DebugLogger** for development logging and debugging
+- **Graceful fallbacks** for network and API failures
 
-### Environment Files
-- **`.env.development`**: Development environment variables
-- **`.env.production`**: Production environment variables
-- **Loaded in main.dart**: `await dotenv.load(fileName: ".env.development");`
-
-### Platform Support
-- **iOS**: Minimum deployment target iOS 14.0
-- **Android**: Minimum SDK version 21
-- **Web**: Chrome support enabled
-
-## Key Dependencies
-
-### Core Framework
-- **flutter**: SDK framework
-- **get**: State management and routing
-- **json_annotation/json_serializable**: Model serialization
-
-### UI/UX
-- **google_fonts**: Typography
-- **cached_network_image**: Image caching
-- **flutter_svg**: SVG support
-- **shimmer**: Loading animations
-
-### Functionality
-- **geolocator**: Location services
-- **flutter_map**: Map integration
-- **webview_flutter**: 360° tour viewing
-- **get_storage**: Local data persistence
+### Dependency Management
+Use `DependencyManager` in `lib/app/utils/dependency_manager.dart`:
+- Tracks initialized services and controllers
+- Handles proper cleanup and disposal
+- Prevents duplicate registrations
+- Manages controller lifecycle efficiently
+- **SafeGetView** wrapper for safe widget disposal
 
 ## Testing
 
 ### Test Structure
-- **Widget tests**: `test/widget_test.dart`
+- **Model tests**: `test/model_test.dart` - JSON serialization testing
+- **Widget tests**: `test/widget_test.dart` - UI component testing
 - **Unit tests**: Test business logic in controllers
 - **Integration tests**: Full app flow testing
 
@@ -257,7 +342,7 @@ genhtml coverage/lcov.info -o coverage/html
 ### Model Generation
 If you modify models with `@JsonSerializable()`, run:
 ```bash
-flutter packages pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build --delete-conflicting-outputs
 ```
 
 ### iOS Build Issues
@@ -270,17 +355,85 @@ flutter packages pub run build_runner build --delete-conflicting-outputs
 - Check `android/app/build.gradle` for compatibility
 - Ensure proper signing configuration
 
-## Future Development
+### GetX Controller Issues
+- Use `Get.find()` with proper tags
+- Ensure controllers are registered in bindings
+- Check for duplicate registrations
+- Use `Get.delete()` for proper cleanup
 
-### Planned Features
-- **Swipe Interface**: Full Bumble-style property swiping
-- **Real API Integration**: Replace mock data with backend
-- **Push Notifications**: Property alerts and updates
-- **Social Features**: Property sharing and comparisons
-- **Advanced Filtering**: ML-based property recommendations
+## Authentication Flow
 
-### Performance Optimizations
-- **Image lazy loading** for property galleries
-- **Virtual scrolling** for large property lists
-- **Background data sync** for offline capability
-- **Memory management** for image caching
+### Login/Signup Process
+1. User enters credentials in auth views (LoginView/SignupView)
+2. AuthController validates input and calls ApiService
+3. Backend handles authentication and returns tokens
+4. Session stored in secure local storage
+5. User redirected to home or profile completion based on setup status
+
+### Profile Completion Flow
+- **ProfileCompletionView**: Collects additional user information
+- **Progressive disclosure**: Step-by-step profile setup
+- **Validation**: Real-time form validation
+- **Image upload**: Profile picture selection and upload
+
+### Protected Routes
+- **AuthMiddleware**: Checks authentication status for protected routes
+- **Automatic redirect**: Redirects to login if not authenticated
+- **Route preservation**: Maintains intended route for post-login redirect
+- **Session management**: Handles token refresh and expiration
+
+## State Management Patterns
+
+### Controller Communication
+- Use GetX's reactive programming for inter-controller communication
+- Example: PropertyController listens to UserController favorites
+- Avoid direct controller dependencies when possible
+
+### Data Flow
+1. View triggers controller action
+2. Controller calls repository method
+3. Repository uses provider (API/Mock)
+4. Data flows back through layers
+5. Controller updates reactive state
+6. View rebuilds automatically
+
+## Performance Optimizations
+
+### Image Handling
+- Use CachedNetworkImage for all remote images
+- Implement proper placeholders and error widgets
+- Lazy load images in lists
+- Optimize image sizes for different screen densities
+
+### List Performance
+- Use ListView.builder for long lists
+- Implement pagination for property listings
+- Add pull-to-refresh functionality
+- Cache frequently accessed data
+
+### Memory Management
+- Dispose controllers properly with SafeGetView
+- Clear image cache periodically
+- Use const constructors where possible
+- Minimize widget rebuilds with GetX reactivity
+- Implement proper controller lifecycle management
+
+## Internationalization
+
+### Multi-Language Support
+The app supports multiple languages with complete localization:
+- **LocalizationController**: Manages language preferences
+- **AppTranslations**: Contains all translation strings
+- **Dynamic switching**: Users can change language in preferences
+- **Persistent storage**: Language preference saved locally
+
+### Supported Languages
+- **English**: Default language
+- **Hindi**: Complete Hindi translation
+- **RTL Support**: Ready for Arabic/Hebrew if needed
+
+### Adding New Languages
+1. Add translation strings to `app/translations/app_translations.dart`
+2. Update LocalizationController with new locale
+3. Test all screens with new language
+4. Ensure proper text overflow handling

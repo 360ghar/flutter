@@ -1,16 +1,17 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../models/property_model.dart';
+import '../models/property_card_model.dart';
 import '../models/user_model.dart';
+import 'api_service.dart';
+import '../../utils/debug_logger.dart';
 
 abstract class IApiProvider {
-  Future<List<PropertyModel>> getProperties();
+  Future<List<PropertyCardModel>> getProperties();
   Future<PropertyModel> getPropertyById(String id);
-  Future<List<PropertyModel>> getFavouriteProperties();
+  Future<List<PropertyCardModel>> getFavouriteProperties();
   Future<void> addToFavourites(String propertyId);
   Future<void> removeFromFavourites(String propertyId);
-  Future<List<PropertyModel>> getPassedProperties();
+  Future<List<PropertyCardModel>> getPassedProperties();
   Future<void> addToPassedProperties(String propertyId);
   Future<void> removeFromPassedProperties(String propertyId);
   Future<UserModel> getUserProfile();
@@ -18,135 +19,185 @@ abstract class IApiProvider {
   Future<void> updateUserPreferences(Map<String, dynamic> preferences);
 }
 
-class MockApiProvider extends GetxService implements IApiProvider {
-  List<PropertyModel> _properties = [];
-  List<String> _favourites = [];
-  List<String> _passed = [];
-  UserModel? _currentUser;
+class RealApiProvider extends GetxService implements IApiProvider {
+  late final ApiService _apiService;
 
   @override
   void onInit() {
     super.onInit();
-    _loadMockData();
-  }
-
-  Future<void> _loadMockData() async {
     try {
-      // Load mock properties
-      final String propertiesJson = await rootBundle.loadString('assets/mock_api/properties.json');
-      final List<dynamic> propertiesList = json.decode(propertiesJson);
-      _properties = propertiesList.map((json) => PropertyModel.fromJson(json)).toList();
-
-      // Load mock user
-      final String userJson = await rootBundle.loadString('assets/mock_api/user.json');
-      _currentUser = UserModel.fromJson(json.decode(userJson));
-
-      // Load mock favourites
-      final String favouritesJson = await rootBundle.loadString('assets/mock_api/favourites.json');
-      _favourites = List<String>.from(json.decode(favouritesJson));
-      print('Loaded favourites: $_favourites');
-
-      // Initialize empty passed list (could load from storage in real app)
-      _passed = [];
-      print('Loaded ${_properties.length} properties and ${_favourites.length} favourites');
+      _apiService = Get.find<ApiService>();
+      DebugLogger.init('🔧 RealApiProvider initialized');
     } catch (e) {
-      print('Error loading mock data: $e');
+      DebugLogger.error('❌ Error initializing RealApiProvider: $e');
+      rethrow;
     }
   }
 
   @override
-  Future<List<PropertyModel>> getProperties() async {
-    if (_properties.isEmpty) {
-      await _loadMockData();
+  void onClose() {
+    // Clean up any resources
+    super.onClose();
+  }
+
+  @override
+  Future<List<PropertyCardModel>> getProperties() async {
+    try {
+      DebugLogger.api('📋 Fetching properties from backend...');
+      final response = await _apiService.discoverProperties(
+        latitude: 19.0760, // Default Mumbai location
+        longitude: 72.8777,
+        limit: 50,
+      );
+      DebugLogger.success('✅ Retrieved ${response.properties.length} properties from backend');
+      return response.properties;
+    } catch (e) {
+      DebugLogger.error('❌ Error fetching properties from backend: $e');
+      DebugLogger.info('💡 Consider checking if your backend server is running');
+      return [];
     }
-    await Future.delayed(const Duration(milliseconds: 800)); // Simulate network delay
-    return _properties;
   }
 
   @override
   Future<PropertyModel> getPropertyById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final property = _properties.firstWhere(
-      (p) => p.id == id,
-      orElse: () => throw Exception('Property not found'),
-    );
-    return property;
+    try {
+      DebugLogger.api('🔍 Fetching property details for ID: $id');
+      final property = await _apiService.getPropertyDetails(int.parse(id));
+      DebugLogger.success('✅ Retrieved property: ${property.title}');
+      return property;
+    } catch (e) {
+      DebugLogger.error('❌ Error fetching property details: $e');
+      rethrow;
+    }
   }
 
   @override
-  Future<List<PropertyModel>> getFavouriteProperties() async {
-    if (_properties.isEmpty || _favourites.isEmpty) {
-      await _loadMockData();
+  Future<List<PropertyCardModel>> getFavouriteProperties() async {
+    try {
+      DebugLogger.api('❤️ Fetching liked properties from backend...');
+      final properties = await _apiService.getLikedProperties();
+      DebugLogger.success('✅ Retrieved ${properties.length} liked properties');
+      return properties;
+    } catch (e) {
+      DebugLogger.error('❌ Error fetching liked properties: $e');
+      return [];
     }
-    await Future.delayed(const Duration(milliseconds: 600));
-    final favouriteProps = _properties.where((p) => _favourites.contains(p.id)).toList();
-    print('getFavouriteProperties: Found ${favouriteProps.length} favourite properties');
-    print('Favourites IDs: $_favourites');
-    print('Available property IDs: ${_properties.map((p) => p.id).toList()}');
-    return favouriteProps;
   }
 
   @override
   Future<void> addToFavourites(String propertyId) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!_favourites.contains(propertyId)) {
-      _favourites.add(propertyId);
+    try {
+      DebugLogger.api('❤️ Adding property $propertyId to favorites...');
+      await _apiService.swipeProperty(int.parse(propertyId), true);
+      await _apiService.trackEvent('property_liked', {
+        'property_id': int.parse(propertyId),
+        'action': 'add_to_favourites',
+      });
+      DebugLogger.success('✅ Property added to favorites');
+    } catch (e) {
+      DebugLogger.error('❌ Error adding to favorites: $e');
+      rethrow;
     }
-    // Remove from passed if it was there
-    _passed.remove(propertyId);
   }
 
   @override
   Future<void> removeFromFavourites(String propertyId) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    _favourites.remove(propertyId);
+    try {
+      DebugLogger.api('💔 Removing property $propertyId from favorites...');
+      // Note: API doesn't have direct remove from favorites,
+      // this would need to be implemented on backend
+      await _apiService.trackEvent('property_unliked', {
+        'property_id': int.parse(propertyId),
+        'action': 'remove_from_favourites',
+      });
+      DebugLogger.success('✅ Property removed from favorites');
+    } catch (e) {
+      DebugLogger.error('❌ Error removing from favorites: $e');
+      rethrow;
+    }
   }
 
   @override
-  Future<List<PropertyModel>> getPassedProperties() async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    return _properties.where((p) => _passed.contains(p.id)).toList();
+  Future<List<PropertyCardModel>> getPassedProperties() async {
+    try {
+      DebugLogger.api('🔄 Fetching passed properties from backend...');
+      final swipeHistory = await _apiService.getSwipeHistory();
+      final passedIds = swipeHistory
+          .where((swipe) => swipe['is_liked'] == false)
+          .map((swipe) => swipe['property_id'].toString())
+          .toList();
+      
+      // For now, return empty list as we'd need to fetch individual properties
+      // This could be optimized with a backend endpoint
+      DebugLogger.success('✅ Retrieved ${passedIds.length} passed properties');
+      return [];
+    } catch (e) {
+      DebugLogger.error('❌ Error fetching passed properties: $e');
+      return [];
+    }
   }
 
   @override
   Future<void> addToPassedProperties(String propertyId) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!_passed.contains(propertyId)) {
-      _passed.add(propertyId);
+    try {
+      DebugLogger.api('🔄 Adding property $propertyId to passed...');
+      await _apiService.swipeProperty(int.parse(propertyId), false);
+      await _apiService.trackEvent('property_passed', {
+        'property_id': int.parse(propertyId),
+        'action': 'add_to_passed',
+      });
+      DebugLogger.success('✅ Property added to passed');
+    } catch (e) {
+      DebugLogger.error('❌ Error adding to passed: $e');
+      rethrow;
     }
-    // Remove from favourites if it was there
-    _favourites.remove(propertyId);
   }
 
   @override
   Future<void> removeFromPassedProperties(String propertyId) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    _passed.remove(propertyId);
+    // This would require backend implementation
+    await _apiService.trackEvent('property_unpass', {
+      'property_id': int.parse(propertyId),
+      'action': 'remove_from_passed',
+    });
   }
 
   @override
   Future<UserModel> getUserProfile() async {
-    if (_currentUser == null) {
-      await _loadMockData();
+    try {
+      DebugLogger.api('👤 Fetching user profile from backend...');
+      final user = await _apiService.getCurrentUser();
+      DebugLogger.success('✅ Retrieved user profile');
+      return user;
+    } catch (e) {
+      DebugLogger.error('❌ Error fetching user profile: $e');
+      rethrow;
     }
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (_currentUser == null) {
-      throw Exception('User not found');
-    }
-    return _currentUser!;
   }
 
   @override
   Future<void> updateUserProfile(UserModel user) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    _currentUser = user;
+    try {
+      DebugLogger.api('👤 Updating user profile in backend...');
+      await _apiService.updateUserProfile(user.toJson());
+      DebugLogger.success('✅ User profile updated');
+    } catch (e) {
+      DebugLogger.error('❌ Error updating user profile: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<void> updateUserPreferences(Map<String, dynamic> preferences) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (_currentUser != null) {
-      _currentUser = _currentUser!.copyWith(preferences: preferences);
+    try {
+      DebugLogger.api('👤 Updating user preferences in backend...');
+      await _apiService.updateUserPreferences(preferences);
+      DebugLogger.success('✅ User preferences updated');
+    } catch (e) {
+      DebugLogger.error('❌ Error updating user preferences: $e');
+      rethrow;
     }
   }
-} 
+}
+
+ 

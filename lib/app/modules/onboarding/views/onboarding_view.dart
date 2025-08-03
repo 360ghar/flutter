@@ -75,7 +75,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (_currentPage == _pages.length - 1) {
-                          Get.offAllNamed('/login');
+                          Get.toNamed('/register');
                         } else {
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 300),
@@ -88,15 +88,42 @@ class _OnboardingViewState extends State<OnboardingView> {
                         backgroundColor: AppTheme.primaryColor,
                       ),
                       child: Text(
-                        _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
+                        _currentPage == _pages.length - 1 ? 'Sign Up' : 'Next',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
                 ),
+                if (_currentPage == _pages.length - 1) ...[
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Get.toNamed('/login');
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: AppTheme.primaryColor),
+                        ),
+                        child: const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

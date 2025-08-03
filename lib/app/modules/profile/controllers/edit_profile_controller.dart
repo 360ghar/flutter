@@ -44,12 +44,12 @@ class EditProfileController extends GetxController {
       
       // Load additional fields from preferences if available
       final prefs = user.preferences;
-      if (prefs.containsKey('location')) {
-        final location = prefs['location'];
+      if (prefs?.containsKey('location') == true) {
+        final location = prefs!['location'];
         locationController.text = location is String ? location : '';
       }
-      if (prefs.containsKey('dateOfBirth')) {
-        final dobString = prefs['dateOfBirth'];
+      if (prefs?.containsKey('dateOfBirth') == true) {
+        final dobString = prefs!['dateOfBirth'];
         if (dobString is String) {
           try {
             dateOfBirth.value = DateTime.parse(dobString);
@@ -124,7 +124,7 @@ class EditProfileController extends GetxController {
       }
 
       // Prepare updated preferences
-      final updatedPreferences = Map<String, dynamic>.from(currentUser.preferences);
+      final updatedPreferences = Map<String, dynamic>.from(currentUser.preferences ?? {});
       updatedPreferences['location'] = locationController.text.trim();
       if (dateOfBirth.value != null) {
         updatedPreferences['dateOfBirth'] = dateOfBirth.value!.toIso8601String();
@@ -132,17 +132,18 @@ class EditProfileController extends GetxController {
         updatedPreferences.remove('dateOfBirth');
       }
 
-      // Create updated user model
-      final updatedUser = currentUser.copyWith(
-        name: nameController.text.trim(),
-        email: emailController.text.trim(),
-        phone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
-        profileImage: profileImageUrl.value.isEmpty ? null : profileImageUrl.value,
-        preferences: updatedPreferences,
-      );
+      // Prepare profile data for update
+      final profileData = {
+        'full_name': nameController.text.trim(),
+        'phone': phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+        'profile_image_url': profileImageUrl.value.isEmpty ? null : profileImageUrl.value,
+      };
 
       // Update user profile
-      await _userController.updateProfile(updatedUser);
+      await _userController.updateProfile(profileData);
+      
+      // Update preferences separately
+      await _userController.updatePreferences(updatedPreferences);
 
       Get.back();
       Get.snackbar(

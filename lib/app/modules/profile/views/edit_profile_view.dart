@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../utils/app_colors.dart';
 import '../../../mixins/theme_mixin.dart';
 import '../controllers/edit_profile_controller.dart';
+import '../../../../widgets/common/robust_network_image.dart';
 
 class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
   const EditProfileView({Key? key}) : super(key: key);
@@ -30,25 +31,41 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                 Center(
                   child: Stack(
                     children: [
-                      Obx(() => CircleAvatar(
-                        radius: 60,
-                        backgroundColor: AppColors.primaryYellow,
-                        backgroundImage: controller.profileImageUrl.value.isNotEmpty
-                            ? NetworkImage(controller.profileImageUrl.value)
-                            : null,
-                        child: controller.profileImageUrl.value.isEmpty
-                            ? Text(
-                                controller.nameController.text.isNotEmpty
-                                    ? controller.nameController.text[0].toUpperCase()
-                                    : 'U',
-                                style: TextStyle(
-                                  fontSize: 40,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.buttonText,
+                      Obx(() {
+                        return controller.profileImageUrl.value.isNotEmpty
+                            ? RobustNetworkImageExtension.circular(
+                                imageUrl: controller.profileImageUrl.value,
+                                radius: 60,
+                                errorWidget: CircleAvatar(
+                                  radius: 60,
+                                  backgroundColor: AppColors.primaryYellow,
+                                  child: Text(
+                                    controller.nameController.text.isNotEmpty
+                                        ? controller.nameController.text[0].toUpperCase()
+                                        : 'U',
+                                    style: TextStyle(
+                                      fontSize: 40,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.buttonText,
+                                    ),
+                                  ),
                                 ),
                               )
-                            : null,
-                      )),
+                            : CircleAvatar(
+                                radius: 60,
+                                backgroundColor: AppColors.primaryYellow,
+                                child: Text(
+                                  controller.nameController.text.isNotEmpty
+                                      ? controller.nameController.text[0].toUpperCase()
+                                      : 'U',
+                                  style: TextStyle(
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.buttonText,
+                                  ),
+                                ),
+                              );
+                      }),
                       Positioned(
                         bottom: 0,
                         right: 0,

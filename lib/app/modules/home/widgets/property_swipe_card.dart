@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import '../../../utils/webview_helper.dart';
 import '../../../data/models/property_model.dart';
+import '../../../data/models/property_card_model.dart';
 import '../../../utils/theme.dart';
+import '../../../../widgets/common/robust_network_image.dart';
 import 'dart:math' as math;
 
 class PropertySwipeCard extends StatelessWidget {
-  final PropertyModel property;
+  final PropertyCardModel property;
   final VoidCallback? onTap;
 
   const PropertySwipeCard({
@@ -44,12 +46,10 @@ class PropertySwipeCard extends StatelessWidget {
                     children: [
                       // Main property image
                       Positioned.fill(
-                        child: CachedNetworkImage(
-                          imageUrl: property.images.isNotEmpty 
-                              ? property.images.first 
-                              : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267',
+                        child: RobustNetworkImage(
+                          imageUrl: property.mainImage,
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
+                          placeholder: Container(
                             color: Colors.grey[300],
                             child: const Center(
                               child: CircularProgressIndicator(
@@ -57,7 +57,7 @@ class PropertySwipeCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          errorWidget: (context, url, error) => Container(
+                          errorWidget: Container(
                             color: Colors.grey[300],
                             child: const Icon(Icons.error),
                           ),
@@ -144,7 +144,7 @@ class PropertySwipeCard extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      property.address,
+                                      property.addressDisplay,
                                       style: const TextStyle(
                                         color: Colors.white70,
                                         fontSize: 14,
@@ -167,7 +167,7 @@ class PropertySwipeCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  '${property.bedrooms} bed • ${property.bathrooms} bath • ${property.area.toInt()} sqft',
+                                  '${property.bedrooms ?? 0} bed • ${property.bathrooms ?? 0} bath • ${property.areaSqft?.toInt() ?? 0} sqft',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -238,7 +238,7 @@ class PropertySwipeCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                property.propertyType,
+                                property.propertyTypeString,
                                 style: TextStyle(
                                   color: AppTheme.accentBlue,
                                   fontSize: 12,
@@ -247,25 +247,24 @@ class PropertySwipeCard extends StatelessWidget {
                               ),
                             ),
                             const Spacer(),
-                            if (property.isAvailable)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.accentGreen.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'Available',
-                                  style: TextStyle(
-                                    color: AppTheme.accentGreen,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentGreen.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Available',
+                                style: TextStyle(
+                                  color: AppTheme.accentGreen,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 20),
@@ -281,7 +280,7 @@ class PropertySwipeCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          property.description,
+                          'Beautiful ${property.propertyTypeString} in ${property.city ?? "prime location"}. ${property.areaSqft != null ? "Spacious ${property.areaSqft!.toInt()} sq ft area with modern amenities." : "Perfect for your needs."}',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
@@ -290,92 +289,12 @@ class PropertySwipeCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
                         
-                        // Amenities
-                        if (property.amenities.isNotEmpty) ...[
-                          const Text(
-                            'Amenities',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: property.amenities.map((amenity) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.accentGreen.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  amenity,
-                                  style: TextStyle(
-                                    color: AppTheme.accentGreen,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
+                        // Note: Amenities not available in PropertyCardModel
                         
-                        // Additional Images
-                        if (property.images.length > 1) ...[
-                          const Text(
-                            'More Photos',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            height: 120,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: property.images.length - 1,
-                              itemBuilder: (context, index) {
-                                return Container(
-                                  margin: const EdgeInsets.only(right: 12),
-                                  width: 160,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: CachedNetworkImage(
-                                      imageUrl: property.images[index + 1],
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(
-                                        color: Colors.grey[300],
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            color: AppTheme.primaryYellow,
-                                          ),
-                                        ),
-                                      ),
-                                      errorWidget: (context, url, error) => Container(
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.error),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
+                        // Note: Additional images not available in PropertyCardModel
                         
                         // 360° Tour Embedded Section
-                        if (property.tour360Url != null && property.tour360Url!.isNotEmpty) ...[
+                        if (property.virtualTourUrl != null && property.virtualTourUrl!.isNotEmpty) ...[
                           Row(
                             children: [
                               Icon(
@@ -395,7 +314,7 @@ class PropertySwipeCard extends StatelessWidget {
                               const Spacer(),
                               InkWell(
                                 onTap: () {
-                                  Get.toNamed('/tour', arguments: property.tour360Url);
+                                  Get.toNamed('/tour', arguments: property.virtualTourUrl);
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -450,7 +369,7 @@ class PropertySwipeCard extends StatelessWidget {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: _EmbeddedSwipe360Tour(tourUrl: property.tour360Url!),
+                                child: _EmbeddedSwipe360Tour(tourUrl: property.virtualTourUrl!),
                               ),
                             ),
                           ),
@@ -476,12 +395,13 @@ class PropertySwipeCard extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              _buildDetailRow('Property Type', property.propertyType),
-                              _buildDetailRow('Bedrooms', '${property.bedrooms}'),
-                              _buildDetailRow('Bathrooms', '${property.bathrooms}'),
-                              _buildDetailRow('Area', '${property.area.toInt()} sq ft'),
-                              _buildDetailRow('Listed Date', _formatDate(property.listedDate)),
-                              _buildDetailRow('Status', property.isAvailable ? 'Available' : 'Not Available'),
+                              _buildDetailRow('Property Type', property.propertyTypeString),
+                              _buildDetailRow('Bedrooms', '${property.bedrooms ?? 0}'),
+                              _buildDetailRow('Bathrooms', '${property.bathrooms ?? 0}'),
+                              _buildDetailRow('Area', '${property.areaSqft?.toInt() ?? 0} sq ft'),
+                              if (property.distanceKm != null)
+                                _buildDetailRow('Distance', property.distanceText),
+                              _buildDetailRow('Location', property.addressDisplay),
                             ],
                           ),
                         ),
@@ -591,10 +511,10 @@ class PropertySwipeCard extends StatelessWidget {
 }
 
 class PropertySwipeStack extends StatefulWidget {
-  final List<PropertyModel> properties;
-  final Function(PropertyModel) onSwipeLeft;
-  final Function(PropertyModel) onSwipeRight;
-  final Function(PropertyModel) onSwipeUp;
+  final List<PropertyCardModel> properties;
+  final Function(PropertyCardModel) onSwipeLeft;
+  final Function(PropertyCardModel) onSwipeRight;
+  final Function(PropertyCardModel) onSwipeUp;
 
   const PropertySwipeStack({
     super.key,
@@ -610,7 +530,7 @@ class PropertySwipeStack extends StatefulWidget {
 
 class _PropertySwipeStackState extends State<PropertySwipeStack>
     with TickerProviderStateMixin {
-  late List<PropertyModel> _properties;
+  late List<PropertyCardModel> _properties;
   late AnimationController _swipeAnimationController;
   late AnimationController _sparklesAnimationController;
   late Animation<double> _swipeAnimation;
@@ -627,6 +547,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
   void initState() {
     super.initState();
     _properties = List.from(widget.properties);
+    print('📊 PropertySwipeStack initialized with ${_properties.length} properties');
     
     // Animation for the swipe out effect
     _swipeAnimationController = AnimationController(
@@ -662,6 +583,18 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
         setState(() {});
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(PropertySwipeStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Update properties when widget properties change
+    if (widget.properties != oldWidget.properties) {
+      _properties = List.from(widget.properties);
+      print('🔄 PropertySwipeStack updated with ${_properties.length} properties');
+      setState(() {});
+    }
   }
 
   @override
@@ -747,7 +680,10 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
 
   @override
   Widget build(BuildContext context) {
+    print('🎨 PropertySwipeStack build called with ${_properties.length} properties');
+    
     if (_properties.isEmpty) {
+      print('⚠️ PropertySwipeStack: No properties to display');
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -779,6 +715,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
     }
 
     final screenSize = MediaQuery.of(context).size;
+    print('✅ PropertySwipeStack: Rendering ${_properties.length} properties');
 
     return GestureDetector(
       onPanStart: (details) {
@@ -975,33 +912,44 @@ class _EmbeddedSwipe360Tour extends StatefulWidget {
 }
 
 class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
-  late final WebViewController controller;
+  WebViewController? controller;
   bool isLoading = true;
+  bool hasError = false;
   
   @override
   void initState() {
     super.initState();
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageFinished: (String url) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-              });
-            }
-          },
-          onWebResourceError: (WebResourceError error) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-              });
-            }
-          },
-        ),
-      );
+    _initializeWebView();
+  }
+  
+  void _initializeWebView() {
+    try {
+      // Ensure WebView platform is initialized
+      WebViewHelper.ensureInitialized();
+      
+      controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(const Color(0x00000000))
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageFinished: (String url) {
+              if (mounted) {
+                setState(() {
+                  isLoading = false;
+                });
+              }
+            },
+            onWebResourceError: (WebResourceError error) {
+              print('⚠️ WebView error in 360° tour: ${error.description}');
+              if (mounted) {
+                setState(() {
+                  isLoading = false;
+                  hasError = true;
+                });
+              }
+            },
+          ),
+        );
     
     // Create optimized HTML for embedded Kuula tour
     final htmlContent = '''
@@ -1036,14 +984,58 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
       </html>
     ''';
     
-    controller.loadHtmlString(htmlContent);
+      controller!.loadHtmlString(htmlContent);
+    } catch (e) {
+      print('❌ Error initializing WebView for 360° tour: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          hasError = true;
+        });
+      }
+    }
   }
   
   @override
   Widget build(BuildContext context) {
+    if (hasError || controller == null) {
+      return Container(
+        color: AppTheme.backgroundGray,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.public_off,
+                size: 48,
+                color: AppTheme.textGray.withOpacity(0.7),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '360° Tour Unavailable',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textGray,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Virtual tour could not be loaded',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textGray.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return Stack(
       children: [
-        WebViewWidget(controller: controller),
+        WebViewWidget(controller: controller!),
         if (isLoading)
           Container(
             color: AppTheme.backgroundGray,

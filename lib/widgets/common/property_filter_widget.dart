@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../app/utils/app_colors.dart';
 import '../../app/controllers/property_controller.dart';
+import '../../app/utils/controller_helper.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'
@@ -49,7 +50,7 @@ class _FilterBottomSheet extends StatefulWidget {
 }
 
 class _FilterBottomSheetState extends State<_FilterBottomSheet> {
-  final PropertyController propertyController = Get.find<PropertyController>();
+  late final PropertyController propertyController;
   
   late String _selectedPurpose;
   late double _minPrice;
@@ -100,6 +101,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   @override
   void initState() {
     super.initState();
+    // Ensure PropertyController is available
+    ControllerHelper.ensurePropertyController();
+    propertyController = Get.find<PropertyController>();
     _initializeFilters();
   }
 

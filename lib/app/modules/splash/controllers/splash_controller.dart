@@ -1,5 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../controllers/auth_controller.dart';
+import '../../../routes/app_routes.dart';
 
 class SplashController extends GetxController with GetTickerProviderStateMixin {
   // Current step in the splash screen
@@ -112,9 +115,9 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
       _resetAndStartAnimations();
       _startAutoAdvance();
     } else {
-      // Navigate to home after the last step
+      // Check authentication status after splash
       Future.delayed(const Duration(milliseconds: 500), () {
-        Get.offAllNamed('/home');
+        _checkAuthenticationAndNavigate();
       });
     }
   }
@@ -154,7 +157,79 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
   }
   
   void skipToHome() {
-    Get.offAllNamed('/home');
+    _checkAuthenticationAndNavigate();
+  }
+
+  bool _hasNavigated = false;
+
+  void _checkAuthenticationAndNavigate() async {
+    // Prevent multiple navigation attempts
+    if (_hasNavigated) return;
+    _hasNavigated = true;
+    
+    try {
+      // Check if AuthController is available
+      if (!Get.isRegistered<AuthController>()) {
+        print('AuthController not registered, going to onboarding');
+        Get.offAllNamed(AppRoutes.onboarding);
+        return;
+      }
+      
+      final authController = Get.find<AuthController>();
+      
+      // Wait for auth controller initialization to complete
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Check current authentication status (no need to restore session manually)
+      // The AuthController already handles session restoration in onInit
+      if (authController.isAuthenticated) {
+        final currentUser = authController.currentUser.value;
+        
+        // Check if user profile is loaded and complete
+        if (currentUser != null) {
+          if (_isProfileComplete(currentUser)) {
+            // Profile is complete, go to home (middleware will handle auth check)
+            Get.offAllNamed(AppRoutes.home);
+          } else {
+            // Need to complete profile
+            Get.offAllNamed(AppRoutes.profileCompletion);
+          }
+        } else {
+          // User is authenticated but profile not loaded, wait a bit
+          await Future.delayed(const Duration(milliseconds: 1000));
+          if (authController.currentUser.value != null) {
+            Get.offAllNamed(AppRoutes.home);
+          } else {
+            // Profile loading failed, might need to complete profile
+            Get.offAllNamed(AppRoutes.profileCompletion);
+          }
+        }
+      } else {
+        // User not authenticated, show onboarding
+        Get.offAllNamed(AppRoutes.onboarding);
+      }
+    } catch (e) {
+      print('Error during splash navigation: $e');
+      // On any error, go to onboarding
+      Get.offAllNamed(AppRoutes.onboarding);
+    }
+  }
+  
+  /// Checks if user profile is complete enough to access the main app
+  bool _isProfileComplete(dynamic user) {
+    if (user == null) return false;
+    
+    // Basic checks for profile completion
+    try {
+      final hasBasicInfo = user.name?.isNotEmpty == true && 
+                          user.email?.isNotEmpty == true;
+      
+      // You can add more specific checks here based on your requirements
+      return hasBasicInfo;
+    } catch (e) {
+      print('Error checking profile completion: $e');
+      return false;
+    }
   }
   
   @override

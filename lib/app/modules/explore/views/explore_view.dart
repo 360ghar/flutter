@@ -7,6 +7,7 @@ import '../../../data/models/property_model.dart';
 import '../../../utils/app_colors.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/property_filter_widget.dart';
+import '../../../../widgets/common/robust_network_image.dart';
 
 
 class ExploreView extends GetView<ExploreController> {
@@ -391,19 +392,17 @@ class ExploreView extends GetView<ExploreController> {
           child: Row(
             children: [
               // Property Image
-              ClipRRect(
+              RobustNetworkImage(
+                imageUrl: property.images?.isNotEmpty == true ? property.images!.first.imageUrl : property.mainImage,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  property.images.isNotEmpty ? property.images.first : '',
+                errorWidget: Container(
                   width: 80,
                   height: 80,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 80,
-                    height: 80,
-                    color: AppColors.inputBackground,
-                    child: Icon(Icons.home, color: AppColors.iconColor),
-                  ),
+                  color: AppColors.inputBackground,
+                  child: Icon(Icons.home, color: AppColors.iconColor),
                 ),
               ),
               
@@ -428,7 +427,7 @@ class ExploreView extends GetView<ExploreController> {
                     const SizedBox(height: 4),
                     
                     Text(
-                      '${property.address}, ${property.city}',
+                      property.addressDisplay,
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.propertyCardSubtext,
@@ -445,7 +444,7 @@ class ExploreView extends GetView<ExploreController> {
                         const SizedBox(width: 12),
                         _buildPropertySpec(Icons.bathtub, '${property.bathrooms}'),
                         const SizedBox(width: 12),
-                        _buildPropertySpec(Icons.square_foot, '${property.area.toInt()}'),
+                        _buildPropertySpec(Icons.square_foot, '${property.areaSqft?.toInt() ?? 0}'),
                       ],
                     ),
                   ],
@@ -466,7 +465,7 @@ class ExploreView extends GetView<ExploreController> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    property.propertyType,
+                    property.propertyTypeString,
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.propertyCardSubtext,

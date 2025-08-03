@@ -1,9 +1,10 @@
 import 'package:get/get.dart';
-import '../../../controllers/property_controller.dart';
+import '../../../utils/controller_helper.dart';
 
 class FavouritesBinding extends Bindings {
   @override
   void dependencies() {
-    Get.find<PropertyController>();
+    // Ensure PropertyController is available
+    ControllerHelper.ensurePropertyController();
   }
 } 

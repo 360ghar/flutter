@@ -5,6 +5,8 @@ import '../../../controllers/property_controller.dart';
 import '../../../controllers/visits_controller.dart';
 import '../../../data/models/property_model.dart';
 import '../../../utils/app_colors.dart';
+import '../../../utils/controller_helper.dart';
+import '../../../../widgets/common/robust_network_image.dart';
 
 class PropertyDetailsView extends StatelessWidget {
   const PropertyDetailsView({super.key});
@@ -18,8 +20,9 @@ class PropertyDetailsView extends StatelessWidget {
     if (arguments is PropertyModel) {
       property = arguments;
     } else if (arguments is String) {
-      final controller = Get.find<PropertyController>();
-      property = controller.getPropertyById(arguments);
+      // For string IDs, we'll need to handle this in a FutureBuilder or similar
+      // For now, return error state
+      property = null;
     }
 
     if (property == null) {
@@ -52,6 +55,8 @@ class PropertyDetailsView extends StatelessWidget {
       );
     }
 
+    // Ensure PropertyController is available
+    ControllerHelper.ensurePropertyController();
     final controller = Get.find<PropertyController>();
     final visitsController = Get.find<VisitsController>();
     
@@ -125,21 +130,19 @@ class PropertyDetailsView extends StatelessWidget {
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: PageView.builder(
-                itemCount: safeProperty.images.length,
+                itemCount: safeProperty.images?.length ?? 0,
                 itemBuilder: (context, index) {
-                  return Image.network(
-                    safeProperty.images[index],
+                  return RobustNetworkImage(
+                    imageUrl: safeProperty.images?[index].imageUrl ?? safeProperty.mainImage,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: AppColors.inputBackground,
-                        child: Icon(
-                          Icons.image, 
-                          size: 50, 
-                          color: AppColors.disabledColor,
-                        ),
-                      );
-                    },
+                    errorWidget: Container(
+                      color: AppColors.inputBackground,
+                      child: Icon(
+                        Icons.image, 
+                        size: 50, 
+                        color: AppColors.disabledColor,
+                      ),
+                    ),
                   );
                 },
               ),
@@ -171,7 +174,7 @@ class PropertyDetailsView extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '₹${safeProperty.price.toStringAsFixed(0)}',
+                                  '₹${safeProperty.getEffectivePrice().toStringAsFixed(0)}',
                                   style: TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,
@@ -197,7 +200,7 @@ class PropertyDetailsView extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              safeProperty.propertyType,
+                              safeProperty.propertyTypeString,
                               style: TextStyle(
                                 color: AppColors.buttonText,
                                 fontWeight: FontWeight.w600,
@@ -227,7 +230,7 @@ class PropertyDetailsView extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              safeProperty.address,
+                              safeProperty.addressDisplay,
                               style: TextStyle(
                                 fontSize: 16,
                                 color: AppColors.textSecondary,
@@ -251,7 +254,7 @@ class PropertyDetailsView extends StatelessWidget {
                         children: [
                           _buildFeature(Icons.bed, '${safeProperty.bedrooms}', 'Bedrooms'),
                           _buildFeature(Icons.bathtub_outlined, '${safeProperty.bathrooms}', 'Bathrooms'),
-                          _buildFeature(Icons.square_foot, '${safeProperty.area.toInt()}', 'Sq Ft'),
+                          _buildFeature(Icons.square_foot, '${safeProperty.areaSqft?.toInt() ?? 0}', 'Sq Ft'),
                         ],
                       ),
                     ),
@@ -268,7 +271,7 @@ class PropertyDetailsView extends StatelessWidget {
                      ),
                      const SizedBox(height: 12),
                      Text(
-                       safeProperty.description,
+                       safeProperty.description ?? 'No description available',
                        style: TextStyle(
                          fontSize: 16,
                          color: AppColors.textSecondary,
@@ -290,7 +293,7 @@ class PropertyDetailsView extends StatelessWidget {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: safeProperty.amenities.map((amenity) {
+                      children: safeProperty.amenities?.map((amenity) {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
@@ -306,12 +309,12 @@ class PropertyDetailsView extends StatelessWidget {
                              ),
                            ),
                         );
-                      }).toList(),
+                      }).toList() ?? [],
                     ),
                     const SizedBox(height: 24),
                     
                     // 360° Tour Embedded Section
-                    if (safeProperty.tour360Url != null && safeProperty.tour360Url!.isNotEmpty) ...[
+                    if (safeProperty.virtualTourUrl != null && safeProperty.virtualTourUrl!.isNotEmpty) ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -335,7 +338,7 @@ class PropertyDetailsView extends StatelessWidget {
                           ),
                           InkWell(
                             onTap: () {
-                              Get.toNamed('/tour', arguments: safeProperty.tour360Url);
+                              Get.toNamed('/tour', arguments: safeProperty.virtualTourUrl);
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -377,7 +380,7 @@ class PropertyDetailsView extends StatelessWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: _Embedded360TourDetails(tourUrl: safeProperty.tour360Url!),
+                          child: _Embedded360TourDetails(tourUrl: safeProperty.virtualTourUrl!),
                         ),
                       ),
                       const SizedBox(height: 24),

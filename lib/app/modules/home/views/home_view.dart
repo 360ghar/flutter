@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/property_controller.dart';
 import '../../../controllers/swipe_controller.dart';
+import '../../../widgets/safe_get_view.dart';
 import '../widgets/property_swipe_card.dart';
 import '../../../utils/app_colors.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/property_filter_widget.dart';
 
-class HomeView extends GetView<PropertyController> {
+class HomeView extends SafePropertyView {
   const HomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Ensure SwipeController is available
     final SwipeController swipeController = Get.find<SwipeController>();
 
     return Scaffold(
@@ -38,7 +39,7 @@ class HomeView extends GetView<PropertyController> {
         ],
       ),
       body: Obx(() {
-        if (controller.isLoading.value) {
+        if (propertyController.isLoading.value) {
           return Center(
             child: CircularProgressIndicator(
               color: AppColors.loadingIndicator,
@@ -46,7 +47,7 @@ class HomeView extends GetView<PropertyController> {
           );
         }
 
-        if (controller.error.value.isNotEmpty) {
+        if (propertyController.error.value.isNotEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -66,7 +67,7 @@ class HomeView extends GetView<PropertyController> {
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
-                  onPressed: () => controller.fetchProperties(),
+                  onPressed: () => propertyController.fetchProperties(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.buttonBackground,
                     foregroundColor: AppColors.buttonText,

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/property_controller.dart';
+import '../../../widgets/safe_get_view.dart';
 import '../../../utils/app_colors.dart';
 import '../../../../widgets/property/compact_property_card.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/property_filter_widget.dart';
+import '../../../../widgets/common/paginated_grid_view.dart';
 
-class FavouritesView extends GetView<PropertyController> {
+class FavouritesView extends SafePropertyView {
   const FavouritesView({Key? key}) : super(key: key);
 
   @override
@@ -27,6 +28,23 @@ class FavouritesView extends GetView<PropertyController> {
             ),
           ),
           actions: [
+            IconButton(
+              onPressed: () {
+                propertyController.fetchFavouriteProperties();
+                Get.snackbar(
+                  'Refreshed',
+                  'Favourite properties updated',
+                  snackPosition: SnackPosition.TOP,
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: AppColors.primaryYellow,
+                  colorText: Colors.white,
+                );
+              },
+              icon: Icon(
+                Icons.refresh,
+                color: AppColors.appBarText,
+              ),
+            ),
             PropertyFilterWidget(
               pageType: 'favourites',
               onFiltersApplied: () {
@@ -63,113 +81,90 @@ class FavouritesView extends GetView<PropertyController> {
 
   Widget _buildLikedPropertiesTab() {
     return Obx(() {
-      final filteredProperties = controller.getFilteredFavourites();
-      
-      if (controller.isLoading.value) {
-        return Center(
-          child: CircularProgressIndicator(
-            color: AppColors.loadingIndicator,
-          ),
-        );
+      // Lazy load favourites data when tab is accessed
+      if (propertyController.favouriteProperties.isEmpty && !propertyController.isLoading.value) {
+        propertyController.fetchFavouritePropertiesLazy();
       }
-
-      if (filteredProperties.isEmpty) {
-        return _buildEmptyState(
+      
+      final filteredProperties = propertyController.getFilteredFavourites();
+      
+      return PaginatedGridView(
+        items: filteredProperties,
+        onLoadMore: () async {
+          // For favourites, we typically don't paginate since it's user's limited list
+          // But we can refresh to get any new favourites
+        },
+        hasMore: false, // Favourites typically don't need pagination
+        isLoadingMore: false,
+        isLoading: propertyController.isLoading.value,
+        onRefresh: () => propertyController.fetchFavouriteProperties(),
+        emptyWidget: _buildEmptyState(
           icon: Icons.favorite_border,
           title: 'no_favorites'.tr,
           subtitle: 'no_favorites_message'.tr,
-        );
-      }
-
-      return RefreshIndicator(
-        color: AppColors.loadingIndicator,
-        backgroundColor: AppColors.surface,
-        onRefresh: () => controller.fetchFavouriteProperties(),
-        child: GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.75, // Adjust for card height
-          ),
-          itemCount: filteredProperties.length,
-          itemBuilder: (context, index) {
-            final property = filteredProperties[index];
-            return CompactPropertyCard(
-              property: property,
-              isFavourite: true,
-              onFavouriteToggle: () {
-                controller.removeFromFavourites(property.id);
-                Get.snackbar(
-                  'Removed',
-                  'Property removed from liked list',
-                  snackPosition: SnackPosition.TOP,
-                  backgroundColor: AppColors.snackbarBackground,
-                  colorText: AppColors.snackbarText,
-                  duration: const Duration(seconds: 2),
-                );
-              },
-            );
-          },
         ),
+        itemBuilder: (context, property, index) {
+          return CompactPropertyCard(
+            property: property,
+            isFavourite: true,
+            onFavouriteToggle: () {
+              propertyController.removeFromFavourites(property.id);
+              Get.snackbar(
+                'Removed',
+                'Property removed from liked list',
+                snackPosition: SnackPosition.TOP,
+                backgroundColor: AppColors.snackbarBackground,
+                colorText: AppColors.snackbarText,
+                duration: const Duration(seconds: 2),
+              );
+            },
+          );
+        },
       );
     });
   }
 
   Widget _buildPassedPropertiesTab() {
     return Obx(() {
-      final filteredProperties = controller.getFilteredPassed();
-      
-      if (controller.isLoading.value) {
-        return Center(
-          child: CircularProgressIndicator(
-            color: AppColors.loadingIndicator,
-          ),
-        );
+      // Lazy load passed properties data when tab is accessed
+      if (propertyController.passedProperties.isEmpty && !propertyController.isLoading.value) {
+        propertyController.fetchPassedPropertiesLazy();
       }
-
-      if (filteredProperties.isEmpty) {
-        return _buildEmptyState(
+      
+      final filteredProperties = propertyController.getFilteredPassed();
+      
+      return PaginatedGridView(
+        items: filteredProperties,
+        onLoadMore: () async {
+          // For passed properties, we typically don't paginate since it's user's limited list
+        },
+        hasMore: false, // Passed properties typically don't need pagination
+        isLoadingMore: false,
+        isLoading: propertyController.isLoading.value,
+        onRefresh: () => propertyController.fetchPassedProperties(),
+        emptyWidget: _buildEmptyState(
           icon: Icons.not_interested,
           title: 'No Passed Properties',
           subtitle: 'Properties you\'ve passed on will appear here.\nYou can always give them another chance!',
-        );
-      }
-
-      return RefreshIndicator(
-        color: AppColors.loadingIndicator,
-        backgroundColor: AppColors.surface,
-        onRefresh: () => controller.fetchPassedProperties(),
-        child: GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.75, // Adjust for card height
-          ),
-          itemCount: filteredProperties.length,
-          itemBuilder: (context, index) {
-            final property = filteredProperties[index];
-            return CompactPropertyCard(
-              property: property,
-              isFavourite: false,
-              onFavouriteToggle: () {
-                controller.addToFavourites(property.id);
-                controller.removeFromPassedProperties(property.id);
-                Get.snackbar(
-                  'Added to Liked',
-                  'Property moved to liked list',
-                  snackPosition: SnackPosition.TOP,
-                  backgroundColor: AppColors.snackbarBackground,
-                  colorText: AppColors.snackbarText,
-                  duration: const Duration(seconds: 2),
-                );
-              },
-            );
-          },
         ),
+        itemBuilder: (context, property, index) {
+          return CompactPropertyCard(
+            property: property,
+            isFavourite: false,
+            onFavouriteToggle: () {
+              propertyController.addToFavourites(property.id);
+              propertyController.removeFromPassedProperties(property.id);
+              Get.snackbar(
+                'Added to Liked',
+                'Property moved to liked list',
+                snackPosition: SnackPosition.TOP,
+                backgroundColor: AppColors.snackbarBackground,
+                colorText: AppColors.snackbarText,
+                duration: const Duration(seconds: 2),
+              );
+            },
+          );
+        },
       );
     });
   }
@@ -186,12 +181,24 @@ class FavouritesView extends GetView<PropertyController> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 80,
-              color: AppColors.disabledColor,
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppColors.primaryYellow.withOpacity(0.1),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.primaryYellow.withOpacity(0.3),
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                icon,
+                size: 60,
+                color: AppColors.primaryYellow,
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             Text(
               title,
               style: TextStyle(
@@ -200,7 +207,7 @@ class FavouritesView extends GetView<PropertyController> {
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
               subtitle,
               textAlign: TextAlign.center,
@@ -208,6 +215,20 @@ class FavouritesView extends GetView<PropertyController> {
                 fontSize: 16,
                 color: AppColors.textSecondary,
                 height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => Get.offAllNamed('/home'),
+              icon: const Icon(Icons.explore),
+              label: const Text('Explore Properties'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryYellow,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
               ),
             ),
           ],

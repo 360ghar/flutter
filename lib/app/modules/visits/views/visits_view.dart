@@ -4,12 +4,21 @@ import '../../../controllers/visits_controller.dart';
 import '../../../data/models/visit_model.dart';
 import '../../../utils/app_colors.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
+import '../../../../widgets/common/robust_network_image.dart';
+import '../widgets/visits_skeleton_loaders.dart';
 
 class VisitsView extends GetView<VisitsController> {
   const VisitsView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Initialize data loading once on widget build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!controller.hasLoadedVisits.value && !controller.isLoading.value) {
+        controller.loadVisitsLazy();
+      }
+    });
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -96,11 +105,7 @@ class VisitsView extends GetView<VisitsController> {
         ),
         body: Obx(() {
           if (controller.isLoading.value) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: AppColors.loadingIndicator,
-              ),
-            );
+            return _buildLoadingState();
           }
 
           return Column(
@@ -143,6 +148,45 @@ class VisitsView extends GetView<VisitsController> {
           child: const Icon(Icons.add),
         ),
         bottomNavigationBar: const CustomBottomNavigationBar(currentIndex: 4),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Column(
+      children: [
+        // Agent skeleton loader
+        Container(
+          color: AppColors.scaffoldBackground,
+          child: const Padding(
+            padding: EdgeInsets.all(20),
+            child: RelationshipManagerSkeleton(),
+          ),
+        ),
+        
+        // Tab content skeleton loaders
+        Expanded(
+          child: TabBarView(
+            children: [
+              // Upcoming visits skeleton
+              _buildSkeletonList(),
+              // Past visits skeleton
+              _buildSkeletonList(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildSkeletonList() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: List.generate(
+          3,
+          (index) => const VisitCardSkeleton(),
+        ),
       ),
     );
   }
@@ -202,8 +246,23 @@ class VisitsView extends GetView<VisitsController> {
   }
 
   Widget _buildRelationshipManagerCard() {
+    // Initialize agent data loading once on card build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!controller.hasLoadedAgent.value && !controller.isLoadingAgent.value) {
+        controller.loadRelationshipManagerLazy();
+      }
+    });
+
     return Obx(() {
+      if (controller.isLoadingAgent.value) {
+        return const RelationshipManagerSkeleton();
+      }
+      
       final agent = controller.relationshipManager.value;
+      if (agent == null) {
+        return const RelationshipManagerSkeleton();
+      }
+      
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -245,13 +304,21 @@ class VisitsView extends GetView<VisitsController> {
             const SizedBox(height: 16),
             Row(
               children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundImage: NetworkImage(agent.image),
-                  onBackgroundImageError: (_, __) {},
-                  child: agent.image.isEmpty
-                      ? Icon(Icons.person, size: 30, color: AppColors.iconColor)
-                      : null,
+                RobustNetworkImageExtension.avatar(
+                  imageUrl: agent.image,
+                  size: 60,
+                  placeholder: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(shape: BoxShape.circle),
+                    child: Icon(Icons.person, size: 30, color: AppColors.iconColor),
+                  ),
+                  errorWidget: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(shape: BoxShape.circle),
+                    child: Icon(Icons.person, size: 30, color: AppColors.iconColor),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -298,13 +365,13 @@ class VisitsView extends GetView<VisitsController> {
                             color: AppColors.iconColor,
                           ),
                           const SizedBox(width: 4),
-                                                  Text(
-                          agent.experience,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
+                          Text(
+                            agent.experience,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
                         ],
                       ),
                     ],
@@ -372,21 +439,17 @@ class VisitsView extends GetView<VisitsController> {
         children: [
           Row(
             children: [
-              ClipRRect(
+              RobustNetworkImage(
+                imageUrl: visit.propertyImage,
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  visit.propertyImage,
+                errorWidget: Container(
                   width: 60,
                   height: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 60,
-                      height: 60,
-                      color: AppColors.inputBackground,
-                      child: Icon(Icons.image, color: AppColors.iconColor),
-                    );
-                  },
+                  color: AppColors.inputBackground,
+                  child: Icon(Icons.image, color: AppColors.iconColor),
                 ),
               ),
               const SizedBox(width: 12),
@@ -444,7 +507,7 @@ class VisitsView extends GetView<VisitsController> {
               ),
             ),
           ],
-          if (isUpcoming && visit.status == VisitStatus.upcoming) ...[
+          if (isUpcoming && visit.status == VisitStatus.scheduled) ...[
             const SizedBox(height: 12),
             Row(
               children: [
@@ -500,9 +563,13 @@ class VisitsView extends GetView<VisitsController> {
     String text;
     
     switch (status) {
-      case VisitStatus.upcoming:
-        color = AppColors.accentBlue;
-        text = 'Upcoming';
+      case VisitStatus.scheduled:
+        color = AppColors.primaryYellow;
+        text = 'Scheduled';
+        break;
+      case VisitStatus.confirmed:
+        color = AppColors.accentGreen;
+        text = 'Confirmed';
         break;
       case VisitStatus.completed:
         color = AppColors.accentGreen;
@@ -511,6 +578,10 @@ class VisitsView extends GetView<VisitsController> {
       case VisitStatus.cancelled:
         color = AppColors.errorRed;
         text = 'Cancelled';
+        break;
+      case VisitStatus.rescheduled:
+        color = AppColors.primaryYellow;
+        text = 'Rescheduled';
         break;
     }
     
@@ -639,7 +710,7 @@ class VisitsView extends GetView<VisitsController> {
                 selectedTime.minute,
               );
               
-              controller.rescheduleVisit(visit.id, newDateTime);
+              controller.rescheduleVisit(visit.id.toString(), newDateTime);
               Get.back();
             },
             style: ElevatedButton.styleFrom(
@@ -665,7 +736,7 @@ class VisitsView extends GetView<VisitsController> {
           ),
           ElevatedButton(
             onPressed: () {
-              controller.cancelVisit(visit.id);
+              controller.cancelVisit(visit.id.toString());
               Get.back();
             },
             style: ElevatedButton.styleFrom(
@@ -678,4 +749,4 @@ class VisitsView extends GetView<VisitsController> {
       ),
     );
   }
-} 
+}

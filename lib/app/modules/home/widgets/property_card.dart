@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import '../../../utils/webview_helper.dart';
 import '../../../data/models/property_model.dart';
 import '../../../utils/app_colors.dart';
+import '../../../../widgets/common/robust_network_image.dart';
 
 class PropertyCard extends StatelessWidget {
   final PropertyModel property;
@@ -29,35 +30,19 @@ class PropertyCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min, // Prevent unbounded height
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Stack(
               children: [
-                ClipRRect(
+                RobustNetworkImage(
+                  imageUrl: property.mainImage,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: CachedNetworkImage(
-                    imageUrl: property.mainImage,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      height: 200,
-                      color: AppColors.inputBackground,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.loadingIndicator,
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      height: 200,
-                      color: AppColors.inputBackground,
-                      child: Icon(
-                        Icons.error,
-                        color: AppColors.iconColor,
-                      ),
-                    ),
-                  ),
+                  memCacheWidth: 400,
+                  memCacheHeight: 200,
                 ),
                 Positioned(
                   top: 8,
@@ -81,6 +66,7 @@ class PropertyCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
+                mainAxisSize: MainAxisSize.min, // Prevent unbounded height
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -110,7 +96,7 @@ class PropertyCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    property.fullAddress,
+                    property.addressDisplay,
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.propertyCardSubtext,
@@ -134,13 +120,13 @@ class PropertyCard extends StatelessWidget {
                       const SizedBox(width: 16),
                       _buildFeature(
                         Icons.square_foot,
-                        '${property.area} sqft',
+                        '${property.areaSqft} sqft',
                       ),
                     ],
                   ),
                   
                   // 360° Tour Embedded Section
-                  if (property.tour360Url != null && property.tour360Url!.isNotEmpty) ...[
+                  if (property.virtualTourUrl != null && property.virtualTourUrl!.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +150,7 @@ class PropertyCard extends StatelessWidget {
                             const Spacer(),
                             InkWell(
                               onTap: () {
-                                Get.toNamed('/tour', arguments: property.tour360Url);
+                                Get.toNamed('/tour', arguments: property.virtualTourUrl);
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -212,7 +198,7 @@ class PropertyCard extends StatelessWidget {
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: _Embedded360Tour(tourUrl: property.tour360Url!),
+                              child: _Embedded360Tour(tourUrl: property.virtualTourUrl!),
                             ),
                           ),
                         ),
@@ -260,13 +246,20 @@ class _Embedded360Tour extends StatefulWidget {
 }
 
 class _Embedded360TourState extends State<_Embedded360Tour> {
-  late final WebViewController controller;
+  WebViewController? controller;
   bool isLoading = true;
+  bool hasError = false;
   
   @override
   void initState() {
     super.initState();
-    controller = WebViewController()
+    _initializeWebView();
+  }
+  
+  void _initializeWebView() {
+    try {
+      WebViewHelper.ensureInitialized();
+      controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
@@ -279,17 +272,19 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
             }
           },
           onWebResourceError: (WebResourceError error) {
+            print('⚠️ WebView error in 360° tour: ${error.description}');
             if (mounted) {
               setState(() {
                 isLoading = false;
+                hasError = true;
               });
             }
           },
         ),
       );
     
-    // Create optimized HTML for embedded Kuula tour
-    final htmlContent = '''
+      // Create optimized HTML for embedded Kuula tour
+      final htmlContent = '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -321,14 +316,58 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
       </html>
     ''';
     
-    controller.loadHtmlString(htmlContent);
+      controller!.loadHtmlString(htmlContent);
+    } catch (e) {
+      print('❌ Error initializing WebView for 360° tour: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          hasError = true;
+        });
+      }
+    }
   }
   
   @override
   Widget build(BuildContext context) {
+    if (hasError || controller == null) {
+      return Container(
+        color: AppColors.inputBackground,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.public_off,
+                size: 48,
+                color: AppColors.textSecondary.withOpacity(0.7),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '360° Tour Unavailable',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Virtual tour could not be loaded',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return Stack(
       children: [
-        WebViewWidget(controller: controller),
+        WebViewWidget(controller: controller!),
         if (isLoading)
           Container(
             color: AppColors.inputBackground,

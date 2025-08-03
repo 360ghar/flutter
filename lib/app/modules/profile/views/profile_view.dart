@@ -5,6 +5,7 @@ import '../../../utils/theme.dart';
 import '../../../utils/app_colors.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../../../widgets/common/theme_toggle_button.dart';
+import '../../../../widgets/common/robust_network_image.dart';
 
 class ProfileView extends GetView<UserController> {
   const ProfileView({super.key});
@@ -132,23 +133,35 @@ class ProfileView extends GetView<UserController> {
           // Profile Picture
           Stack(
             children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: AppColors.primaryYellow,
-                backgroundImage: user.profileImage != null && user.profileImage!.isNotEmpty
-                    ? NetworkImage(user.profileImage!)
-                    : null,
-                child: user.profileImage == null || user.profileImage!.isEmpty
-                    ? Text(
+              user.profileImage != null && user.profileImage!.isNotEmpty
+                  ? RobustNetworkImageExtension.circular(
+                      imageUrl: user.profileImage!,
+                      radius: 50,
+                      errorWidget: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: AppColors.primaryYellow,
+                        child: Text(
+                          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    )
+                  : CircleAvatar(
+                      radius: 50,
+                      backgroundColor: AppColors.primaryYellow,
+                      child: Text(
                         user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: AppColors.buttonText,
                         ),
-                      )
-                    : null,
-              ),
+                      ),
+                    ),
               Positioned(
                 bottom: 0,
                 right: 0,

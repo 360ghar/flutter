@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
-import '../../app/data/models/property_model.dart';
+import '../../app/data/models/property_card_model.dart';
 import '../../app/utils/app_colors.dart';
+import '../common/robust_network_image.dart';
 
 class CompactPropertyCard extends StatelessWidget {
-  final PropertyModel property;
+  final PropertyCardModel property;
   final bool isFavourite;
   final VoidCallback onFavouriteToggle;
 
@@ -32,116 +32,153 @@ class CompactPropertyCard extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min, // Prevent unbounded height
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Property Image
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: CachedNetworkImage(
-                    imageUrl: property.images.isNotEmpty ? property.images.first : '',
-                    height: 120,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
+            // Property Image with fixed height container
+            SizedBox(
+              height: 120,
+              child: Stack(
+                children: [
+                  // Main image
+                  Positioned.fill(
+                    child: RobustNetworkImage(
+                      imageUrl: property.mainImage,
                       height: 120,
                       width: double.infinity,
-                      color: AppColors.inputBackground,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.loadingIndicator,
-                          strokeWidth: 2,
+                      fit: BoxFit.cover,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      memCacheWidth: 200,
+                      memCacheHeight: 120,
+                      placeholder: Container(
+                        height: 120,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: AppColors.inputBackground,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primaryYellow,
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Loading...',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                    errorWidget: (context, url, error) => Container(
-                      height: 120,
-                      width: double.infinity,
-                      color: AppColors.inputBackground,
-                      child: Icon(
-                        Icons.home,
-                        size: 32,
-                        color: AppColors.iconColor,
+                  ),
+                  // Property type badge
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryYellow,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        property.propertyTypeString.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Favorite button
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        isFavourite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavourite ? AppColors.favoriteActive : Colors.white,
-                        size: 20,
+                  // Favorite button
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
                       ),
-                      onPressed: onFavouriteToggle,
-                      padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(),
-                    ),
-                  ),
-                ),
-                // Property type badge
-                Positioned(
-                  bottom: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryYellow,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      property.propertyType,
-                      style: TextStyle(
-                        color: AppColors.buttonText,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
+                      child: IconButton(
+                        icon: Icon(
+                          isFavourite ? Icons.favorite : Icons.favorite_border,
+                          color: isFavourite ? AppColors.favoriteActive : Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: onFavouriteToggle,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                        padding: EdgeInsets.zero,
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            // Property Details
-            Expanded(
+            
+            // Property Details Section
+            Flexible(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Price
-                    Text(
-                      '\$${property.price.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.propertyCardPrice,
-                      ),
+                    // Property title and price
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            property.title,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.propertyCardText,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          property.formattedPrice,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.propertyCardPrice,
+                          ),
+                        ),
+                      ],
                     ),
+                    
                     const SizedBox(height: 4),
-                    // Title
+                    
+                    // Location
                     Text(
-                      property.title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.propertyCardText,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    // Address
-                    Text(
-                      property.address,
+                      property.addressDisplay,
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.propertyCardSubtext,
@@ -149,15 +186,17 @@ class CompactPropertyCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
+                    
+                    const SizedBox(height: 8),
+                    
                     // Property features
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildFeature(Icons.bed, '${property.bedrooms}'),
-                        _buildFeature(Icons.bathtub_outlined, '${property.bathrooms}'),
-                        _buildFeature(Icons.square_foot, '${property.area.toInt()}'),
-                      ],
+                    Text(
+                      property.bedroomBathroomText,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.propertyFeatureText,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -168,25 +207,4 @@ class CompactPropertyCard extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildFeature(IconData icon, String value) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 14,
-          color: AppColors.propertyFeatureIcon,
-        ),
-        const SizedBox(width: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 11,
-            color: AppColors.propertyFeatureText,
-          ),
-        ),
-      ],
-    );
-  }
-} 
+}
