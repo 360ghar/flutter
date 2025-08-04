@@ -20,22 +20,12 @@ class ExploreController extends GetxController {
   final RxBool isLoadingLocation = false.obs;
   final RxBool hasLocationPermission = false.obs;
   
-  // Map markers and properties
+  // Map markers and properties - now using unified PropertyModel
   final RxList<Marker> markers = <Marker>[].obs;
   final RxList<PropertyModel> visibleProperties = <PropertyModel>[].obs;
   final RxList<PropertyModel> filteredProperties = <PropertyModel>[].obs;
   
-  // Helper to convert PropertyCardModel to PropertyModel
-  Future<PropertyModel?> _getFullPropertyModel(int propertyId) async {
-    try {
-      // Get full property details from API or repository
-      final propertyData = await _propertyController.getPropertyDetails(propertyId.toString());
-      return propertyData;
-    } catch (e) {
-      // Error logged, return null
-      return null;
-    }
-  }
+  // Note: Now using unified PropertyModel everywhere for clean, simple architecture
   
   // Search functionality
   final TextEditingController searchController = TextEditingController();
@@ -211,19 +201,10 @@ class ExploreController extends GetxController {
     final center = currentLocation.value;
     final radius = mapRadius.value;
     
-    // Convert PropertyCardModel to PropertyModel for map functionality
-    final List<PropertyModel> allProperties = [];
-    for (final propertyCard in allPropertyCards) {
-      final fullProperty = await _getFullPropertyModel(propertyCard.id);
-      if (fullProperty != null) {
-        allProperties.add(fullProperty);
-      }
-    }
-    
-    // Filter properties within radius
-    final propertiesInRadius = allProperties.where((property) {
+    // Filter properties within radius - now using unified PropertyModel
+    final propertiesInRadius = allPropertyCards.where((property) {
       // Skip properties without location data
-      if (property.latitude == null || property.longitude == null) {
+      if (!property.hasLocation) {
         return false;
       }
       
@@ -281,7 +262,7 @@ class ExploreController extends GetxController {
       // Amenities filter
       if (_propertyController.selectedAmenities.isNotEmpty) {
         final hasAllAmenities = _propertyController.selectedAmenities
-            .every((amenity) => property.amenities?.contains(amenity) ?? false);
+            .every((amenity) => property.amenitiesList.contains(amenity));
         if (!hasAllAmenities) {
           return false;
         }
@@ -359,7 +340,7 @@ class ExploreController extends GetxController {
     
     for (final property in properties) {
       // Skip properties without location data
-      if (property.latitude == null || property.longitude == null) {
+      if (!property.hasLocation) {
         continue;
       }
       
@@ -378,7 +359,7 @@ class ExploreController extends GetxController {
               border: Border.all(color: Colors.white, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -460,16 +441,13 @@ class ExploreController extends GetxController {
         for (final propertyCard in propertyCards) {
           if ((propertyCard.city?.toLowerCase() ?? "").contains(query.toLowerCase()) ||
               (propertyCard.fullAddress?.toLowerCase() ?? "").contains(query.toLowerCase())) {
-            // Get full property details
-            matchingProperty = await _getFullPropertyModel(propertyCard.id);
+            matchingProperty = propertyCard;
             break;
           }
         }
       }
       
-      if (matchingProperty != null && 
-          matchingProperty.latitude != null && 
-          matchingProperty.longitude != null) {
+      if (matchingProperty != null && matchingProperty.hasLocation) {
         final newLocation = LatLng(matchingProperty.latitude!, matchingProperty.longitude!);
         currentLocation.value = newLocation;
         

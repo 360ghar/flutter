@@ -248,13 +248,40 @@ class PropertyDetailsView extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
+                        boxShadow: AppColors.getCardShadow(),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      child: Column(
                         children: [
-                          _buildFeature(Icons.bed, '${safeProperty.bedrooms}', 'Bedrooms'),
-                          _buildFeature(Icons.bathtub_outlined, '${safeProperty.bathrooms}', 'Bathrooms'),
-                          _buildFeature(Icons.square_foot, '${safeProperty.areaSqft?.toInt() ?? 0}', 'Sq Ft'),
+                          // Primary features row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              if (safeProperty.bedrooms != null)
+                                _buildFeature(Icons.bed, '${safeProperty.bedrooms}', 'Bedrooms'),
+                              if (safeProperty.bathrooms != null)
+                                _buildFeature(Icons.bathtub_outlined, '${safeProperty.bathrooms}', 'Bathrooms'),
+                              if (safeProperty.areaSqft != null)
+                                _buildFeature(Icons.square_foot, '${safeProperty.areaSqft?.toInt()}', 'Sq Ft'),
+                            ],
+                          ),
+                          
+                          // Secondary features row
+                          if (safeProperty.balconies != null || safeProperty.parkingSpaces != null || safeProperty.floorNumber != null) ...[
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                if (safeProperty.balconies != null)
+                                  _buildFeature(Icons.balcony, '${safeProperty.balconies}', 'Balconies'),
+                                if (safeProperty.parkingSpaces != null)
+                                  _buildFeature(Icons.local_parking, '${safeProperty.parkingSpaces}', 'Parking'),
+                                if (safeProperty.floorNumber != null)
+                                  _buildFeature(Icons.layers, '${safeProperty.floorNumber}/${safeProperty.totalFloors ?? "?"}', 'Floor'),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -279,6 +306,20 @@ class PropertyDetailsView extends StatelessWidget {
                        ),
                      ),
                      const SizedBox(height: 24),
+                     
+                     // Additional Property Information
+                     _buildPropertyInfoSection(safeProperty),
+                     const SizedBox(height: 24),
+                     
+                     // Pricing Details
+                     _buildPricingSection(safeProperty),
+                     const SizedBox(height: 24),
+                     
+                     // Owner/Agent Information
+                     if (safeProperty.hasOwner || safeProperty.builderName?.isNotEmpty == true) ...[
+                       _buildContactSection(safeProperty),
+                       const SizedBox(height: 24),
+                     ],
                      
                      // Amenities
                      Text(
@@ -456,6 +497,162 @@ class PropertyDetailsView extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPropertyInfoSection(PropertyModel property) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: AppColors.getCardShadow(),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, color: AppColors.primaryYellow, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Property Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          _buildInfoRow('Status', property.statusString),
+          _buildInfoRow('Purpose', property.purposeString),
+          if (property.ageText.isNotEmpty)
+            _buildInfoRow('Age', property.ageText),
+          if (property.maxOccupancy != null)
+            _buildInfoRow('Max Occupancy', '${property.maxOccupancy} people'),
+          if (property.minimumStayDays != null)
+            _buildInfoRow('Minimum Stay', '${property.minimumStayDays} days'),
+          if (property.availableFrom?.isNotEmpty == true)
+            _buildInfoRow('Available From', property.availableFrom!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPricingSection(PropertyModel property) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: AppColors.getCardShadow(),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.payments_outlined, color: AppColors.primaryYellow, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Pricing Details',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          _buildInfoRow('Base Price', '₹${property.basePrice.toStringAsFixed(0)}'),
+          if (property.monthlyRent != null)
+            _buildInfoRow('Monthly Rent', '₹${property.monthlyRent!.toStringAsFixed(0)}'),
+          if (property.dailyRate != null)
+            _buildInfoRow('Daily Rate', '₹${property.dailyRate!.toStringAsFixed(0)}'),
+          if (property.securityDeposit != null)
+            _buildInfoRow('Security Deposit', '₹${property.securityDeposit!.toStringAsFixed(0)}'),
+          if (property.maintenanceCharges != null)
+            _buildInfoRow('Maintenance', '₹${property.maintenanceCharges!.toStringAsFixed(0)}'),
+          if (property.pricePerSqft != null)
+            _buildInfoRow('Price per Sq Ft', '₹${property.pricePerSqft!.toStringAsFixed(0)}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactSection(PropertyModel property) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: AppColors.getCardShadow(),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.contact_phone, color: AppColors.primaryYellow, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Contact Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          if (property.hasOwner) ...[
+            _buildInfoRow('Owner', property.ownerDisplayName),
+            if (property.hasOwnerContact)
+              _buildInfoRow('Contact', property.ownerContact!),
+          ],
+          if (property.builderName?.isNotEmpty == true)
+            _buildInfoRow('Builder', property.builderName!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

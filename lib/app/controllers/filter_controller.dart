@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import '../data/models/property_card_model.dart';
 import '../data/models/property_model.dart';
 import '../utils/debug_logger.dart';
 
@@ -58,7 +57,7 @@ class PropertyFilterController extends GetxController {
   }
 
   // Filter application methods
-  List<PropertyCardModel> applyFilters(List<PropertyCardModel> propertyList) {
+  List<PropertyModel> applyFilters(List<PropertyModel> propertyList) {
     DebugLogger.info('🔍 Applying filters to ${propertyList.length} properties');
     DebugLogger.info('📋 Purpose: ${selectedPurpose.value}');
     DebugLogger.info('💰 Price range: ${minPrice.value} - ${maxPrice.value}');
@@ -66,7 +65,7 @@ class PropertyFilterController extends GetxController {
     DebugLogger.info('🏠 Property type: ${propertyType.value}');
     DebugLogger.info('🔍 Search query: "${searchQuery.value}"');
     
-    List<PropertyCardModel> filteredList = propertyList;
+    List<PropertyModel> filteredList = propertyList;
     
     // Apply search query filter first
     if (searchQuery.value.isNotEmpty) {
@@ -110,7 +109,7 @@ class PropertyFilterController extends GetxController {
     return filteredList;
   }
 
-  List<PropertyCardModel> _applySearchFilter(List<PropertyCardModel> propertyList) {
+  List<PropertyModel> _applySearchFilter(List<PropertyModel> propertyList) {
     final query = searchQuery.value.toLowerCase().trim();
     return propertyList.where((property) {
       final titleMatch = property.title.toLowerCase().contains(query);
@@ -122,7 +121,7 @@ class PropertyFilterController extends GetxController {
     }).toList();
   }
 
-  bool _matchesPurpose(PropertyCardModel property) {
+  bool _matchesPurpose(PropertyModel property) {
     switch (selectedPurpose.value) {
       case 'Stay':
         // Stay properties should match the purpose or be suitable for short stays
@@ -139,21 +138,21 @@ class PropertyFilterController extends GetxController {
     }
   }
 
-  double _getAdjustedPrice(PropertyCardModel property) {
+  double _getAdjustedPrice(PropertyModel property) {
     switch (selectedPurpose.value) {
       case 'Stay':
-        // Convert property price to estimated per-night rate
-        return (property.basePrice / 365 / 100).clamp(500.0, 50000.0); // Rough estimate
+        // Use daily rate if available, otherwise estimate from base price
+        return property.dailyRate ?? (property.basePrice / 365 / 100).clamp(500.0, 50000.0);
       case 'Rent':
-        // Convert property price to estimated monthly rent
-        return (property.basePrice * 0.001).clamp(5000.0, 500000.0); // Rough 0.1% of property value per month
+        // Use monthly rent if available, otherwise estimate from base price
+        return property.monthlyRent ?? (property.basePrice * 0.001).clamp(5000.0, 500000.0);
       case 'Buy':
       default:
         return property.basePrice;
     }
   }
 
-  bool _matchesPropertyType(PropertyCardModel property) {
+  bool _matchesPropertyType(PropertyModel property) {
     final selectedType = propertyType.value;
     
     if (selectedPurpose.value == 'Stay') {

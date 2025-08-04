@@ -1,12 +1,12 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'property_card_model.dart';
+import 'property_model.dart';
 
 part 'unified_property_response.g.dart';
 
 @JsonSerializable()
 class UnifiedPropertyResponse {
-  @JsonKey(defaultValue: <PropertyCardModel>[])
-  final List<PropertyCardModel> properties;
+  @JsonKey(defaultValue: <PropertyModel>[])
+  final List<PropertyModel> properties;
   @JsonKey(defaultValue: 0)
   final int total;
   @JsonKey(defaultValue: 1)

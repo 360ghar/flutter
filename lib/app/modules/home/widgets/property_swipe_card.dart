@@ -3,13 +3,12 @@ import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../utils/webview_helper.dart';
 import '../../../data/models/property_model.dart';
-import '../../../data/models/property_card_model.dart';
 import '../../../utils/theme.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 import 'dart:math' as math;
 
 class PropertySwipeCard extends StatelessWidget {
-  final PropertyCardModel property;
+  final PropertyModel property;
   final VoidCallback? onTap;
 
   const PropertySwipeCard({
@@ -111,14 +110,34 @@ class PropertySwipeCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Price
-                              Text(
-                                property.formattedPrice,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              // Price with purpose-based display
+                              Row(
+                                children: [
+                                  Text(
+                                    property.formattedPrice,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryYellow,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      property.purposeString,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 4),
                               
@@ -156,24 +175,66 @@ class PropertySwipeCard extends StatelessWidget {
                               ),
                               const SizedBox(height: 8),
                               
-                              // Property specs
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${property.bedrooms ?? 0} bed • ${property.bathrooms ?? 0} bath • ${property.areaSqft?.toInt() ?? 0} sqft',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                              // Property specs with enhanced info
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: [
+                                  // Basic specs
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      property.bedroomBathroomText.isNotEmpty 
+                                          ? property.bedroomBathroomText 
+                                          : 'Property',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  
+                                  // Area if available
+                                  if (property.areaText.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        property.areaText,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  
+                                  // Floor info if available
+                                  if (property.floorText.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        property.floorText,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                               const SizedBox(height: 16),
                               
@@ -280,7 +341,9 @@ class PropertySwipeCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Beautiful ${property.propertyTypeString} in ${property.city ?? "prime location"}. ${property.areaSqft != null ? "Spacious ${property.areaSqft!.toInt()} sq ft area with modern amenities." : "Perfect for your needs."}',
+                          property.description?.isNotEmpty == true 
+                              ? property.description!
+                              : 'Beautiful ${property.propertyTypeString} in ${property.city ?? "prime location"}. ${property.areaSqft != null ? "Spacious ${property.areaSqft!.toInt()} sq ft area with modern amenities." : "Perfect for your needs."}',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
@@ -289,7 +352,51 @@ class PropertySwipeCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
                         
-                        // Note: Amenities not available in PropertyCardModel
+                        // Amenities section
+                        if (property.hasAmenities) ...[
+                          const Text(
+                            'Amenities',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: property.amenitiesList.take(6).map((amenity) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentBlue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: AppTheme.accentBlue.withOpacity(0.3)),
+                              ),
+                              child: Text(
+                                amenity,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.accentBlue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            )).toList(),
+                          ),
+                          if (property.amenitiesList.length > 6)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                '+${property.amenitiesList.length - 6} more amenities',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.accentBlue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+                        ],
                         
                         // Note: Additional images not available in PropertyCardModel
                         
@@ -396,12 +503,29 @@ class PropertySwipeCard extends StatelessWidget {
                               ),
                               const SizedBox(height: 12),
                               _buildDetailRow('Property Type', property.propertyTypeString),
-                              _buildDetailRow('Bedrooms', '${property.bedrooms ?? 0}'),
-                              _buildDetailRow('Bathrooms', '${property.bathrooms ?? 0}'),
-                              _buildDetailRow('Area', '${property.areaSqft?.toInt() ?? 0} sq ft'),
+                              _buildDetailRow('Purpose', property.purposeString),
+                              _buildDetailRow('Status', property.statusString),
+                              if (property.bedrooms != null)
+                                _buildDetailRow('Bedrooms', '${property.bedrooms}'),
+                              if (property.bathrooms != null)
+                                _buildDetailRow('Bathrooms', '${property.bathrooms}'),
+                              if (property.areaSqft != null)
+                                _buildDetailRow('Area', property.areaText),
+                              if (property.floorText.isNotEmpty)
+                                _buildDetailRow('Floor', property.floorText),
+                              if (property.ageText.isNotEmpty)
+                                _buildDetailRow('Age', property.ageText),
+                              if (property.parkingSpaces != null)
+                                _buildDetailRow('Parking', '${property.parkingSpaces} spaces'),
+                              if (property.balconies != null)
+                                _buildDetailRow('Balconies', '${property.balconies}'),
                               if (property.distanceKm != null)
                                 _buildDetailRow('Distance', property.distanceText),
                               _buildDetailRow('Location', property.addressDisplay),
+                              if (property.hasOwner)
+                                _buildDetailRow('Owner', property.ownerDisplayName),
+                              if (property.builderName?.isNotEmpty == true)
+                                _buildDetailRow('Builder', property.builderName!),
                             ],
                           ),
                         ),
@@ -511,10 +635,10 @@ class PropertySwipeCard extends StatelessWidget {
 }
 
 class PropertySwipeStack extends StatefulWidget {
-  final List<PropertyCardModel> properties;
-  final Function(PropertyCardModel) onSwipeLeft;
-  final Function(PropertyCardModel) onSwipeRight;
-  final Function(PropertyCardModel) onSwipeUp;
+  final List<PropertyModel> properties;
+  final Function(PropertyModel) onSwipeLeft;
+  final Function(PropertyModel) onSwipeRight;
+  final Function(PropertyModel) onSwipeUp;
 
   const PropertySwipeStack({
     super.key,
@@ -530,7 +654,7 @@ class PropertySwipeStack extends StatefulWidget {
 
 class _PropertySwipeStackState extends State<PropertySwipeStack>
     with TickerProviderStateMixin {
-  late List<PropertyCardModel> _properties;
+  late List<PropertyModel> _properties;
   late AnimationController _swipeAnimationController;
   late AnimationController _sparklesAnimationController;
   late Animation<double> _swipeAnimation;

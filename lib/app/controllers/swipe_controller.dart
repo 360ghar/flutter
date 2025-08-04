@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import '../data/models/property_model.dart';
-import '../data/models/property_card_model.dart';
 import '../data/providers/api_service.dart';
 import '../utils/debug_logger.dart';
 import '../utils/reactive_state_monitor.dart';
@@ -12,7 +11,7 @@ class SwipeController extends GetxController {
   late final ApiService _apiService;
   late final AuthController _authController;
   
-  final RxList<PropertyCardModel> currentStack = <PropertyCardModel>[].obs;
+  final RxList<PropertyModel> currentStack = <PropertyModel>[].obs;
   final RxInt currentIndex = 0.obs;
   final RxBool isLoading = false.obs;
   final RxBool canUndo = false.obs;
@@ -118,19 +117,19 @@ class SwipeController extends GetxController {
     return DateTime.now().difference(_cardViewStartTime!).inSeconds;
   }
 
-  Future<void> swipeLeft(PropertyCardModel property) async {
+  Future<void> swipeLeft(PropertyModel property) async {
     DebugLogger.info('👈 Swiping left on property: ${property.id} (${property.title})');
     await _recordSwipe(property, false, 'left');
     _nextProperty();
   }
 
-  Future<void> swipeRight(PropertyCardModel property) async {
+  Future<void> swipeRight(PropertyModel property) async {
     DebugLogger.info('👉 Swiping right on property: ${property.id} (${property.title})');
     await _recordSwipe(property, true, 'right');
     _nextProperty();
   }
 
-  Future<void> swipeUp(PropertyCardModel property) async {
+  Future<void> swipeUp(PropertyModel property) async {
     DebugLogger.info('👆 Swiping up on property: ${property.id} (${property.title})');
     // Navigate to property details
     Get.toNamed('/property-details', arguments: property);
@@ -145,7 +144,7 @@ class SwipeController extends GetxController {
     }
   }
 
-  Future<void> _recordSwipe(PropertyCardModel property, bool isLiked, String direction) async {
+  Future<void> _recordSwipe(PropertyModel property, bool isLiked, String direction) async {
     try {
       final interactionTime = _getInteractionTime();
       
@@ -322,8 +321,8 @@ class SwipeController extends GetxController {
     await _loadSwipeStats();
   }
 
-  List<PropertyCardModel> get visibleCards {
-    final List<PropertyCardModel> cards = [];
+  List<PropertyModel> get visibleCards {
+    final List<PropertyModel> cards = [];
     for (int i = currentIndex.value; i < currentIndex.value + 3 && i < currentStack.length; i++) {
       cards.add(currentStack[i]);
     }
@@ -340,7 +339,7 @@ class SwipeController extends GetxController {
     _loadInitialStack();
   }
 
-  List<PropertyCardModel> _applyFilters(List<PropertyCardModel> properties) {
+  List<PropertyModel> _applyFilters(List<PropertyModel> properties) {
     return properties.where((property) {
       // Purpose filter
       if (!_matchesPurpose(property)) {
@@ -375,7 +374,7 @@ class SwipeController extends GetxController {
     }).toList();
   }
 
-  bool _matchesPurpose(PropertyCardModel property) {
+  bool _matchesPurpose(PropertyModel property) {
     switch (_propertyController.selectedPurpose) {
       case 'Stay':
         return property.purpose == PropertyPurpose.shortStay ||
@@ -389,7 +388,7 @@ class SwipeController extends GetxController {
     }
   }
 
-  double _getAdjustedPrice(PropertyCardModel property) {
+  double _getAdjustedPrice(PropertyModel property) {
     switch (_propertyController.selectedPurpose) {
       case 'Stay':
         return property.basePrice / 30; // Daily rate approximation
@@ -401,7 +400,7 @@ class SwipeController extends GetxController {
     }
   }
 
-  bool _matchesPropertyType(PropertyCardModel property) {
+  bool _matchesPropertyType(PropertyModel property) {
     final selectedType = _propertyController.propertyType;
     
     if (_propertyController.selectedPurpose == 'Stay') {
@@ -423,7 +422,7 @@ class SwipeController extends GetxController {
 
   // Getters for UI
   bool get hasMoreCards => currentIndex.value < currentStack.length;
-  PropertyCardModel? get currentCard => hasMoreCards ? currentStack[currentIndex.value] : null;
+  PropertyModel? get currentCard => hasMoreCards ? currentStack[currentIndex.value] : null;
   int get remainingCards => currentStack.length - currentIndex.value;
   int get totalSwipesInSession => _totalSwipes;
   
@@ -433,26 +432,4 @@ class SwipeController extends GetxController {
   int get totalSwipes => swipeStats['total_swipes'] ?? 0;
   double get likeRate => totalSwipes > 0 ? (totalLikes / totalSwipes) * 100 : 0.0;
 
-  // Helper method to convert PropertyModel to PropertyCardModel
-  PropertyCardModel _convertToPropertyCard(PropertyModel property) {
-    return PropertyCardModel(
-      id: int.tryParse(property.id.toString()) ?? 0,
-      title: property.title,
-      propertyType: property.propertyType,
-      purpose: property.purpose,
-      basePrice: property.basePrice,
-      areaSqft: property.areaSqft,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      mainImageUrl: property.images?.isNotEmpty == true ? property.images!.first.imageUrl : null,
-      virtualTourUrl: property.virtualTourUrl,
-      city: property.city,
-      state: property.state,
-      locality: property.locality,
-      pincode: property.pincode,
-      fullAddress: property.fullAddress,
-      distanceKm: null, // Will be calculated based on user location if needed
-      likeCount: 0, // Default value
-    );
-  }
 } 

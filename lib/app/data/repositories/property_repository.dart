@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import '../providers/api_provider.dart';
 import '../models/property_model.dart';
-import '../models/property_card_model.dart';
 import '../../utils/debug_logger.dart';
 
 class PropertyRepository extends GetxService {
@@ -9,7 +8,7 @@ class PropertyRepository extends GetxService {
 
   PropertyRepository(this._apiProvider);
 
-  Future<List<PropertyCardModel>> getProperties() async {
+  Future<List<PropertyModel>> getProperties() async {
     try {
       DebugLogger.info('🔍 Fetching properties from API provider');
       final properties = await _apiProvider.getProperties();
@@ -33,7 +32,7 @@ class PropertyRepository extends GetxService {
     }
   }
 
-  Future<List<PropertyCardModel>> getFavouriteProperties() async {
+  Future<List<PropertyModel>> getFavouriteProperties() async {
     try {
       DebugLogger.info('🔍 Fetching favourite properties');
       final favourites = await _apiProvider.getFavouriteProperties();
@@ -67,7 +66,7 @@ class PropertyRepository extends GetxService {
     }
   }
 
-  Future<List<PropertyCardModel>> getPassedProperties() async {
+  Future<List<PropertyModel>> getPassedProperties() async {
     try {
       DebugLogger.info('🔍 Fetching passed properties');
       final passed = await _apiProvider.getPassedProperties();

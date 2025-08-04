@@ -291,4 +291,89 @@ class PropertyModel {
     return mainImageUrl != null ? [mainImageUrl!] : [];
   }
 
+  // Location convenience methods
+  bool get hasLocation => latitude != null && longitude != null;
+  
+  // Amenities convenience methods
+  bool get hasAmenities => amenities?.isNotEmpty == true;
+  List<String> get amenitiesList => amenities ?? [];
+  
+  // Virtual tour convenience methods
+  bool get hasVirtualTour => virtualTourUrl?.isNotEmpty == true;
+  
+  // Agent/Owner convenience methods
+  bool get hasOwner => ownerName?.isNotEmpty == true;
+  String get ownerDisplayName => ownerName ?? 'Property Owner';
+  bool get hasOwnerContact => ownerContact?.isNotEmpty == true;
+  
+  // Property details convenience methods
+  String get bedroomBathroomText {
+    if (bedrooms != null && bathrooms != null) {
+      return '${bedrooms}BHK, ${bathrooms} Bath';
+    } else if (bedrooms != null) {
+      return '${bedrooms}BHK';
+    } else if (bathrooms != null) {
+      return '${bathrooms} Bath';
+    }
+    return '';
+  }
+
+  String get areaText {
+    if (areaSqft != null) {
+      return '${areaSqft!.toStringAsFixed(0)} sq ft';
+    }
+    return '';
+  }
+
+  String get distanceText {
+    if (distanceKm != null) {
+      if (distanceKm! < 1) {
+        return '${(distanceKm! * 1000).toStringAsFixed(0)}m away';
+      } else {
+        return '${distanceKm!.toStringAsFixed(1)}km away';
+      }
+    }
+    return '';
+  }
+
+  // Get a fallback description for error widgets
+  String get imageDescription {
+    return '${propertyTypeString} in ${city ?? 'Unknown Location'}';
+  }
+  
+  // Get initials for fallback display
+  String get titleInitials {
+    final words = title.split(' ');
+    if (words.length >= 2) {
+      return '${words[0][0]}${words[1][0]}'.toUpperCase();
+    } else if (words.isNotEmpty) {
+      return words[0].substring(0, 1).toUpperCase();
+    }
+    return 'P';
+  }
+
+  // Floor information
+  String get floorText {
+    if (floorNumber != null && totalFloors != null) {
+      return 'Floor ${floorNumber}/${totalFloors}';
+    } else if (floorNumber != null) {
+      return 'Floor ${floorNumber}';
+    }
+    return '';
+  }
+
+  // Age information
+  String get ageText {
+    if (ageOfProperty != null) {
+      if (ageOfProperty! == 0) {
+        return 'New Construction';
+      } else if (ageOfProperty! == 1) {
+        return '1 year old';
+      } else {
+        return '${ageOfProperty} years old';
+      }
+    }
+    return '';
+  }
+
 } 

@@ -10,8 +10,7 @@ UnifiedPropertyResponse _$UnifiedPropertyResponseFromJson(
         Map<String, dynamic> json) =>
     UnifiedPropertyResponse(
       properties: (json['properties'] as List<dynamic>?)
-              ?.map(
-                  (e) => PropertyCardModel.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => PropertyModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       total: (json['total'] as num?)?.toInt() ?? 0,

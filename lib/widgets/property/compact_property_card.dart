@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../app/data/models/property_card_model.dart';
+import '../../app/data/models/property_model.dart';
 import '../../app/utils/app_colors.dart';
 import '../common/robust_network_image.dart';
 
 class CompactPropertyCard extends StatelessWidget {
-  final PropertyCardModel property;
+  final PropertyModel property;
   final bool isFavourite;
   final VoidCallback onFavouriteToggle;
 
@@ -189,15 +189,90 @@ class CompactPropertyCard extends StatelessWidget {
                     
                     const SizedBox(height: 8),
                     
-                    // Property features
-                    Text(
-                      property.bedroomBathroomText,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.propertyFeatureText,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    // Property features row
+                    Row(
+                      children: [
+                        // Bedrooms/Bathrooms
+                        if (property.bedroomBathroomText.isNotEmpty) ...[
+                          Icon(
+                            Icons.bed_outlined,
+                            size: 14,
+                            color: AppColors.propertyFeatureText,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            property.bedroomBathroomText,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.propertyFeatureText,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                        
+                        // Area
+                        if (property.areaText.isNotEmpty) ...[
+                          const SizedBox(width: 12),
+                          Icon(
+                            Icons.square_foot,
+                            size: 14,
+                            color: AppColors.propertyFeatureText,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            property.areaText,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.propertyFeatureText,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
+                    
+                    // Additional features row (floor, age, etc.)
+                    if (property.floorText.isNotEmpty || property.ageText.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          // Floor information
+                          if (property.floorText.isNotEmpty) ...[
+                            Icon(
+                              Icons.layers_outlined,
+                              size: 14,
+                              color: AppColors.propertyFeatureText,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              property.floorText,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.propertyFeatureText,
+                              ),
+                            ),
+                          ],
+                          
+                          // Age information
+                          if (property.ageText.isNotEmpty) ...[
+                            const SizedBox(width: 12),
+                            Icon(
+                              Icons.access_time_outlined,
+                              size: 14,
+                              color: AppColors.propertyFeatureText,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              property.ageText,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.propertyFeatureText,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import '../data/models/property_model.dart';
-import '../data/models/property_card_model.dart';
 import '../data/repositories/property_repository.dart';
 import '../data/providers/api_service.dart';
 import 'auth_controller.dart';
@@ -19,12 +18,12 @@ class PropertyController extends GetxController {
   late final PropertyFilterController _filterController;
   late final AnalyticsController _analyticsController;
   
-  final RxList<PropertyCardModel> properties = <PropertyCardModel>[].obs;
-  final RxList<PropertyCardModel> discoverProperties = <PropertyCardModel>[].obs;
-  final RxList<PropertyCardModel> nearbyProperties = <PropertyCardModel>[].obs;
-  final RxList<PropertyCardModel> recommendedProperties = <PropertyCardModel>[].obs;
-  final RxList<PropertyCardModel> favouriteProperties = <PropertyCardModel>[].obs;
-  final RxList<PropertyCardModel> passedProperties = <PropertyCardModel>[].obs;
+  final RxList<PropertyModel> properties = <PropertyModel>[].obs;
+  final RxList<PropertyModel> discoverProperties = <PropertyModel>[].obs;
+  final RxList<PropertyModel> nearbyProperties = <PropertyModel>[].obs;
+  final RxList<PropertyModel> recommendedProperties = <PropertyModel>[].obs;
+  final RxList<PropertyModel> favouriteProperties = <PropertyModel>[].obs;
+  final RxList<PropertyModel> passedProperties = <PropertyModel>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isLoadingDiscover = false.obs;
   final RxBool isLoadingNearby = false.obs;
@@ -647,7 +646,7 @@ class PropertyController extends GetxController {
     return passedProperties.any((property) => property.id.toString() == id);
   }
 
-  PropertyCardModel? getPropertyCardById(dynamic id) {
+  PropertyModel? getPropertyById(dynamic id) {
     try {
       final idString = id.toString();
       return properties.firstWhere((property) => property.id.toString() == idString);
@@ -656,44 +655,16 @@ class PropertyController extends GetxController {
     }
   }
 
-  // Filter methods - now using FilterController
-  List<PropertyCardModel> getFilteredFavourites() {
+  // Filter methods - now using FilterController with unified PropertyModel
+  List<PropertyModel> getFilteredFavourites() {
     DebugLogger.info('🔍 Filtering ${favouriteProperties.length} favourite properties');
     final filtered = _filterController.applyFilters(favouriteProperties);
     DebugLogger.info('✅ After filtering: ${filtered.length} properties');
     return filtered;
   }
 
-  List<PropertyCardModel> getFilteredPassed() {
+  List<PropertyModel> getFilteredPassed() {
     return _filterController.applyFilters(passedProperties);
-  }
-
-  // Deprecated: Use FilterController.applyFilters instead
-  List<PropertyCardModel> _applyCardFilters(List<PropertyCardModel> propertyList) {
-    return _filterController.applyFilters(propertyList);
-  }
-
-  // Helper method to convert PropertyModel to PropertyCardModel
-  PropertyCardModel _convertToPropertyCard(PropertyModel property) {
-    return PropertyCardModel(
-      id: int.tryParse(property.id.toString()) ?? 0,
-      title: property.title,
-      propertyType: property.propertyType,
-      purpose: property.purpose,
-      basePrice: property.basePrice,
-      areaSqft: property.areaSqft,
-      bedrooms: property.bedrooms,
-      bathrooms: property.bathrooms,
-      mainImageUrl: property.images?.isNotEmpty == true ? property.images!.first.imageUrl : null,
-      virtualTourUrl: property.virtualTourUrl,
-      city: property.city,
-      state: property.state,
-      locality: property.locality,
-      pincode: property.pincode,
-      fullAddress: property.fullAddress,
-      distanceKm: null, // Will be calculated based on user location if needed
-      likeCount: 0, // Default value
-    );
   }
 
   // Deprecated filter helper methods - now delegated to FilterController

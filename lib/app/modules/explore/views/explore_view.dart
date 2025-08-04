@@ -375,15 +375,15 @@ class ExploreView extends GetView<ExploreController> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: controller.selectedPropertyId.value == property.id
+          color: controller.selectedPropertyId.value == property.id.toString()
               ? AppColors.primaryYellow.withValues(alpha: 0.1)
               : AppColors.propertyCardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: controller.selectedPropertyId.value == property.id
+            color: controller.selectedPropertyId.value == property.id.toString()
                 ? AppColors.primaryYellow
                 : AppColors.border,
-            width: controller.selectedPropertyId.value == property.id ? 2 : 1,
+            width: controller.selectedPropertyId.value == property.id.toString() ? 2 : 1,
           ),
         ),
         child: Padding(
@@ -437,20 +437,45 @@ class ExploreView extends GetView<ExploreController> {
                     
                     const SizedBox(height: 8),
                     
+                    // Property specs - first row
                     Row(
                       children: [
-                        _buildPropertySpec(Icons.bed, '${property.bedrooms}'),
-                        const SizedBox(width: 12),
-                        _buildPropertySpec(Icons.bathtub, '${property.bathrooms}'),
-                        const SizedBox(width: 12),
-                        _buildPropertySpec(Icons.square_foot, '${property.areaSqft?.toInt() ?? 0}'),
+                        if (property.bedrooms != null)
+                          _buildPropertySpec(Icons.bed, '${property.bedrooms}'),
+                        if (property.bedrooms != null && property.bathrooms != null)
+                          const SizedBox(width: 12),
+                        if (property.bathrooms != null)
+                          _buildPropertySpec(Icons.bathtub, '${property.bathrooms}'),
+                        if ((property.bedrooms != null || property.bathrooms != null) && property.areaSqft != null)
+                          const SizedBox(width: 12),
+                        if (property.areaSqft != null)
+                          _buildPropertySpec(Icons.square_foot, '${property.areaSqft?.toInt()}'),
                       ],
                     ),
+                    
+                    // Additional specs - second row if available
+                    if (property.floorNumber != null || property.parkingSpaces != null || property.ageOfProperty != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (property.floorNumber != null)
+                            _buildPropertySpec(Icons.layers, 'Floor ${property.floorNumber}'),
+                          if (property.floorNumber != null && property.parkingSpaces != null)
+                            const SizedBox(width: 12),
+                          if (property.parkingSpaces != null)
+                            _buildPropertySpec(Icons.local_parking, '${property.parkingSpaces}P'),
+                          if ((property.floorNumber != null || property.parkingSpaces != null) && property.ageOfProperty != null)
+                            const SizedBox(width: 12),
+                          if (property.ageOfProperty != null && property.ageOfProperty! <= 5)
+                            _buildPropertySpec(Icons.new_releases, property.ageOfProperty == 0 ? 'New' : '${property.ageOfProperty}y'),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
               
-              // Price
+              // Price and Status
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -462,7 +487,23 @@ class ExploreView extends GetView<ExploreController> {
                       color: AppColors.propertyCardPrice,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryYellow.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      property.purposeString,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryYellow.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
                   Text(
                     property.propertyTypeString,
                     style: TextStyle(
@@ -470,6 +511,28 @@ class ExploreView extends GetView<ExploreController> {
                       color: AppColors.propertyCardSubtext,
                     ),
                   ),
+                  // Status indicator
+                  if (property.status != PropertyStatus.available)
+                    Container(
+                      margin: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: property.status == PropertyStatus.sold 
+                            ? Colors.red.withValues(alpha: 0.1)
+                            : Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        property.statusString,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w500,
+                          color: property.status == PropertyStatus.sold 
+                              ? Colors.red
+                              : Colors.orange,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ],

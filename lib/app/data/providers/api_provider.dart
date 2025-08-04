@@ -1,17 +1,16 @@
 import 'package:get/get.dart';
 import '../models/property_model.dart';
-import '../models/property_card_model.dart';
 import '../models/user_model.dart';
 import 'api_service.dart';
 import '../../utils/debug_logger.dart';
 
 abstract class IApiProvider {
-  Future<List<PropertyCardModel>> getProperties();
+  Future<List<PropertyModel>> getProperties();
   Future<PropertyModel> getPropertyById(String id);
-  Future<List<PropertyCardModel>> getFavouriteProperties();
+  Future<List<PropertyModel>> getFavouriteProperties();
   Future<void> addToFavourites(String propertyId);
   Future<void> removeFromFavourites(String propertyId);
-  Future<List<PropertyCardModel>> getPassedProperties();
+  Future<List<PropertyModel>> getPassedProperties();
   Future<void> addToPassedProperties(String propertyId);
   Future<void> removeFromPassedProperties(String propertyId);
   Future<UserModel> getUserProfile();
@@ -41,7 +40,7 @@ class RealApiProvider extends GetxService implements IApiProvider {
   }
 
   @override
-  Future<List<PropertyCardModel>> getProperties() async {
+  Future<List<PropertyModel>> getProperties() async {
     try {
       DebugLogger.api('📋 Fetching properties from backend...');
       final response = await _apiService.discoverProperties(
@@ -72,7 +71,7 @@ class RealApiProvider extends GetxService implements IApiProvider {
   }
 
   @override
-  Future<List<PropertyCardModel>> getFavouriteProperties() async {
+  Future<List<PropertyModel>> getFavouriteProperties() async {
     try {
       DebugLogger.api('❤️ Fetching liked properties from backend...');
       final properties = await _apiService.getLikedProperties();
@@ -118,7 +117,7 @@ class RealApiProvider extends GetxService implements IApiProvider {
   }
 
   @override
-  Future<List<PropertyCardModel>> getPassedProperties() async {
+  Future<List<PropertyModel>> getPassedProperties() async {
     try {
       DebugLogger.api('🔄 Fetching passed properties from backend...');
       final swipeHistory = await _apiService.getSwipeHistory();

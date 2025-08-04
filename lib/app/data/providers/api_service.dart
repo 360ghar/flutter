@@ -7,7 +7,6 @@ import '../models/property_model.dart';
 import '../models/user_model.dart';
 import '../models/visit_model.dart';
 import '../models/booking_model.dart';
-import '../models/property_card_model.dart';
 import '../models/unified_property_response.dart';
 import '../models/analytics_models.dart';
 import '../../utils/debug_logger.dart';
@@ -492,7 +491,7 @@ class ApiService extends getx.GetConnect {
           if (propertyData is Map<String, dynamic>) {
             try {
               // Test parsing each property individually
-              _validatePropertyCardJson(propertyData);
+              _validatePropertyJson(propertyData);
               validProperties.add(propertyData);
             } catch (e) {
               failedCount++;
@@ -521,38 +520,6 @@ class ApiService extends getx.GetConnect {
     }
   }
   
-  // Validate property card JSON before parsing
-  static void _validatePropertyCardJson(Map<String, dynamic> json) {
-    final requiredFields = ['id', 'title', 'property_type', 'purpose'];
-    final missingFields = <String>[];
-    
-    for (final field in requiredFields) {
-      if (json[field] == null) {
-        missingFields.add(field);
-      }
-    }
-    
-    if (missingFields.isNotEmpty) {
-      throw Exception('Missing required fields: ${missingFields.join(', ')}');
-    }
-    
-    // Validate enum values - use backend format with snake_case
-    if (json['property_type'] != null && json['property_type'] is String) {
-      final validTypes = ['house', 'apartment', 'builder_floor', 'room'];
-      if (!validTypes.contains(json['property_type'])) {
-        DebugLogger.warning('⚠️ Invalid property_type: ${json['property_type']}, setting to apartment');
-        json['property_type'] = 'apartment';
-      }
-    }
-    
-    if (json['purpose'] != null && json['purpose'] is String) {
-      final validPurposes = ['buy', 'rent', 'short_stay'];
-      if (!validPurposes.contains(json['purpose'])) {
-        DebugLogger.warning('⚠️ Invalid purpose: ${json['purpose']}, setting to buy');
-        json['purpose'] = 'buy';
-      }
-    }
-  }
 
   // Authentication Methods
   Future<AuthResponse> signUp(String email, String password, {
@@ -655,14 +622,14 @@ class ApiService extends getx.GetConnect {
     );
   }
 
-  Future<List<PropertyCardModel>> getLikedProperties() async {
+  Future<List<PropertyModel>> getLikedProperties() async {
     return await _makeRequest(
       '/users/liked-properties',
       (json) {
         final propertiesData = json['data'] ?? json;
         
         if (propertiesData is List) {
-          return propertiesData.map((item) => PropertyCardModel.fromJson(item)).toList();
+          return propertiesData.map((item) => _parsePropertyModel(item)).toList();
         } else {
           throw Exception('Expected list of properties but got: ${propertiesData.runtimeType}');
         }
@@ -671,14 +638,14 @@ class ApiService extends getx.GetConnect {
     );
   }
   
-  Future<List<PropertyCardModel>> getDislikedProperties() async {
+  Future<List<PropertyModel>> getDislikedProperties() async {
     return await _makeRequest(
       '/users/disliked-properties',
       (json) {
         final propertiesData = json['data'] ?? json;
         
         if (propertiesData is List) {
-          return propertiesData.map((item) => PropertyCardModel.fromJson(item)).toList();
+          return propertiesData.map((item) => _parsePropertyModel(item)).toList();
         } else {
           throw Exception('Expected list of properties but got: ${propertiesData.runtimeType}');
         }
@@ -779,14 +746,14 @@ class ApiService extends getx.GetConnect {
     );
   }
 
-  Future<List<PropertyCardModel>> getPropertyRecommendations({int limit = 10}) async {
+  Future<List<PropertyModel>> getPropertyRecommendations({int limit = 10}) async {
     return await _makeRequest(
       '/properties/recommendations',
       (json) {
         final propertiesData = json['data'] ?? json;
         
         if (propertiesData is List) {
-          return propertiesData.map((item) => PropertyCardModel.fromJson(item)).toList();
+          return propertiesData.map((item) => _parsePropertyModel(item)).toList();
         } else {
           throw Exception('Expected list of properties but got: ${propertiesData.runtimeType}');
         }
