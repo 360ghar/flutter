@@ -47,13 +47,3 @@ logs/
 dist/
 out/
 
-# Flutter assets and app structure
-assets/
-assets/images/
-assets/icons/
-assets/fonts/
-assets/mock_api/
-lib/
-test/
-web/
-# End of Selection

@@ -1,0 +1,33 @@
+---
+globs: lib/app/**/*.dart
+description: GetX architecture conventions for controllers, bindings, SafeGetView, and routing via app_pages/app_routes.
+---
+
+## GetX Architecture & Routing
+
+- **Controllers**
+  - Use `GetxController` for feature logic; keep UI in Views. Initialize work in `onInit`, clean up in `onClose`.
+  - Prefer dependency injection through bindings instead of `Get.put` in widgets.
+- **Views**
+  - Extend `SafeGetView<T>` from [lib/app/widgets/safe_get_view.dart](mdc:lib/app/widgets/safe_get_view.dart) for typed controller access and safety.
+- **Bindings**
+  - One binding per module: `lib/app/modules/<feature>/bindings/<feature>_binding.dart`.
+  - Register controllers/services with `Get.lazyPut(() => Controller())`.
+- **Routes**
+  - Define route names in [lib/app/routes/app_routes.dart](mdc:lib/app/routes/app_routes.dart).
+  - Register pages in [lib/app/routes/app_pages.dart](mdc:lib/app/routes/app_pages.dart) using `GetPage` and attach bindings.
+  - Apply guards with [lib/app/middlewares/auth_middleware.dart](mdc:lib/app/middlewares/auth_middleware.dart) where needed.
+- **Navigation**
+  - Navigate with `Get.toNamed(Routes.propertyDetails, arguments: property)`; pop with `Get.back()`.
+- **Module structure**
+  - Place feature code under `lib/app/modules/<feature>/{views,controllers,bindings,widgets}`.
+
+Example: route registration
+```dart
+GetPage(
+  name: Routes.home,
+  page: () => const HomeView(),
+  binding: HomeBinding(),
+  middlewares: [AuthMiddleware()],
+)
+```

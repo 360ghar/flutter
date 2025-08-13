@@ -1,0 +1,51 @@
+---
+globs: *.dart
+description: Dart + GetX code style, naming, control flow, comments, formatting. Prefer AppTheme/AppColors and use GetX reactivity & localization.
+---
+
+## Dart and GetX Code Style
+
+- **Naming**
+  - Classes/types: PascalCase. Variables, methods, params: camelCase. Constants: lowerCamelCase unless part of enums.
+  - Prefer meaningful, verbose names over abbreviations.
+- **Types**
+  - Annotate public APIs and exports. Avoid dynamic/any.
+  - Avoid force casts; handle nullability explicitly.
+- **Control flow**
+  - Use guard clauses; avoid deep nesting. Handle errors/edge cases first.
+- **Comments**
+  - Write concise doc comments for non-trivial functions/classes; explain "why" not "how".
+- **Formatting**
+  - Match existing style. Prefer multi-line for readability. Do not reformat unrelated code.
+- **State management (GetX)**
+  - Use `.obs` for reactive state; prefer `GetxController` over StatefulWidget for complex state.
+  - Expose immutable getters for external read; mutate only inside controller methods.
+- **Theme & colors**
+  - Do not hardcode `Colors.*`. Use `AppTheme`/`AppColors` from [lib/app/utils/theme.dart](mdc:lib/app/utils/theme.dart) and [lib/app/utils/app_colors.dart](mdc:lib/app/utils/app_colors.dart).
+  - Use typography from `AppTheme` (e.g., `AppTheme.headlineLarge`).
+- **Strings & i18n**
+  - No hardcoded user-facing strings. Add keys in [lib/app/translations/app_translations.dart](mdc:lib/app/translations/app_translations.dart) and use `'key'.tr`.
+- **Async & errors**
+  - Wrap async calls in try/catch. Map errors via [lib/app/utils/error_mapper.dart](mdc:lib/app/utils/error_mapper.dart) and handle with [lib/app/utils/error_handler.dart](mdc:lib/app/utils/error_handler.dart).
+  - Log with [lib/app/utils/debug_logger.dart](mdc:lib/app/utils/debug_logger.dart).
+- **Lints**
+  - Follow [analysis_options.yaml](mdc:analysis_options.yaml). Fix lints in files you touch.
+
+Short example
+```dart
+class ExampleController extends GetxController {
+  final RxBool isLoading = false.obs;
+
+  Future<void> load() async {
+    isLoading.value = true;
+    try {
+      // ... work
+    } catch (error, stackTrace) {
+      ErrorHandler.handle(ErrorMapper.map(error));
+      DebugLogger.error('load failed', error, stackTrace);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+}
+```

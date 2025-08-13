@@ -1,0 +1,18 @@
+---
+globs: lib/app/translations/**/*.dart,lib/**/*.dart
+description: Internationalization rules. Use translation keys with .tr; avoid hardcoded user-facing strings.
+---
+
+## i18n & Copy
+
+- **No hardcoded strings**
+  - Add keys and translations to [lib/app/translations/app_translations.dart](mdc:lib/app/translations/app_translations.dart).
+  - Use `'key'.tr` in widgets/controllers.
+- **Keys**
+  - Namespaced by feature: `home.title`, `favourites.empty`, `visits.scheduleCta`.
+- **Placeholders**
+  - Prefer positional/Named params where needed: `'greeting_name'.trParams({'name': userName})`.
+- **Languages**
+  - Keep English complete; add others incrementally.
+- **Testing**
+  - Temporarily switch locale to catch missing keys; avoid string concatenation in UI.

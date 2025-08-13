@@ -1,0 +1,36 @@
+---
+globs: lib/app/data/**/*.dart
+description: Data layer conventions for models, repositories, providers, API client/service, error handling and logging.
+---
+
+## Data Layer & Networking
+
+- **Models**
+  - Define in `lib/app/data/models`. Keep JSON serialization consistent.
+  - If both legacy and new versions exist (e.g., `unified_property_response.dart` and `unified_property_response_new.dart`), prefer the `*_new.dart` variants.
+- **Repositories**
+  - Encapsulate data access in `lib/app/data/repositories/` (e.g., `properties_repository.dart`, `swipes_repository.dart`).
+  - Repositories call services/providers and map results to domain models.
+- **Providers/Services**
+  - Use [lib/app/data/providers/api_client.dart](mdc:lib/app/data/providers/api_client.dart) for low-level HTTP with interceptors and base config.
+  - Implement endpoint logic in [lib/app/data/providers/api_service.dart](mdc:lib/app/data/providers/api_service.dart) or [lib/app/data/providers/api_provider.dart](mdc:lib/app/data/providers/api_provider.dart) as appropriate.
+- **Error handling**
+  - Map raw errors via [lib/app/utils/error_mapper.dart](mdc:lib/app/utils/error_mapper.dart); handle/present via [lib/app/utils/error_handler.dart](mdc:lib/app/utils/error_handler.dart).
+- **Logging**
+  - Use [lib/app/utils/debug_logger.dart](mdc:lib/app/utils/debug_logger.dart) for network lifecycle logs and diagnostics.
+- **Threading**
+  - Keep network calls async; avoid heavy work on UI thread. Consider pagination/lazy loading for lists.
+
+Typical repository method
+```dart
+Future<List<PropertyModel>> fetchRecommended() async {
+  try {
+    final response = await apiService.getRecommendedProperties();
+    return response.properties;
+  } catch (error, stack) {
+    ErrorHandler.handle(ErrorMapper.map(error));
+    DebugLogger.error('fetchRecommended failed', error, stack);
+    rethrow;
+  }
+}
+```
