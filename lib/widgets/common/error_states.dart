@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../app/utils/app_exceptions.dart';
-import '../../app/utils/error_mapper.dart';
+import '../../core/utils/app_exceptions.dart';
+import '../../core/utils/error_mapper.dart';
 
 class ErrorStates {
   // Generic error widget with retry functionality

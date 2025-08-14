@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../app/utils/app_colors.dart';
+import '../../core/utils/app_colors.dart';
 
 class PaginatedListView<T> extends StatefulWidget {
   final List<T> items;

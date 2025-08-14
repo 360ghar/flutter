@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../app/data/models/property_model.dart';
-import '../../app/utils/app_colors.dart';
+import '../../core/data/models/property_model.dart';
+import '../../core/utils/app_colors.dart';
 import '../common/robust_network_image.dart';
 
 class CompactPropertyCard extends StatelessWidget {

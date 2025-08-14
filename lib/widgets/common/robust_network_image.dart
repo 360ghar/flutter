@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_network/image_network.dart';
-import '../../app/utils/app_colors.dart';
+import '../../core/utils/app_colors.dart';
 
 class ImageLoadingService {
   static bool isValidUrl(String url) {

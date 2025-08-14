@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../app/utils/app_colors.dart';
-import '../../app/controllers/property_controller.dart';
-import '../../app/controllers/filter_controller.dart';
-import '../../app/utils/controller_helper.dart';
+import '../../core/utils/app_colors.dart';
+import '../../features/property_details/controllers/property_controller.dart';
+import '../../features/filters/controllers/filter_controller.dart';
+import '../../core/utils/controller_helper.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'

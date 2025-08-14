@@ -4,15 +4,15 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'app/utils/webview_helper.dart';
-import 'app/routes/app_pages.dart';
-import 'app/routes/app_routes.dart';
-import 'app/utils/theme.dart';
-import 'app/bindings/initial_binding.dart';
-import 'app/controllers/theme_controller.dart';
-import 'app/controllers/localization_controller.dart';
-import 'app/translations/app_translations.dart';
-import 'app/utils/debug_logger.dart';
+import 'core/utils/webview_helper.dart';
+import 'core/routes/app_pages.dart';
+import 'core/routes/app_routes.dart';
+import 'core/utils/theme.dart';
+import 'core/bindings/initial_binding.dart';
+import 'core/controllers/theme_controller.dart';
+import 'core/controllers/localization_controller.dart';
+import 'core/translations/app_translations.dart';
+import 'core/utils/debug_logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

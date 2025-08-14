@@ -1,0 +1,1 @@
+export '../../discover/widgets/property_card.dart'; 
