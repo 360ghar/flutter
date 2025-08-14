@@ -6,7 +6,7 @@ import '../utils/controller_helper.dart';
 
 /// A safe version of GetView that ensures controllers are registered before access
 abstract class SafeGetView<T> extends GetView<T> {
-  const SafeGetView({Key? key}) : super(key: key);
+  const SafeGetView({super.key});
   
   @override
   T get controller {
@@ -23,7 +23,7 @@ abstract class SafeGetView<T> extends GetView<T> {
 
 /// Specialized SafeGetView for PropertyController
 abstract class SafePropertyView extends SafeGetView<PropertyController> {
-  const SafePropertyView({Key? key}) : super(key: key);
+  const SafePropertyView({super.key});
   
   /// Direct access to PropertyController with safety guarantees
   PropertyController get propertyController => controller;
@@ -31,7 +31,7 @@ abstract class SafePropertyView extends SafeGetView<PropertyController> {
 
 /// Specialized SafeGetView for UserController
 abstract class SafeUserView extends SafeGetView<UserController> {
-  const SafeUserView({Key? key}) : super(key: key);
+  const SafeUserView({super.key});
   
   /// Direct access to UserController with safety guarantees
   UserController get userController => controller;

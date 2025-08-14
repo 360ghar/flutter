@@ -4,17 +4,20 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../../utils/webview_helper.dart';
 import '../../../data/models/property_model.dart';
 import '../../../utils/theme.dart';
+import '../../../utils/debug_logger.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 import 'dart:math' as math;
 
 class PropertySwipeCard extends StatelessWidget {
   final PropertyModel property;
   final VoidCallback? onTap;
+  final bool showSwipeInstructions;
 
   const PropertySwipeCard({
     super.key,
     required this.property,
     this.onTap,
+    this.showSwipeInstructions = false,
   });
 
   @override
@@ -24,7 +27,7 @@ class PropertySwipeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -73,7 +76,7 @@ class PropertySwipeCard extends StatelessWidget {
                               colors: [
                                 Colors.transparent,
                                 Colors.transparent,
-                                Colors.black.withOpacity(0.7),
+                                Colors.black.withValues(alpha: 0.7),
                               ],
                               stops: const [0.0, 0.5, 1.0],
                             ),
@@ -88,7 +91,7 @@ class PropertySwipeCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Icon(
@@ -112,6 +115,7 @@ class PropertySwipeCard extends StatelessWidget {
                             children: [
                               // Price with purpose-based display
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
                                     property.formattedPrice,
@@ -184,7 +188,7 @@ class PropertySwipeCard extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
+                                      color: Colors.white.withValues(alpha: 0.2),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
@@ -204,7 +208,7 @@ class PropertySwipeCard extends StatelessWidget {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
+                                        color: Colors.white.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
@@ -222,7 +226,7 @@ class PropertySwipeCard extends StatelessWidget {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
+                                        color: Colors.white.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
@@ -246,7 +250,7 @@ class PropertySwipeCard extends StatelessWidget {
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Row(
@@ -288,6 +292,7 @@ class PropertySwipeCard extends StatelessWidget {
                       children: [
                         // Property Type Badge
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -295,7 +300,7 @@ class PropertySwipeCard extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.accentBlue.withOpacity(0.1),
+                                color: AppTheme.accentBlue.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -314,7 +319,7 @@ class PropertySwipeCard extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.accentGreen.withOpacity(0.1),
+                                color: AppTheme.accentGreen.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -369,9 +374,9 @@ class PropertySwipeCard extends StatelessWidget {
                             children: property.amenitiesList.take(6).map((amenity) => Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppTheme.accentBlue.withOpacity(0.1),
+                                color: AppTheme.accentBlue.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppTheme.accentBlue.withOpacity(0.3)),
+                                border: Border.all(color: AppTheme.accentBlue.withValues(alpha: 0.3)),
                               ),
                               child: Text(
                                 amenity,
@@ -403,6 +408,7 @@ class PropertySwipeCard extends StatelessWidget {
                         // 360° Tour Embedded Section
                         if (property.virtualTourUrl != null && property.virtualTourUrl!.isNotEmpty) ...[
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.threesixty,
@@ -426,9 +432,9 @@ class PropertySwipeCard extends StatelessWidget {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryYellow.withOpacity(0.1),
+                                    color: AppTheme.primaryYellow.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: AppTheme.primaryYellow.withOpacity(0.3)),
+                                    border: Border.all(color: AppTheme.primaryYellow.withValues(alpha: 0.3)),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -464,7 +470,7 @@ class PropertySwipeCard extends StatelessWidget {
                               height: 500,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppTheme.textLight.withOpacity(0.2)),
+                                border: Border.all(color: AppTheme.textLight.withValues(alpha: 0.2)),
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppTheme.cardShadow,
@@ -531,38 +537,40 @@ class PropertySwipeCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
                         
-                        // Swipe Instructions
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryYellow.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppTheme.primaryYellow.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.swipe,
-                                color: AppTheme.primaryYellow,
-                                size: 24,
+                        // Swipe Instructions (conditional)
+                        if (showSwipeInstructions) ...[
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryYellow.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.primaryYellow.withValues(alpha: 0.3),
                               ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Text(
-                                  'Swipe right to like • Swipe left to pass',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.swipe,
+                                  color: AppTheme.primaryYellow,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    'Swipe right to like • Swipe left to pass',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
+                        ],
                       ],
                     ),
                   ),
@@ -639,6 +647,7 @@ class PropertySwipeStack extends StatefulWidget {
   final Function(PropertyModel) onSwipeLeft;
   final Function(PropertyModel) onSwipeRight;
   final Function(PropertyModel) onSwipeUp;
+  final bool showSwipeInstructions;
 
   const PropertySwipeStack({
     super.key,
@@ -646,6 +655,7 @@ class PropertySwipeStack extends StatefulWidget {
     required this.onSwipeLeft,
     required this.onSwipeRight,
     required this.onSwipeUp,
+    this.showSwipeInstructions = false,
   });
 
   @override
@@ -671,7 +681,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
   void initState() {
     super.initState();
     _properties = List.from(widget.properties);
-    print('📊 PropertySwipeStack initialized with ${_properties.length} properties');
+    DebugLogger.debug('PropertySwipeStack initialized with ${_properties.length} properties');
     
     // Animation for the swipe out effect
     _swipeAnimationController = AnimationController(
@@ -716,7 +726,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
     // Update properties when widget properties change
     if (widget.properties != oldWidget.properties) {
       _properties = List.from(widget.properties);
-      print('🔄 PropertySwipeStack updated with ${_properties.length} properties');
+      DebugLogger.debug('PropertySwipeStack updated with ${_properties.length} properties');
       setState(() {});
     }
   }
@@ -804,10 +814,10 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
 
   @override
   Widget build(BuildContext context) {
-    print('🎨 PropertySwipeStack build called with ${_properties.length} properties');
+    DebugLogger.verbose('PropertySwipeStack build called with ${_properties.length} properties');
     
     if (_properties.isEmpty) {
-      print('⚠️ PropertySwipeStack: No properties to display');
+      DebugLogger.warning('PropertySwipeStack: No properties to display');
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -839,7 +849,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
     }
 
     final screenSize = MediaQuery.of(context).size;
-    print('✅ PropertySwipeStack: Rendering ${_properties.length} properties');
+    DebugLogger.debug('PropertySwipeStack: Rendering ${_properties.length} properties');
 
     return GestureDetector(
       onPanStart: (details) {
@@ -912,6 +922,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
                           : 1.0,
                       child: PropertySwipeCard(
                         property: _properties[0],
+                        showSwipeInstructions: widget.showSwipeInstructions,
                       ),
                     ),
                   ),
@@ -966,7 +977,7 @@ class SparklesPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppTheme.primaryYellow.withOpacity(0.8)
+      ..color = AppTheme.primaryYellow.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
 
     // Create sparkles at various positions
@@ -990,7 +1001,7 @@ class SparklesPainter extends CustomPainter {
         final sparkleSize = 8.0 * sparkleAnimation * (1 - sparkleAnimation * 0.5);
         final sparkleOpacity = (1 - sparkleAnimation).clamp(0.0, 1.0);
         
-        paint.color = AppTheme.primaryYellow.withOpacity(sparkleOpacity * 0.8);
+        paint.color = AppTheme.primaryYellow.withValues(alpha: sparkleOpacity * 0.8);
         
         // Draw sparkle as a star shape
         _drawStar(canvas, paint, position, sparkleSize);
@@ -1064,7 +1075,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
               }
             },
             onWebResourceError: (WebResourceError error) {
-              print('⚠️ WebView error in 360° tour: ${error.description}');
+              DebugLogger.warning('WebView error in 360° tour: ${error.description}');
               if (mounted) {
                 setState(() {
                   isLoading = false;
@@ -1109,8 +1120,8 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
     ''';
     
       controller!.loadHtmlString(htmlContent);
-    } catch (e) {
-      print('❌ Error initializing WebView for 360° tour: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error initializing WebView for 360° tour', e, stackTrace);
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -1132,7 +1143,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
               Icon(
                 Icons.public_off,
                 size: 48,
-                color: AppTheme.textGray.withOpacity(0.7),
+                color: AppTheme.textGray.withValues(alpha: 0.7),
               ),
               const SizedBox(height: 16),
               Text(
@@ -1148,7 +1159,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
                 'Virtual tour could not be loaded',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppTheme.textGray.withOpacity(0.7),
+                  color: AppTheme.textGray.withValues(alpha: 0.7),
                 ),
               ),
             ],

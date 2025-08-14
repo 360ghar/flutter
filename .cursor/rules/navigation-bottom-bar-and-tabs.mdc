@@ -7,7 +7,7 @@ description: Bottom navigation order, tab routing, and implementation notes.
 
 - **Order**: Profile → Discover → Properties → Liked → Visits.
 - **Implementation**
-  - Primary widget: [lib/widgets/navigation/bottom_nav_bar_new.dart](mdc:lib/widgets/navigation/bottom_nav_bar_new.dart). If not present, fallback to [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart).
+  - Primary widget: [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart).
   - Center tab routes to the main swipe interface (Home/Properties module).
 - **Routes**
   - Ensure each tab maps to a named route defined in [lib/app/routes/app_routes.dart](mdc:lib/app/routes/app_routes.dart) and page in [lib/app/routes/app_pages.dart](mdc:lib/app/routes/app_pages.dart).

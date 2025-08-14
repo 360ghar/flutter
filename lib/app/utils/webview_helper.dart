@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'debug_logger.dart';
 
 class WebViewHelper {
   static bool _isInitialized = false;
@@ -13,14 +14,14 @@ class WebViewHelper {
       if (kIsWeb) {
         // For web, we need to register the web platform
         // This is handled automatically by webview_flutter_web when imported
-        print('✅ WebView platform initialized for web');
+        DebugLogger.success('WebView platform initialized for web');
       } else {
         // For mobile platforms (iOS/Android), initialization is automatic
-        print('✅ WebView platform initialized for mobile');
+        DebugLogger.success('WebView platform initialized for mobile');
       }
       _isInitialized = true;
-    } catch (e) {
-      print('⚠️ WebView platform initialization failed: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.warning('WebView platform initialization failed', e, stackTrace);
     }
   }
   
@@ -43,15 +44,15 @@ class WebViewHelper {
             onPageStarted: onPageStarted,
             onPageFinished: onPageFinished,
             onWebResourceError: onWebResourceError ?? (WebResourceError error) {
-              print('⚠️ WebView error: ${error.description}');
+              DebugLogger.warning('WebView error: ${error.description}');
             },
           ),
         )
         ..loadRequest(Uri.parse(url));
         
       return controller;
-    } catch (e) {
-      print('❌ Error creating WebView controller: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error creating WebView controller', e, stackTrace);
       rethrow;
     }
   }
@@ -73,17 +74,17 @@ class WebViewHelper {
         onPageStarted: onPageStarted,
         onPageFinished: onPageFinished,
         onWebResourceError: (error) {
-          print('⚠️ WebView resource error: ${error.description}');
+          DebugLogger.warning('WebView resource error: ${error.description}');
         },
       );
       
-      return Container(
+      return SizedBox(
         width: width,
         height: height,
         child: WebViewWidget(controller: controller),
       );
-    } catch (e) {
-      print('❌ Error creating safe WebView: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error creating safe WebView', e, stackTrace);
       return errorWidget ?? _buildErrorWidget(width, height, url);
     }
   }
@@ -130,9 +131,9 @@ class WebViewHelper {
                 // Try to open in new tab for web
                 try {
                   // This would need url_launcher for proper implementation
-                  print('Opening URL in new tab: $url');
-                } catch (e) {
-                  print('Could not open URL: $e');
+                  DebugLogger.debug('Opening URL in new tab: $url');
+                } catch (e, stackTrace) {
+                  DebugLogger.warning('Could not open URL', e);
                 }
               },
               child: const Text('Open in New Tab'),
@@ -147,7 +148,7 @@ class WebViewHelper {
     try {
       ensureInitialized();
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
       return false;
     }
   }

@@ -60,7 +60,7 @@ class GuestMiddleware extends GetMiddleware {
       
       // If user is authenticated and trying to access guest-only routes
       if (route != null && authController.isAuthenticated && _isGuestOnlyRoute(route)) {
-        return const RouteSettings(name: AppRoutes.home);
+        return const RouteSettings(name: AppRoutes.discover);
       }
       
       return null;

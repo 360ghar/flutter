@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/user_controller.dart';
-import '../../../utils/theme.dart';
 import '../../../utils/app_colors.dart';
 import '../../../../widgets/common/theme_toggle_button.dart';
 import '../../../../widgets/common/robust_network_image.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/user_controller.dart';
-import '../../../data/models/user_model.dart';
 
 class EditProfileController extends GetxController {
   final UserController _userController = Get.find<UserController>();

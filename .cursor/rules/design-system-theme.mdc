@@ -21,6 +21,6 @@ description: Design system usage for colors, typography, elevation, and componen
   - Hardcode `Colors.*` or font sizes; reuse tokens. Avoid inconsistent radii or shadows.
 
 Reference components
-- Bottom nav: [lib/widgets/navigation/bottom_nav_bar_new.dart](mdc:lib/widgets/navigation/bottom_nav_bar_new.dart)
+- Bottom nav: [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart)
 - Loading/Error states: [lib/widgets/common/loading_states.dart](mdc:lib/widgets/common/loading_states.dart), [lib/widgets/common/error_states.dart](mdc:lib/widgets/common/error_states.dart)
 - Property cards: [lib/app/modules/home/widgets/property_swipe_card.dart](mdc:lib/app/modules/home/widgets/property_swipe_card.dart)

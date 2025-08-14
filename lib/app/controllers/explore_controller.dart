@@ -1,564 +1,386 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
 import '../data/models/property_model.dart';
-import 'property_controller.dart';
-import '../modules/filters/controllers/filters_controller.dart';
+import '../data/repositories/properties_repository.dart';
+import '../utils/debug_logger.dart';
+import 'filters_controller.dart';
+import 'location_controller.dart';
+
+enum ExploreState {
+  initial,
+  loading,
+  loaded,
+  empty,
+  error,
+  loadingMore,
+}
 
 class ExploreController extends GetxController {
-  final PropertyController _propertyController = Get.find<PropertyController>();
-  
+  final PropertiesRepository _propertiesRepository = Get.find<PropertiesRepository>();
+  final FiltersController _filtersController = Get.find<FiltersController>();
+  final LocationController _locationController = Get.find<LocationController>();
+
   // Map controller
-  MapController? mapController;
-  
-  // Location and map state
-  final Rx<LatLng> currentLocation = LatLng(28.4595, 77.0266).obs; // Default to Gurgaon
-  final RxDouble currentZoom = 13.0.obs;
-  final RxDouble mapRadius = 5.0.obs; // 5km radius
-  final RxBool isLoadingLocation = false.obs;
-  final RxBool hasLocationPermission = false.obs;
-  
-  // Map markers and properties - now using unified PropertyModel
-  final RxList<Marker> markers = <Marker>[].obs;
-  final RxList<PropertyModel> visibleProperties = <PropertyModel>[].obs;
-  final RxList<PropertyModel> filteredProperties = <PropertyModel>[].obs;
-  
-  // Note: Now using unified PropertyModel everywhere for clean, simple architecture
-  
-  // Search functionality
-  final TextEditingController searchController = TextEditingController();
+  final MapController mapController = MapController();
+
+  // Reactive state
+  final Rx<ExploreState> state = ExploreState.initial.obs;
+  final RxList<PropertyModel> properties = <PropertyModel>[].obs;
+  final RxnString error = RxnString();
+
+  // Map state
+  final Rx<LatLng> currentCenter = const LatLng(28.6139, 77.2090).obs; // Default: Delhi
+  final RxDouble currentZoom = 12.0.obs;
+  final RxDouble currentRadius = 5.0.obs;
+
+  // Search
   final RxString searchQuery = ''.obs;
-  final RxBool isSearching = false.obs;
-  
-  // Filters
-  final RxBool showFilters = false.obs;
-  FiltersController? filtersController;
-  
-  // UI state
-  final RxBool showPropertyList = true.obs;
-  final RxString selectedPropertyId = ''.obs;
+  Timer? _searchDebouncer;
+  Timer? _mapMoveDebouncer;
+
+  // Loading progress for sequential page loading
+  final RxInt loadingProgress = 0.obs;
+  final RxInt totalPages = 1.obs;
+
+  // Selected property for bottom sheet
+  final Rx<PropertyModel?> selectedProperty = Rx<PropertyModel?>(null);
 
   @override
   void onInit() {
     super.onInit();
-    
-    // Initialize map controller
-    mapController = MapController();
-    
-    // Try to get filters controller if it exists
-    try {
-      filtersController = Get.find<FiltersController>();
-    } catch (e) {
-      // FiltersController not found, will create when needed
-    }
-    
-    _initializeLocation();
-    _setupPropertyListener();
+    _setupFilterListener();
+    _setupLocationListener();
+    _initializeMap();
   }
 
   @override
   void onClose() {
-    searchController.dispose();
+    _searchDebouncer?.cancel();
+    _mapMoveDebouncer?.cancel();
     super.onClose();
   }
 
-  void _setupPropertyListener() {
-    // Listen to property changes and update markers
-    ever(_propertyController.properties, (_) {
-      _updateMarkersAndVisibleProperties();
-    });
-    
-    // Listen to location changes and update visible properties
-    ever(currentLocation, (_) {
-      _updateMarkersAndVisibleProperties();
-    });
-    
-    // Listen to zoom changes and update radius
-    ever(currentZoom, (zoom) {
-      _updateMapRadius(zoom);
-      _updateMarkersAndVisibleProperties();
+  void _setupFilterListener() {
+    // Listen to filter changes and reload properties
+    debounce(_filtersController.filtersRx, (_) {
+      _loadPropertiesForCurrentView();
+    }, time: const Duration(milliseconds: 500));
+  }
+
+  void _setupLocationListener() {
+    // Listen to location updates
+    _locationController.currentPosition.listen((position) {
+      if (position != null) {
+        final newCenter = LatLng(position.latitude, position.longitude);
+        final distance = const Distance();
+        if (distance.as(LengthUnit.Meter, currentCenter.value, newCenter) > 1000) { // Only update if >1km difference
+          _updateMapCenter(newCenter, 14.0);
+        }
+      }
     });
   }
 
-  void _updateMapRadius(double zoom) {
-    // Calculate radius based on zoom level
-    if (zoom >= 16) {
-      mapRadius.value = 1.0; // 1km
-    } else if (zoom >= 14) {
-      mapRadius.value = 2.5; // 2.5km
-    } else if (zoom >= 12) {
-      mapRadius.value = 5.0; // 5km
-    } else if (zoom >= 10) {
-      mapRadius.value = 10.0; // 10km
-    } else {
-      mapRadius.value = 20.0; // 20km
+  Future<void> _initializeMap() async {
+    try {
+      // Try to use current location or saved location from filters
+      if (_filtersController.hasLocation) {
+        final filters = _filtersController.filters;
+        _updateMapCenter(LatLng(filters.lat!, filters.lng!), currentZoom.value);
+      } else {
+        await _useCurrentLocation();
+      }
+      
+      _loadPropertiesForCurrentView();
+    } catch (e) {
+      DebugLogger.error('❌ Failed to initialize map: $e');
+      _loadPropertiesForCurrentView(); // Load with default location
     }
   }
 
-  Future<void> _initializeLocation() async {
-    // Initialize location
+  Future<void> _useCurrentLocation() async {
     try {
-      isLoadingLocation.value = true;
-      
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      // Check location services
-      if (!serviceEnabled) {
-        // Location services disabled
-        hasLocationPermission.value = false;
-        _showLocationDialog();
-        _setDefaultLocation();
-        return;
-      }
-      
-      // Check location permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        hasLocationPermission.value = false;
-        _showLocationDialog();
-        _setDefaultLocation();
-        return;
-      }
-      
-      if (permission == LocationPermission.whileInUse || 
-          permission == LocationPermission.always) {
-        hasLocationPermission.value = true;
+      await _locationController.getCurrentLocation();
+      final position = _locationController.currentPosition.value;
+      if (position != null) {
+        _updateMapCenter(LatLng(position.latitude, position.longitude), 14.0);
         
-        try {
-          // Get current position with timeout
-          Position position = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.high,
-              distanceFilter: 10,
-            ),
-            timeLimit: const Duration(seconds: 10),
-          );
-          
-          currentLocation.value = LatLng(position.latitude, position.longitude);
-          
-          // Move camera to current location
-          if (mapController != null) {
-            mapController!.move(currentLocation.value, currentZoom.value);
-          }
-        } catch (e) {
-          // Error getting position, using default
-          _setDefaultLocation();
-        }
-      } else {
-        hasLocationPermission.value = false;
-        _setDefaultLocation();
+        // Update filters with current location
+        _filtersController.updateLocation(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          radius: currentRadius.value.toInt(),
+        );
       }
     } catch (e) {
-      // Error initializing location
-      hasLocationPermission.value = false;
-      _setDefaultLocation();
-    } finally {
-      isLoadingLocation.value = false;
-      _updateMarkersAndVisibleProperties();
+      DebugLogger.warning('⚠️ Could not get current location: $e');
     }
   }
 
-  void _setDefaultLocation() {
-    // Set to center of Gurgaon
-    currentLocation.value = LatLng(28.4595, 77.0266);
-    if (mapController != null) {
-      mapController!.move(currentLocation.value, currentZoom.value);
+  void _updateMapCenter(LatLng center, double zoom) {
+    currentCenter.value = center;
+    currentZoom.value = zoom;
+    
+    try {
+      mapController.move(center, zoom);
+    } catch (e) {
+      DebugLogger.warning('⚠️ Could not move map: $e');
     }
   }
 
-  void _showLocationDialog() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Location Access'),
-        content: const Text(
-          'Location access is disabled. To see nearby properties, please enable location services in your device settings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back();
-              Geolocator.openLocationSettings();
-            },
-            child: const Text('Settings'),
-          ),
-        ],
-      ),
+  // Map movement handler with debounce
+  void onMapMove(MapCamera position, bool hasGesture) {
+    if (!hasGesture) return; // Ignore programmatic moves
+    
+    currentCenter.value = position.center;
+    currentZoom.value = position.zoom;
+    
+    // Calculate radius from zoom level and visible bounds
+    final newRadius = _calculateRadiusFromZoom(position.zoom);
+    if ((newRadius - currentRadius.value).abs() > 0.5) {
+      currentRadius.value = newRadius;
+    }
+
+    // Debounce the map move to avoid too many API calls
+    _mapMoveDebouncer?.cancel();
+    _mapMoveDebouncer = Timer(const Duration(milliseconds: 600), () {
+      _onMapMoveCompleted();
+    });
+  }
+
+  void _onMapMoveCompleted() {
+    DebugLogger.api('🗺️ Map moved to ${currentCenter.value}, radius: ${currentRadius.value}km');
+    
+    // Update filters with new location
+    _filtersController.updateLocation(
+      latitude: currentCenter.value.latitude,
+      longitude: currentCenter.value.longitude,
+      radius: currentRadius.value.toInt(),
     );
   }
 
-  void _updateMarkersAndVisibleProperties() async {
-    final allPropertyCards = _propertyController.properties;
-    final center = currentLocation.value;
-    final radius = mapRadius.value;
-    
-    // Filter properties within radius - now using unified PropertyModel
-    final propertiesInRadius = allPropertyCards.where((property) {
-      // Skip properties without location data
-      if (!property.hasLocation) {
-        return false;
-      }
-      
-      final distance = Geolocator.distanceBetween(
-        center.latitude,
-        center.longitude,
-        property.latitude!,
-        property.longitude!,
-      ) / 1000; // Convert to kilometers
-      
-      return distance <= radius;
-    }).toList();
-    
-    // Apply additional filters if available
-    List<PropertyModel> finalProperties = propertiesInRadius;
-    if (filtersController != null) {
-      finalProperties = _applyFilters(propertiesInRadius);
-    }
-    
-    visibleProperties.value = finalProperties;
-    filteredProperties.value = finalProperties;
-    
-    // Update markers
-    _updateMarkers(finalProperties);
+  double _calculateRadiusFromZoom(double zoom) {
+    // Approximate radius calculation based on zoom level
+    if (zoom >= 16) return 1.0;
+    if (zoom >= 14) return 2.0;
+    if (zoom >= 12) return 5.0;
+    if (zoom >= 10) return 10.0;
+    if (zoom >= 8) return 25.0;
+    return 50.0;
   }
 
-  List<PropertyModel> _applyFilters(List<PropertyModel> properties) {
-    return properties.where((property) {
-      // Purpose filter
-      if (!_matchesPurpose(property)) {
-        return false;
-      }
+  // Load all properties for current map view
+  Future<void> _loadPropertiesForCurrentView() async {
+    if (state.value == ExploreState.loading) return;
 
-      // Price filter (adjusted based on purpose)
-      final adjustedPrice = _getAdjustedPrice(property);
-      if (adjustedPrice < _propertyController.minPrice || 
-          adjustedPrice > _propertyController.maxPrice) {
-        return false;
-      }
-
-      // Bedrooms filter (skip for Stay mode)
-      if (_propertyController.selectedPurpose != 'Stay') {
-        if (property.bedrooms != null && (property.bedrooms! < _propertyController.minBedrooms || 
-            property.bedrooms! > _propertyController.maxBedrooms)) {
-          return false;
-        }
-      }
-
-      // Property type filter
-      if (_propertyController.propertyType != 'All' && 
-          !_matchesPropertyType(property)) {
-        return false;
-      }
-
-      // Amenities filter
-      if (_propertyController.selectedAmenities.isNotEmpty) {
-        final hasAllAmenities = _propertyController.selectedAmenities
-            .every((amenity) => property.amenitiesList.contains(amenity));
-        if (!hasAllAmenities) {
-          return false;
-        }
-      }
-
-      return true;
-    }).toList();
-  }
-
-  bool _matchesPurpose(PropertyModel property) {
-    switch (_propertyController.selectedPurpose) {
-      case 'Stay':
-        return property.purpose == PropertyPurpose.shortStay ||
-               property.propertyType == PropertyType.apartment ||
-               property.propertyType == PropertyType.room ||
-               property.basePrice < 5000000;
-      case 'Rent':
-        return property.purpose == PropertyPurpose.rent || property.purpose == PropertyPurpose.shortStay;
-      case 'Buy':
-      default:
-        return property.purpose == PropertyPurpose.buy;
-    }
-  }
-
-  double _getAdjustedPrice(PropertyModel property) {
-    switch (_propertyController.selectedPurpose) {
-      case 'Stay':
-        return (property.getEffectivePrice() / 365 / 100).clamp(500.0, 50000.0);
-      case 'Rent':
-        return (property.getEffectivePrice() * 0.001).clamp(5000.0, 500000.0);
-      case 'Buy':
-      default:
-        return property.getEffectivePrice();
-    }
-  }
-
-  bool _matchesPropertyType(PropertyModel property) {
-    final selectedType = _propertyController.propertyType;
-    
-    if (_propertyController.selectedPurpose == 'Stay') {
-      switch (selectedType) {
-        case 'Hotel':
-          return property.propertyType == PropertyType.apartment ||
-                 property.propertyType == PropertyType.room;
-        case 'Resort':
-          return property.propertyType == PropertyType.house ||
-                 property.propertyType == PropertyType.builderFloor;
-        default:
-          return _propertyTypeMatches(property.propertyType, selectedType);
-      }
-    }
-    
-    return _propertyTypeMatches(property.propertyType, selectedType);
-  }
-
-  bool _propertyTypeMatches(PropertyType propertyType, String selectedType) {
-    if (selectedType == 'All') return true;
-    
-    switch (propertyType) {
-      case PropertyType.house:
-        return selectedType == 'House';
-      case PropertyType.apartment:
-        return selectedType == 'Apartment';
-      case PropertyType.builderFloor:
-        return selectedType == 'Builder Floor';
-      case PropertyType.room:
-        return selectedType == 'Room';
-      default:
-        return false;
-    }
-  }
-
-  void _updateMarkers(List<PropertyModel> properties) {
-    final newMarkers = <Marker>[];
-    
-    for (final property in properties) {
-      // Skip properties without location data
-      if (!property.hasLocation) {
-        continue;
-      }
-      
-      final marker = Marker(
-        width: 40.0,
-        height: 40.0,
-        point: LatLng(property.latitude!, property.longitude!),
-        child: GestureDetector(
-          onTap: () => selectProperty(property.id.toString()),
-          child: Container(
-            decoration: BoxDecoration(
-              color: selectedPropertyId.value == property.id.toString() 
-                  ? const Color(0xFFFFBC05) // Yellow for selected
-                  : const Color(0xFFFF6B35), // Orange for unselected
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Icon(
-                Icons.home,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-        ),
-      );
-      newMarkers.add(marker);
-    }
-    
-    markers.value = newMarkers;
-  }
-
-  void onMapReady() {
-    // Map ready
-    
-    // Move to current location if available
-    if (hasLocationPermission.value) {
-      mapController?.move(currentLocation.value, currentZoom.value);
-    } else {
-      // Move to default location (Gurgaon)
-      mapController?.move(currentLocation.value, currentZoom.value);
-    }
-  }
-
-  void onPositionChanged(MapCamera camera, bool hasGesture) {
-    if (hasGesture) {
-      currentLocation.value = camera.center;
-      currentZoom.value = camera.zoom;
-    }
-  }
-
-  void onMapEvent(MapEvent mapEvent) {
-    if (mapEvent is MapEventMoveEnd) {
-      _updateMarkersAndVisibleProperties();
-    }
-  }
-
-  void selectProperty(String propertyId) {
-    selectedPropertyId.value = propertyId;
-    _updateMarkers(filteredProperties);
-    
-    // Scroll to property in list if needed
-    // This would be handled by the UI layer
-  }
-
-  void viewPropertyDetails(PropertyModel property) {
-    Get.toNamed('/property-details', arguments: property);
-  }
-
-  Future<void> searchLocation(String query) async {
-    if (query.trim().isEmpty) return;
-    
     try {
-      isSearching.value = true;
-      searchQuery.value = query;
-      
-      // Search in visible properties first
-      PropertyModel? matchingProperty;
-      for (final property in visibleProperties) {
-        if ((property.city?.toLowerCase() ?? "").contains(query.toLowerCase()) ||
-            property.addressDisplay.toLowerCase().contains(query.toLowerCase())) {
-          matchingProperty = property;
-          break;
-        }
-      }
-      
-      // If not found in visible properties, search through all property cards
-      if (matchingProperty == null) {
-        final propertyCards = _propertyController.properties;
-        for (final propertyCard in propertyCards) {
-          if ((propertyCard.city?.toLowerCase() ?? "").contains(query.toLowerCase()) ||
-              (propertyCard.fullAddress?.toLowerCase() ?? "").contains(query.toLowerCase())) {
-            matchingProperty = propertyCard;
-            break;
-          }
-        }
-      }
-      
-      if (matchingProperty != null && matchingProperty.hasLocation) {
-        final newLocation = LatLng(matchingProperty.latitude!, matchingProperty.longitude!);
-        currentLocation.value = newLocation;
-        
-        if (mapController != null) {
-          mapController!.move(newLocation, 14.0);
-          currentZoom.value = 14.0;
-        }
-        
-        Get.snackbar(
-          'Location Found',
-          'Showing properties near ${matchingProperty.city}',
-          snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 2),
-        );
-      } else {
-        Get.snackbar(
-          'Location Not Found',
-          'No properties found for "$query"',
-          snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 2),
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Search Error',
-        'Unable to search location',
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 2),
+      state.value = ExploreState.loading;
+      error.value = null;
+      properties.clear();
+      selectedProperty.value = null;
+
+      DebugLogger.api('🗺️ Loading all properties for map view');
+
+      // Load all pages sequentially for map display
+      final allProperties = await _propertiesRepository.loadAllPropertiesForMap(
+        filters: _filtersController.filters,
+        limit: 100,
+        onProgress: (current, total) {
+          loadingProgress.value = current;
+          totalPages.value = total;
+        },
       );
+
+      properties.assignAll(allProperties);
+
+      if (properties.isEmpty) {
+        state.value = ExploreState.empty;
+      } else {
+        state.value = ExploreState.loaded;
+        DebugLogger.success('✅ Loaded ${properties.length} properties for map');
+      }
+
+    } catch (e) {
+      DebugLogger.error('❌ Failed to load properties: $e');
+      state.value = ExploreState.error;
+      error.value = e.toString();
     } finally {
-      isSearching.value = false;
+      loadingProgress.value = 0;
+      totalPages.value = 1;
     }
+  }
+
+  // Search functionality
+  void updateSearchQuery(String query) {
+    searchQuery.value = query;
+    
+    _searchDebouncer?.cancel();
+    
+    if (query.isEmpty) {
+      _filtersController.updateSearchQuery(null);
+      return;
+    }
+
+    _searchDebouncer = Timer(const Duration(milliseconds: 300), () {
+      DebugLogger.api('🔍 Searching properties: "$query"');
+      _filtersController.updateSearchQuery(query);
+    });
   }
 
   void clearSearch() {
-    searchController.clear();
     searchQuery.value = '';
+    _filtersController.updateSearchQuery(null);
   }
 
-  Future<void> goToCurrentLocation() async {
-    if (!hasLocationPermission.value) {
-      await _initializeLocation();
-      return;
-    }
+  // Property selection
+  void selectProperty(PropertyModel property) {
+    selectedProperty.value = property;
+    DebugLogger.api('🏠 Selected property: ${property.title}');
     
-    try {
-      isLoadingLocation.value = true;
-      Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
+    // Center map on selected property if it has location
+    if (property.hasLocation) {
+      _updateMapCenter(
+        LatLng(property.latitude!, property.longitude!),
+        16.0, // Zoom in closer for selected property
       );
-      
-      final newLocation = LatLng(position.latitude, position.longitude);
-      currentLocation.value = newLocation;
-      
-      if (mapController != null) {
-        mapController!.move(newLocation, 14.0);
-        currentZoom.value = 14.0;
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Location Error',
-        'Unable to get current location',
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 2),
-      );
-    } finally {
-      isLoadingLocation.value = false;
     }
   }
 
-  void toggleFilters() {
-    showFilters.value = !showFilters.value;
+  void clearSelection() {
+    selectedProperty.value = null;
   }
 
-  void openFilters() {
+  // Navigation to property details
+  void viewPropertyDetails(PropertyModel property) {
+    Get.toNamed('/property-details', arguments: {'property': property});
+  }
+
+  // Filter shortcuts
+  void showFilters() {
     Get.toNamed('/filters');
   }
 
-  void refreshFilteredProperties() {
-    // Update the markers on the map with applied filters
-    _updateMarkersAndVisibleProperties();
-    
-    // Show success message
-    Get.snackbar(
-      'Filters Applied',
-      'Map updated with filtered properties',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: const Color(0xFFFFBC05),
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-    );
+  void quickFilterByType(PropertyType type) {
+    _filtersController.updatePropertyTypes([type]);
   }
 
-  void togglePropertyList() {
-    showPropertyList.value = !showPropertyList.value;
+  void quickFilterByPurpose(PropertyPurpose purpose) {
+    _filtersController.updatePurpose(purpose);
   }
 
-  // Getters
-  CircleMarker get radiusCircle => CircleMarker(
-    point: currentLocation.value,
-    radius: mapRadius.value * 1000, // Convert km to meters
-    color: const Color(0xFFFFBC05).withValues(alpha: 0.1),
-    borderColor: const Color(0xFFFFBC05),
-    borderStrokeWidth: 2.0,
-    useRadiusInMeter: true,
-  );
+  // Map controls
+  void zoomIn() {
+    final newZoom = (currentZoom.value + 1).clamp(3.0, 18.0);
+    _updateMapCenter(currentCenter.value, newZoom);
+  }
 
-  String get radiusText => '${mapRadius.value.toStringAsFixed(1)} km radius';
+  void zoomOut() {
+    final newZoom = (currentZoom.value - 1).clamp(3.0, 18.0);
+    _updateMapCenter(currentCenter.value, newZoom);
+  }
+
+  void recenterToCurrentLocation() {
+    _useCurrentLocation();
+  }
+
+  void fitBoundsToProperties() {
+    if (properties.isEmpty) return;
+
+    final propertiesWithLocation = properties.where((p) => p.hasLocation).toList();
+    if (propertiesWithLocation.isEmpty) return;
+
+    try {
+      final lats = propertiesWithLocation.map((p) => p.latitude!).toList();
+      final lngs = propertiesWithLocation.map((p) => p.longitude!).toList();
+
+      final minLat = lats.reduce((a, b) => a < b ? a : b);
+      final maxLat = lats.reduce((a, b) => a > b ? a : b);
+      final minLng = lngs.reduce((a, b) => a < b ? a : b);
+      final maxLng = lngs.reduce((a, b) => a > b ? a : b);
+
+      final bounds = LatLngBounds(
+        LatLng(minLat, minLng),
+        LatLng(maxLat, maxLng),
+      );
+
+      mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
+      
+    } catch (e) {
+      DebugLogger.warning('⚠️ Could not fit bounds: $e');
+    }
+  }
+
+  // Refresh
+  Future<void> refreshProperties() async {
+    await _loadPropertiesForCurrentView();
+  }
+
+  // Error handling
+  void retryLoading() {
+    error.value = null;
+    _loadPropertiesForCurrentView();
+  }
+
+  void clearError() {
+    error.value = null;
+    if (state.value == ExploreState.error) {
+      state.value = properties.isEmpty ? ExploreState.empty : ExploreState.loaded;
+    }
+  }
+
+  // Statistics and info
+  String get locationDisplayText => _filtersController.locationDisplayText;
   
-  int get visiblePropertyCount => visibleProperties.length;
-} 
+  String get propertiesCountText {
+    if (properties.isEmpty) return 'No properties found';
+    if (properties.length == 1) return '1 property';
+    return '${properties.length} properties';
+  }
+
+  String get currentAreaText {
+    if (currentRadius.value < 1) {
+      return '${(currentRadius.value * 1000).round()}m radius';
+    }
+    return '${currentRadius.value.toStringAsFixed(1)}km radius';
+  }
+
+  // Get properties for clustering (if implemented)
+  List<PropertyModel> get propertiesWithLocation {
+    return properties.where((p) => p.hasLocation).toList();
+  }
+
+  // Get property markers for map
+  List<PropertyMarker> get propertyMarkers {
+    return propertiesWithLocation.map((property) {
+      return PropertyMarker(
+        property: property,
+        position: LatLng(property.latitude!, property.longitude!),
+        isSelected: selectedProperty.value?.id == property.id,
+      );
+    }).toList();
+  }
+
+  // Helper getters
+  bool get isLoading => state.value == ExploreState.loading;
+  bool get isEmpty => state.value == ExploreState.empty;
+  bool get hasError => state.value == ExploreState.error;
+  bool get isLoaded => state.value == ExploreState.loaded;
+  bool get hasProperties => properties.isNotEmpty;
+  bool get hasSelection => selectedProperty.value != null;
+  bool get isLoadingMore => state.value == ExploreState.loadingMore;
+}
+
+// Helper class for property markers
+class PropertyMarker {
+  final PropertyModel property;
+  final LatLng position;
+  final bool isSelected;
+
+  PropertyMarker({
+    required this.property,
+    required this.position,
+    required this.isSelected,
+  });
+}

@@ -2,560 +2,601 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import '../../../controllers/explore_controller.dart';
-import '../../../controllers/theme_controller.dart';
-import '../../../data/models/property_model.dart';
+import '../../../controllers/filters_controller.dart';
 import '../../../utils/app_colors.dart';
-import '../../../../widgets/common/property_filter_widget.dart';
+import '../../../utils/error_mapper.dart';
+import '../../../../widgets/common/loading_states.dart';
+import '../../../../widgets/common/error_states.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 
-
 class ExploreView extends GetView<ExploreController> {
-  const ExploreView({super.key});
+  ExploreView({super.key});
+  
+  FiltersController get filtersController => Get.find<FiltersController>();
 
   @override
   Widget build(BuildContext context) {
-    final ThemeController themeController = Get.find<ThemeController>();
-    
+
     return Scaffold(
-      body: Stack(
-        children: [
-          // OpenStreetMap with Flutter Map
-          Obx(() => FlutterMap(
+      backgroundColor: AppColors.scaffoldBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.appBarBackground,
+        elevation: 0,
+        title: Text(
+          'Explore Properties',
+          style: TextStyle(
+            color: AppColors.appBarText,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          // Search toggle
+          Obx(() => IconButton(
+            icon: Icon(
+              controller.searchQuery.value.isEmpty ? Icons.search : Icons.search_off,
+              color: AppColors.iconColor,
+            ),
+            onPressed: () => _toggleSearch(context),
+          )),
+          
+          // Filters
+          Obx(() => IconButton(
+            icon: Stack(
+              children: [
+                Icon(
+                  Icons.tune,
+                  color: AppColors.iconColor,
+                ),
+                if (filtersController.activeFilterCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryYellow,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '${filtersController.activeFilterCount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onPressed: () => Get.toNamed('/filters'),
+          )),
+        ],
+      ),
+      body: Obx(() {
+        switch (controller.state.value) {
+          case ExploreState.loading:
+            return _buildLoadingState();
+            
+          case ExploreState.error:
+            return _buildErrorState();
+            
+          case ExploreState.empty:
+            return _buildEmptyState();
+            
+          case ExploreState.loaded:
+          case ExploreState.loadingMore:
+            return _buildMapInterface(context);
+            
+          default:
+            return _buildLoadingState();
+        }
+      }),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Stack(
+      children: [
+        // Skeleton map
+        Container(
+          color: AppColors.surface,
+          child: Center(
+            child: Icon(
+              Icons.map,
+              size: 100,
+              color: AppColors.divider,
+            ),
+          ),
+        ),
+        
+        // Loading overlay with progress
+        Obx(() {
+          if (controller.loadingProgress.value > 0) {
+            return LoadingStates.progressiveLoadingIndicator(
+              current: controller.loadingProgress.value,
+              total: controller.totalPages.value,
+              message: 'Loading properties for map...',
+            );
+          }
+          return LoadingStates.mapLoadingOverlay();
+        }),
+      ],
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Obx(() {
+      final errorMessage = controller.error.value;
+      if (errorMessage == null) return const SizedBox();
+      
+      try {
+        final exception = ErrorMapper.mapApiError(Exception(errorMessage));
+        return ErrorStates.genericError(
+          error: exception,
+          onRetry: controller.retryLoading,
+        );
+      } catch (e) {
+        return ErrorStates.networkError(
+          onRetry: controller.retryLoading,
+          customMessage: errorMessage,
+        );
+      }
+    });
+  }
+
+  Widget _buildEmptyState() {
+    return ErrorStates.emptyState(
+      title: 'No Properties Found',
+      message: 'No properties found in this area.\nTry adjusting your search location or filters.',
+      icon: Icons.location_off,
+      onAction: () => Get.toNamed('/filters'),
+      actionText: 'Adjust Filters',
+    );
+  }
+
+  Widget _buildMapInterface(BuildContext context) {
+    return Stack(
+      children: [
+        // Main map
+        Positioned.fill(
+          child: Obx(() => FlutterMap(
             mapController: controller.mapController,
             options: MapOptions(
-              initialCenter: controller.currentLocation.value,
+              initialCenter: controller.currentCenter.value,
               initialZoom: controller.currentZoom.value,
-              onMapReady: controller.onMapReady,
-              onPositionChanged: controller.onPositionChanged,
-              onMapEvent: controller.onMapEvent,
+              onPositionChanged: controller.onMapMove,
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all,
               ),
             ),
             children: [
-              // OpenStreetMap tile layer
+              // Map tiles
               TileLayer(
-                urlTemplate: Get.isDarkMode 
-                    ? 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png'
-                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.ghar360',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.ghar360.app',
                 maxZoom: 19,
-                tileBuilder: (context, tileWidget, tile) {
-                  return ColorFiltered(
-                    colorFilter: ColorFilter.mode(
-                      Get.isDarkMode 
-                          ? Colors.black.withValues(alpha: 0.2)
-                          : Colors.white.withValues(alpha: 0.1),
-                      BlendMode.color,
-                    ),
-                    child: tileWidget,
-                  );
-                },
               ),
               
-              // Radius circle
-              CircleLayer(
-                circles: [controller.radiusCircle],
-              ),
+              // Search radius circle
+              if (filtersController.hasLocation)
+                CircleLayer(
+                  circles: [
+                    CircleMarker(
+                      point: controller.currentCenter.value,
+                      radius: controller.currentRadius.value * 1000, // Convert to meters
+                      color: AppColors.primaryYellow.withOpacity(0.1),
+                      borderColor: AppColors.primaryYellow.withOpacity(0.5),
+                      borderStrokeWidth: 2,
+                    ),
+                  ],
+                ),
               
               // Property markers
               MarkerLayer(
-                markers: controller.markers,
-              ),
-              
-              // Current location marker
-              if (controller.hasLocationPermission.value)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      width: 20.0,
-                      height: 20.0,
-                      point: controller.currentLocation.value,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                markers: controller.propertyMarkers.map((marker) => Marker(
+                  point: marker.position,
+                  width: 40,
+                  height: 40,
+                  child: GestureDetector(
+                    onTap: () => controller.selectProperty(marker.property),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: marker.isSelected ? AppColors.primaryYellow : AppColors.accentBlue,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          )),
-          
-          // Top Search Bar and Controls
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 16,
-            right: 16,
-            child: Column(
-              children: [
-                // Search Bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: AppColors.getCardShadow(),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controller.searchController,
-                          style: TextStyle(color: AppColors.textPrimary),
-                          decoration: InputDecoration(
-                            hintText: 'search_hint'.tr,
-                            hintStyle: TextStyle(color: AppColors.searchHint),
-                            prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
-                          onSubmitted: controller.searchLocation,
-                        ),
-                      ),
-                      Obx(() => controller.searchQuery.value.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(Icons.clear, color: AppColors.iconColor),
-                              onPressed: controller.clearSearch,
-                            )
-                          : const SizedBox.shrink()),
-                      Obx(() => controller.isSearching.value
-                          ? Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.loadingIndicator),
-                                ),
-                              ),
-                            )
-                          : const SizedBox.shrink()),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Control Buttons Row
-                Row(
-                  children: [
-                    // Filters Button
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.buttonBackground,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: AppColors.getCardShadow(),
-                      ),
-                      child: PropertyFilterWidget(
-                        pageType: 'explore',
-                        onFiltersApplied: () {
-                          // Refresh the map markers and property list
-                          controller.refreshFilteredProperties();
-                        },
-                      ),
-                    ),
-                    
-                    const SizedBox(width: 12),
-                    
-                    // Current Location Button
-                    _buildControlButton(
-                      icon: Icons.my_location,
-                      label: 'my_location'.tr,
-                      onTap: controller.goToCurrentLocation,
-                      backgroundColor: AppColors.surface,
-                    ),
-                    
-                    const SizedBox(width: 12),
-                    
-                    // Theme Toggle Button
-                    Obx(() => _buildControlButton(
-                      icon: themeController.isDarkMode.value 
-                          ? Icons.light_mode 
-                          : Icons.dark_mode,
-                      label: themeController.isDarkMode.value 
-                          ? 'light'.tr 
-                          : 'dark'.tr,
-                      onTap: themeController.toggleTheme,
-                      backgroundColor: AppColors.surface,
-                    )),
-                    
-                    const Spacer(),
-                    
-                    // Property Count and Radius Info
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: AppColors.getCardShadow(),
-                      ),
-                      child: Obx(() => Text(
-                        '${controller.visiblePropertyCount} • ${controller.radiusText}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      )),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          // Loading Indicator
-          Obx(() => controller.isLoadingLocation.value
-              ? Container(
-                  color: AppColors.shadowColor.withValues(alpha: 0.3),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.loadingIndicator),
-                    ),
-                  ),
-                )
-              : const SizedBox.shrink()),
-          
-          // Bottom Property List
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Obx(() => controller.showPropertyList.value
-                ? _buildPropertyList()
-                : const SizedBox.shrink()),
-          ),
-          
-          // Toggle Property List Button
-          Positioned(
-            bottom: 100,
-            right: 16,
-            child: Obx(() => FloatingActionButton(
-              heroTag: "explore_fab",
-              mini: true,
-              backgroundColor: AppColors.buttonBackground,
-              onPressed: controller.togglePropertyList,
-              child: Icon(
-                controller.showPropertyList.value 
-                    ? Icons.keyboard_arrow_down 
-                    : Icons.keyboard_arrow_up,
-                color: AppColors.buttonText,
-              ),
-            )),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildControlButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required Color backgroundColor,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppColors.getCardShadow(),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: backgroundColor == AppColors.buttonBackground 
-                  ? AppColors.buttonText 
-                  : AppColors.textSecondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: backgroundColor == AppColors.buttonBackground 
-                    ? AppColors.buttonText 
-                    : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPropertyList() {
-    return Container(
-      height: 280,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: AppColors.getCardShadow(),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.divider,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Obx(() => Text(
-                  '${controller.visiblePropertyCount} Properties Found',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                )),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(Icons.close, color: AppColors.iconColor),
-                  onPressed: controller.togglePropertyList,
-                ),
-              ],
-            ),
-          ),
-          
-          // Property List
-          Expanded(
-            child: Obx(() => controller.visibleProperties.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.home_outlined, size: 48, color: AppColors.iconColor),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No properties found in this area',
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: controller.visibleProperties.length,
-                    itemBuilder: (context, index) {
-                      final property = controller.visibleProperties[index];
-                      return _buildPropertyCard(property);
-                    },
-                  )),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPropertyCard(PropertyModel property) {
-    return Obx(() => GestureDetector(
-      onTap: () => controller.viewPropertyDetails(property),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: controller.selectedPropertyId.value == property.id.toString()
-              ? AppColors.primaryYellow.withValues(alpha: 0.1)
-              : AppColors.propertyCardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: controller.selectedPropertyId.value == property.id.toString()
-                ? AppColors.primaryYellow
-                : AppColors.border,
-            width: controller.selectedPropertyId.value == property.id.toString() ? 2 : 1,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              // Property Image
-              RobustNetworkImage(
-                imageUrl: property.images?.isNotEmpty == true ? property.images!.first.imageUrl : property.mainImage,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                borderRadius: BorderRadius.circular(8),
-                errorWidget: Container(
-                  width: 80,
-                  height: 80,
-                  color: AppColors.inputBackground,
-                  child: Icon(Icons.home, color: AppColors.iconColor),
-                ),
-              ),
-              
-              const SizedBox(width: 12),
-              
-              // Property Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      property.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.propertyCardText,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    
-                    const SizedBox(height: 4),
-                    
-                    Text(
-                      property.addressDisplay,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.propertyCardSubtext,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    
-                    const SizedBox(height: 8),
-                    
-                    // Property specs - first row
-                    Row(
-                      children: [
-                        if (property.bedrooms != null)
-                          _buildPropertySpec(Icons.bed, '${property.bedrooms}'),
-                        if (property.bedrooms != null && property.bathrooms != null)
-                          const SizedBox(width: 12),
-                        if (property.bathrooms != null)
-                          _buildPropertySpec(Icons.bathtub, '${property.bathrooms}'),
-                        if ((property.bedrooms != null || property.bathrooms != null) && property.areaSqft != null)
-                          const SizedBox(width: 12),
-                        if (property.areaSqft != null)
-                          _buildPropertySpec(Icons.square_foot, '${property.areaSqft?.toInt()}'),
-                      ],
-                    ),
-                    
-                    // Additional specs - second row if available
-                    if (property.floorNumber != null || property.parkingSpaces != null || property.ageOfProperty != null) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          if (property.floorNumber != null)
-                            _buildPropertySpec(Icons.layers, 'Floor ${property.floorNumber}'),
-                          if (property.floorNumber != null && property.parkingSpaces != null)
-                            const SizedBox(width: 12),
-                          if (property.parkingSpaces != null)
-                            _buildPropertySpec(Icons.local_parking, '${property.parkingSpaces}P'),
-                          if ((property.floorNumber != null || property.parkingSpaces != null) && property.ageOfProperty != null)
-                            const SizedBox(width: 12),
-                          if (property.ageOfProperty != null && property.ageOfProperty! <= 5)
-                            _buildPropertySpec(Icons.new_releases, property.ageOfProperty == 0 ? 'New' : '${property.ageOfProperty}y'),
                         ],
                       ),
-                    ],
-                  ],
-                ),
-              ),
-              
-              // Price and Status
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    property.formattedPrice,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.propertyCardPrice,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryYellow.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      property.purposeString,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryYellow.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    property.propertyTypeString,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.propertyCardSubtext,
-                    ),
-                  ),
-                  // Status indicator
-                  if (property.status != PropertyStatus.available)
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: property.status == PropertyStatus.sold 
-                            ? Colors.red.withValues(alpha: 0.1)
-                            : Colors.orange.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        property.statusString,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                          color: property.status == PropertyStatus.sold 
-                              ? Colors.red
-                              : Colors.orange,
+                      child: Center(
+                        child: Text(
+                          marker.property.formattedPrice.replaceAll('₹', '₹').substring(0, 4),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
+                  ),
+                )).toList(),
+              ),
+            ],
+          )),
+        ),
+        
+        // Search bar (if active)
+        Obx(() {
+          if (controller.searchQuery.value.isNotEmpty || _isSearching.value) {
+            return _buildSearchBar(context);
+          }
+          return const SizedBox();
+        }),
+        
+        // Map controls
+        Positioned(
+          top: MediaQuery.of(context).padding.top + (controller.searchQuery.value.isNotEmpty || _isSearching.value ? 70 : 10),
+          right: 16,
+          child: _buildMapControls(),
+        ),
+        
+        // Info panel
+        Positioned(
+          top: MediaQuery.of(context).padding.top + (controller.searchQuery.value.isNotEmpty || _isSearching.value ? 70 : 10),
+          left: 16,
+          child: _buildInfoPanel(),
+        ),
+        
+        // Loading indicator for more properties
+        if (controller.state.value == ExploreState.loadingMore)
+          Positioned(
+            bottom: 100,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surface.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Loading more properties...',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                 ],
+              ),
+            ),
+          ),
+        
+        // Selected property bottom sheet
+        Obx(() {
+          if (controller.hasSelection) {
+            return _buildPropertyBottomSheet();
+          }
+          return const SizedBox();
+        }),
+      ],
+    );
+  }
+
+  // Track search state
+  final RxBool _isSearching = false.obs;
+
+  Widget _buildSearchBar(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 10,
+      left: 16,
+      right: 16,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: AppColors.getCardShadow(),
+        ),
+        child: TextField(
+          onChanged: controller.updateSearchQuery,
+          onSubmitted: (value) {
+            if (value.isEmpty) _isSearching.value = false;
+          },
+          style: TextStyle(color: AppColors.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'Search locations...',
+            hintStyle: TextStyle(color: AppColors.textSecondary),
+            prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
+            suffixIcon: IconButton(
+              icon: Icon(Icons.clear, color: AppColors.iconColor),
+              onPressed: () {
+                controller.clearSearch();
+                _isSearching.value = false;
+              },
+            ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapControls() {
+    return Column(
+      children: [
+        // Zoom controls
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: AppColors.getCardShadow(),
+          ),
+          child: Column(
+            children: [
+              IconButton(
+                icon: Icon(Icons.add, color: AppColors.iconColor),
+                onPressed: controller.zoomIn,
+              ),
+              Container(
+                width: 1,
+                height: 1,
+                color: AppColors.divider,
+              ),
+              IconButton(
+                icon: Icon(Icons.remove, color: AppColors.iconColor),
+                onPressed: controller.zoomOut,
               ),
             ],
           ),
         ),
-      ),
-    ));
-  }
-
-  Widget _buildPropertySpec(IconData icon, String value) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: AppColors.propertyFeatureIcon),
-        const SizedBox(width: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.propertyFeatureText,
+        
+        const SizedBox(height: 12),
+        
+        // Current location button
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: AppColors.getCardShadow(),
+          ),
+          child: IconButton(
+            icon: Icon(Icons.my_location, color: AppColors.primaryYellow),
+            onPressed: controller.recenterToCurrentLocation,
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Fit bounds button
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: AppColors.getCardShadow(),
+          ),
+          child: IconButton(
+            icon: Icon(Icons.center_focus_strong, color: AppColors.accentBlue),
+            onPressed: controller.fitBoundsToProperties,
           ),
         ),
       ],
     );
   }
-} 
+
+  Widget _buildInfoPanel() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: AppColors.getCardShadow(),
+      ),
+      child: Obx(() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            controller.propertiesCountText,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            controller.currentAreaText,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (controller.locationDisplayText != 'All Locations') ...[
+            const SizedBox(height: 4),
+            Text(
+              controller.locationDisplayText,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.primaryYellow,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ],
+      )),
+    );
+  }
+
+  Widget _buildPropertyBottomSheet() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: AppColors.getCardShadow(),
+        ),
+        child: Obx(() {
+          final property = controller.selectedProperty.value;
+          if (property == null) return const SizedBox();
+          
+          return Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Property details
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      // Property image
+                      RobustNetworkImage(
+                        imageUrl: property.mainImage,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        borderRadius: BorderRadius.circular(12),
+                        errorWidget: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.inputBackground,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.home, color: AppColors.iconColor),
+                        ),
+                      ),
+                      
+                      const SizedBox(width: 16),
+                      
+                      // Property info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              property.title,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              property.addressDisplay,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Text(
+                                  property.formattedPrice,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryYellow,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accentBlue.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    property.purposeString,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.accentBlue,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Action buttons
+                      Column(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.close, color: AppColors.textSecondary),
+                            onPressed: controller.clearSelection,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.info, color: AppColors.primaryYellow),
+                            onPressed: () => controller.viewPropertyDetails(property),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  void _toggleSearch(BuildContext context) {
+    if (controller.searchQuery.value.isNotEmpty) {
+      controller.clearSearch();
+      _isSearching.value = false;
+    } else {
+      _isSearching.value = true;
+    }
+  }
+}

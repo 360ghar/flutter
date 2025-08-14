@@ -6,7 +6,7 @@ import '../controllers/edit_profile_controller.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 
 class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
-  const EditProfileView({Key? key}) : super(key: key);
+  const EditProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {

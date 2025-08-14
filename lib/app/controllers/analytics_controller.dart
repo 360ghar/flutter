@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../data/providers/api_service.dart';
 import 'auth_controller.dart';
+import '../utils/debug_logger.dart';
 
 class AnalyticsController extends GetxController {
   late final ApiService _apiService;
@@ -54,9 +55,9 @@ class AnalyticsController extends GetxController {
         );
       }
       
-      print('Event tracked: $eventType');
-    } catch (e) {
-      print('Error tracking event $eventType: $e');
+      DebugLogger.info('Event tracked: $eventType');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error tracking event $eventType', e, stackTrace);
     }
   }
 
@@ -222,7 +223,7 @@ class AnalyticsController extends GetxController {
 
   // Debug methods (remove in production)
   void printSessionEvents() {
-    print('Session Events: $_sessionEvents');
+    DebugLogger.debug('Session Events: $_sessionEvents');
   }
 
   Map<String, dynamic> get debugInfo => {

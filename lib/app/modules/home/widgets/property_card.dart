@@ -4,6 +4,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../../utils/webview_helper.dart';
 import '../../../data/models/property_model.dart';
 import '../../../utils/app_colors.dart';
+import '../../../utils/debug_logger.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 
 class PropertyCard extends StatelessWidget {
@@ -272,7 +273,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
             }
           },
           onWebResourceError: (WebResourceError error) {
-            print('⚠️ WebView error in 360° tour: ${error.description}');
+            DebugLogger.warning('WebView error in 360° tour: ${error.description}');
             if (mounted) {
               setState(() {
                 isLoading = false;
@@ -317,8 +318,8 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
     ''';
     
       controller!.loadHtmlString(htmlContent);
-    } catch (e) {
-      print('❌ Error initializing WebView for 360° tour: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error initializing WebView for 360° tour', e, stackTrace);
       if (mounted) {
         setState(() {
           isLoading = false;

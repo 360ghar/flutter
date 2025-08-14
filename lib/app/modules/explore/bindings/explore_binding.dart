@@ -1,25 +1,32 @@
 import 'package:get/get.dart';
 import '../../../controllers/explore_controller.dart';
-import '../../../utils/controller_helper.dart';
-import '../../filters/controllers/filters_controller.dart';
+import '../../../controllers/filters_controller.dart';
+import '../../../controllers/location_controller.dart';
+import '../../../data/providers/api_client.dart';
+import '../../../data/repositories/properties_repository.dart';
 
 class ExploreBinding extends Bindings {
   @override
   void dependencies() {
-    // Ensure PropertyController is available (ExploreController depends on it)
-    ControllerHelper.ensurePropertyController();
-
-    // Create FiltersController if not already available
-    if (!Get.isRegistered<FiltersController>()) {
-      Get.lazyPut<FiltersController>(
-        () => FiltersController(),
-        fenix: true,
-      );
+    // Core services (ensure they exist)
+    if (!Get.isRegistered<ApiClient>()) {
+      Get.lazyPut<ApiClient>(() => ApiClient(), fenix: true);
     }
     
-    // Create ExploreController after dependencies
-    Get.lazyPut<ExploreController>(
-      () => ExploreController(),
-    );
+    // Repositories
+    if (!Get.isRegistered<PropertiesRepository>()) {
+      Get.lazyPut<PropertiesRepository>(() => PropertiesRepository(), fenix: true);
+    }
+    
+    // Shared controllers (only register if not already registered)
+    if (!Get.isRegistered<LocationController>()) {
+      Get.lazyPut<LocationController>(() => LocationController(), fenix: true);
+    }
+    if (!Get.isRegistered<FiltersController>()) {
+      Get.lazyPut<FiltersController>(() => FiltersController(), fenix: true);
+    }
+    
+    // Screen controller
+    Get.lazyPut<ExploreController>(() => ExploreController());
   }
-} 
+}

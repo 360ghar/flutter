@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart' as getx;
@@ -8,6 +6,7 @@ import '../models/user_model.dart';
 import '../models/visit_model.dart';
 import '../models/booking_model.dart';
 import '../models/unified_property_response.dart';
+import '../models/unified_filter_model.dart';
 import '../models/analytics_models.dart';
 import '../../utils/debug_logger.dart';
 import '../../utils/error_handler.dart';
@@ -125,9 +124,9 @@ class VisitListResponse {
         completed: safeJson['completed'] ?? visits.where((v) => v.isCompleted).length,
         cancelled: safeJson['cancelled'] ?? visits.where((v) => v.isCancelled).length,
       );
-    } catch (e) {
-      DebugLogger.error('❌ Error in VisitListResponse.fromJson: $e');
-      DebugLogger.api('📊 Raw JSON: $json');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error in VisitListResponse.fromJson', e, stackTrace);
+      DebugLogger.api('Raw JSON: $json');
       rethrow;
     }
   }
@@ -181,8 +180,8 @@ class ApiService extends getx.GetConnect {
               body: request.files,
             );
           }
-        } catch (e) {
-          DebugLogger.error('🔄 Token refresh failed: $e');
+        } catch (e, stackTrace) {
+          DebugLogger.error('Token refresh failed', e);
           _handleAuthenticationFailure();
         }
       }
@@ -193,27 +192,27 @@ class ApiService extends getx.GetConnect {
   Future<void> _initializeService() async {
     try {
       // Initialize environment variables - use root URL for GetConnect
-      final fullApiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api/v1';
+      final fullApiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000';
       // Extract base URL without /api/v1 for GetConnect
       _baseUrl = fullApiUrl.replaceAll('/api/v1', '');
-      DebugLogger.init('🔧 API Service initialized with base URL: $_baseUrl');
+      DebugLogger.startup('API Service initialized with base URL: $_baseUrl');
       
       // Check if Supabase is already initialized
       try {
         _supabase = Supabase.instance.client;
-        DebugLogger.success('✅ Supabase client found');
-      } catch (e) {
-        DebugLogger.warning('⚠️ Supabase not initialized, attempting to initialize...');
+        DebugLogger.success('Supabase client found');
+      } catch (e, stackTrace) {
+        DebugLogger.warning('Supabase not initialized, attempting to initialize...');
         // Initialize Supabase if not already initialized
         await Supabase.initialize(
           url: dotenv.env['SUPABASE_URL'] ?? '',
           anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
         );
         _supabase = Supabase.instance.client;
-        DebugLogger.success('✅ Supabase initialized successfully');
+        DebugLogger.success('Supabase initialized successfully');
       }
-    } catch (e) {
-      DebugLogger.error('❌ Error initializing API service: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error initializing API service', e, stackTrace);
       // Create a mock client or handle the error appropriately
     }
     
@@ -224,20 +223,22 @@ class ApiService extends getx.GetConnect {
       
       switch (event) {
         case AuthChangeEvent.signedIn:
-          DebugLogger.auth('🔐 User signed in');
+          DebugLogger.auth('User signed in');
           if (session != null) {
-            DebugLogger.jwt('🔑 New session token: ${session.accessToken}');
-            DebugLogger.user('👤 User: ${session.user.email}');
+            DebugLogger.logJWTToken(
+              session.accessToken,
+              userEmail: session.user.email,
+            );
             _syncUserProfile();
           }
           break;
         case AuthChangeEvent.signedOut:
-          DebugLogger.auth('🚪 User signed out');
+          DebugLogger.auth('User signed out');
           break;
         case AuthChangeEvent.tokenRefreshed:
-          DebugLogger.auth('🔄 Token refreshed');
+          DebugLogger.auth('Token refreshed');
           if (session != null) {
-            DebugLogger.jwt('🔑 Refreshed token: ${session.accessToken}');
+            DebugLogger.logJWTToken(session.accessToken);
           }
           break;
         default:
@@ -289,7 +290,7 @@ class ApiService extends getx.GetConnect {
           duration: const Duration(seconds: 3),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       DebugLogger.error('❌ Navigation error during auth failure: $e');
     }
   }
@@ -374,7 +375,7 @@ class ApiService extends getx.GetConnect {
             response: response.bodyString,
           );
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
         lastException = e is Exception ? e : Exception(e.toString());
         
         // If it's an auth exception, don't retry
@@ -434,7 +435,7 @@ class ApiService extends getx.GetConnect {
       }
       
       return UserModel.fromJson(safeJson);
-    } catch (e) {
+    } catch (e, stackTrace) {
       DebugLogger.error('❌ Error parsing user model: $e');
       DebugLogger.api('📊 Raw JSON: $json');
       rethrow;
@@ -447,7 +448,7 @@ class ApiService extends getx.GetConnect {
       // Validate critical fields before parsing
       _validatePropertyJson(json);
       return PropertyModel.fromJson(json);
-    } catch (e) {
+    } catch (e, stackTrace) {
       DebugLogger.error('❌ Error parsing property model: $e');
       DebugLogger.api('📊 Raw JSON: $json');
       
@@ -493,7 +494,7 @@ class ApiService extends getx.GetConnect {
               // Test parsing each property individually
               _validatePropertyJson(propertyData);
               validProperties.add(propertyData);
-            } catch (e) {
+            } catch (e, stackTrace) {
               failedCount++;
               DebugLogger.warning('⚠️ Skipping property at index $i due to parsing error: $e');
               continue;
@@ -513,7 +514,7 @@ class ApiService extends getx.GetConnect {
       }
       
       return UnifiedPropertyResponse.fromJson(json);
-    } catch (e) {
+    } catch (e, stackTrace) {
       DebugLogger.error('❌ Error parsing unified property response: $e');
       DebugLogger.api('📊 Raw JSON: $json');
       rethrow;
@@ -580,7 +581,7 @@ class ApiService extends getx.GetConnect {
       DebugLogger.api('🔄 Syncing user profile with backend...');
       await _makeRequest('/auth/sync', (json) => json, method: 'POST', operationName: 'Sync User Profile');
       DebugLogger.success('✅ User profile synced successfully');
-    } catch (e) {
+    } catch (e, stackTrace) {
       DebugLogger.error('❌ Failed to sync user profile: $e');
     }
   }
@@ -651,6 +652,25 @@ class ApiService extends getx.GetConnect {
         }
       },
       operationName: 'Get Disliked Properties',
+    );
+  }
+
+  // Unified property search method that supports all filters
+  Future<UnifiedPropertyResponse> searchProperties({
+    required UnifiedFilterModel filters,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    return await _makeRequest(
+      '/properties/search',
+      (json) => _parseUnifiedPropertyResponse(json),
+      method: 'POST',
+      queryParams: {
+        'page': page.toString(),
+        'limit': limit.toString(),
+      },
+      body: filters.toJson(),
+      operationName: 'Search Properties',
     );
   }
 
@@ -815,7 +835,7 @@ class ApiService extends getx.GetConnect {
       DebugLogger.api('🏥 Health check body: ${response.bodyString}');
       
       return response.statusCode == 200;
-    } catch (e) {
+    } catch (e, stackTrace) {
       DebugLogger.error('💔 Backend connection test failed: $e');
       // Try alternative endpoint for testing
       try {
@@ -1027,13 +1047,14 @@ class ApiService extends getx.GetConnect {
         // Handle both List and Map responses from backend
         if (json is List) {
           return (json as List).cast<Map<String, dynamic>>();
-        } else if (json is Map<String, dynamic>) {
-          // If response is a Map, extract the data array or return empty list
-          final data = json['data'] ?? json['history'] ?? json['results'];
-          if (data is List) {
-            return (data as List).cast<Map<String, dynamic>>();
+        } else {
+          // If response is a Map, extract the array or return empty list
+          final resultsData = json['data'] ?? json['history'] ?? json['results'];
+          if (resultsData is List) {
+            return resultsData.cast<Map<String, dynamic>>();
           }
         }
+      
         // Return empty list if parsing fails
         return <Map<String, dynamic>>[];
       },
@@ -1304,8 +1325,4 @@ class ApiService extends getx.GetConnect {
     });
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }

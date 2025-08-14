@@ -8,10 +8,10 @@ class ThemeToggleButton extends StatelessWidget {
   final double? iconSize;
 
   const ThemeToggleButton({
-    Key? key,
+    super.key,
     this.showLabel = false,
     this.iconSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -63,9 +63,9 @@ class AnimatedThemeToggle extends StatelessWidget {
   final double? size;
 
   const AnimatedThemeToggle({
-    Key? key,
+    super.key,
     this.size,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../app/utils/theme.dart';
 
 // 360 Tour Illustration with rotating animation

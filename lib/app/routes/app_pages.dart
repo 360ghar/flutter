@@ -10,7 +10,7 @@ import '../modules/auth/views/signup_view.dart';
 import '../modules/auth/views/profile_completion_view.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
-import '../modules/home/bindings/home_binding.dart';
+import '../bindings/discover_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/property_details/bindings/property_details_binding.dart';
 import '../modules/property_details/views/property_details_view.dart';
@@ -29,7 +29,7 @@ import '../modules/profile/controllers/notifications_controller.dart';
 import '../modules/profile/controllers/privacy_controller.dart';
 import '../modules/profile/controllers/help_controller.dart';
 import '../modules/profile/controllers/about_controller.dart';
-import '../modules/favourites/bindings/favourites_binding.dart';
+import '../bindings/likes_binding.dart';
 import '../modules/favourites/views/favourites_view.dart';
 import '../modules/visits/bindings/visits_binding.dart';
 import '../modules/visits/views/visits_view.dart';
@@ -38,7 +38,9 @@ import '../modules/explore/views/explore_view.dart';
 import '../modules/tour/bindings/tour_binding.dart';
 import '../modules/tour/views/tour_view.dart';
 import '../modules/filters/views/filters_view.dart';
-import '../modules/filters/bindings/filters_binding.dart';
+import '../bindings/filters_binding.dart';
+import '../modules/location_search/views/location_search_view.dart';
+import '../modules/location_search/bindings/location_search_binding.dart';
 import '../middlewares/auth_middleware.dart';
 import 'app_routes.dart';
 
@@ -78,12 +80,7 @@ class AppPages {
       binding: DashboardBinding(),
       middlewares: [AuthMiddleware()],
     ),
-    GetPage(
-      name: AppRoutes.home,
-      page: () => const HomeView(),
-      binding: HomeBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
+    // Legacy /home retained only if needed. Prefer /discover
     GetPage(
       name: AppRoutes.propertyDetails,
       page: () => const PropertyDetailsView(),
@@ -103,9 +100,9 @@ class AppPages {
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.favourites,
-      page: () => const FavouritesView(),
-      binding: FavouritesBinding(),
+      name: AppRoutes.likes,
+      page: () => FavouritesView(),
+      binding: LikesBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
@@ -116,7 +113,7 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.explore,
-      page: () => const ExploreView(),
+      page: () => ExploreView(),
       binding: ExploreBinding(),
       middlewares: [AuthMiddleware()],
     ),
@@ -178,6 +175,19 @@ class AppPages {
       binding: BindingsBuilder(() {
         Get.lazyPut<AboutController>(() => AboutController());
       }),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.locationSearch,
+      page: () => const LocationSearchView(),
+      binding: LocationSearchBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+  
+    GetPage(
+      name: AppRoutes.discover,
+      page: () => const HomeView(), // Swipe deck interface
+      binding: DiscoverBinding(),
       middlewares: [AuthMiddleware()],
     ),
   ];

@@ -4,7 +4,7 @@ import '../../../utils/app_colors.dart';
 import '../../../mixins/theme_mixin.dart';
 
 class PrivacyView extends StatelessWidget with ThemeMixin {
-  const PrivacyView({Key? key}) : super(key: key);
+  const PrivacyView({super.key});
 
   @override
   Widget build(BuildContext context) {

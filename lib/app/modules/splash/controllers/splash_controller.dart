@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../routes/app_routes.dart';
+import '../../../utils/debug_logger.dart';
 
 class SplashController extends GetxController with GetTickerProviderStateMixin {
   // Current step in the splash screen
@@ -170,7 +170,7 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
     try {
       // Check if AuthController is available
       if (!Get.isRegistered<AuthController>()) {
-        print('AuthController not registered, going to onboarding');
+        DebugLogger.warning('AuthController not registered, going to onboarding');
         Get.offAllNamed(AppRoutes.onboarding);
         return;
       }
@@ -208,8 +208,8 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
         // User not authenticated, show onboarding
         Get.offAllNamed(AppRoutes.onboarding);
       }
-    } catch (e) {
-      print('Error during splash navigation: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error during splash navigation', e, stackTrace);
       // On any error, go to onboarding
       Get.offAllNamed(AppRoutes.onboarding);
     }
@@ -226,8 +226,8 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
       
       // You can add more specific checks here based on your requirements
       return hasBasicInfo;
-    } catch (e) {
-      print('Error checking profile completion: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error checking profile completion', e, stackTrace);
       return false;
     }
   }

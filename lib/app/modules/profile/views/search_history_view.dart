@@ -4,7 +4,7 @@ import '../../../utils/app_colors.dart';
 import '../../../mixins/theme_mixin.dart';
 
 class SearchHistoryView extends StatelessWidget with ThemeMixin {
-  const SearchHistoryView({Key? key}) : super(key: key);
+  const SearchHistoryView({super.key});
 
   @override
   Widget build(BuildContext context) {

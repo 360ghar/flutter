@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart';
+import '../../../utils/debug_logger.dart';
 
 class SearchHistoryController extends GetxController {
   final GetStorage _storage = GetStorage();
@@ -28,7 +29,7 @@ class SearchHistoryController extends GetxController {
         _saveSearchHistory();
       }
       filteredHistory.value = List.from(searchHistory);
-    } catch (e) {
+    } catch (e, stackTrace) {
       searchHistory.value = _getSampleSearchHistory();
       filteredHistory.value = List.from(searchHistory);
     } finally {
@@ -125,7 +126,7 @@ class SearchHistoryController extends GetxController {
 
       filteredHistory.value = List.from(searchHistory);
       _saveSearchHistory();
-    } catch (e) {
+    } catch (e, stackTrace) {
       Get.snackbar('Error', 'Failed to save search history');
     }
   }
@@ -141,7 +142,7 @@ class SearchHistoryController extends GetxController {
         'Search removed from history',
         snackPosition: SnackPosition.BOTTOM,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       Get.snackbar('Error', 'Failed to remove search');
     }
   }
@@ -178,7 +179,7 @@ class SearchHistoryController extends GetxController {
   void repeatSearch(Map<String, dynamic> search) {
     // Navigate back to search/home page with the search parameters
     Get.back(); // Go back to profile
-    Get.offNamed('/home', arguments: {
+    Get.offNamed('/discover', arguments: {
       'search': search,
       'autoSearch': true,
     });
@@ -187,8 +188,8 @@ class SearchHistoryController extends GetxController {
   void _saveSearchHistory() {
     try {
       _storage.write('searchHistory', searchHistory.toList());
-    } catch (e) {
-      print('Error saving search history: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error saving search history', e, stackTrace);
     }
   }
 
@@ -212,7 +213,7 @@ class SearchHistoryController extends GetxController {
       } else {
         return DateFormat('MMM dd, yyyy').format(date);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       return '';
     }
   }

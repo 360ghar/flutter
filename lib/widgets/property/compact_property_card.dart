@@ -10,11 +10,11 @@ class CompactPropertyCard extends StatelessWidget {
   final VoidCallback onFavouriteToggle;
 
   const CompactPropertyCard({
-    Key? key,
+    super.key,
     required this.property,
     required this.isFavourite,
     required this.onFavouriteToggle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

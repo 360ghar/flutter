@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../data/providers/api_service.dart';
 import 'auth_controller.dart';
+import '../utils/debug_logger.dart';
 
 class DashboardController extends GetxController {
   late final ApiService _apiService;
@@ -57,9 +58,9 @@ class DashboardController extends GetxController {
       userStats.value = results[2] as Map<String, dynamic>;
       recentActivity.value = results[3] as List<Map<String, dynamic>>;
       
-    } catch (e) {
+    } catch (e, stackTrace) {
       error.value = 'Failed to load dashboard data';
-      print('Error loading dashboard data: $e');
+      DebugLogger.error('Error loading dashboard data', e, stackTrace);
       
       Get.snackbar(
         'Dashboard Error',
@@ -94,8 +95,8 @@ class DashboardController extends GetxController {
         'time_spent_minutes': dashboardData['time_spent_minutes'] ?? 0,
         'favorite_location': dashboardData['favorite_location'] ?? 'N/A',
       };
-    } catch (e) {
-      print('Error loading user stats: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error loading user stats', e, stackTrace);
       return {};
     }
   }
@@ -124,8 +125,8 @@ class DashboardController extends GetxController {
           'icon': 'favorite',
         },
       ];
-    } catch (e) {
-      print('Error loading recent activity: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error loading recent activity', e, stackTrace);
       return [];
     }
   }
@@ -169,8 +170,8 @@ class DashboardController extends GetxController {
     try {
       final history = await _apiService.getSearchHistory();
       searchHistory.value = history;
-    } catch (e) {
-      print('Error refreshing search history: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error refreshing search history', e, stackTrace);
     }
   }
 

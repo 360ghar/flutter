@@ -4,7 +4,7 @@ import '../../../utils/app_colors.dart';
 import '../../../mixins/theme_mixin.dart';
 
 class AboutView extends StatelessWidget with ThemeMixin {
-  const AboutView({Key? key}) : super(key: key);
+  const AboutView({super.key});
 
   @override
   Widget build(BuildContext context) {

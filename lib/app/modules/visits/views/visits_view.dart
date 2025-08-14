@@ -5,6 +5,7 @@ import '../../../data/models/visit_model.dart';
 import '../../../utils/app_colors.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 import '../widgets/visits_skeleton_loaders.dart';
+import '../../../widgets/common/shared_app_bar.dart';
 
 class VisitsView extends GetView<VisitsController> {
   const VisitsView({super.key});
@@ -22,31 +23,27 @@ class VisitsView extends GetView<VisitsController> {
       length: 2,
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
-        appBar: AppBar(
-          backgroundColor: AppColors.appBarBackground,
-          elevation: 0,
-          title: Text(
-            'my_visits'.tr,
-            style: TextStyle(
-              color: AppColors.appBarText,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          bottom: TabBar(
-            indicatorColor: AppColors.primaryYellow,
-            indicatorWeight: 3,
-            labelColor: AppColors.primaryYellow,
-            unselectedLabelColor: AppColors.tabUnselected,
-            labelStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.normal,
-            ),
-            tabs: [
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight + 48), // AppBar + TabBar height
+          child: Column(
+            children: [
+              const SharedAppBar(title: 'My Visits'),
+              Container(
+                color: AppColors.appBarBackground,
+                child: TabBar(
+                  indicatorColor: AppColors.primaryYellow,
+                  indicatorWeight: 3,
+                  labelColor: AppColors.primaryYellow,
+                  unselectedLabelColor: AppColors.tabUnselected,
+                  labelStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.normal,
+                  ),
+                  tabs: [
               Tab(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -99,6 +96,9 @@ class VisitsView extends GetView<VisitsController> {
                   ],
                 ),
               ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -133,20 +133,7 @@ class VisitsView extends GetView<VisitsController> {
             ],
           );
         }),
-        floatingActionButton: FloatingActionButton(
-          heroTag: "visits_fab",
-          onPressed: () {
-            Get.snackbar(
-              'schedule_visit'.tr,
-              'Visit scheduling feature coming soon',
-              backgroundColor: AppColors.snackbarBackground,
-              colorText: AppColors.snackbarText,
-            );
-          },
-          backgroundColor: AppColors.primaryYellow,
-          foregroundColor: AppColors.buttonText,
-          child: const Icon(Icons.add),
-        ),
+
       ),
     );
   }
@@ -496,16 +483,7 @@ class VisitsView extends GetView<VisitsController> {
               _buildStatusChip(visit.status),
             ],
           ),
-          if (visit.notes.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              visit.notes,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
+
           if (isUpcoming && visit.status == VisitStatus.scheduled) ...[
             const SizedBox(height: 12),
             Row(

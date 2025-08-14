@@ -12,6 +12,7 @@ import 'app/bindings/initial_binding.dart';
 import 'app/controllers/theme_controller.dart';
 import 'app/controllers/localization_controller.dart';
 import 'app/translations/app_translations.dart';
+import 'app/utils/debug_logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,17 +20,26 @@ void main() async {
   // Initialize GetStorage before any controllers that depend on it
   await GetStorage.init();
   
+  // Load environment variables first (before DebugLogger initialization)
+  try {
+    await dotenv.load(fileName: ".env.development");
+  } catch (e) {
+    // Continue without .env file - will use defaults
+  }
+  
+  // Initialize DebugLogger after dotenv is loaded
+  DebugLogger.initialize();
+  
   // Initialize WebView platform
   WebViewHelper.ensureInitialized();
   
-  // Load environment variables with error handling
+  // Log environment status after DebugLogger is ready
   try {
-    await dotenv.load(fileName: ".env.development");
-    print('✅ Environment variables loaded successfully');
-    print('🌐 API Base URL: ${dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000/api/v1'}');
+    DebugLogger.success('Environment variables loaded successfully');
+    DebugLogger.info('API Base URL: ${dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000'}');
   } catch (e) {
-    print('⚠️ Failed to load .env.development: $e');
-    print('💡 Using default configuration');
+    DebugLogger.warning('Failed to load .env.development', e);
+    DebugLogger.info('Using default configuration');
   }
   
   // Initialize Supabase with error handling
@@ -38,10 +48,10 @@ void main() async {
       url: dotenv.env['SUPABASE_URL'] ?? '',
       anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
     );
-    print('✅ Supabase initialized successfully');
+    DebugLogger.success('Supabase initialized successfully');
   } catch (e) {
-    print('⚠️ Failed to initialize Supabase: $e');
-    print('💡 Continuing without Supabase');
+    DebugLogger.warning('Failed to initialize Supabase', e);
+    DebugLogger.info('Continuing without Supabase');
   }
   
   // Initialize dependencies before running the app
@@ -78,7 +88,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       // Add proper lifecycle management
       routingCallback: (routing) {
-        print('🧭 Routing to: ${routing?.current}');
+        DebugLogger.debug('Routing to: ${routing?.current}');
       },
     ));
   }

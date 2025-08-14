@@ -57,6 +57,12 @@ genhtml coverage/lcov.info -o coverage/html
 # Analyze code for issues
 flutter analyze
 
+# Fix lint issues automatically
+dart fix --apply
+
+# Format code according to Dart style
+dart format .
+
 # Check dependencies for updates
 flutter pub outdated
 
@@ -138,18 +144,30 @@ lib/
 - **LocationController**: Handles location permissions and services
 - **LocalizationController**: Multi-language support and localization
 - **ThemeController**: Light/dark theme management and user preferences
+- **DashboardController**: Manages dashboard data and navigation
+- **DiscoverController**: Discovery and recommendation features
+- **FiltersController**: Property filtering and search parameters
+- **LikesController**: Manages liked properties and favorites
 
 #### 2. Data Layer
 - **Models**: JSON serializable with `json_annotation`
-  - PropertyModel, PropertyCardModel, PropertyImageModel
+  - PropertyModel, PropertyImageModel for property data
   - UserModel with authentication details
   - BookingModel, VisitModel for scheduling
   - UnifiedPropertyResponse for API responses
   - AnalyticsModels for tracking events
+  - FiltersModel for search and filter parameters
+  - SwipeHistoryModel for tracking user interactions
+  - UnifiedFilterModel for advanced filtering
 - **Providers**: 
   - ApiService: Real API integration with error handling
+  - ApiClient: Modern API client with Dio integration
   - ApiProvider: Legacy API provider (still in use)
 - **Repositories**: Abstraction layer between controllers and data sources
+  - PropertiesRepository: Property data access and caching
+  - PropertyRepository: Single property operations
+  - SwipesRepository: Swipe interaction tracking
+  - UserRepository: User profile and preferences
 
 #### 3. Module Structure
 Each feature follows the same pattern:
@@ -198,10 +216,11 @@ Complete dark theme implementation with:
 
 ### Backend Services
 The app supports multiple backend integrations:
+- **Supabase**: Backend as a Service with PostgreSQL database, real-time subscriptions, and authentication
 - **Real API**: Production backend with full CRUD operations
 - **Development**: Environment-based configuration switching
 - **Error Handling**: Centralized error management with user-friendly messages
-- **Authentication**: Token-based authentication system
+- **Authentication**: Token-based authentication system with Supabase Auth
 
 ### API Service Architecture
 Located in `lib/app/data/providers/api_service.dart`:
@@ -210,6 +229,14 @@ Located in `lib/app/data/providers/api_service.dart`:
 - Authentication token management
 - Retry logic for failed requests
 - Environment-based endpoint configuration
+
+### Supabase Integration
+The app uses Supabase as the primary backend service:
+- **Database**: PostgreSQL database for property listings, user profiles, and bookings
+- **Authentication**: Built-in authentication with social login support
+- **Real-time**: Live updates for property availability and new listings
+- **Storage**: File storage for property images and user avatars
+- **Row Level Security**: Database-level security policies for data protection
 
 ## Environment Configuration
 
@@ -237,7 +264,8 @@ STORAGE_BUCKET=your_storage_bucket
 - **flutter**: SDK framework
 - **get**: ^4.6.6 - State management and routing
 - **json_annotation/json_serializable**: Model serialization
-- **http**: ^1.1.0 - HTTP client for API calls
+- **dio**: ^5.3.0 - HTTP client for API calls
+- **supabase_flutter**: ^2.8.0 - Backend as a Service integration
 - **get_storage**: ^2.1.1 - Local data persistence
 
 ### UI/UX
@@ -247,6 +275,8 @@ STORAGE_BUCKET=your_storage_bucket
 - **shimmer**: ^3.0.0 - Loading animations and skeletons
 - **flutter_rating_bar**: ^4.0.1 - Property ratings
 - **cupertino_icons**: ^1.0.2 - iOS-style icons
+- **image_network**: ^2.1.2 - Advanced network image handling
+- **flutter_cache_manager**: ^3.3.1 - Advanced caching management
 
 ### Functionality
 - **geolocator**: ^14.0.1 - Location services and GPS
@@ -254,6 +284,7 @@ STORAGE_BUCKET=your_storage_bucket
 - **flutter_map**: ^8.1.1 - Interactive map integration
 - **latlong2**: ^0.9.0 - Latitude/longitude calculations
 - **webview_flutter**: ^4.4.2 - 360° tour viewing
+- **webview_flutter_web**: ^0.2.2+4 - Web platform support for WebView
 - **connectivity_plus**: ^5.0.2 - Network connectivity status
 - **flutter_localizations**: Internationalization support
 - **intl**: ^0.20.2 - Date/time formatting and localization
@@ -262,12 +293,31 @@ STORAGE_BUCKET=your_storage_bucket
 
 ## Development Guidelines
 
+### Change Scope and Minimal-Change Policy
+- Implement only what is explicitly requested. Avoid opportunistic refactors or UI changes unless asked.
+- Make the least necessary edits to achieve the requirement while upholding best practices for Flutter, GetX, and Dio.
+- Prefer modifying existing code over adding parallel/new implementations. Do not keep legacy code alongside new code; remove obsolete code paths.
+- Avoid redundant code intended for backward compatibility. The codebase is in active development; prioritize cleanliness over temporary shims.
+- Reuse existing widgets, controllers, repositories, and helpers whenever possible. Do not create duplicates.
+- Keep behavior and public APIs stable unless the task requires changes. If APIs change, update all affected call sites and remove the old API.
+- Do not introduce new UI components or visual tweaks unless the task requests them. Preserve current UI/UX.
+- Keep commits small, focused, and reversible. Include clear rationale in PR descriptions.
+- Maintain testability and quality: update or add only the minimal tests needed for the change; fix broken tests caused by removed code instead of adding workarounds.
+- Remove dead code and unused assets/imports discovered in the touched areas as part of the edit.
+
+### When minimal edits require refactor
+- If a small, surgical refactor reduces complexity or eliminates duplication in the touched scope, do it; keep it scoped.
+- Prefer in-place refactors over broad rewrites. Avoid wide-ranging renames that are not required for the task.
+
 ### Code Organization
 1. **Follow existing module structure** when adding new features
 2. **Use GetX controllers** for all state management
 3. **Create reusable widgets** in `lib/widgets/` directory
 4. **Implement proper error handling** with user-friendly messages
 5. **Add loading states** for all async operations
+6. **Module structure**: Place feature code under `lib/app/modules/<feature>/{views,controllers,bindings,widgets}`
+7. **Use dependency injection** through bindings instead of `Get.put` in widgets
+8. **Apply route guards** with `AuthMiddleware` where needed
 
 ### GetX Best Practices
 ```dart
@@ -282,13 +332,14 @@ void onInit() {
   loadProperties();
 }
 
-// ✅ Error handling
+// ✅ Error handling with proper error mapping
 void loadProperties() async {
   try {
     isLoading.value = true;
     properties.value = await repository.getProperties();
-  } catch (e) {
-    Get.snackbar('Error', 'Failed to load properties');
+  } catch (error, stackTrace) {
+    ErrorHandler.handle(ErrorMapper.map(error));
+    DebugLogger.error('Failed to load properties', error, stackTrace);
   } finally {
     isLoading.value = false;
   }
@@ -300,6 +351,9 @@ void loadProperties() async {
 - **Use AppTheme colors** instead of hardcoded values
 - **Make widgets responsive** to different screen sizes
 - **Follow naming conventions**: PascalCase for classes, camelCase for variables
+- **Extend SafeGetView<T>** from `lib/app/widgets/safe_get_view.dart` for typed controller access
+- **Use guard clauses** to avoid deep nesting
+- **No hardcoded strings** - use translation keys with `.tr` from `app_translations.dart`
 
 ### Error Handling
 The app uses centralized error handling:

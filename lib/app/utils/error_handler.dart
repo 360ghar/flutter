@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart';
 import 'debug_logger.dart';
 
 class ErrorHandler {
@@ -252,13 +251,11 @@ class ErrorHandler {
 }
 
 class ApiErrorHandler {
-  static const String _tag = 'ApiErrorHandler';
-
   /// Handles API errors and provides user-friendly messages and debugging info
-  static String handleError(dynamic error, {String? context}) {
+  static String handleError(dynamic error, {String? context, StackTrace? stackTrace}) {
     final errorMessage = error.toString();
     
-    DebugLogger.error('💥 API Error in ${context ?? 'unknown context'}: $errorMessage');
+    DebugLogger.error('API Error in ${context ?? 'unknown context'}: $errorMessage', error, stackTrace);
     
     // Type casting errors
     if (errorMessage.contains('is not a subtype of type')) {
@@ -303,86 +300,72 @@ class ApiErrorHandler {
   }
 
   static String _handleTypeCastingError(String error, String? context) {
-    DebugLogger.warning('🔄 Type casting error detected - Backend data types don\'t match frontend expectations');
+    DebugLogger.warning('Type casting error detected - Backend data types don\'t match frontend expectations');
     
     if (error.contains("'int' is not a subtype of type 'String'")) {
-      DebugLogger.info('💡 Solution: Backend is returning integer where string is expected');
+      DebugLogger.info('Solution: Backend is returning integer where string is expected');
       return 'Data format mismatch - contact support';
     } else if (error.contains("'List<dynamic>' is not a subtype of type 'Map<String, dynamic>'")) {
-      DebugLogger.info('💡 Solution: Backend is returning array where object is expected');
-      return 'Data structure mismatch - using fallback data';
+      DebugLogger.info('Solution: Backend is returning array where object is expected');
+      return 'Data structure mismatch - please try again';
     } else if (error.contains("'String' is not a subtype of type 'int'")) {
-      DebugLogger.info('💡 Solution: Backend is returning string where number is expected');
-      return 'Numeric data format issue - using defaults';
+      DebugLogger.info('Solution: Backend is returning string where number is expected');
+      return 'Numeric data format issue - please try again';
     }
     
-    return 'Data format error - using fallback data';
+    return 'Data format error - please try again';
   }
 
   static String _handleNetworkError(String error, String? context) {
-    DebugLogger.warning('🔌 Network connectivity issue detected');
-    DebugLogger.info('💡 Solutions:');
-    DebugLogger.info('   1. Check if backend server is running on http://localhost:8000');
-    DebugLogger.info('   2. Verify network connectivity');
-    DebugLogger.info('   3. Check firewall settings');
-    DebugLogger.info('   4. Using mock data as fallback');
+    DebugLogger.warning('Network connectivity issue detected');
+    DebugLogger.debug('Solutions: 1. Check backend server 2. Verify connectivity 3. Check firewall');
     
-    return 'Unable to connect to server - using offline data';
+    return 'Unable to connect to server - please try again later';
   }
 
   static String _handleHttpError(int statusCode, String? context) {
     switch (statusCode) {
       case 401:
-        DebugLogger.warning('🔐 Authentication error - Invalid or expired token');
-        DebugLogger.info('💡 Solution: Re-authenticate user');
+        DebugLogger.warning('Authentication error - Invalid or expired token');
         return 'Please log in again';
         
       case 403:
-        DebugLogger.warning('🚫 Authorization error - Insufficient permissions');
-        DebugLogger.info('💡 Solution: Check user permissions');
+        DebugLogger.warning('Authorization error - Insufficient permissions');
         return 'Access denied - insufficient permissions';
         
       case 404:
-        DebugLogger.warning('📭 Resource not found');
-        DebugLogger.info('💡 Solution: Check API endpoint or resource ID');
+        DebugLogger.warning('Resource not found');
         return 'Requested data not found';
         
       case 500:
-        DebugLogger.error('💥 Server error - Backend is experiencing issues');
-        DebugLogger.info('💡 Solution: Check backend server logs');
+        DebugLogger.error('Server error - Backend is experiencing issues');
         return 'Server error - please try again later';
         
       default:
-        DebugLogger.error('❌ HTTP Error $statusCode');
+        DebugLogger.error('HTTP Error $statusCode');
         return 'Server responded with error $statusCode';
     }
   }
 
   static String _handleJsonError(String error, String? context) {
-    DebugLogger.warning('📋 JSON parsing error - Invalid response format');
-    DebugLogger.info('💡 Solutions:');
-    DebugLogger.info('   1. Check backend response format');
-    DebugLogger.info('   2. Verify API endpoint is returning valid JSON');
-    DebugLogger.info('   3. Check for HTML error pages in response');
+    DebugLogger.warning('JSON parsing error - Invalid response format');
+    DebugLogger.debug('Check backend response format and verify valid JSON');
     
-    return 'Invalid data format received - using fallback';
+    return 'Invalid data format received - please try again';
   }
 
   static String _handleAuthError(String error, String? context) {
-    DebugLogger.warning('🔑 Authentication failed');
-    DebugLogger.info('💡 Solutions:');
-    DebugLogger.info('   1. Verify email and password');
-    DebugLogger.info('   2. Check if account is verified');
-    DebugLogger.info('   3. Reset password if needed');
+    DebugLogger.warning('Authentication failed');
+    DebugLogger.debug('Verify credentials and account status');
     
     return 'Authentication failed - please check credentials';
   }
 
   static String _handleGenericError(String error, String? context) {
-    DebugLogger.error('❓ Unhandled error type: $error');
-    DebugLogger.info('💡 Using mock data as fallback');
+    DebugLogger.error('Unhandled error type: $error');
+    DebugLogger.debug('Request failed - please retry');
     
-    return 'Unexpected error occurred - using offline data';
+    return 'Unexpected error occurred - please try again later';
   }
 
   /// Logs detailed error information for debugging
@@ -392,85 +375,13 @@ class ApiErrorHandler {
     required StackTrace stackTrace,
     Map<String, dynamic>? additionalData,
   }) {
-    DebugLogger.error('========================');
-    DebugLogger.error('💥 DETAILED ERROR LOG');
-    DebugLogger.error('========================');
-    DebugLogger.error('🔧 Operation: $operation');
-    DebugLogger.error('❌ Error: ${error.toString()}');
-    DebugLogger.error('📍 Error Type: ${error.runtimeType}');
-    
-    if (additionalData != null) {
-      DebugLogger.error('📊 Additional Data:');
-      additionalData.forEach((key, value) {
-        DebugLogger.error('   $key: $value');
-      });
-    }
-    
-    if (kDebugMode) {
-      DebugLogger.error('📚 Stack Trace:');
-      DebugLogger.error(stackTrace.toString());
-    }
-    
-    DebugLogger.error('========================');
+    // Use the enhanced logger's built-in detailed error method
+    DebugLogger.logDetailedError(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      additionalData: additionalData,
+    );
   }
 
-  /// Checks if error is recoverable (can fallback to mock data)
-  static bool isRecoverableError(dynamic error) {
-    final errorMessage = error.toString();
-    
-    // Network errors are recoverable (use mock data)
-    if (errorMessage.contains('Connection refused') ||
-        errorMessage.contains('Failed host lookup') ||
-        errorMessage.contains('SocketException') ||
-        errorMessage.contains('NetworkException')) {
-      return true;
-    }
-    
-    // Type casting errors are recoverable (data conversion possible)
-    if (errorMessage.contains('is not a subtype of type')) {
-      return true;
-    }
-    
-    // HTTP errors are mostly recoverable
-    if (errorMessage.contains('404') || 
-        errorMessage.contains('500') ||
-        errorMessage.contains('503')) {
-      return true;
-    }
-    
-    // JSON errors might be recoverable
-    if (errorMessage.contains('FormatException') ||
-        errorMessage.contains('Invalid JSON')) {
-      return true;
-    }
-    
-    return false;
-  }
-}
-
-/// Extension to add error handling to Future operations
-extension FutureErrorHandling<T> on Future<T> {
-  /// Catches errors and provides fallback with detailed logging
-  Future<T> catchWithFallback({
-    required String operation,
-    required T fallback,
-    bool logDetailedError = false,
-  }) async {
-    try {
-      return await this;
-    } catch (error, stackTrace) {
-      if (logDetailedError) {
-        ApiErrorHandler.logDetailedError(
-          operation: operation,
-          error: error,
-          stackTrace: stackTrace,
-        );
-      }
-      
-      final userMessage = ApiErrorHandler.handleError(error, context: operation);
-      DebugLogger.warning('🔄 Using fallback for $operation: $userMessage');
-      
-      return fallback;
-    }
-  }
 }

@@ -3,13 +3,15 @@ import '../data/models/property_model.dart';
 import '../data/providers/api_service.dart';
 import '../utils/debug_logger.dart';
 import '../utils/reactive_state_monitor.dart';
-import 'property_controller.dart';
+import 'filter_controller.dart';
+import 'location_controller.dart';
 import 'auth_controller.dart';
 
 class SwipeController extends GetxController {
-  final PropertyController _propertyController = Get.find<PropertyController>();
   late final ApiService _apiService;
   late final AuthController _authController;
+  late final PropertyFilterController _filterController;
+  late final LocationController _locationController;
   
   final RxList<PropertyModel> currentStack = <PropertyModel>[].obs;
   final RxInt currentIndex = 0.obs;
@@ -27,13 +29,89 @@ class SwipeController extends GetxController {
     super.onInit();
     _apiService = Get.find<ApiService>();
     _authController = Get.find<AuthController>();
+    _filterController = Get.find<PropertyFilterController>();
+    _locationController = Get.find<LocationController>();
     
     // Setup monitoring for debugging
     ReactiveStateMonitor.monitorRxList(currentStack, 'SwipeController.currentStack');
     ReactiveStateMonitor.monitorRxBool(isLoading, 'SwipeController.isLoading');
     
+    _setupFilterListener();
     _loadInitialStack();
     _loadSwipeStats();
+  }
+
+  void _setupFilterListener() {
+    // Listen to filter changes with debounce
+    debounce(
+      _filterController.currentFilter,
+      (_) => _refreshStackWithFilters(),
+      time: const Duration(milliseconds: 800), // Longer debounce for swipe stack
+    );
+    
+    // Listen to location changes
+    ever(_locationController.currentPosition, (position) {
+      if (position != null && currentStack.isEmpty) {
+        _loadInitialStack();
+      }
+    });
+  }
+
+  Future<void> _fetchPropertiesWithCurrentFilters({bool isInitialLoad = false}) async {
+    try {
+      // Get current location for filtering
+      double? latitude = _locationController.currentLatitude;
+      double? longitude = _locationController.currentLongitude;
+      
+      // Require location for property fetching
+      if (latitude == null || longitude == null) {
+        throw Exception('User location is required for property recommendations. Please enable location services.');
+      }
+      
+      // Update filter with current location
+      final currentFilters = _filterController.currentFilter.value.copyWith(
+        latitude: latitude,
+        longitude: longitude,
+        radiusKm: 10.0, // 10km radius for swipe stack
+      );
+      
+      DebugLogger.info('🎯 Fetching properties with filters for swipe stack');
+      DebugLogger.info('📍 Location: $latitude, $longitude');
+      
+      final response = await _apiService.searchProperties(
+        filters: currentFilters,
+        page: 1,
+        limit: isInitialLoad ? 20 : 10,
+      );
+      
+      if (isInitialLoad) {
+        currentStack.assignAll(response.properties);
+      } else {
+        // For refresh, merge with existing cards that haven't been swiped
+        final unseenProperties = response.properties.where((property) => 
+          !currentStack.any((existing) => existing.id == property.id)
+        ).toList();
+        
+        currentStack.addAll(unseenProperties);
+      }
+      
+      DebugLogger.info('✅ Fetched ${response.properties.length} properties for swipe stack');
+      
+    } catch (e) {
+      DebugLogger.error('❌ Error fetching properties for swipe stack: $e');
+      rethrow; // Re-throw to handle in calling method
+    }
+  }
+  
+  Future<void> _refreshStackWithFilters() async {
+    if (isLoading.value) return; // Don't refresh if already loading
+    
+    try {
+      await _fetchPropertiesWithCurrentFilters(isInitialLoad: false);
+      DebugLogger.info('🔄 Swipe stack refreshed with new filters');
+    } catch (e) {
+      DebugLogger.error('❌ Error refreshing swipe stack: $e');
+    }
   }
 
   Future<void> _loadInitialStack() async {
@@ -43,29 +121,12 @@ class SwipeController extends GetxController {
       DebugLogger.info('🔍 Loading initial swipe stack...');
       
       if (_authController.isAuthenticated) {
-        // Load fresh properties for discovery
-        await _propertyController.fetchDiscoverProperties(limit: 20);
-        currentStack.assignAll(_propertyController.discoverProperties);
+        await _fetchPropertiesWithCurrentFilters(isInitialLoad: true);
         
-        DebugLogger.success('✅ Swipe stack loaded from API: ${currentStack.length} properties');
-        DebugLogger.info('📊 Current stack sample: ${currentStack.take(3).map((p) => 'ID:${p.id} "${p.title}"').join(", ")}');
-        DebugLogger.info('📊 Current index: ${currentIndex.value}');
-        DebugLogger.info('📊 Visible cards count: ${visibleCards.length}');
+        DebugLogger.success('✅ Swipe stack loaded: ${currentStack.length} properties');
       } else {
-        DebugLogger.warning('⚠️ User not authenticated, using local properties');
-        // Fallback to existing properties
-        final allProperties = _propertyController.properties;
-        final filteredProperties = _applyFilters(allProperties);
-        
-        final availableProperties = filteredProperties
-            .where((property) => 
-                !_propertyController.isFavourite(property.id) && 
-                !_propertyController.isPassed(property.id))
-            .toList();
-        
-        currentStack.assignAll(availableProperties.take(10).toList());
-        
-        DebugLogger.info('📱 Swipe stack loaded from local: ${currentStack.length} properties');
+        DebugLogger.warning('⚠️ User not authenticated, cannot load properties');
+        currentStack.clear();
       }
       
       currentIndex.value = 0;
@@ -183,13 +244,10 @@ class SwipeController extends GetxController {
       }
       
       // Update local state
-      if (isLiked) {
-        await _propertyController.addToFavourites(property.id);
-        DebugLogger.info('❤️ Added to favorites: ${property.title}');
-      } else {
-        await _propertyController.addToPassedProperties(property.id);
-        DebugLogger.info('👎 Added to passed: ${property.title}');
-      }
+      await _apiService.swipeProperty(property.id, isLiked);
+      DebugLogger.info(isLiked 
+        ? '❤️ Added to favorites: ${property.title}'
+        : '👎 Added to passed: ${property.title}');
       
       _totalSwipes++;
       
@@ -197,11 +255,7 @@ class SwipeController extends GetxController {
       DebugLogger.error('❌ Error recording swipe: $e');
       
       // Still update local state even if API fails
-      if (isLiked) {
-        await _propertyController.addToFavourites(property.id);
-      } else {
-        await _propertyController.addToPassedProperties(property.id);
-      }
+      await _apiService.swipeProperty(property.id, isLiked);
       
       Get.snackbar(
         'Warning',
@@ -236,21 +290,16 @@ class SwipeController extends GetxController {
     try {
       DebugLogger.info('🔍 Loading more properties for swipe stack...');
       
-      await _propertyController.fetchDiscoverProperties(limit: 10);
-      final newProperties = _propertyController.discoverProperties
-          .where((property) => 
-              !currentStack.any((existing) => existing.id == property.id) &&
-              !_propertyController.isFavourite(property.id) && 
-              !_propertyController.isPassed(property.id))
-          .toList();
+      final previousCount = currentStack.length;
+      await _fetchPropertiesWithCurrentFilters(isInitialLoad: false);
+      // New properties are already added to currentStack in the fetch method
+      final newCount = currentStack.length - previousCount;
       
-      currentStack.addAll(newProperties);
-      
-      DebugLogger.success('✅ Added ${newProperties.length} new properties to stack');
+      DebugLogger.success('✅ Added $newCount new properties to stack');
       
       // Track analytics
       await _apiService.trackEvent('swipe_stack_extended', {
-        'new_properties_count': newProperties.length,
+        'new_properties_count': newCount,
         'total_stack_size': currentStack.length,
         'timestamp': DateTime.now().toIso8601String(),
       });
@@ -286,8 +335,8 @@ class SwipeController extends GetxController {
       }
       
       // Remove from local favorites/passed lists
-      await _propertyController.removeFromFavourites(_lastSwipeId!);
-      await _propertyController.removeFromPassedProperties(_lastSwipeId!);
+      await _apiService.undoLastSwipe();
+      // Note: No need to remove from passed as undoing will put it back in stack
       
       canUndo.value = false;
       _lastSwipeId = null;
@@ -339,86 +388,9 @@ class SwipeController extends GetxController {
     _loadInitialStack();
   }
 
-  List<PropertyModel> _applyFilters(List<PropertyModel> properties) {
-    return properties.where((property) {
-      // Purpose filter
-      if (!_matchesPurpose(property)) {
-        return false;
-      }
+  // Client-side filtering removed - all filtering done at backend level
 
-      // Price filter (adjusted based on purpose)
-      final adjustedPrice = _getAdjustedPrice(property);
-      if (adjustedPrice < _propertyController.minPrice || 
-          adjustedPrice > _propertyController.maxPrice) {
-        return false;
-      }
-
-      // Bedrooms filter (skip for Stay mode)
-      if (_propertyController.selectedPurpose != 'Stay') {
-        if (property.bedrooms != null && (property.bedrooms! < _propertyController.minBedrooms || 
-            property.bedrooms! > _propertyController.maxBedrooms)) {
-          return false;
-        }
-      }
-
-      // Property type filter
-      if (_propertyController.propertyType != 'All' && 
-          !_matchesPropertyType(property)) {
-        return false;
-      }
-
-      // Note: PropertyCardModel doesn't include amenities for performance
-      // Amenities filtering should be done at API level
-
-      return true;
-    }).toList();
-  }
-
-  bool _matchesPurpose(PropertyModel property) {
-    switch (_propertyController.selectedPurpose) {
-      case 'Stay':
-        return property.purpose == PropertyPurpose.shortStay ||
-               property.propertyType == PropertyType.apartment ||
-               property.basePrice < 5000000;
-      case 'Rent':
-        return property.purpose == PropertyPurpose.rent || property.purpose == PropertyPurpose.shortStay;
-      case 'Buy':
-      default:
-        return property.purpose == PropertyPurpose.buy;
-    }
-  }
-
-  double _getAdjustedPrice(PropertyModel property) {
-    switch (_propertyController.selectedPurpose) {
-      case 'Stay':
-        return property.basePrice / 30; // Daily rate approximation
-      case 'Rent':
-        return property.basePrice / 100; // Monthly rent approximation
-      case 'Buy':
-      default:
-        return property.basePrice;
-    }
-  }
-
-  bool _matchesPropertyType(PropertyModel property) {
-    final selectedType = _propertyController.propertyType;
-    
-    if (_propertyController.selectedPurpose == 'Stay') {
-      // For Stay mode, map property types differently
-      switch (selectedType) {
-        case 'Hotel':
-          return property.propertyType == PropertyType.apartment ||
-                 property.propertyType == PropertyType.room;
-        case 'Resort':
-          return property.propertyType == PropertyType.house ||
-                 property.propertyType == PropertyType.builderFloor;
-        default:
-          return property.propertyTypeString == selectedType;
-      }
-    }
-    
-    return property.propertyTypeString == selectedType;
-  }
+  // Old filtering methods removed - backend now handles all filtering
 
   // Getters for UI
   bool get hasMoreCards => currentIndex.value < currentStack.length;

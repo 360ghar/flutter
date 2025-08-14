@@ -5,7 +5,7 @@ import '../../../mixins/theme_mixin.dart';
 import '../controllers/preferences_controller.dart';
 
 class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
-  const PreferencesView({Key? key}) : super(key: key);
+  const PreferencesView({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../widgets/safe_get_view.dart';
+import '../../../controllers/likes_controller.dart';
 import '../../../utils/app_colors.dart';
+import '../../../utils/error_mapper.dart';
+import '../../../../widgets/common/loading_states.dart';
+import '../../../../widgets/common/error_states.dart';
 import '../../../../widgets/property/compact_property_card.dart';
-import '../../../../widgets/common/property_filter_widget.dart';
-import '../../../../widgets/common/paginated_grid_view.dart';
+import '../../../data/models/property_model.dart';
 
-class FavouritesView extends SafePropertyView {
-  const FavouritesView({Key? key}) : super(key: key);
+class FavouritesView extends GetView<LikesController> {
+  const FavouritesView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,223 +17,336 @@ class FavouritesView extends SafePropertyView {
       length: 2,
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
-        appBar: AppBar(
-          backgroundColor: AppColors.appBarBackground,
-          elevation: 0,
-          title: Text(
-            'my_favorites'.tr,
-            style: TextStyle(
-              color: AppColors.appBarText,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          actions: [
-            IconButton(
-              onPressed: () {
-                propertyController.fetchFavouriteProperties();
-                Get.snackbar(
-                  'Refreshed',
-                  'Favourite properties updated',
-                  snackPosition: SnackPosition.TOP,
-                  duration: const Duration(seconds: 2),
-                  backgroundColor: AppColors.primaryYellow,
-                  colorText: Colors.white,
-                );
-              },
-              icon: Icon(
-                Icons.refresh,
-                color: AppColors.appBarText,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight + 48 + 60), // AppBar + TabBar + Search
+          child: Column(
+            children: [
+              // Main app bar
+              AppBar(
+                backgroundColor: AppColors.appBarBackground,
+                elevation: 0,
+                title: Text(
+                  'My Likes',
+                  style: TextStyle(
+                    color: AppColors.appBarText,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                actions: [
+                  // View toggle (grid/list)
+                  IconButton(
+                    icon: Icon(
+                      Icons.view_module,
+                      color: AppColors.iconColor,
+                    ),
+                    onPressed: () {
+                      // Toggle view mode if needed
+                    },
+                  ),
+                ],
               ),
-            ),
-            PropertyFilterWidget(
-              pageType: 'favourites',
-              onFiltersApplied: () {
-                // The UI will automatically update due to Obx in build method
-                // No additional action needed as filters are reactive
-              },
-            ),
-          ],
-          bottom: TabBar(
-            labelColor: AppColors.tabSelected,
-            unselectedLabelColor: AppColors.tabUnselected,
-            indicatorColor: AppColors.tabIndicator,
-            indicatorWeight: 3,
-            labelStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-            tabs: [
-              Tab(text: 'liked'.tr),
-              Tab(text: 'passed'.tr),
+              
+              // Search bar
+              Container(
+                color: AppColors.appBarBackground,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Obx(() => TextField(
+                  onChanged: controller.updateSearchQuery,
+                  style: TextStyle(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: 'Search in your likes...',
+                    hintStyle: TextStyle(color: AppColors.textSecondary),
+                    prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
+                    suffixIcon: controller.hasSearchQuery
+                        ? IconButton(
+                            icon: Icon(Icons.clear, color: AppColors.iconColor),
+                            onPressed: controller.clearSearch,
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppColors.inputBackground,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                )),
+              ),
+              
+              // Tab bar
+              Container(
+                color: AppColors.appBarBackground,
+                child: TabBar(
+                  labelColor: AppColors.primaryYellow,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: AppColors.primaryYellow,
+                  indicatorWeight: 3,
+                  labelStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  onTap: (index) {
+                    final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
+                    controller.switchToSegment(segment);
+                  },
+                  tabs: [
+                    Tab(
+                      child: Obx(() => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.favorite, size: 18),
+                          const SizedBox(width: 8),
+                          Text('Liked'),
+                          if (controller.currentSegment.value == LikesSegment.liked && 
+                              controller.hasCurrentProperties) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryYellow,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${controller.currentProperties.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      )),
+                    ),
+                    Tab(
+                      child: Obx(() => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.not_interested, size: 18),
+                          const SizedBox(width: 8),
+                          Text('Passed'),
+                          if (controller.currentSegment.value == LikesSegment.passed && 
+                              controller.hasCurrentProperties) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${controller.currentProperties.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      )),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            _buildLikedPropertiesTab(),
-            _buildPassedPropertiesTab(),
+            _buildLikesTab(),
+            _buildPassedTab(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLikedPropertiesTab() {
+  Widget _buildLikesTab() {
     return Obx(() {
-      // Lazy load favourites data when tab is accessed
-      if (propertyController.favouriteProperties.isEmpty && !propertyController.isLoading.value) {
-        propertyController.fetchFavouritePropertiesLazy();
+      // Handle different states
+      if (controller.isCurrentLoading) {
+        return LoadingStates.propertyGridSkeleton();
       }
       
-      final filteredProperties = propertyController.getFilteredFavourites();
+      if (controller.hasCurrentError) {
+        return _buildErrorState();
+      }
       
-      return PaginatedGridView(
-        items: filteredProperties,
-        onLoadMore: () async {
-          // For favourites, we typically don't paginate since it's user's limited list
-          // But we can refresh to get any new favourites
-        },
-        hasMore: false, // Favourites typically don't need pagination
-        isLoadingMore: false,
-        isLoading: propertyController.isLoading.value,
-        onRefresh: () => propertyController.fetchFavouriteProperties(),
-        emptyWidget: _buildEmptyState(
-          icon: Icons.favorite_border,
-          title: 'no_favorites'.tr,
-          subtitle: 'no_favorites_message'.tr,
-        ),
-        itemBuilder: (context, property, index) {
-          return CompactPropertyCard(
-            property: property,
-            isFavourite: true,
-            onFavouriteToggle: () {
-              propertyController.removeFromFavourites(property.id);
-              Get.snackbar(
-                'Removed',
-                'Property removed from liked list',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: AppColors.snackbarBackground,
-                colorText: AppColors.snackbarText,
-                duration: const Duration(seconds: 2),
-              );
-            },
-          );
-        },
-      );
+      if (controller.isCurrentEmpty) {
+        return _buildEmptyState(true);
+      }
+      
+      return _buildPropertyGrid();
     });
   }
 
-  Widget _buildPassedPropertiesTab() {
+  Widget _buildPassedTab() {
     return Obx(() {
-      // Lazy load passed properties data when tab is accessed
-      if (propertyController.passedProperties.isEmpty && !propertyController.isLoading.value) {
-        propertyController.fetchPassedPropertiesLazy();
+      // Handle different states
+      if (controller.isCurrentLoading) {
+        return LoadingStates.propertyGridSkeleton();
       }
       
-      final filteredProperties = propertyController.getFilteredPassed();
+      if (controller.hasCurrentError) {
+        return _buildErrorState();
+      }
       
-      return PaginatedGridView(
-        items: filteredProperties,
-        onLoadMore: () async {
-          // For passed properties, we typically don't paginate since it's user's limited list
-        },
-        hasMore: false, // Passed properties typically don't need pagination
-        isLoadingMore: false,
-        isLoading: propertyController.isLoading.value,
-        onRefresh: () => propertyController.fetchPassedProperties(),
-        emptyWidget: _buildEmptyState(
-          icon: Icons.not_interested,
-          title: 'No Passed Properties',
-          subtitle: 'Properties you\'ve passed on will appear here.\nYou can always give them another chance!',
-        ),
-        itemBuilder: (context, property, index) {
-          return CompactPropertyCard(
-            property: property,
-            isFavourite: false,
-            onFavouriteToggle: () {
-              propertyController.addToFavourites(property.id);
-              propertyController.removeFromPassedProperties(property.id);
-              Get.snackbar(
-                'Added to Liked',
-                'Property moved to liked list',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: AppColors.snackbarBackground,
-                colorText: AppColors.snackbarText,
-                duration: const Duration(seconds: 2),
-              );
-            },
-          );
-        },
-      );
+      if (controller.isCurrentEmpty) {
+        return _buildEmptyState(false);
+      }
+      
+      return _buildPropertyGrid();
     });
   }
 
-
-  Widget _buildEmptyState({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: AppColors.primaryYellow.withOpacity(0.1),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.primaryYellow.withOpacity(0.3),
-                  width: 2,
-                ),
+  Widget _buildPropertyGrid() {
+    return RefreshIndicator(
+      onRefresh: controller.refreshCurrentSegment,
+      color: AppColors.primaryYellow,
+      child: CustomScrollView(
+        slivers: [
+          // Results header
+          SliverToBoxAdapter(
+            child: Obx(() => Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Text(
+                    controller.currentCountText,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (controller.hasSearchQuery)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryYellow.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Filtered',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primaryYellow,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              child: Icon(
-                icon,
-                size: 60,
-                color: AppColors.primaryYellow,
-              ),
+            )),
+          ),
+          
+          // Properties grid
+          Obx(() => SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.75,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
-            const SizedBox(height: 32),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final properties = controller.currentProperties;
+                
+                // Show load more indicator at the end
+                if (index == properties.length) {
+                  if (controller.currentHasMore && !controller.isCurrentLoadingMore) {
+                    // Trigger load more
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      controller.loadMoreCurrentSegment();
+                    });
+                  }
+                  
+                  return controller.isCurrentLoadingMore
+                      ? const Center(child: CircularProgressIndicator())
+                      : const SizedBox();
+                }
+                
+                final property = properties[index];
+                final isLiked = controller.currentSegment.value == LikesSegment.liked;
+                
+                return CompactPropertyCard(
+                  property: property,
+                  isFavourite: isLiked,
+                  onFavouriteToggle: () => _handleFavoriteToggle(property, isLiked),
+                );
+              },
+              childCount: controller.currentProperties.length + 
+                         (controller.currentHasMore || controller.isCurrentLoadingMore ? 1 : 0),
             ),
-            const SizedBox(height: 16),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => Get.offAllNamed('/home'),
-              icon: const Icon(Icons.explore),
-              label: const Text('Explore Properties'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryYellow,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-            ),
-          ],
-        ),
+          )),
+          
+          // Bottom padding for FAB
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 100),
+          ),
+        ],
       ),
     );
   }
-} 
+
+  Widget _buildErrorState() {
+    return Obx(() {
+      final errorMessage = controller.currentError;
+      if (errorMessage == null) return const SizedBox();
+      
+      try {
+        final exception = ErrorMapper.mapApiError(Exception(errorMessage));
+        return ErrorStates.genericError(
+          error: exception,
+          onRetry: controller.retryCurrentSegment,
+        );
+      } catch (e) {
+        return ErrorStates.networkError(
+          onRetry: controller.retryCurrentSegment,
+          customMessage: errorMessage,
+        );
+      }
+    });
+  }
+
+  Widget _buildEmptyState(bool isLiked) {
+    if (controller.hasSearchQuery) {
+      return ErrorStates.searchEmpty(
+        searchQuery: controller.searchQuery.value,
+        onClearSearch: controller.clearSearch,
+      );
+    }
+    
+    return ErrorStates.emptyState(
+      title: isLiked ? 'No Liked Properties' : 'No Passed Properties',
+      message: controller.emptyStateMessage,
+      icon: isLiked ? Icons.favorite_border : Icons.not_interested,
+      onAction: () => Get.offNamed('/discover'),
+      actionText: 'Explore Properties',
+    );
+  }
+
+  void _handleFavoriteToggle(PropertyModel property, bool isCurrentlyLiked) {
+    if (isCurrentlyLiked) {
+      // Remove from likes
+      controller.removeFromLikes(property);
+    } else {
+      // This would be moving from passed to liked
+      // For now, just show a message
+      Get.snackbar(
+        'Info',
+        'Feature coming soon: Move to liked properties',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.primaryYellow.withOpacity(0.1),
+        colorText: AppColors.primaryYellow,
+        duration: const Duration(seconds: 2),
+      );
+    }
+  }
+}

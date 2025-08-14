@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/swipe_controller.dart';
-import '../../../widgets/safe_get_view.dart';
-import '../widgets/property_swipe_card.dart';
+import '../../../controllers/discover_controller.dart';
+import '../../../controllers/filters_controller.dart';
 import '../../../utils/app_colors.dart';
-import '../../../../widgets/common/property_filter_widget.dart';
+import '../../../utils/error_mapper.dart';
+import '../../../../widgets/common/loading_states.dart';
+import '../../../../widgets/common/error_states.dart';
+import '../widgets/property_swipe_card.dart';
 
-class HomeView extends SafePropertyView {
+class HomeView extends GetView<DiscoverController> {
   const HomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Ensure SwipeController is available
-    final SwipeController swipeController = Get.find<SwipeController>();
+    final filtersController = Get.find<FiltersController>();
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -28,66 +29,157 @@ class HomeView extends SafePropertyView {
           ),
         ),
         actions: [
-          PropertyFilterWidget(
-            pageType: 'home',
-            onFiltersApplied: () {
-              // Reset the swipe stack to apply new filters
-              Get.find<SwipeController>().resetStack();
-            },
-          ),
+          // Filters button
+          Obx(() => IconButton(
+            icon: Stack(
+              children: [
+                Icon(
+                  Icons.tune,
+                  color: AppColors.iconColor,
+                ),
+                if (filtersController.activeFilterCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryYellow,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        '${filtersController.activeFilterCount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            onPressed: () => Get.toNamed('/filters'),
+          )),
         ],
       ),
       body: Obx(() {
-        if (propertyController.isLoading.value) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: AppColors.loadingIndicator,
-            ),
-          );
+        // Show different states based on controller state
+        switch (controller.state.value) {
+          case DiscoverState.loading:
+            return _buildLoadingState();
+            
+          case DiscoverState.error:
+            return _buildErrorState();
+            
+          case DiscoverState.empty:
+            return _buildEmptyState();
+            
+          case DiscoverState.loaded:
+          case DiscoverState.prefetching:
+            return _buildSwipeInterface(context);
+            
+          default:
+            return _buildLoadingState();
         }
-
-        if (propertyController.error.value.isNotEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'error'.tr,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () => propertyController.fetchProperties(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.buttonBackground,
-                    foregroundColor: AppColors.buttonText,
-                  ),
-                  child: Text('retry'.tr),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: PropertySwipeStack(
-            properties: swipeController.visibleCards,
-            onSwipeLeft: (property) => swipeController.swipeLeft(property),
-            onSwipeRight: (property) => swipeController.swipeRight(property),
-            onSwipeUp: (property) => swipeController.swipeUp(property),
-          ),
-        );
       }),
     );
   }
+
+  Widget _buildLoadingState() {
+    return Column(
+      children: [
+        // Show loading progress if available
+        Obx(() {
+          if (controller.isPrefetching.value) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Loading more properties...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          return const SizedBox();
+        }),
+        
+        // Main loading
+        Expanded(
+          child: LoadingStates.swipeCardSkeleton(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Obx(() {
+      final errorMessage = controller.error.value;
+      if (errorMessage == null) return const SizedBox();
+      
+      // Try to map the error for better user experience
+      try {
+        final exception = ErrorMapper.mapApiError(Exception(errorMessage));
+        return ErrorStates.genericError(
+          error: exception,
+          onRetry: controller.retryLoading,
+        );
+      } catch (e) {
+        return ErrorStates.networkError(
+          onRetry: controller.retryLoading,
+          customMessage: errorMessage,
+        );
+      }
+    });
+  }
+
+  Widget _buildEmptyState() {
+    return ErrorStates.swipeDeckEmpty(
+      onRefresh: controller.refreshDeck,
+      onChangeFilters: () => Get.toNamed('/filters'),
+    );
+  }
+
+  Widget _buildSwipeInterface(BuildContext context) {
+    return Stack(
+      children: [
+        // Main swipe cards
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Obx(() => PropertySwipeStack(
+              properties: controller.deck.take(3).toList(), // Show max 3 cards in stack
+              onSwipeLeft: controller.swipeLeft,
+              onSwipeRight: controller.swipeRight,
+              onSwipeUp: (property) => controller.viewPropertyDetails(property),
+              showSwipeInstructions: controller.totalSwipesInSession.value < 3,
+            )),
+          ),
+        ),
+        
+        
+      ],
+    );
+  }
+
 }

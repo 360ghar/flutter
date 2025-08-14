@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../routes/app_routes.dart';
 import '../../../utils/error_handler.dart';
+import '../../../utils/debug_logger.dart';
 
 class SignupController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -90,7 +91,7 @@ class SignupController extends GetxController {
       } else {
         throw Exception('Failed to create account');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       errorMessage.value = _getErrorMessage(e);
       ErrorHandler.handleAuthError(e, onRetry: signUp);
     } finally {
@@ -122,7 +123,7 @@ class SignupController extends GetxController {
       } else {
         throw Exception('Invalid OTP');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       errorMessage.value = _getErrorMessage(e);
       Get.snackbar(
         'Error',
@@ -150,8 +151,8 @@ class SignupController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-    } catch (e) {
-      print('Phone OTP error: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Phone OTP error', e, stackTrace);
       // For now, we'll skip phone verification if it fails
       await _completeSignup();
     }
@@ -184,7 +185,7 @@ class SignupController extends GetxController {
       } else {
         throw Exception('Invalid phone OTP');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       errorMessage.value = _getErrorMessage(e);
       Get.snackbar(
         'Error',
@@ -217,8 +218,8 @@ class SignupController extends GetxController {
       } else {
         Get.offAllNamed(AppRoutes.profileCompletion);
       }
-    } catch (e) {
-      print('Profile sync error: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Profile sync error', e, stackTrace);
       // Still go to profile completion even if sync fails
       Get.offAllNamed(AppRoutes.profileCompletion);
     }
@@ -248,7 +249,7 @@ class SignupController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       Get.snackbar(
         'Error',
         'Failed to resend email: ${_getErrorMessage(e)}',

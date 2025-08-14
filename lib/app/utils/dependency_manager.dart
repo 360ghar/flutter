@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../data/providers/api_service.dart';
 import '../data/providers/api_provider.dart';
+import 'debug_logger.dart';
 
 class DependencyManager {
   static final Map<String, bool> _initializedServices = {};
@@ -31,14 +32,14 @@ class DependencyManager {
         try {
           if (Get.isRegistered(tag: controllerName)) {
             Get.delete(tag: controllerName);
-            print('✅ Cleaned up $controllerName');
+            DebugLogger.info('Cleaned up $controllerName');
           }
-        } catch (e) {
-          print('⚠️ Failed to cleanup $controllerName: $e');
+        } catch (e, stackTrace) {
+          DebugLogger.warning('Failed to cleanup $controllerName', e);
         }
       }
-    } catch (e) {
-      print('❌ Error during dependency cleanup: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error during dependency cleanup', e, stackTrace);
     }
   }
 
@@ -47,9 +48,9 @@ class DependencyManager {
     try {
       Get.reset();
       _initializedServices.clear();
-      print('🧹 All dependencies forcefully cleaned up');
-    } catch (e) {
-      print('❌ Error during force cleanup: $e');
+      DebugLogger.info('All dependencies forcefully cleaned up');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error during force cleanup', e, stackTrace);
     }
   }
 
@@ -58,8 +59,8 @@ class DependencyManager {
     try {
       return Get.isRegistered<ApiService>() && 
              (Get.isRegistered<IApiProvider>());
-    } catch (e) {
-      print('❌ Error checking critical services: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error checking critical services', e, stackTrace);
       return false;
     }
   }
@@ -71,8 +72,8 @@ class DependencyManager {
         return Get.find<T>();
       }
       return null;
-    } catch (e) {
-      print('❌ Error finding dependency ${T.toString()}: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error finding dependency ${T.toString()}', e, stackTrace);
       return null;
     }
   }
@@ -84,8 +85,8 @@ class DependencyManager {
         return Get.find<T>();
       }
       return Get.put<T>(creator(), permanent: permanent);
-    } catch (e) {
-      print('❌ Error initializing dependency ${T.toString()}: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error initializing dependency ${T.toString()}', e, stackTrace);
       return null;
     }
   }

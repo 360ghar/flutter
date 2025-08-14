@@ -60,7 +60,7 @@ class ControllerHelper {
       // Ensure UserController is available
       if (!Get.isRegistered<UserController>()) {
         Get.lazyPut<UserController>(
-          () => UserController(Get.find<UserRepository>()),
+          () => UserController(),
           fenix: true, // Allow recreation if needed
         );
         DebugLogger.info('✅ UserController registered via ControllerHelper');

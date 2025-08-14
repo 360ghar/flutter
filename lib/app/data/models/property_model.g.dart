@@ -118,7 +118,7 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
       'interest_count': instance.interestCount,
       'created_at': instance.createdAt.toIso8601String(),
       'updated_at': instance.updatedAt?.toIso8601String(),
-      'images': instance.images,
+      'images': instance.images?.map((e) => e.toJson()).toList(),
       'distance_km': instance.distanceKm,
     };
 

@@ -26,9 +26,9 @@ class RealApiProvider extends GetxService implements IApiProvider {
     super.onInit();
     try {
       _apiService = Get.find<ApiService>();
-      DebugLogger.init('🔧 RealApiProvider initialized');
-    } catch (e) {
-      DebugLogger.error('❌ Error initializing RealApiProvider: $e');
+      DebugLogger.startup('RealApiProvider initialized');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error initializing RealApiProvider', e, stackTrace);
       rethrow;
     }
   }
@@ -43,17 +43,11 @@ class RealApiProvider extends GetxService implements IApiProvider {
   Future<List<PropertyModel>> getProperties() async {
     try {
       DebugLogger.api('📋 Fetching properties from backend...');
-      final response = await _apiService.discoverProperties(
-        latitude: 19.0760, // Default Mumbai location
-        longitude: 72.8777,
-        limit: 50,
-      );
-      DebugLogger.success('✅ Retrieved ${response.properties.length} properties from backend');
-      return response.properties;
+      throw Exception('getProperties() should not be called directly. Use specific methods with location parameters.');
     } catch (e) {
       DebugLogger.error('❌ Error fetching properties from backend: $e');
       DebugLogger.info('💡 Consider checking if your backend server is running');
-      return [];
+      rethrow;
     }
   }
 
@@ -79,7 +73,7 @@ class RealApiProvider extends GetxService implements IApiProvider {
       return properties;
     } catch (e) {
       DebugLogger.error('❌ Error fetching liked properties: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -129,10 +123,10 @@ class RealApiProvider extends GetxService implements IApiProvider {
       // For now, return empty list as we'd need to fetch individual properties
       // This could be optimized with a backend endpoint
       DebugLogger.success('✅ Retrieved ${passedIds.length} passed properties');
-      return [];
+      return []; // TODO: Implement actual property fetching for passed properties
     } catch (e) {
       DebugLogger.error('❌ Error fetching passed properties: $e');
-      return [];
+      rethrow;
     }
   }
 

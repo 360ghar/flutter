@@ -4,7 +4,7 @@ import '../../../utils/app_colors.dart';
 import '../../../mixins/theme_mixin.dart';
 
 class HelpView extends StatelessWidget with ThemeMixin {
-  const HelpView({Key? key}) : super(key: key);
+  const HelpView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -346,7 +346,7 @@ class HelpView extends StatelessWidget with ThemeMixin {
                 ),
               ],
             ),
-          )).toList(),
+          )),
         ],
       ),
     );

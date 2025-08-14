@@ -26,8 +26,8 @@ class AuthController extends GetxController {
     try {
       apiService = Get.find<ApiService>();
       _initializeAuth();
-    } catch (e) {
-      DebugLogger.error('❌ Error initializing AuthController: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error initializing AuthController', e, stackTrace);
     }
   }
 
@@ -96,8 +96,8 @@ class AuthController extends GetxController {
     try {
       final userProfile = await apiService.getCurrentUser();
       currentUser.value = userProfile;
-    } catch (e) {
-      DebugLogger.error('Failed to load user profile: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Failed to load user profile', e, stackTrace);
     }
   }
 
@@ -119,8 +119,8 @@ class AuthController extends GetxController {
       );
 
       if (response.user != null) {
-        DebugLogger.success('🎉 Signup successful!');
-        DebugLogger.user('👤 New User: ${response.user!.email}');
+        DebugLogger.success('Signup successful!');
+        DebugLogger.user('New User: ${response.user!.email}');
         
         Get.snackbar(
           'Success',
@@ -131,15 +131,18 @@ class AuthController extends GetxController {
         // If auto-confirm is enabled, user will be signed in automatically
         // Otherwise, they need to verify their email first
         if (response.session != null) {
-          DebugLogger.jwt('🔑 JWT Token: ${response.session!.accessToken}');
-          DebugLogger.jwt('⏰ Token expires: ${DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000)}');
+          DebugLogger.logJWTToken(
+            response.session!.accessToken,
+            expiresAt: DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000),
+            userEmail: response.user!.email,
+          );
           
           currentSupabaseUser.value = response.user;
           isLoggedIn.value = true;
           await _loadUserProfile();
           Get.offAllNamed(AppRoutes.dashboard);
         } else {
-          DebugLogger.info('📧 Email verification required');
+          DebugLogger.info('Email verification required');
           Get.toNamed(AppRoutes.login);
         }
         return true;
@@ -147,8 +150,8 @@ class AuthController extends GetxController {
         errorMessage.value = 'Failed to create account';
         return false;
       }
-    } catch (e) {
-      DebugLogger.error('🔴 Signup error: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Signup error', e, stackTrace);
       ErrorHandler.handleAuthError(e);
       return false;
     } finally {
@@ -168,22 +171,25 @@ class AuthController extends GetxController {
 
       if (response.user != null && response.session != null) {
         // Log JWT Token
-        DebugLogger.success('🎉 Login successful!');
-        DebugLogger.user('👤 User: ${response.user!.email}');
-        DebugLogger.jwt('🔑 JWT Token: ${response.session!.accessToken}');
-        DebugLogger.jwt('⏰ Token expires: ${DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000)}');
+        DebugLogger.success('Login successful!');
+        DebugLogger.user('User: ${response.user!.email}');
+        DebugLogger.logJWTToken(
+          response.session!.accessToken,
+          expiresAt: DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000),
+          userEmail: response.user!.email,
+        );
         
         currentSupabaseUser.value = response.user;
         isLoggedIn.value = true;
         await _loadUserProfile();
-        Get.offAllNamed(AppRoutes.home);
+        Get.offAllNamed(AppRoutes.discover);
         return true;
       } else {
         errorMessage.value = 'Failed to sign in';
         return false;
       }
-    } catch (e) {
-      DebugLogger.error('🔴 Login error: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Login error', e, stackTrace);
       ErrorHandler.handleAuthError(e);
       return false;
     } finally {
@@ -274,8 +280,8 @@ class AuthController extends GetxController {
   Future<void> refreshUserProfile() async {
     try {
       await _loadUserProfile();
-    } catch (e) {
-      DebugLogger.error('Failed to refresh user profile: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Failed to refresh user profile', e, stackTrace);
     }
   }
 
@@ -326,8 +332,8 @@ class AuthController extends GetxController {
     try {
       await apiService.updateUserLocation(latitude, longitude);
       return true;
-    } catch (e) {
-      DebugLogger.error('Failed to update user location: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Failed to update user location', e, stackTrace);
       return false;
     }
   }
@@ -350,8 +356,8 @@ class AuthController extends GetxController {
       // Validate with backend
       final response = await apiService.checkSession();
       return response['valid'] == true;
-    } catch (e) {
-      DebugLogger.error('Session validation failed: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Session validation failed', e, stackTrace);
       return false;
     }
   }
@@ -369,8 +375,8 @@ class AuthController extends GetxController {
           await signOut();
         }
       }
-    } catch (e) {
-      DebugLogger.error('Session restoration failed: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Session restoration failed', e, stackTrace);
       await signOut();
     }
   }

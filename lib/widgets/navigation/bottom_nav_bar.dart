@@ -7,43 +7,43 @@ class CustomBottomNavigationBar extends StatelessWidget {
   final Function(int)? onTap;
   
   const CustomBottomNavigationBar({
-    Key? key,
+    super.key,
     required this.currentIndex,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       backgroundColor: AppColors.navigationBackground,
-      selectedItemColor: AppColors.navigationSelected,
+      selectedItemColor: AppColors.primaryYellow,
       unselectedItemColor: AppColors.navigationUnselected,
       currentIndex: currentIndex,
       onTap: _onItemTapped,
       elevation: 8,
       selectedFontSize: 12,
       unselectedFontSize: 12,
-      items: [
+      items: const [
         BottomNavigationBarItem(
-          icon: const Icon(Icons.person),
-          label: 'profile'.tr,
+          icon: Icon(Icons.person),
+          label: 'Profile',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.explore),
-          label: 'discover'.tr,
+          icon: Icon(Icons.explore),
+          label: 'Explore',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.home),
-          label: 'properties'.tr,
+          icon: Icon(Icons.home),
+          label: 'Discover',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.favorite),
-          label: 'liked'.tr,
+          icon: Icon(Icons.favorite),
+          label: 'Likes',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.calendar_today),
-          label: 'visits'.tr,
+          icon: Icon(Icons.calendar_today),
+          label: 'Visits',
         ),
       ],
     );
@@ -57,19 +57,19 @@ class CustomBottomNavigationBar extends StatelessWidget {
     if (onTap != null) {
       onTap!(index);
     } else {
-      // Fallback to old navigation for backward compatibility
+      // Updated navigation with new routes
       switch (index) {
         case 0:
           Get.offNamed('/profile');
           break;
         case 1:
-          Get.offNamed('/explore');
+          Get.offNamed('/explore'); // Map interface
           break;
         case 2:
-          Get.offNamed('/home');
+          Get.offNamed('/discover'); // Swipe interface (was /home)
           break;
         case 3:
-          Get.offNamed('/favourites');
+          Get.offNamed('/likes'); // Updated from /favourites
           break;
         case 4:
           Get.offNamed('/visits');
@@ -77,4 +77,4 @@ class CustomBottomNavigationBar extends StatelessWidget {
       }
     }
   }
-} 
+}

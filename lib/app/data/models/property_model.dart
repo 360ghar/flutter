@@ -37,7 +37,7 @@ enum PropertyStatus {
   maintenance,
 }
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class PropertyModel {
   final int id;
   @JsonKey(defaultValue: 'Unknown Property')
@@ -309,11 +309,11 @@ class PropertyModel {
   // Property details convenience methods
   String get bedroomBathroomText {
     if (bedrooms != null && bathrooms != null) {
-      return '${bedrooms}BHK, ${bathrooms} Bath';
+      return '${bedrooms}BHK, $bathrooms Bath';
     } else if (bedrooms != null) {
       return '${bedrooms}BHK';
     } else if (bathrooms != null) {
-      return '${bathrooms} Bath';
+      return '$bathrooms Bath';
     }
     return '';
   }
@@ -338,7 +338,7 @@ class PropertyModel {
 
   // Get a fallback description for error widgets
   String get imageDescription {
-    return '${propertyTypeString} in ${city ?? 'Unknown Location'}';
+    return '$propertyTypeString in ${city ?? 'Unknown Location'}';
   }
   
   // Get initials for fallback display
@@ -355,9 +355,9 @@ class PropertyModel {
   // Floor information
   String get floorText {
     if (floorNumber != null && totalFloors != null) {
-      return 'Floor ${floorNumber}/${totalFloors}';
+      return 'Floor $floorNumber/$totalFloors';
     } else if (floorNumber != null) {
-      return 'Floor ${floorNumber}';
+      return 'Floor $floorNumber';
     }
     return '';
   }
@@ -370,7 +370,7 @@ class PropertyModel {
       } else if (ageOfProperty! == 1) {
         return '1 year old';
       } else {
-        return '${ageOfProperty} years old';
+        return '$ageOfProperty years old';
       }
     }
     return '';

@@ -15,7 +15,7 @@ class PaginatedGridView<T> extends StatefulWidget {
   final bool isLoading;
 
   const PaginatedGridView({
-    Key? key,
+    super.key,
     required this.items,
     required this.itemBuilder,
     required this.onLoadMore,
@@ -27,7 +27,7 @@ class PaginatedGridView<T> extends StatefulWidget {
     this.padding = const EdgeInsets.all(16),
     this.emptyWidget,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   @override
   State<PaginatedGridView<T>> createState() => _PaginatedGridViewState<T>();

@@ -65,8 +65,12 @@ class PropertyController extends GetxController {
       }
     });
     
-    // Listen to filter changes for automatic refresh
-    ever(_filterController.selectedPurpose, (_) => _onFiltersChanged());
+    // Listen to filter changes for automatic refresh of favorites
+    debounce(
+      _filterController.currentFilter,
+      (_) => _onFiltersChanged(),
+      time: const Duration(milliseconds: 500),
+    );
     
     // If already logged in, initialize immediately
     if (_authController.isLoggedIn.value) {
@@ -81,8 +85,11 @@ class PropertyController extends GetxController {
   }
   
   void _onFiltersChanged() {
-    // React to filter changes - could trigger data refresh
-    DebugLogger.info('🔄 Filters changed, properties may need refresh');
+    // React to filter changes - refresh favorites if they're loaded
+    DebugLogger.info('🔄 Filters changed, refreshing favorites');
+    if (favouriteProperties.isNotEmpty) {
+      fetchFavouriteProperties(); // This will now apply current filters
+    }
   }
   
   void _clearAllData() {
@@ -110,18 +117,11 @@ class PropertyController extends GetxController {
     // Try to get current location
     await _locationController.getCurrentLocation();
     
-    return _locationController.currentPosition.value ?? Position(
-      latitude: 19.0760,
-      longitude: 72.8777,
-      timestamp: DateTime.now(),
-      accuracy: 0,
-      altitude: 0,
-      heading: 0,
-      speed: 0,
-      speedAccuracy: 0,
-      altitudeAccuracy: 0,
-      headingAccuracy: 0,
-    );
+    final position = _locationController.currentPosition.value;
+    if (position == null) {
+      throw Exception('User location is required but not available. Please enable location services.');
+    }
+    return position;
   }
 
   // API integration methods
@@ -174,8 +174,8 @@ class PropertyController extends GetxController {
         DebugLogger.success('✅ Discover properties loaded: ${validProperties.length} valid items out of ${result.properties.length} total');
         
         // Trigger reactive update by accessing the value
-        final _ = discoverProperties.length;
-        DebugLogger.info('📊 Reactive state updated - discoverProperties.length: $_');
+        final currentLength = discoverProperties.length;
+        DebugLogger.info('📊 Reactive state updated - discoverProperties.length: $currentLength');
         
         // Track analytics
         await _apiService.trackEvent('properties_discovery_loaded', {
@@ -184,46 +184,19 @@ class PropertyController extends GetxController {
           'timestamp': DateTime.now().toIso8601String(),
         });
       } else {
-        DebugLogger.warning('⚠️ User not authenticated, falling back to repository');
-        // Fallback to repository for non-authenticated users
-        final result = await _repository.getProperties();
-        // Repository already returns PropertyCardModel
-        if (loadMore) {
-          // For local data, simulate pagination by taking next set of items
-          final startIndex = (currentDiscoverPage.value - 1) * limit;
-          final endIndex = (startIndex + limit).clamp(0, result.length);
-          if (startIndex < result.length) {
-            discoverProperties.addAll(result.skip(startIndex).take(limit).toList());
-            currentDiscoverPage.value++;
-          }
-          hasMoreDiscoverProperties.value = startIndex + limit < result.length;
-        } else {
-          discoverProperties.assignAll(result.take(limit).toList());
-          currentDiscoverPage.value = 2;
-          hasMoreDiscoverProperties.value = result.length > limit;
-        }
-        
-        DebugLogger.info('📱 Loaded ${discoverProperties.length} properties from local repository');
+        DebugLogger.error('⚠️ User not authenticated, cannot fetch properties');
+        throw Exception('Authentication required to fetch discover properties');
       }
     } catch (e) {
       error.value = e.toString();
       DebugLogger.error('❌ Error fetching discover properties: $e');
       
-      // Try fallback to local data
-      try {
-        DebugLogger.info('🔄 Attempting fallback to local data...');
-        final result = await _repository.getProperties();
-        discoverProperties.assignAll(result.take(limit).toList());
-        DebugLogger.warning('⚠️ Using fallback data: ${discoverProperties.length} properties');
-        error.value = ''; // Clear error since fallback worked
-      } catch (fallbackError) {
-        DebugLogger.error('💥 Fallback also failed: $fallbackError');
-        Get.snackbar(
-          'Error',
-          'Failed to load properties. Please check your connection.',
-          snackPosition: SnackPosition.TOP,
-        );
-      }
+      DebugLogger.error('💥 Failed to fetch discover properties: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load properties. Please check your connection.',
+        snackPosition: SnackPosition.TOP,
+      );
     } finally {
       if (loadMore) {
         isLoadingMoreDiscover.value = false;
@@ -348,13 +321,8 @@ class PropertyController extends GetxController {
           'timestamp': DateTime.now().toIso8601String(),
         });
       } else {
-        DebugLogger.warning('⚠️ User not authenticated, using local filtering');
-        // For non-authenticated users, use FilterController to filter results
-        final allProps = await _repository.getProperties();
-        final filtered = _filterController.applyFilters(allProps);
-        properties.assignAll(filtered);
-        
-        DebugLogger.info('📱 Local search completed: ${filtered.length} results');
+        DebugLogger.error('⚠️ User not authenticated, cannot search properties');
+        throw Exception('Authentication required to search properties');
       }
     } catch (e) {
       error.value = e.toString();
@@ -383,10 +351,8 @@ class PropertyController extends GetxController {
         
         return property;
       } else {
-        DebugLogger.warning('⚠️ User not authenticated, using repository');
-        final property = await _repository.getPropertyById(propertyId);
-        DebugLogger.info('📱 Property details loaded from repository: ${property.title}');
-        return property;
+        DebugLogger.error('⚠️ User not authenticated, cannot fetch property details');
+        throw Exception('Authentication required to fetch property details');
       }
     } catch (e) {
       DebugLogger.error('❌ Error fetching property details: $e');
@@ -496,10 +462,8 @@ class PropertyController extends GetxController {
         properties.assignAll(response.properties);
         DebugLogger.success('✅ Properties loaded from API: ${response.properties.length} items');
       } else {
-        // Fallback to repository for non-authenticated users
-        final result = await _repository.getProperties();
-        properties.assignAll(result);
-        DebugLogger.info('📱 Properties loaded from repository: ${result.length} items');
+        DebugLogger.error('⚠️ User not authenticated, cannot fetch properties');
+        throw Exception('Authentication required to fetch properties');
       }
     } catch (e) {
       error.value = e.toString();
@@ -539,34 +503,40 @@ class PropertyController extends GetxController {
       DebugLogger.info('🔍 Fetching favourite properties...');
       
       if (_authController.isAuthenticated) {
-        final result = await _apiService.getLikedProperties();
+        // First get liked property IDs
+        final likedProperties = await _apiService.getLikedProperties();
+        final likedPropertyIds = likedProperties.map((p) => p.id).toList();
         
-        // Validate favourite properties
-        final validFavourites = result.where((property) {
-          final isValid = property.id > 0 && property.title.isNotEmpty;
-          if (!isValid) {
-            DebugLogger.warning('⚠️ Filtering out invalid favourite property: ID=${property.id}, Title="${property.title}"');
-          }
-          return isValid;
-        }).toList();
-        
-        favouriteProperties.assignAll(validFavourites);
-        DebugLogger.success('✅ Favourite properties loaded from API: ${validFavourites.length} valid items out of ${result.length} total');
-        
-        // Force reactive update
-        final _ = favouriteProperties.length;
-        DebugLogger.info('📊 Favourite properties reactive state updated - count: $_');
+        if (likedPropertyIds.isNotEmpty) {
+          // Use the unified search with property IDs filter
+          final currentFilters = _filterController.currentFilter.value.copyWith(
+            propertyIds: likedPropertyIds,
+          );
+          
+          DebugLogger.info('🎯 Fetching filtered favourites: ${likedPropertyIds.length} properties');
+          
+          final response = await _apiService.searchProperties(
+            filters: currentFilters,
+            page: 1,
+            limit: likedPropertyIds.length,
+          );
+          
+          favouriteProperties.assignAll(response.properties);
+          DebugLogger.success('✅ Filtered favourite properties loaded: ${response.properties.length} items');
+        } else {
+          favouriteProperties.clear();
+          DebugLogger.info('📭 No favourite properties found');
+        }
         
         // Track analytics
         await _apiService.trackEvent('favourites_loaded', {
-          'count': result.length,
+          'count': likedPropertyIds.length,
+          'filtered_count': favouriteProperties.length,
           'timestamp': DateTime.now().toIso8601String(),
         });
       } else {
-        // Fallback to repository
-        final result = await _repository.getFavouriteProperties();
-        favouriteProperties.assignAll(result);
-        DebugLogger.info('📱 Favourite properties loaded from repository: ${result.length} items');
+        DebugLogger.error('⚠️ User not authenticated, cannot fetch favourite properties');
+        throw Exception('Authentication required to fetch favourite properties');
       }
     } catch (e) {
       DebugLogger.error('❌ Error fetching favourites: $e');
@@ -589,10 +559,8 @@ class PropertyController extends GetxController {
           'timestamp': DateTime.now().toIso8601String(),
         });
       } else {
-        // Fallback to repository
-        final result = await _repository.getPassedProperties();
-        passedProperties.assignAll(result);
-        DebugLogger.info('📱 Passed properties loaded from repository: ${result.length} items');
+        DebugLogger.error('⚠️ User not authenticated, cannot fetch passed properties');
+        throw Exception('Authentication required to fetch passed properties');
       }
     } catch (e) {
       DebugLogger.error('❌ Error fetching passed properties: $e');
@@ -657,60 +625,15 @@ class PropertyController extends GetxController {
 
   // Filter methods - now using FilterController with unified PropertyModel
   List<PropertyModel> getFilteredFavourites() {
-    DebugLogger.info('🔍 Filtering ${favouriteProperties.length} favourite properties');
-    final filtered = _filterController.applyFilters(favouriteProperties);
-    DebugLogger.info('✅ After filtering: ${filtered.length} properties');
-    return filtered;
+    // Filtering is now done at the API level in fetchFavouriteProperties
+    DebugLogger.info('📋 Returning ${favouriteProperties.length} favourite properties');
+    return favouriteProperties;
   }
 
   List<PropertyModel> getFilteredPassed() {
-    return _filterController.applyFilters(passedProperties);
+    // Filtering can be added here if needed for passed properties
+    return passedProperties;
   }
 
-  // Deprecated filter helper methods - now delegated to FilterController
-  
-  void updateFilters({
-    String? selectedPurposeValue,
-    double? minPriceValue,
-    double? maxPriceValue,
-    int? minBedroomsValue,
-    int? maxBedroomsValue,
-    String? propertyTypeValue,
-    List<String>? selectedAmenitiesValue,
-  }) {
-    _filterController.updateFilters(
-      selectedPurposeValue: selectedPurposeValue,
-      minPriceValue: minPriceValue,
-      maxPriceValue: maxPriceValue,
-      minBedroomsValue: minBedroomsValue,
-      maxBedroomsValue: maxBedroomsValue,
-      propertyTypeValue: propertyTypeValue,
-      selectedAmenitiesValue: selectedAmenitiesValue,
-    );
-  }
-
-  void clearFilters() {
-    _filterController.clearFilters();
-  }
-
-  double getPriceMin() {
-    return _filterController.getPriceMin();
-  }
-
-  double getPriceMax() {
-    return _filterController.getPriceMax();
-  }
-
-  String getPriceLabel() {
-    return _filterController.getPriceLabel();
-  }
-  
-  // Getter delegation for backward compatibility
-  String get selectedPurpose => _filterController.selectedPurpose.value;
-  double get minPrice => _filterController.minPrice.value;
-  double get maxPrice => _filterController.maxPrice.value;
-  int get minBedrooms => _filterController.minBedrooms.value;
-  int get maxBedrooms => _filterController.maxBedrooms.value;
-  String get propertyType => _filterController.propertyType.value;
-  List<String> get selectedAmenities => _filterController.selectedAmenities;
+  // Legacy filter methods removed - use PropertyFilterController directly
 } 

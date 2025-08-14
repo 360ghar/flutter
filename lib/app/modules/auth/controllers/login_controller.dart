@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../routes/app_routes.dart';
 import '../../../utils/error_handler.dart';
+import '../../../utils/debug_logger.dart';
 
 class LoginController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -40,7 +41,7 @@ class LoginController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
-      print('🔐 Attempting login for: ${emailController.text.trim()}');
+      DebugLogger.auth('Attempting login for: ${emailController.text.trim()}');
 
       final success = await authController.signIn(
         email: emailController.text.trim(),
@@ -48,14 +49,14 @@ class LoginController extends GetxController {
       );
 
       if (success) {
-        print('✅ Login controller: Authentication successful');
+        DebugLogger.success('Login controller: Authentication successful');
         // AuthController will handle navigation and JWT token logging
         ErrorHandler.showSuccess('Welcome back!');
       } else {
-        print('❌ Login controller: Authentication failed');
+        DebugLogger.warning('Login controller: Authentication failed');
       }
-    } catch (e) {
-      print('💥 Login controller error: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Login controller error', e, stackTrace);
       errorMessage.value = e.toString();
       ErrorHandler.handleAuthError(e, onRetry: signIn);
     } finally {
@@ -68,18 +69,18 @@ class LoginController extends GetxController {
       isLoading.value = true;
       errorMessage.value = '';
 
-      print('🔐 Attempting Google sign-in...');
+      DebugLogger.auth('Attempting Google sign-in...');
 
       final success = await authController.signInWithGoogle();
       
       if (success) {
-        print('✅ Google sign-in successful');
+        DebugLogger.success('Google sign-in successful');
         ErrorHandler.showSuccess('Signed in with Google!');
       } else {
-        print('❌ Google sign-in failed');
+        DebugLogger.warning('Google sign-in failed');
       }
-    } catch (e) {
-      print('💥 Google sign-in error: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Google sign-in error', e, stackTrace);
       errorMessage.value = e.toString();
       ErrorHandler.handleAuthError(e, onRetry: signInWithGoogle);
     } finally {
@@ -96,18 +97,18 @@ class LoginController extends GetxController {
     try {
       isLoading.value = true;
       
-      print('🔐 Attempting password reset for: ${emailController.text.trim()}');
+      DebugLogger.auth('Attempting password reset for: ${emailController.text.trim()}');
       
       final success = await authController.resetPassword(emailController.text.trim());
       
       if (success) {
-        print('✅ Password reset email sent');
+        DebugLogger.success('Password reset email sent');
         ErrorHandler.showSuccess('Password reset email sent! Please check your inbox.');
       } else {
-        print('❌ Password reset failed');
+        DebugLogger.warning('Password reset failed');
       }
-    } catch (e) {
-      print('💥 Password reset error: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Password reset error', e, stackTrace);
       ErrorHandler.handleAuthError(e, onRetry: resetPassword);
     } finally {
       isLoading.value = false;

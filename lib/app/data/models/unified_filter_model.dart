@@ -1,0 +1,236 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'unified_filter_model.g.dart';
+
+@JsonSerializable()
+class UnifiedFilterModel {
+  // Location-based filters
+  final double? latitude;
+  final double? longitude;
+  @JsonKey(name: 'radius_km')
+  final double? radiusKm;
+  final String? city;
+  final String? locality;
+  final String? pincode;
+
+  // Core property filters
+  final String? purpose; // buy, rent, short_stay
+  @JsonKey(name: 'property_type')
+  final List<String>? propertyType;
+  @JsonKey(name: 'price_min')
+  final double? priceMin;
+  @JsonKey(name: 'price_max')
+  final double? priceMax;
+  @JsonKey(name: 'bedrooms_min')
+  final int? bedroomsMin;
+  @JsonKey(name: 'bedrooms_max')
+  final int? bedroomsMax;
+  @JsonKey(name: 'bathrooms_min')
+  final int? bathroomsMin;
+  @JsonKey(name: 'bathrooms_max')
+  final int? bathroomsMax;
+  @JsonKey(name: 'area_min')
+  final double? areaMin;
+  @JsonKey(name: 'area_max')
+  final double? areaMax;
+
+  // Detailed property filters
+  @JsonKey(name: 'parking_spaces_min')
+  final int? parkingSpacesMin;
+  @JsonKey(name: 'floor_number_min')
+  final int? floorNumberMin;
+  @JsonKey(name: 'floor_number_max')
+  final int? floorNumberMax;
+  @JsonKey(name: 'age_max')
+  final int? ageMax;
+  final List<String>? amenities;
+  final List<String>? features;
+
+  // Availability & sorting
+  @JsonKey(name: 'available_from')
+  final DateTime? availableFrom;
+  @JsonKey(name: 'check_in_date')
+  final DateTime? checkInDate;
+  @JsonKey(name: 'check_out_date')
+  final DateTime? checkOutDate;
+  final int? guests;
+  @JsonKey(name: 'sort_by')
+  final String? sortBy;
+  @JsonKey(name: 'include_unavailable')
+  final bool? includeUnavailable;
+
+  // Additional filters for favorites
+  @JsonKey(name: 'property_ids')
+  final List<int>? propertyIds;
+
+  UnifiedFilterModel({
+    this.latitude,
+    this.longitude,
+    this.radiusKm,
+    this.city,
+    this.locality,
+    this.pincode,
+    this.purpose,
+    this.propertyType,
+    this.priceMin,
+    this.priceMax,
+    this.bedroomsMin,
+    this.bedroomsMax,
+    this.bathroomsMin,
+    this.bathroomsMax,
+    this.areaMin,
+    this.areaMax,
+    this.parkingSpacesMin,
+    this.floorNumberMin,
+    this.floorNumberMax,
+    this.ageMax,
+    this.amenities,
+    this.features,
+    this.availableFrom,
+    this.checkInDate,
+    this.checkOutDate,
+    this.guests,
+    this.sortBy,
+    this.includeUnavailable,
+    this.propertyIds,
+  });
+
+  factory UnifiedFilterModel.initial() {
+    return UnifiedFilterModel(
+      radiusKm: 10.0,
+      purpose: 'buy',
+      sortBy: 'distance',
+      includeUnavailable: false,
+      propertyType: [],
+      amenities: [],
+      features: [],
+    );
+  }
+
+  factory UnifiedFilterModel.fromJson(Map<String, dynamic> json) =>
+      _$UnifiedFilterModelFromJson(json);
+
+  Map<String, dynamic> toJson() {
+    final json = _$UnifiedFilterModelToJson(this);
+    // Remove null values for cleaner API requests
+    json.removeWhere((key, value) => value == null);
+    return json;
+  }
+
+  UnifiedFilterModel copyWith({
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
+    String? city,
+    String? locality,
+    String? pincode,
+    String? purpose,
+    List<String>? propertyType,
+    double? priceMin,
+    double? priceMax,
+    int? bedroomsMin,
+    int? bedroomsMax,
+    int? bathroomsMin,
+    int? bathroomsMax,
+    double? areaMin,
+    double? areaMax,
+    int? parkingSpacesMin,
+    int? floorNumberMin,
+    int? floorNumberMax,
+    int? ageMax,
+    List<String>? amenities,
+    List<String>? features,
+    DateTime? availableFrom,
+    DateTime? checkInDate,
+    DateTime? checkOutDate,
+    int? guests,
+    String? sortBy,
+    bool? includeUnavailable,
+    List<int>? propertyIds,
+  }) {
+    return UnifiedFilterModel(
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      radiusKm: radiusKm ?? this.radiusKm,
+      city: city ?? this.city,
+      locality: locality ?? this.locality,
+      pincode: pincode ?? this.pincode,
+      purpose: purpose ?? this.purpose,
+      propertyType: propertyType ?? this.propertyType,
+      priceMin: priceMin ?? this.priceMin,
+      priceMax: priceMax ?? this.priceMax,
+      bedroomsMin: bedroomsMin ?? this.bedroomsMin,
+      bedroomsMax: bedroomsMax ?? this.bedroomsMax,
+      bathroomsMin: bathroomsMin ?? this.bathroomsMin,
+      bathroomsMax: bathroomsMax ?? this.bathroomsMax,
+      areaMin: areaMin ?? this.areaMin,
+      areaMax: areaMax ?? this.areaMax,
+      parkingSpacesMin: parkingSpacesMin ?? this.parkingSpacesMin,
+      floorNumberMin: floorNumberMin ?? this.floorNumberMin,
+      floorNumberMax: floorNumberMax ?? this.floorNumberMax,
+      ageMax: ageMax ?? this.ageMax,
+      amenities: amenities ?? this.amenities,
+      features: features ?? this.features,
+      availableFrom: availableFrom ?? this.availableFrom,
+      checkInDate: checkInDate ?? this.checkInDate,
+      checkOutDate: checkOutDate ?? this.checkOutDate,
+      guests: guests ?? this.guests,
+      sortBy: sortBy ?? this.sortBy,
+      includeUnavailable: includeUnavailable ?? this.includeUnavailable,
+      propertyIds: propertyIds ?? this.propertyIds,
+    );
+  }
+
+  // Helper method to count active filters
+  int get activeFilterCount {
+    int count = 0;
+    if (priceMin != null || priceMax != null) count++;
+    if (bedroomsMin != null || bedroomsMax != null) count++;
+    if (bathroomsMin != null || bathroomsMax != null) count++;
+    if (areaMin != null || areaMax != null) count++;
+    if (propertyType != null && propertyType!.isNotEmpty) count++;
+    if (amenities != null && amenities!.isNotEmpty) count++;
+    if (features != null && features!.isNotEmpty) count++;
+    if (parkingSpacesMin != null) count++;
+    if (floorNumberMin != null || floorNumberMax != null) count++;
+    if (ageMax != null) count++;
+    return count;
+  }
+}
+
+// Location data model for location selection
+class LocationData {
+  final String name;
+  final double latitude;
+  final double longitude;
+  final String? city;
+  final String? locality;
+
+  LocationData({
+    required this.name,
+    required this.latitude,
+    required this.longitude,
+    this.city,
+    this.locality,
+  });
+
+  factory LocationData.fromJson(Map<String, dynamic> json) {
+    return LocationData(
+      name: json['name'] ?? '',
+      latitude: json['latitude']?.toDouble() ?? 0.0,
+      longitude: json['longitude']?.toDouble() ?? 0.0,
+      city: json['city'],
+      locality: json['locality'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'latitude': latitude,
+      'longitude': longitude,
+      'city': city,
+      'locality': locality,
+    };
+  }
+}

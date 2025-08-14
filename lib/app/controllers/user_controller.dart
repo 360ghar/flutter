@@ -1,12 +1,8 @@
 import 'package:get/get.dart';
 import '../data/models/user_model.dart';
-import '../data/repositories/user_repository.dart';
-import '../data/providers/api_service.dart';
 import 'auth_controller.dart';
 
 class UserController extends GetxController {
-  final UserRepository _repository;
-  late final ApiService _apiService;
   late final AuthController _authController;
   
   final Rx<UserModel?> user = Rx<UserModel?>(null);
@@ -23,12 +19,11 @@ class UserController extends GetxController {
     'new_properties': true,
   }.obs;
 
-  UserController(this._repository);
+  UserController();
 
   @override
   void onInit() {
     super.onInit();
-    _apiService = Get.find<ApiService>();
     _authController = Get.find<AuthController>();
     _initializeController();
   }
@@ -59,9 +54,7 @@ class UserController extends GetxController {
         await _authController.refreshUserProfile();
         user.value = _authController.currentUser.value;
       } else {
-        // Fallback to repository
-        final result = await _repository.getUserProfile();
-        user.value = result;
+        throw Exception('Authentication required to fetch user profile');
       }
     } catch (e) {
       error.value = e.toString();
@@ -83,14 +76,7 @@ class UserController extends GetxController {
         }
         return success;
       } else {
-        // Fallback to repository
-        final updatedUser = UserModel.fromJson({
-          ...user.value?.toJson() ?? {},
-          ...profileData,
-        });
-        await _repository.updateUserProfile(updatedUser);
-        user.value = updatedUser;
-        return true;
+        throw Exception('Authentication required to update profile');
       }
     } catch (e) {
       error.value = e.toString();
@@ -113,12 +99,7 @@ class UserController extends GetxController {
         }
         return success;
       } else {
-        // Fallback to repository
-        await _repository.updateUserPreferences(preferences);
-        if (user.value != null) {
-          user.value = user.value!.copyWith(preferences: preferences);
-        }
-        return true;
+        throw Exception('Authentication required to update preferences');
       }
     } catch (e) {
       error.value = e.toString();
@@ -142,9 +123,7 @@ class UserController extends GetxController {
         }
         return success;
       } else {
-        // Store locally for non-authenticated users
-        notificationSettings.addAll(settings);
-        return true;
+        throw Exception('Authentication required to update notification settings');
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to update notification settings', snackPosition: SnackPosition.TOP);

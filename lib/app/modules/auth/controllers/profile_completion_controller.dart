@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../routes/app_routes.dart';
+import '../../../utils/debug_logger.dart';
 
 class ProfileCompletionController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -109,8 +110,8 @@ class ProfileCompletionController extends GetxController {
           }
         }
       }
-    } catch (e) {
-      print('Error loading existing data: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error loading existing profile data', e, stackTrace);
     }
   }
 

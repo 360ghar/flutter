@@ -50,8 +50,6 @@ class AppTheme {
         onSecondary: backgroundWhite,
         surface: backgroundWhite,
         onSurface: textDark,
-        background: backgroundGray,
-        onBackground: textDark,
         error: errorRed,
         onError: backgroundWhite,
         outline: textLight,
@@ -145,14 +143,14 @@ class AppTheme {
         ),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return primaryYellow;
           }
           return textLight;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return primaryYellow.withOpacity(0.3);
           }
           return textLight.withOpacity(0.3);
@@ -173,8 +171,6 @@ class AppTheme {
         onSecondary: darkTextPrimary,
         surface: darkSurface,
         onSurface: darkTextPrimary,
-        background: darkBackground,
-        onBackground: darkTextPrimary,
         error: errorRed,
         onError: darkTextPrimary,
         outline: darkTextTertiary,
@@ -268,14 +264,14 @@ class AppTheme {
         ),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return primaryYellow;
           }
           return darkTextTertiary;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return primaryYellow.withOpacity(0.3);
           }
           return darkTextTertiary.withOpacity(0.3);
