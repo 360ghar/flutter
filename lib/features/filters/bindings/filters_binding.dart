@@ -1,12 +1,11 @@
 import 'package:get/get.dart';
-import '../controllers/filters_controller.dart';
+// FiltersController has been consolidated into FilterService
+// which is now registered globally in InitialBinding
 
 class FiltersBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<FiltersController>(
-      () => FiltersController(),
-      fenix: true,
-    );
+    // No dependencies needed - FilterService is globally available
+    // This binding is kept for compatibility but does nothing
   }
 }

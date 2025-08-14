@@ -6,7 +6,7 @@ import '../controllers/location_controller.dart';
 import '../controllers/localization_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/analytics_controller.dart';
-import '../../features/filters/controllers/filter_controller.dart';
+import '../controllers/filter_service.dart';
 import '../utils/debug_logger.dart';
 
 class InitialBinding extends Bindings {
@@ -64,8 +64,8 @@ class InitialBinding extends Bindings {
       Get.put<AnalyticsController>(AnalyticsController(), permanent: true);
       DebugLogger.success('✅ AnalyticsController registered');
       
-      Get.put<PropertyFilterController>(PropertyFilterController(), permanent: true);
-      DebugLogger.success('✅ PropertyFilterController registered');
+      Get.put<FilterService>(FilterService(), permanent: true);
+      DebugLogger.success('✅ FilterService registered');
     } catch (e) {
       DebugLogger.error('💥 Error initializing core controllers: $e');
       rethrow;

@@ -5,7 +5,7 @@ import '../../../core/data/repositories/property_repository.dart';
 import '../../../core/data/providers/api_service.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/controllers/location_controller.dart';
-import '../../filters/controllers/filter_controller.dart';
+import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/analytics_controller.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/utils/reactive_state_monitor.dart';
@@ -15,7 +15,7 @@ class PropertyController extends GetxController {
   late final ApiService _apiService;
   late final AuthController _authController;
   late final LocationController _locationController;
-  late final PropertyFilterController _filterController;
+  late final FilterService _filterService;
   late final AnalyticsController _analyticsController;
   
   final RxList<PropertyModel> properties = <PropertyModel>[].obs;
@@ -48,7 +48,7 @@ class PropertyController extends GetxController {
     _apiService = Get.find<ApiService>();
     _authController = Get.find<AuthController>();
     _locationController = Get.find<LocationController>();
-    _filterController = Get.find<PropertyFilterController>();
+    _filterService = Get.find<FilterService>();
     _analyticsController = Get.find<AnalyticsController>();
     
     // Setup reactive state monitoring for debugging
@@ -67,7 +67,7 @@ class PropertyController extends GetxController {
     
     // Listen to filter changes for automatic refresh of favorites
     debounce(
-      _filterController.currentFilter,
+      _filterService.currentFilter,
       (_) => _onFiltersChanged(),
       time: const Duration(milliseconds: 500),
     );
@@ -509,7 +509,7 @@ class PropertyController extends GetxController {
         
         if (likedPropertyIds.isNotEmpty) {
           // Use the unified search with property IDs filter
-          final currentFilters = _filterController.currentFilter.value.copyWith(
+          final currentFilters = _filterService.currentFilter.value.copyWith(
             propertyIds: likedPropertyIds,
           );
           
@@ -635,5 +635,5 @@ class PropertyController extends GetxController {
     return passedProperties;
   }
 
-  // Legacy filter methods removed - use PropertyFilterController directly
+  // Legacy filter methods removed - use FilterService directly
 } 

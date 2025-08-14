@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/filters_controller.dart';
-import '../../../core/data/models/property_model.dart';
+import '../../../core/controllers/filter_service.dart';
 import '../../../core/utils/app_colors.dart';
 
-class FiltersView extends GetView<FiltersController> {
+class FiltersView extends GetView<FilterService> {
   const FiltersView({super.key});
 
   @override
@@ -24,11 +23,11 @@ class FiltersView extends GetView<FiltersController> {
         ),
         actions: [
           Obx(() => TextButton(
-            onPressed: controller.activeFilterCount > 0 ? controller.resetFilters : null,
+            onPressed: controller.activeFiltersCount > 0 ? controller.resetFilters : null,
             child: Text(
               'Reset',
               style: TextStyle(
-                color: controller.activeFilterCount > 0 
+                color: controller.activeFiltersCount > 0 
                     ? AppColors.primaryYellow 
                     : AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
@@ -45,27 +44,27 @@ class FiltersView extends GetView<FiltersController> {
             child: Row(
               children: [
                 Text(
-                  '${controller.activeFilterCount} filters active',
+                  '${controller.activeFiltersCount} filters active',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const Spacer(),
-                if (controller.hasLocation)
+                if (controller.activeFiltersCount > 0)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryYellow.withOpacity(0.1),
+                      color: AppColors.primaryYellow.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      controller.locationDisplayText,
+                      '${controller.activeFiltersCount}',
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
                         color: AppColors.primaryYellow,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -80,347 +79,40 @@ class FiltersView extends GetView<FiltersController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildLocationSection(),
-                  _buildSectionDivider(),
+                  // Purpose selection
+                  _buildSectionTitle('Purpose'),
+                  const SizedBox(height: 12),
+                  _buildPurposeSelector(),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Price range
+                  _buildSectionTitle('Price Range'),
+                  const SizedBox(height: 12),
+                  _buildPriceRangeSection(),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Bedrooms
+                  _buildSectionTitle('Bedrooms'),
+                  const SizedBox(height: 12),
+                  _buildBedroomSection(),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Property Types
+                  _buildSectionTitle('Property Type'),
+                  const SizedBox(height: 12),
                   _buildPropertyTypeSection(),
-                  _buildSectionDivider(),
-                  _buildPurposeSection(),
-                  _buildSectionDivider(),
-                  _buildPriceSection(),
-                  _buildSectionDivider(),
-                  _buildRoomsSection(),
-                  _buildSectionDivider(),
-                  _buildAreaSection(),
-                  _buildSectionDivider(),
-                  _buildAmenitiesSection(),
-                  _buildSectionDivider(),
-                  _buildAdditionalFilters(),
-                  const SizedBox(height: 100), // Space for apply button
+                  
+                  const SizedBox(height: 100), // Bottom padding for apply button
                 ],
               ),
             ),
           ),
         ],
       ),
-      bottomSheet: _buildApplyButton(),
-    );
-  }
-
-  Widget _buildLocationSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Location'),
-        const SizedBox(height: 16),
-        
-        // Current location button
-        Obx(() => ListTile(
-          leading: Icon(
-            Icons.my_location,
-            color: controller.isLoadingLocation.value 
-                ? AppColors.textSecondary 
-                : AppColors.primaryYellow,
-          ),
-          title: Text(
-            'Use Current Location',
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          subtitle: controller.hasLocation
-              ? Text('Using your location', style: TextStyle(color: AppColors.textSecondary))
-              : null,
-          trailing: controller.isLoadingLocation.value
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
-                  ),
-                )
-              : null,
-          onTap: controller.isLoadingLocation.value ? null : controller.setCurrentLocation,
-        )),
-        
-        // Search radius
-        if (controller.hasLocation) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Search Radius: ${controller.filters.radius ?? 5} km',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Obx(() => Slider(
-            value: (controller.filters.radius ?? 5).toDouble(),
-            min: 1,
-            max: 50,
-            divisions: 49,
-            activeColor: AppColors.primaryYellow,
-            onChanged: (value) => controller.updateRadius(value.toInt()),
-          )),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildPropertyTypeSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Property Type'),
-        const SizedBox(height: 16),
-        Obx(() => Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: PropertyType.values.map((type) {
-            final isSelected = controller.filters.propertyType?.contains(type) ?? false;
-            return FilterChip(
-              label: Text(FiltersController.propertyTypeDisplayNames[type] ?? type.name),
-              selected: isSelected,
-              onSelected: (selected) => controller.togglePropertyType(type),
-              selectedColor: AppColors.primaryYellow.withOpacity(0.2),
-              checkmarkColor: AppColors.primaryYellow,
-            );
-          }).toList(),
-        )),
-      ],
-    );
-  }
-
-  Widget _buildPurposeSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Purpose'),
-        const SizedBox(height: 16),
-        Obx(() => Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: PropertyPurpose.values.map((purpose) {
-            final isSelected = controller.filters.purpose == purpose;
-            return FilterChip(
-              label: Text(FiltersController.purposeDisplayNames[purpose] ?? purpose.name),
-              selected: isSelected,
-              onSelected: (selected) => controller.updatePurpose(selected ? purpose : null),
-              selectedColor: AppColors.primaryYellow.withOpacity(0.2),
-              checkmarkColor: AppColors.primaryYellow,
-            );
-          }).toList(),
-        )),
-      ],
-    );
-  }
-
-  Widget _buildPriceSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Price Range'),
-        const SizedBox(height: 16),
-        
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Min Price',
-                  prefixText: '₹ ',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  final price = double.tryParse(value);
-                  controller.updatePriceRange(min: price);
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Max Price',
-                  prefixText: '₹ ',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  final price = double.tryParse(value);
-                  controller.updatePriceRange(max: price);
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRoomsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Bedrooms'),
-        const SizedBox(height: 16),
-        
-        Obx(() => Wrap(
-          spacing: 8,
-          children: List.generate(6, (index) {
-            final bedrooms = index == 0 ? null : index;
-            final isSelected = controller.filters.bedroomsMin == bedrooms;
-            
-            return FilterChip(
-              label: Text(index == 0 ? 'Any' : '$index+'),
-              selected: isSelected,
-              onSelected: (selected) => controller.updateBedroomRange(
-                min: selected ? bedrooms : null,
-              ),
-              selectedColor: AppColors.primaryYellow.withOpacity(0.2),
-              checkmarkColor: AppColors.primaryYellow,
-            );
-          }),
-        )),
-        
-        const SizedBox(height: 16),
-        _buildSectionTitle('Bathrooms'),
-        const SizedBox(height: 16),
-        
-        Obx(() => Wrap(
-          spacing: 8,
-          children: List.generate(4, (index) {
-            final bathrooms = index == 0 ? null : index;
-            final isSelected = controller.filters.bathroomsMin == bathrooms;
-            
-            return FilterChip(
-              label: Text(index == 0 ? 'Any' : '$index+'),
-              selected: isSelected,
-              onSelected: (selected) => controller.updateBathroomRange(
-                min: selected ? bathrooms : null,
-              ),
-              selectedColor: AppColors.primaryYellow.withOpacity(0.2),
-              checkmarkColor: AppColors.primaryYellow,
-            );
-          }),
-        )),
-      ],
-    );
-  }
-
-  Widget _buildAreaSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Area (sq ft)'),
-        const SizedBox(height: 16),
-        
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Min Area',
-                  suffixText: 'sq ft',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  final area = double.tryParse(value);
-                  controller.updateAreaRange(min: area);
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Max Area',
-                  suffixText: 'sq ft',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  final area = double.tryParse(value);
-                  controller.updateAreaRange(max: area);
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAmenitiesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Amenities'),
-        const SizedBox(height: 16),
-        Obx(() => Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: FiltersController.availableAmenities.map((amenity) {
-            final isSelected = controller.filters.amenities?.contains(amenity) ?? false;
-            return FilterChip(
-              label: Text(amenity.split('_').map((word) => 
-                word[0].toUpperCase() + word.substring(1)).join(' ')),
-              selected: isSelected,
-              onSelected: (selected) => controller.toggleAmenity(amenity),
-              selectedColor: AppColors.primaryYellow.withOpacity(0.2),
-              checkmarkColor: AppColors.primaryYellow,
-            );
-          }).toList(),
-        )),
-      ],
-    );
-  }
-
-  Widget _buildAdditionalFilters() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle('Additional Filters'),
-        const SizedBox(height: 16),
-        
-        // Parking
-        ListTile(
-          leading: Icon(Icons.local_parking, color: AppColors.iconColor),
-          title: Text('Minimum Parking Spaces'),
-          trailing: DropdownButton<int?>(
-            value: controller.filters.parkingSpacesMin,
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Any')),
-              ...List.generate(5, (index) => DropdownMenuItem(
-                value: index + 1,
-                child: Text('${index + 1}+'),
-              )),
-            ],
-            onChanged: controller.updateParkingSpaces,
-          ),
-        ),
-        
-        // Property age
-        ListTile(
-          leading: Icon(Icons.schedule, color: AppColors.iconColor),
-          title: Text('Maximum Property Age'),
-          trailing: DropdownButton<int?>(
-            value: controller.filters.ageMax,
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Any')),
-              const DropdownMenuItem(value: 1, child: Text('New (0-1 years)')),
-              const DropdownMenuItem(value: 5, child: Text('Recent (0-5 years)')),
-              const DropdownMenuItem(value: 10, child: Text('Modern (0-10 years)')),
-              const DropdownMenuItem(value: 20, child: Text('Established (0-20 years)')),
-            ],
-            onChanged: controller.updateMaxAge,
-          ),
-        ),
-      ],
+      bottomNavigationBar: _buildApplyButton(),
     );
   }
 
@@ -429,61 +121,255 @@ class FiltersView extends GetView<FiltersController> {
       title,
       style: TextStyle(
         fontSize: 18,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
       ),
     );
   }
 
-  Widget _buildSectionDivider() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 24),
-      height: 1,
-      color: AppColors.divider,
+  Widget _buildPurposeSelector() {
+    return Obx(() => Row(
+      children: [
+        _buildPurposeChip('Buy', 'buy'),
+        const SizedBox(width: 12),
+        _buildPurposeChip('Rent', 'rent'),
+        const SizedBox(width: 12),
+        _buildPurposeChip('Short Stay', 'short_stay'),
+      ],
+    ));
+  }
+
+  Widget _buildPurposeChip(String label, String value) {
+    final isSelected = controller.currentFilter.value.purpose == value;
+    
+    return GestureDetector(
+      onTap: () => controller.updatePurpose(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryYellow : AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryYellow : AppColors.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
+      ),
     );
+  }
+
+  Widget _buildPriceRangeSection() {
+    return Obx(() {
+      final filter = controller.currentFilter.value;
+      final minPrice = filter.priceMin ?? controller.getPriceMin();
+      final maxPrice = filter.priceMax ?? controller.getPriceMax();
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Min: ₹${_formatPrice(minPrice)}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  'Max: ₹${_formatPrice(maxPrice)}',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          RangeSlider(
+            values: RangeValues(minPrice, maxPrice),
+            min: controller.getPriceMin(),
+            max: controller.getPriceMax(),
+            divisions: 20,
+            activeColor: AppColors.primaryYellow,
+            inactiveColor: AppColors.border,
+            onChanged: (values) {
+              controller.updatePriceRange(values.start, values.end);
+            },
+          ),
+          Text(
+            controller.getPriceLabel(),
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildBedroomSection() {
+    return Obx(() {
+      final filter = controller.currentFilter.value;
+      final min = filter.bedroomsMin ?? 1;
+      final max = filter.bedroomsMax ?? 5;
+      
+      return Row(
+        children: [
+          Text('Min: $min', style: TextStyle(color: AppColors.textSecondary)),
+          Expanded(
+            child: Slider(
+              value: min.toDouble(),
+              min: 1,
+              max: 10,
+              divisions: 9,
+              activeColor: AppColors.primaryYellow,
+              onChanged: (value) {
+                controller.updateBedrooms(value.toInt(), max);
+              },
+            ),
+          ),
+          Text('Max: $max', style: TextStyle(color: AppColors.textSecondary)),
+          Expanded(
+            child: Slider(
+              value: max.toDouble(),
+              min: 1,
+              max: 10,
+              divisions: 9,
+              activeColor: AppColors.primaryYellow,
+              onChanged: (value) {
+                controller.updateBedrooms(min, value.toInt());
+              },
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildPropertyTypeSection() {
+    final propertyTypes = ['House', 'Apartment', 'Builder Floor', 'Room'];
+    
+    return Obx(() {
+      final selectedTypes = controller.currentFilter.value.propertyType ?? [];
+      
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: propertyTypes.map((type) {
+          final isSelected = selectedTypes.contains(type.toLowerCase());
+          
+          return GestureDetector(
+            onTap: () {
+              if (isSelected) {
+                controller.removePropertyType(type.toLowerCase());
+              } else {
+                controller.addPropertyType(type.toLowerCase());
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primaryYellow : AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected ? AppColors.primaryYellow : AppColors.border,
+                ),
+              ),
+              child: Text(
+                type,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    });
   }
 
   Widget _buildApplyButton() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBackground,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
         ],
       ),
       child: SafeArea(
-        child: SizedBox(
+        child: Obx(() => SizedBox(
           width: double.infinity,
+          height: 50,
           child: ElevatedButton(
-            onPressed: () {
-              controller.applyFilters();
-              Get.back();
-            },
+            onPressed: controller.activeFiltersCount > 0 ? _applyFilters : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryYellow,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: controller.activeFiltersCount > 0 
+                  ? AppColors.primaryYellow 
+                  : AppColors.border,
+              elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: Obx(() => Text(
-              controller.activeFilterCount > 0 
-                  ? 'Apply ${controller.activeFilterCount} Filters' 
-                  : 'Show All Properties',
-              style: const TextStyle(
+            child: Text(
+              'Apply Filters (${controller.activeFiltersCount})',
+              style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                color: controller.activeFiltersCount > 0 
+                    ? Colors.white 
+                    : AppColors.textSecondary,
               ),
-            )),
+            ),
           ),
-        ),
+        )),
       ),
     );
+  }
+
+  void _applyFilters() {
+    controller.applyFilters();
+    Get.back();
+    Get.snackbar(
+      'Filters Applied',
+      '${controller.activeFiltersCount} filters are now active',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: AppColors.primaryYellow,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  String _formatPrice(double price) {
+    if (price >= 10000000) {
+      return '${(price / 10000000).toStringAsFixed(1)}Cr';
+    } else if (price >= 100000) {
+      return '${(price / 100000).toStringAsFixed(1)}L';
+    } else if (price >= 1000) {
+      return '${(price / 1000).toStringAsFixed(1)}K';
+    } else {
+      return price.toStringAsFixed(0);
+    }
   }
 }

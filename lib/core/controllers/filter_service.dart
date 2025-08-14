@@ -1,11 +1,16 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import '../../../core/data/models/unified_filter_model.dart';
-import '../../../core/utils/debug_logger.dart';
+import '../data/models/unified_filter_model.dart';
+import '../utils/debug_logger.dart';
+import 'location_controller.dart';
 
-class PropertyFilterController extends GetxController {
+class FilterService extends GetxController {
+  static FilterService get instance => Get.find<FilterService>();
+
   // Storage instance
   final _storage = GetStorage();
+  late final LocationController _locationController;
   
   // Central filter state
   final Rx<UnifiedFilterModel> currentFilter = UnifiedFilterModel.initial().obs;
@@ -16,12 +21,32 @@ class PropertyFilterController extends GetxController {
   // UI state
   final RxBool isLoading = false.obs;
   final RxString searchQuery = ''.obs;
+  
+  // Loading states
+  final RxBool isApplyingFilters = false.obs;
+  final RxBool isLoadingLocation = false.obs;
+  
+  // Debounce timer for text search
+  Timer? _searchDebouncer;
+  static const Duration _searchDebounceDelay = Duration(milliseconds: 300);
 
   @override
   void onInit() {
     super.onInit();
+    _locationController = Get.find<LocationController>();
     _loadSavedFilters();
     _setupListeners();
+    
+    // Listen to location updates
+    _locationController.currentPosition.listen((position) {
+      // Position updates are handled by the location controller
+    });
+  }
+
+  @override
+  void onClose() {
+    _searchDebouncer?.cancel();
+    super.onClose();
   }
 
   void _loadSavedFilters() {
@@ -38,6 +63,8 @@ class PropertyFilterController extends GetxController {
       if (savedFilters != null) {
         currentFilter.value = UnifiedFilterModel.fromJson(savedFilters);
       }
+      
+      DebugLogger.success('📂 Loaded saved filters');
     } catch (e) {
       DebugLogger.error('Error loading saved filters: $e');
     }
@@ -162,6 +189,24 @@ class PropertyFilterController extends GetxController {
     DebugLogger.info('Location updated: ${location.name}');
   }
 
+  void updateLocationWithCoordinates({
+    required double latitude,
+    required double longitude,
+    double? radiusKm,
+    String? city,
+    String? locality,
+  }) {
+    currentFilter.value = currentFilter.value.copyWith(
+      latitude: latitude,
+      longitude: longitude,
+      radiusKm: radiusKm ?? currentFilter.value.radiusKm,
+      city: city,
+      locality: locality,
+      sortBy: 'distance', // Always sort by distance when location is set
+    );
+    DebugLogger.info('Location updated: lat=$latitude, lng=$longitude');
+  }
+
   void updateRadius(double radiusKm) {
     currentFilter.value = currentFilter.value.copyWith(radiusKm: radiusKm);
     DebugLogger.info('Search radius updated: ${radiusKm}km');
@@ -190,16 +235,71 @@ class PropertyFilterController extends GetxController {
     DebugLogger.info('Max age updated: $ageInYears years');
   }
 
+  // Text search with debounce
   void updateSearchQuery(String query) {
-    searchQuery.value = query;
-    // Search query can be added to city/locality for text-based search
-    if (query.isNotEmpty) {
-      currentFilter.value = currentFilter.value.copyWith(city: query);
-    } else {
+    _searchDebouncer?.cancel();
+    
+    if (query.isEmpty) {
+      searchQuery.value = '';
       currentFilter.value = currentFilter.value.copyWith(
         city: selectedLocation.value?.city,
       );
+      return;
     }
+
+    _searchDebouncer = Timer(_searchDebounceDelay, () {
+      searchQuery.value = query;
+      currentFilter.value = currentFilter.value.copyWith(city: query);
+    });
+  }
+
+  // Set current location
+  Future<void> setCurrentLocation() async {
+    if (isLoadingLocation.value) return;
+
+    try {
+      isLoadingLocation.value = true;
+      
+      // Get current position
+      await _locationController.getCurrentLocation();
+      final position = _locationController.currentPosition.value;
+      if (position != null) {
+        updateLocationWithCoordinates(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          radiusKm: currentFilter.value.radiusKm ?? 5.0,
+        );
+        
+        Get.snackbar(
+          'Location Updated',
+          'Using your current location for search',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      DebugLogger.error('❌ Failed to get current location: $e');
+      Get.snackbar(
+        'Location Error',
+        'Unable to get your current location',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
+      );
+    } finally {
+      isLoadingLocation.value = false;
+    }
+  }
+
+  // Short-stay filters
+  void updateStayDates({String? checkIn, String? checkOut}) {
+    // Convert to the unified model format if needed
+    // For now, we'll store as additional parameters
+    DebugLogger.info('Stay dates updated: checkIn=$checkIn, checkOut=$checkOut');
+  }
+
+  void updateGuests(int? guests) {
+    // Store guests count in a suitable field
+    DebugLogger.info('Guests updated: $guests');
   }
 
   // Reset methods
@@ -209,6 +309,13 @@ class PropertyFilterController extends GetxController {
     // Keep location as it is
     _updateLocationInFilter();
     DebugLogger.info('All filters reset');
+    
+    Get.snackbar(
+      'Filters Reset',
+      'All filters have been cleared',
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2),
+    );
   }
 
   void clearLocation() {
@@ -221,6 +328,18 @@ class PropertyFilterController extends GetxController {
     );
     _storage.remove('saved_location');
     DebugLogger.info('Location cleared');
+  }
+
+  // Apply filters (used by controllers to trigger API calls)
+  void applyFilters() {
+    isApplyingFilters.value = true;
+    
+    // Trigger a small delay to show loading state
+    Future.delayed(const Duration(milliseconds: 100), () {
+      isApplyingFilters.value = false;
+    });
+    
+    DebugLogger.api('🔍 Applying filters: ${currentFilter.value.activeFilterCount} active');
   }
 
   // Helper methods
@@ -291,6 +410,44 @@ class PropertyFilterController extends GetxController {
     }
   }
 
+  // Get query parameters for API calls
+  Map<String, dynamic> getQueryParams() {
+    final params = <String, dynamic>{};
+    final filter = currentFilter.value;
+    
+    if (searchQuery.value.isNotEmpty) params['q'] = searchQuery.value;
+    if (filter.purpose != null) params['purpose'] = filter.purpose;
+    if (filter.priceMin != null) params['price_min'] = filter.priceMin;
+    if (filter.priceMax != null) params['price_max'] = filter.priceMax;
+    if (filter.bedroomsMin != null) params['bedrooms_min'] = filter.bedroomsMin;
+    if (filter.bedroomsMax != null) params['bedrooms_max'] = filter.bedroomsMax;
+    if (filter.bathroomsMin != null) params['bathrooms_min'] = filter.bathroomsMin;
+    if (filter.bathroomsMax != null) params['bathrooms_max'] = filter.bathroomsMax;
+    if (filter.areaMin != null) params['area_min'] = filter.areaMin;
+    if (filter.areaMax != null) params['area_max'] = filter.areaMax;
+    if (filter.propertyType != null && filter.propertyType!.isNotEmpty) {
+      params['property_type'] = filter.propertyType!.join(',');
+    }
+    if (filter.amenities != null && filter.amenities!.isNotEmpty) {
+      params['amenities'] = filter.amenities!.join(',');
+    }
+    if (filter.latitude != null) params['lat'] = filter.latitude;
+    if (filter.longitude != null) params['lng'] = filter.longitude;
+    if (filter.radiusKm != null) params['radius'] = filter.radiusKm;
+    if (filter.city != null) params['city'] = filter.city;
+    if (filter.locality != null) params['locality'] = filter.locality;
+    if (filter.sortBy != null) params['sort_by'] = filter.sortBy;
+    if (filter.parkingSpacesMin != null) params['parking_min'] = filter.parkingSpacesMin;
+    if (filter.floorNumberMin != null) params['floor_min'] = filter.floorNumberMin;
+    if (filter.floorNumberMax != null) params['floor_max'] = filter.floorNumberMax;
+    if (filter.ageMax != null) params['age_max'] = filter.ageMax;
+    if (filter.propertyIds != null && filter.propertyIds!.isNotEmpty) {
+      params['property_ids'] = filter.propertyIds!.join(',');
+    }
+    
+    return params;
+  }
+
   // Get summary of active filters for display
   List<String> getActiveFiltersSummary() {
     List<String> summary = [];
@@ -330,9 +487,53 @@ class PropertyFilterController extends GetxController {
   
   // Get count of active filters
   int get activeFiltersCount => currentFilter.value.activeFilterCount + (searchQuery.value.isNotEmpty ? 1 : 0);
+  
+  // Check if location is set
+  bool get hasLocation => currentFilter.value.latitude != null && currentFilter.value.longitude != null;
+
+  // Get location display text
+  String get locationDisplayText {
+    final filter = currentFilter.value;
+    if (filter.city != null) {
+      return filter.locality != null 
+          ? '${filter.locality}, ${filter.city}'
+          : filter.city!;
+    } else if (hasLocation) {
+      return 'Current Location';
+    }
+    return 'All Locations';
+  }
 
   // Method to set property IDs for favorites filtering
   void setPropertyIds(List<int> ids) {
     currentFilter.value = currentFilter.value.copyWith(propertyIds: ids);
   }
+
+  // Predefined amenities list
+  static const List<String> availableAmenities = [
+    'parking',
+    'gym',
+    'pool',
+    'security',
+    'elevator',
+    'garden',
+    'powerbackup',
+    'clubhouse',
+    'playground',
+    'wifi',
+    'ac',
+    'furnished',
+    'balcony',
+    'terrace',
+  ];
+
+  // Sort options
+  static const Map<String, String> sortOptions = {
+    'distance': 'Distance',
+    'price_low': 'Price: Low to High',
+    'price_high': 'Price: High to Low',
+    'newest': 'Newest First',
+    'popular': 'Most Popular',
+    'relevance': 'Relevance',
+  };
 }

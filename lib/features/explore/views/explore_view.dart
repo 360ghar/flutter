@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import '../controllers/explore_controller.dart';
-import '../../filters/controllers/filters_controller.dart';
+import '../../../core/controllers/filter_service.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
 import '../../../../widgets/common/loading_states.dart';
@@ -12,7 +12,7 @@ import '../../../../widgets/common/robust_network_image.dart';
 class ExploreView extends GetView<ExploreController> {
   ExploreView({super.key});
   
-  FiltersController get filtersController => Get.find<FiltersController>();
+  FilterService get filterService => Get.find<FilterService>();
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +48,7 @@ class ExploreView extends GetView<ExploreController> {
                   Icons.tune,
                   color: AppColors.iconColor,
                 ),
-                if (filtersController.activeFilterCount > 0)
+                if (filterService.activeFiltersCount > 0)
                   Positioned(
                     right: 0,
                     top: 0,
@@ -63,7 +63,7 @@ class ExploreView extends GetView<ExploreController> {
                         minHeight: 16,
                       ),
                       child: Text(
-                        '${filtersController.activeFilterCount}',
+                        '${filterService.activeFiltersCount}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -185,7 +185,7 @@ class ExploreView extends GetView<ExploreController> {
               ),
               
               // Search radius circle
-              if (filtersController.hasLocation)
+              if (filterService.hasLocation)
                 CircleLayer(
                   circles: [
                     CircleMarker(

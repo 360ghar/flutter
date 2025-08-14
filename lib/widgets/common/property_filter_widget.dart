@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/utils/app_colors.dart';
 import '../../features/property_details/controllers/property_controller.dart';
-import '../../features/filters/controllers/filter_controller.dart';
+import '../../core/controllers/filter_service.dart';
 import '../../core/utils/controller_helper.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
@@ -52,7 +52,7 @@ class _FilterBottomSheet extends StatefulWidget {
 
 class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   late final PropertyController propertyController;
-  late final PropertyFilterController filterController;
+  late final FilterService filterService;
   
   late String _selectedPurpose;
   late double _minPrice;
@@ -106,17 +106,17 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     // Ensure controllers are available
     ControllerHelper.ensurePropertyController();
     propertyController = Get.find<PropertyController>();
-    filterController = Get.find<PropertyFilterController>();
+    filterService = Get.find<FilterService>();
     _initializeFilters();
   }
 
   void _initializeFilters() {
-    final currentFilter = filterController.currentFilter.value;
+    final currentFilter = filterService.currentFilter.value;
     _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'buy');
     // Clamp values to ensure they're within the slider range
-    final maxRange = filterController.getPriceMax();
-    _minPrice = (currentFilter.priceMin ?? filterController.getPriceMin()).clamp(0.0, maxRange);
-    _maxPrice = (currentFilter.priceMax ?? filterController.getPriceMax()).clamp(0.0, maxRange);
+    final maxRange = filterService.getPriceMax();
+    _minPrice = (currentFilter.priceMin ?? filterService.getPriceMin()).clamp(0.0, maxRange);
+    _maxPrice = (currentFilter.priceMax ?? filterService.getPriceMax()).clamp(0.0, maxRange);
     _minBedrooms = (currentFilter.bedroomsMin ?? 0).clamp(0, 10);
     _maxBedrooms = (currentFilter.bedroomsMax ?? 10).clamp(0, 10);
     _propertyType = (currentFilter.propertyType?.isNotEmpty == true) ? currentFilter.propertyType!.first : 'All';
@@ -237,10 +237,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 setState(() {
                   _selectedPurpose = purpose;
                   // Update filter controller purpose
-                  filterController.updatePurpose(_mapPurposeToApi(purpose));
+                  filterService.updatePurpose(_mapPurposeToApi(purpose));
                   // Update price range based on new purpose
-                  _minPrice = filterController.getPriceMin();
-                  _maxPrice = filterController.getPriceMax();
+                  _minPrice = filterService.getPriceMin();
+                  _maxPrice = filterService.getPriceMax();
                   // Reset property type
                   _propertyType = 'All';
                 });
@@ -640,18 +640,18 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
   void _applyFilters() {
     // Apply filters to FilterController
-    filterController.updatePurpose(_mapPurposeToApi(_selectedPurpose));
-    filterController.updatePriceRange(_minPrice, _maxPrice);
-    filterController.updateBedrooms(_minBedrooms, _maxBedrooms);
+    filterService.updatePurpose(_mapPurposeToApi(_selectedPurpose));
+    filterService.updatePriceRange(_minPrice, _maxPrice);
+    filterService.updateBedrooms(_minBedrooms, _maxBedrooms);
     
     // Handle property type
     if (_propertyType != 'All') {
-      filterController.updatePropertyTypes([_propertyType]);
+      filterService.updatePropertyTypes([_propertyType]);
     } else {
-      filterController.updatePropertyTypes([]);
+      filterService.updatePropertyTypes([]);
     }
     
-    filterController.updateAmenities(_selectedAmenities);
+    filterService.updateAmenities(_selectedAmenities);
 
     Navigator.pop(context);
     

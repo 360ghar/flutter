@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/controllers/location_controller.dart';
-import '../../filters/controllers/filter_controller.dart';
+import '../../../core/controllers/filter_service.dart';
 import '../../../core/data/models/unified_filter_model.dart';
 
 class LocationSearchController extends GetxController {
   late final LocationController locationController;
-  late final PropertyFilterController filterController;
+  late final FilterService filterService;
   
   final TextEditingController searchController = TextEditingController();
   final RxString searchQuery = ''.obs;
@@ -19,7 +19,7 @@ class LocationSearchController extends GetxController {
   void onInit() {
     super.onInit();
     locationController = Get.find<LocationController>();
-    filterController = Get.find<PropertyFilterController>();
+    filterService = Get.find<FilterService>();
     
     // Setup debounce for search
     _debounceWorker = debounce(
@@ -56,7 +56,7 @@ class LocationSearchController extends GetxController {
       
       if (locationData != null) {
         // Update filter controller with selected location
-        filterController.updateLocation(locationData);
+        filterService.updateLocation(locationData);
         
         Get.back();
         Get.snackbar(
@@ -90,7 +90,7 @@ class LocationSearchController extends GetxController {
     
     // For now, just update the location without coordinates
     // You could enhance this by geocoding the city name
-    filterController.updateLocation(locationData);
+    filterService.updateLocation(locationData);
     
     Get.back();
     Get.snackbar(
@@ -121,7 +121,7 @@ class LocationSearchController extends GetxController {
           locality: null,
         );
         
-        filterController.updateLocation(locationData);
+        filterService.updateLocation(locationData);
         
         Get.back();
         Get.snackbar(

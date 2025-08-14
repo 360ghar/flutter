@@ -6,7 +6,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/repositories/properties_repository.dart';
 import '../../../core/utils/debug_logger.dart';
-import '../../filters/controllers/filters_controller.dart';
+import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/location_controller.dart';
 
 enum ExploreState {
@@ -20,7 +20,7 @@ enum ExploreState {
 
 class ExploreController extends GetxController {
   final PropertiesRepository _propertiesRepository = Get.find<PropertiesRepository>();
-  final FiltersController _filtersController = Get.find<FiltersController>();
+  final FilterService _filterService = Get.find<FilterService>();
   final LocationController _locationController = Get.find<LocationController>();
 
   // Map controller
@@ -65,7 +65,7 @@ class ExploreController extends GetxController {
 
   void _setupFilterListener() {
     // Listen to filter changes and reload properties
-    debounce(_filtersController.filtersRx, (_) {
+    debounce(_filterService.currentFilter, (_) {
       _loadPropertiesForCurrentView();
     }, time: const Duration(milliseconds: 500));
   }
@@ -86,9 +86,9 @@ class ExploreController extends GetxController {
   Future<void> _initializeMap() async {
     try {
       // Try to use current location or saved location from filters
-      if (_filtersController.hasLocation) {
-        final filters = _filtersController.filters;
-        _updateMapCenter(LatLng(filters.lat!, filters.lng!), currentZoom.value);
+      if (_filterService.hasLocation) {
+        final filters = _filterService.currentFilter.value;
+        _updateMapCenter(LatLng(filters.latitude!, filters.longitude!), currentZoom.value);
       } else {
         await _useCurrentLocation();
       }
@@ -108,10 +108,10 @@ class ExploreController extends GetxController {
         _updateMapCenter(LatLng(position.latitude, position.longitude), 14.0);
         
         // Update filters with current location
-        _filtersController.updateLocation(
+        _filterService.updateLocationWithCoordinates(
           latitude: position.latitude,
           longitude: position.longitude,
-          radius: currentRadius.value.toInt(),
+          radiusKm: currentRadius.value,
         );
       }
     } catch (e) {
@@ -154,10 +154,10 @@ class ExploreController extends GetxController {
     DebugLogger.api('🗺️ Map moved to ${currentCenter.value}, radius: ${currentRadius.value}km');
     
     // Update filters with new location
-    _filtersController.updateLocation(
+    _filterService.updateLocationWithCoordinates(
       latitude: currentCenter.value.latitude,
       longitude: currentCenter.value.longitude,
-      radius: currentRadius.value.toInt(),
+      radiusKm: currentRadius.value,
     );
   }
 
@@ -185,7 +185,7 @@ class ExploreController extends GetxController {
 
       // Load all pages sequentially for map display
       final allProperties = await _propertiesRepository.loadAllPropertiesForMap(
-        filters: _filtersController.filters,
+        filters: _filterService.currentFilter.value,
         limit: 100,
         onProgress: (current, total) {
           loadingProgress.value = current;
@@ -219,19 +219,19 @@ class ExploreController extends GetxController {
     _searchDebouncer?.cancel();
     
     if (query.isEmpty) {
-      _filtersController.updateSearchQuery(null);
+      _filterService.updateSearchQuery('');
       return;
     }
 
     _searchDebouncer = Timer(const Duration(milliseconds: 300), () {
       DebugLogger.api('🔍 Searching properties: "$query"');
-      _filtersController.updateSearchQuery(query);
+      _filterService.updateSearchQuery(query);
     });
   }
 
   void clearSearch() {
     searchQuery.value = '';
-    _filtersController.updateSearchQuery(null);
+    _filterService.updateSearchQuery('');
   }
 
   // Property selection
@@ -263,11 +263,11 @@ class ExploreController extends GetxController {
   }
 
   void quickFilterByType(PropertyType type) {
-    _filtersController.updatePropertyTypes([type]);
+    _filterService.updatePropertyTypes([type.toString()]);
   }
 
   void quickFilterByPurpose(PropertyPurpose purpose) {
-    _filtersController.updatePurpose(purpose);
+    _filterService.updatePurpose(purpose.toString());
   }
 
   // Map controls
@@ -331,7 +331,7 @@ class ExploreController extends GetxController {
   }
 
   // Statistics and info
-  String get locationDisplayText => _filtersController.locationDisplayText;
+  String get locationDisplayText => _filterService.locationDisplayText;
   
   String get propertiesCountText {
     if (properties.isEmpty) return 'No properties found';

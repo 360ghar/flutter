@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import '../models/swipe_history_model.dart';
 import '../models/property_model.dart';
-import '../models/filters_model.dart';
+import '../models/unified_filter_model.dart';
 import '../models/unified_property_response.dart';
 import '../providers/api_client.dart';
 import '../../utils/debug_logger.dart';
@@ -48,7 +48,7 @@ class SwipesRepository extends GetxService {
 
   // Get swipe history properties with full filters (server returns properties list)
   Future<UnifiedPropertyResponse> getSwipeHistoryProperties({
-    required FiltersModel filters,
+    required UnifiedFilterModel filters,
     int page = 1,
     int limit = 50,
     bool? isLiked,
@@ -57,7 +57,7 @@ class SwipesRepository extends GetxService {
       final queryParams = <String, dynamic>{
         'page': page.toString(),
         'limit': limit.toString(),
-        ...filters.toQueryParams(),
+        ..._convertFiltersToQueryParams(filters),
       };
 
       if (isLiked != null) {
@@ -65,7 +65,7 @@ class SwipesRepository extends GetxService {
       }
 
       DebugLogger.api(
-        '📜 Fetching swipe history properties: page=$page, limit=$limit, liked=$isLiked, filters=${filters.toJson()}',
+        '📜 Fetching swipe history properties: page=$page, limit=$limit, liked=$isLiked, filters=${filters.activeFilterCount} active',
       );
 
       final response = await _apiClient.request<UnifiedPropertyResponse>(
@@ -87,7 +87,7 @@ class SwipesRepository extends GetxService {
 
   // Get liked properties via server-side history endpoint
   Future<List<PropertyModel>> getLikedProperties({
-    required FiltersModel filters,
+    required UnifiedFilterModel filters,
     int page = 1,
     int limit = 50,
   }) async {
@@ -108,7 +108,7 @@ class SwipesRepository extends GetxService {
 
   // Get passed properties via server-side history endpoint
   Future<List<PropertyModel>> getPassedProperties({
-    required FiltersModel filters,
+    required UnifiedFilterModel filters,
     int page = 1,
     int limit = 50,
   }) async {
@@ -133,7 +133,7 @@ class SwipesRepository extends GetxService {
   Future<bool> wasPropertySwiped(int propertyId) async {
     try {
       final response = await getSwipeHistoryProperties(
-        filters: FiltersModel(),
+        filters: UnifiedFilterModel.initial(),
         page: 1,
         limit: 100,
       );
@@ -206,5 +206,26 @@ class SwipesRepository extends GetxService {
       DebugLogger.error('❌ Failed to record batch swipes: $e');
       rethrow;
     }
+  }
+
+  // Helper method to convert UnifiedFilterModel to query parameters
+  Map<String, String> _convertFiltersToQueryParams(UnifiedFilterModel filters) {
+    final params = <String, String>{};
+    final json = filters.toJson();
+    
+    // Convert each non-null value to string
+    json.forEach((key, value) {
+      if (value != null) {
+        if (value is List) {
+          if (value.isNotEmpty) {
+            params[key] = value.join(',');
+          }
+        } else {
+          params[key] = value.toString();
+        }
+      }
+    });
+    
+    return params;
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../features/filters/controllers/filter_controller.dart';
+import '../../controllers/filter_service.dart';
 import '../../controllers/location_controller.dart';
 import '../../routes/app_routes.dart';
 import '../../utils/theme.dart';
@@ -17,7 +17,7 @@ class SharedAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final propertyFilterController = Get.find<PropertyFilterController>();
+    final filterService = Get.find<FilterService>();
     final locationController = Get.find<LocationController>();
     
     return AppBar(
@@ -39,17 +39,17 @@ class SharedAppBar extends StatelessWidget implements PreferredSizeWidget {
               fontWeight: FontWeight.w600,
             ),
           )
-        : _buildLocationSelector(context, propertyFilterController, locationController),
+        : _buildLocationSelector(context, filterService, locationController),
       centerTitle: false,
       actions: [
-        _buildFilterButton(context, propertyFilterController),
+        _buildFilterButton(context, filterService),
       ],
     );
   }
 
   Widget _buildLocationSelector(
     BuildContext context,
-    PropertyFilterController filterController,
+    FilterService filterController,
     LocationController locationController,
   ) {
     return Obx(() {
@@ -112,7 +112,7 @@ class SharedAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   Widget _buildFilterButton(
     BuildContext context,
-    PropertyFilterController filterController,
+    FilterService filterController,
   ) {
     return Obx(() {
       final activeFilters = filterController.activeFiltersCount;

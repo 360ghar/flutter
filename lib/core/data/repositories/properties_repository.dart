@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import '../models/property_model.dart';
 import '../models/unified_property_response.dart';
-import '../models/filters_model.dart';
+import '../models/unified_filter_model.dart';
 import '../providers/api_client.dart';
 import '../../utils/debug_logger.dart';
 
@@ -10,7 +10,7 @@ class PropertiesRepository extends GetxService {
 
   // Get properties with filters and pagination
   Future<UnifiedPropertyResponse> getProperties({
-    required FiltersModel filters,
+    required UnifiedFilterModel filters,
     required int page,
     required int limit,
     bool useCache = true,
@@ -19,10 +19,11 @@ class PropertiesRepository extends GetxService {
       final queryParams = {
         'page': page.toString(),
         'limit': limit.toString(),
-        ...filters.toQueryParams(),
+        // Convert UnifiedFilterModel to query params
+        ..._convertFiltersToQueryParams(filters),
       };
 
-      DebugLogger.api('🔍 Fetching properties: page=$page, limit=$limit, filters=${filters.cacheKey}');
+      DebugLogger.api('🔍 Fetching properties: page=$page, limit=$limit, filters=${filters.activeFilterCount} active');
 
       final response = await _apiClient.request<UnifiedPropertyResponse>(
         '/properties',
@@ -94,7 +95,7 @@ class PropertiesRepository extends GetxService {
 
   // Search properties (same as getProperties but for consistency)
   Future<UnifiedPropertyResponse> searchProperties({
-    required FiltersModel filters,
+    required UnifiedFilterModel filters,
     required int page,
     required int limit,
     bool useCache = false, // Search results shouldn't be cached as much
@@ -109,7 +110,7 @@ class PropertiesRepository extends GetxService {
 
   // Load all pages for map view
   Future<List<PropertyModel>> loadAllPropertiesForMap({
-    required FiltersModel filters,
+    required UnifiedFilterModel filters,
     int limit = 100,
     Function(int current, int total)? onProgress,
   }) async {
@@ -183,5 +184,26 @@ class PropertiesRepository extends GetxService {
   void clearCache() {
     _apiClient.clearCache();
     DebugLogger.api('🧹 Properties repository cache cleared');
+  }
+
+  // Helper method to convert UnifiedFilterModel to query parameters
+  Map<String, String> _convertFiltersToQueryParams(UnifiedFilterModel filters) {
+    final params = <String, String>{};
+    final json = filters.toJson();
+    
+    // Convert each non-null value to string
+    json.forEach((key, value) {
+      if (value != null) {
+        if (value is List) {
+          if (value.isNotEmpty) {
+            params[key] = value.join(',');
+          }
+        } else {
+          params[key] = value.toString();
+        }
+      }
+    });
+    
+    return params;
   }
 }

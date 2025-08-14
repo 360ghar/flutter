@@ -3,14 +3,14 @@ import '../../../core/data/models/property_model.dart';
 import '../../../core/data/providers/api_service.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/utils/reactive_state_monitor.dart';
-import '../../filters/controllers/filter_controller.dart';
+import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/location_controller.dart';
 import '../../../core/controllers/auth_controller.dart';
 
 class SwipeController extends GetxController {
   late final ApiService _apiService;
   late final AuthController _authController;
-  late final PropertyFilterController _filterController;
+  late final FilterService _filterService;
   late final LocationController _locationController;
   
   final RxList<PropertyModel> currentStack = <PropertyModel>[].obs;
@@ -29,7 +29,7 @@ class SwipeController extends GetxController {
     super.onInit();
     _apiService = Get.find<ApiService>();
     _authController = Get.find<AuthController>();
-    _filterController = Get.find<PropertyFilterController>();
+    _filterService = Get.find<FilterService>();
     _locationController = Get.find<LocationController>();
     
     // Setup monitoring for debugging
@@ -44,7 +44,7 @@ class SwipeController extends GetxController {
   void _setupFilterListener() {
     // Listen to filter changes with debounce
     debounce(
-      _filterController.currentFilter,
+      _filterService.currentFilter,
       (_) => _refreshStackWithFilters(),
       time: const Duration(milliseconds: 800), // Longer debounce for swipe stack
     );
@@ -69,7 +69,7 @@ class SwipeController extends GetxController {
       }
       
       // Update filter with current location
-      final currentFilters = _filterController.currentFilter.value.copyWith(
+      final currentFilters = _filterService.currentFilter.value.copyWith(
         latitude: latitude,
         longitude: longitude,
         radiusKm: 10.0, // 10km radius for swipe stack

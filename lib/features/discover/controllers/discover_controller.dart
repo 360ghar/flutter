@@ -4,7 +4,7 @@ import '../../../core/data/models/unified_property_response.dart';
 import '../../../core/data/repositories/properties_repository.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
 import '../../../core/utils/debug_logger.dart';
-import '../../filters/controllers/filters_controller.dart';
+import '../../../core/controllers/filter_service.dart';
 
 enum DiscoverState {
   initial,
@@ -18,7 +18,7 @@ enum DiscoverState {
 class DiscoverController extends GetxController {
   final PropertiesRepository _propertiesRepository = Get.find<PropertiesRepository>();
   final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
-  final FiltersController _filtersController = Get.find<FiltersController>();
+  final FilterService _filterService = Get.find<FilterService>();
 
   // Reactive state
   final Rx<DiscoverState> state = DiscoverState.initial.obs;
@@ -50,7 +50,7 @@ class DiscoverController extends GetxController {
 
   void _setupFilterListener() {
     // Listen to filter changes and reload deck
-    debounce(_filtersController.filtersRx, (_) {
+    debounce(_filterService.currentFilter, (_) {
       _resetAndLoadDeck();
     }, time: const Duration(milliseconds: 500));
   }
@@ -87,7 +87,7 @@ class DiscoverController extends GetxController {
       DebugLogger.api('📚 Loading more properties: page $_currentPage');
 
       final response = await _propertiesRepository.getProperties(
-        filters: _filtersController.filters,
+        filters: _filterService.currentFilter.value,
         page: _currentPage,
         limit: _limit,
         useCache: true,
@@ -297,15 +297,15 @@ class DiscoverController extends GetxController {
 
   // Quick filter shortcuts
   void showNearbyProperties() {
-    _filtersController.setCurrentLocation();
+    _filterService.setCurrentLocation();
   }
 
-  void filterByPropertyType(PropertyType type) {
-    _filtersController.updatePropertyTypes([type]);
+  void filterByPropertyType(String type) {
+    _filterService.updatePropertyTypes([type]);
   }
 
-  void filterByPurpose(PropertyPurpose purpose) {
-    _filtersController.updatePurpose(purpose);
+  void filterByPurpose(String purpose) {
+    _filterService.updatePurpose(purpose);
   }
 
   // Error handling

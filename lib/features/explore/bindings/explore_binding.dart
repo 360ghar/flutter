@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import '../controllers/explore_controller.dart';
-import '../../filters/controllers/filters_controller.dart';
 import '../../../core/controllers/location_controller.dart';
 import '../../../core/data/providers/api_client.dart';
 import '../../../core/data/repositories/properties_repository.dart';
@@ -22,9 +21,7 @@ class ExploreBinding extends Bindings {
     if (!Get.isRegistered<LocationController>()) {
       Get.lazyPut<LocationController>(() => LocationController(), fenix: true);
     }
-    if (!Get.isRegistered<FiltersController>()) {
-      Get.lazyPut<FiltersController>(() => FiltersController(), fenix: true);
-    }
+    // FilterService is now registered globally in InitialBinding
     
     // Screen controller
     Get.lazyPut<ExploreController>(() => ExploreController());

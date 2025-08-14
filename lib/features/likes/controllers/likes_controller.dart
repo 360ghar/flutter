@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import '../../../core/data/models/property_model.dart';
+import '../../../core/data/models/unified_filter_model.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
-import '../../filters/controllers/filters_controller.dart';
+import '../../../core/controllers/filter_service.dart';
 import '../../../core/utils/debug_logger.dart';
 
 enum LikesSegment { liked, passed }
@@ -18,7 +19,7 @@ enum LikesState {
 
 class LikesController extends GetxController {
   final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
-  final FiltersController _filtersController = Get.find<FiltersController>();
+  final FilterService _filterService = Get.find<FilterService>();
 
   // Current segment (Liked or Passed)
   final Rx<LikesSegment> currentSegment = LikesSegment.liked.obs;
@@ -118,9 +119,7 @@ class LikesController extends GetxController {
       DebugLogger.api('❤️ Loading liked properties: page $page');
 
       final properties = await _swipesRepository.getLikedProperties(
-        filters: _filtersController.filters.copyWith(
-          q: searchQuery.value.isEmpty ? null : searchQuery.value,
-        ),
+        filters: _buildFiltersWithSearch(),
         page: page,
         limit: _limit,
       );
@@ -185,9 +184,7 @@ class LikesController extends GetxController {
       DebugLogger.api('👎 Loading passed properties: page $page');
 
       final properties = await _swipesRepository.getPassedProperties(
-        filters: _filtersController.filters.copyWith(
-          q: searchQuery.value.isEmpty ? null : searchQuery.value,
-        ),
+        filters: _buildFiltersWithSearch(),
         page: page,
         limit: _limit,
       );
@@ -235,6 +232,20 @@ class LikesController extends GetxController {
 
   void clearSearch() {
     searchQuery.value = '';
+  }
+
+  // Helper method to build filters with search query
+  UnifiedFilterModel _buildFiltersWithSearch() {
+    final baseFilters = _filterService.currentFilter.value;
+    
+    // If we have a search query, we need to add it to city field
+    if (searchQuery.value.isNotEmpty) {
+      return baseFilters.copyWith(
+        city: searchQuery.value,
+      );
+    }
+    
+    return baseFilters;
   }
 
   void _applySearchFilter() {

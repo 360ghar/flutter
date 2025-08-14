@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/discover_controller.dart';
-import '../../filters/controllers/filters_controller.dart';
+import '../../../core/controllers/filter_service.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
 import '../../../../widgets/common/loading_states.dart';
@@ -13,7 +13,7 @@ class DiscoverView extends GetView<DiscoverController> {
 
   @override
   Widget build(BuildContext context) {
-    final filtersController = Get.find<FiltersController>();
+    final filterService = Get.find<FilterService>();
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -37,7 +37,7 @@ class DiscoverView extends GetView<DiscoverController> {
                   Icons.tune,
                   color: AppColors.iconColor,
                 ),
-                if (filtersController.activeFilterCount > 0)
+                if (filterService.activeFiltersCount > 0)
                   Positioned(
                     right: 0,
                     top: 0,
@@ -52,7 +52,7 @@ class DiscoverView extends GetView<DiscoverController> {
                         minHeight: 16,
                       ),
                       child: Text(
-                        '${filtersController.activeFilterCount}',
+                        '${filterService.activeFiltersCount}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,

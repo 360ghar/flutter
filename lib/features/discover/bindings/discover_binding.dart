@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import '../controllers/discover_controller.dart';
-import '../../filters/controllers/filters_controller.dart';
 import '../../../core/controllers/location_controller.dart';
 import '../../../core/data/providers/api_client.dart';
 import '../../../core/data/repositories/properties_repository.dart';
@@ -18,7 +17,7 @@ class DiscoverBinding extends Bindings {
     
     // Shared controllers
     Get.lazyPut<LocationController>(() => LocationController(), fenix: true);
-    Get.lazyPut<FiltersController>(() => FiltersController(), fenix: true);
+    // FilterService is now registered globally in InitialBinding
     
     // Screen controller
     Get.lazyPut<DiscoverController>(() => DiscoverController());
