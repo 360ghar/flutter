@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../data/models/unified_filter_model.dart';
+import '../data/models/api_response_models.dart';
 import '../utils/debug_logger.dart';
 import 'location_controller.dart';
 
@@ -109,7 +110,7 @@ class FilterService extends GetxController {
       priceMin: min,
       priceMax: max,
     );
-    DebugLogger.info('Price range updated: ₹$min - ₹$max');
+    DebugLogger.info('Price range updated: min=₹$min, max=₹$max');
   }
 
   void updateBedrooms(int? min, int? max) {
@@ -117,7 +118,7 @@ class FilterService extends GetxController {
       bedroomsMin: min,
       bedroomsMax: max,
     );
-    DebugLogger.info('Bedrooms updated: $min - $max');
+    DebugLogger.info('Bedrooms updated: min=$min, max=$max');
   }
 
   void updateBathrooms(int? min, int? max) {
@@ -125,7 +126,7 @@ class FilterService extends GetxController {
       bathroomsMin: min,
       bathroomsMax: max,
     );
-    DebugLogger.info('Bathrooms updated: $min - $max');
+    DebugLogger.info('Bathrooms updated: min=$min, max=$max');
   }
 
   void updateArea(double? min, double? max) {
@@ -133,7 +134,7 @@ class FilterService extends GetxController {
       areaMin: min,
       areaMax: max,
     );
-    DebugLogger.info('Area updated: $min - $max sqft');
+    DebugLogger.info('Area updated: min=$min sqft, max=$max sqft');
   }
 
   void updatePropertyTypes(List<String> types) {
@@ -202,7 +203,7 @@ class FilterService extends GetxController {
       radiusKm: radiusKm ?? currentFilter.value.radiusKm,
       city: city,
       locality: locality,
-      sortBy: 'distance', // Always sort by distance when location is set
+      sortBy: SortBy.distance, // Always sort by distance when location is set
     );
     DebugLogger.info('Location updated: lat=$latitude, lng=$longitude');
   }
@@ -212,7 +213,7 @@ class FilterService extends GetxController {
     DebugLogger.info('Search radius updated: ${radiusKm}km');
   }
 
-  void updateSortBy(String sortBy) {
+  void updateSortBy(SortBy sortBy) {
     currentFilter.value = currentFilter.value.copyWith(sortBy: sortBy);
     DebugLogger.info('Sort by updated: $sortBy');
   }
@@ -227,7 +228,7 @@ class FilterService extends GetxController {
       floorNumberMin: min,
       floorNumberMax: max,
     );
-    DebugLogger.info('Floor range updated: $min - $max');
+    DebugLogger.info('Floor range updated: min=$min, max=$max');
   }
 
   void updateMaxAge(int? ageInYears) {

@@ -97,13 +97,6 @@ class BookingController extends GetxController {
       
       DebugLogger.success('✅ Bookings loaded: ${allBookings.length} total, ${upcoming.length} upcoming, ${past.length} past');
       
-      // Track analytics
-      await _apiService.trackEvent('bookings_loaded', {
-        'total_count': allBookings.length,
-        'upcoming_count': upcoming.length,
-        'past_count': past.length,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
       
     } catch (e) {
       error.value = 'Failed to load bookings: ${e.toString()}';
@@ -168,18 +161,6 @@ class BookingController extends GetxController {
       
       DebugLogger.success('✅ Booking created successfully: ${booking.id}');
       
-      // Track analytics
-      await _apiService.trackBookingAction(
-        action: 'created',
-        bookingId: booking.id,
-        propertyId: propertyId,
-        additionalData: {
-          'check_in_date': checkInDate.toIso8601String().split('T')[0],
-          'check_out_date': checkOutDate.toIso8601String().split('T')[0],
-          'guests_count': guestsCount,
-          'has_special_requests': specialRequests != null,
-        },
-      );
       
       Get.snackbar(
         'Booking Created',
@@ -248,12 +229,6 @@ class BookingController extends GetxController {
       
       DebugLogger.success('✅ Booking updated successfully');
       
-      // Track analytics
-      await _apiService.trackBookingAction(
-        action: 'updated',
-        bookingId: bookingId,
-        additionalData: updateData,
-      );
       
       Get.snackbar(
         'Booking Updated',
@@ -289,14 +264,6 @@ class BookingController extends GetxController {
       
       DebugLogger.success('✅ Booking cancelled successfully');
       
-      // Track analytics
-      await _apiService.trackBookingAction(
-        action: 'cancelled',
-        bookingId: bookingId,
-        additionalData: {
-          if (reason != null) 'cancellation_reason': reason,
-        },
-      );
       
       Get.snackbar(
         'Booking Cancelled',
@@ -337,15 +304,6 @@ class BookingController extends GetxController {
       
       DebugLogger.success('✅ Payment session created');
       
-      // Track analytics
-      await _apiService.trackBookingAction(
-        action: 'payment_initiated',
-        bookingId: bookingId,
-        additionalData: {
-          'payment_method': paymentMethod,
-          'payment_session_id': paymentSession['session_id'],
-        },
-      );
       
       return true;
     } catch (e) {
@@ -381,14 +339,6 @@ class BookingController extends GetxController {
       
       DebugLogger.success('✅ Payment confirmed successfully');
       
-      // Track analytics
-      await _apiService.trackBookingAction(
-        action: 'payment_completed',
-        bookingId: bookingId,
-        additionalData: {
-          'payment_reference': paymentReference,
-        },
-      );
       
       Get.snackbar(
         'Payment Successful',

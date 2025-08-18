@@ -7,7 +7,10 @@ import '../models/visit_model.dart';
 import '../models/booking_model.dart';
 import '../models/unified_property_response.dart';
 import '../models/unified_filter_model.dart';
-import '../models/analytics_models.dart';
+import '../models/agent_model.dart';
+import '../models/swipe_history_model.dart';
+import '../models/amenity_model.dart';
+import '../models/api_response_models.dart';
 import '../../utils/debug_logger.dart';
 import '../../utils/error_handler.dart';
 
@@ -180,7 +183,7 @@ class ApiService extends getx.GetConnect {
               body: request.files,
             );
           }
-        } catch (e, stackTrace) {
+        } catch (e) {
           DebugLogger.error('Token refresh failed', e);
           _handleAuthenticationFailure();
         }
@@ -201,7 +204,7 @@ class ApiService extends getx.GetConnect {
       try {
         _supabase = Supabase.instance.client;
         DebugLogger.success('Supabase client found');
-      } catch (e, stackTrace) {
+      } catch (e) {
         DebugLogger.warning('Supabase not initialized, attempting to initialize...');
         // Initialize Supabase if not already initialized
         await Supabase.initialize(
@@ -229,7 +232,6 @@ class ApiService extends getx.GetConnect {
               session.accessToken,
               userEmail: session.user.email,
             );
-            _syncUserProfile();
           }
           break;
         case AuthChangeEvent.signedOut:
@@ -271,7 +273,7 @@ class ApiService extends getx.GetConnect {
 
   /// Handles authentication failure by redirecting to login
   void _handleAuthenticationFailure() {
-    DebugLogger.auth('🚪 Authentication failed - redirecting to login');
+    DebugLogger.auth('🚪 Authentication failed: redirecting to login');
     
     // Clear the current session
     _supabase.auth.signOut();
@@ -290,7 +292,7 @@ class ApiService extends getx.GetConnect {
           duration: const Duration(seconds: 3),
         );
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       DebugLogger.error('❌ Navigation error during auth failure: $e');
     }
   }
@@ -348,6 +350,9 @@ class ApiService extends getx.GetConnect {
           final responseData = response.body;
           if (responseData is Map<String, dynamic>) {
             return fromJson(responseData);
+          } else if (responseData is List) {
+            // Normalize bare list payloads to a map shape
+            return fromJson({'data': responseData});
           } else {
             return fromJson({'data': responseData});
           }
@@ -375,7 +380,7 @@ class ApiService extends getx.GetConnect {
             response: response.bodyString,
           );
         }
-      } catch (e, stackTrace) {
+      } catch (e) {
         lastException = e is Exception ? e : Exception(e.toString());
         
         // If it's an auth exception, don't retry
@@ -402,32 +407,14 @@ class ApiService extends getx.GetConnect {
     throw lastException ?? Exception('Unknown error occurred for $operation');
   }
 
-  // Helper method for safer type conversion
-  static Map<String, dynamic> _safeConvertToMap(dynamic data) {
-    if (data is Map<String, dynamic>) {
-      return data;
-    } else if (data is Map) {
-      return Map<String, dynamic>.from(data);
-    } else {
-      return {'data': data};
-    }
-  }
-
   // Helper method for safer user model parsing
   static UserModel _parseUserModel(Map<String, dynamic> json) {
     try {
       final safeJson = Map<String, dynamic>.from(json);
       
-      // Handle ID conversion
-      if (safeJson['id'] is int) {
-        safeJson['id'] = safeJson['id'].toString();
-      }
-      
-      // Ensure required fields have defaults
-      safeJson['name'] ??= '';
+      // Ensure required fields have defaults  
       safeJson['email'] ??= '';
       safeJson['phone'] ??= '';
-      safeJson['profile_image'] ??= '';
       
       // Handle preferences
       if (safeJson['preferences'] is! Map) {
@@ -435,7 +422,7 @@ class ApiService extends getx.GetConnect {
       }
       
       return UserModel.fromJson(safeJson);
-    } catch (e, stackTrace) {
+    } catch (e) {
       DebugLogger.error('❌ Error parsing user model: $e');
       DebugLogger.api('📊 Raw JSON: $json');
       rethrow;
@@ -445,10 +432,44 @@ class ApiService extends getx.GetConnect {
   // Helper method for safer property model parsing
   static PropertyModel _parsePropertyModel(Map<String, dynamic> json) {
     try {
+      // Normalize fields that may vary in type from different backends
+      final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
+
+      // Features should remain as List, no conversion needed
+      if (safeJson['calendar_data'] is List) {
+        safeJson['calendar_data'] = <String, dynamic>{};
+      }
+
+      // Ensure numeric fields are parsed as double when provided as int/strings
+      double? _toDouble(dynamic v) {
+        if (v == null) return null;
+        if (v is num) return v.toDouble();
+        if (v is String) return double.tryParse(v);
+        return null;
+      }
+      if (safeJson.containsKey('base_price')) {
+        safeJson['base_price'] = _toDouble(safeJson['base_price']) ?? 0.0;
+      }
+      if (safeJson.containsKey('price_per_sqft')) {
+        safeJson['price_per_sqft'] = _toDouble(safeJson['price_per_sqft']);
+      }
+      if (safeJson.containsKey('monthly_rent')) {
+        safeJson['monthly_rent'] = _toDouble(safeJson['monthly_rent']);
+      }
+      if (safeJson.containsKey('daily_rate')) {
+        safeJson['daily_rate'] = _toDouble(safeJson['daily_rate']);
+      }
+      if (safeJson.containsKey('security_deposit')) {
+        safeJson['security_deposit'] = _toDouble(safeJson['security_deposit']);
+      }
+      if (safeJson.containsKey('maintenance_charges')) {
+        safeJson['maintenance_charges'] = _toDouble(safeJson['maintenance_charges']);
+      }
+
       // Validate critical fields before parsing
       _validatePropertyJson(json);
-      return PropertyModel.fromJson(json);
-    } catch (e, stackTrace) {
+      return PropertyModel.fromJson(safeJson);
+    } catch (e) {
       DebugLogger.error('❌ Error parsing property model: $e');
       DebugLogger.api('📊 Raw JSON: $json');
       
@@ -481,40 +502,76 @@ class ApiService extends getx.GetConnect {
   // Helper method for parsing unified property response
   static UnifiedPropertyResponse _parseUnifiedPropertyResponse(Map<String, dynamic> json) {
     try {
-      // Enhanced error handling for property list parsing
-      if (json['properties'] is List) {
-        final propertiesList = json['properties'] as List;
-        final validProperties = <Map<String, dynamic>>[];
-        int failedCount = 0;
-        
-        for (int i = 0; i < propertiesList.length; i++) {
-          final propertyData = propertiesList[i];
-          if (propertyData is Map<String, dynamic>) {
-            try {
-              // Test parsing each property individually
-              _validatePropertyJson(propertyData);
-              validProperties.add(propertyData);
-            } catch (e, stackTrace) {
-              failedCount++;
-              DebugLogger.warning('⚠️ Skipping property at index $i due to parsing error: $e');
-              continue;
-            }
-          } else {
+      final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
+
+      // Accept multiple shapes: { properties: [...] }, { data: [...] }, or nested common keys
+      dynamic rawList = safeJson['properties'] ?? safeJson['data'] ?? safeJson['results'] ?? safeJson['items'];
+      final List<dynamic> list = rawList is List ? rawList : <dynamic>[];
+
+      final List<PropertyModel> parsed = <PropertyModel>[];
+      int failedCount = 0;
+      for (int i = 0; i < list.length; i++) {
+        final item = list[i];
+        if (item is Map<String, dynamic>) {
+          try {
+            parsed.add(_parsePropertyModel(item));
+          } catch (_) {
             failedCount++;
-            DebugLogger.warning('⚠️ Skipping invalid property data at index $i');
+          }
+        } else {
+          failedCount++;
+        }
+      }
+
+      if (failedCount > 0) {
+        DebugLogger.warning('⚠️ Skipped $failedCount invalid properties');
+      }
+
+      // Metadata with safe fallbacks
+      final int total = (safeJson['total'] is num)
+          ? (safeJson['total'] as num).toInt()
+          : parsed.length;
+      final int limit = (safeJson['limit'] is num)
+          ? (safeJson['limit'] as num).toInt()
+          : (parsed.isNotEmpty ? parsed.length : 20);
+      final int page = (safeJson['page'] is num)
+          ? (safeJson['page'] as num).toInt()
+          : 1;
+      final int totalPages = (safeJson['total_pages'] is num)
+          ? (safeJson['total_pages'] as num).toInt()
+          : ((limit > 0) ? ((total + limit - 1) / limit).ceil() : 1);
+
+      Map<String, dynamic> filtersApplied = {};
+      if (safeJson['filters_applied'] is Map<String, dynamic>) {
+        filtersApplied = Map<String, dynamic>.from(safeJson['filters_applied'] as Map);
+      }
+
+      SearchCenter? searchCenter;
+      if (safeJson['search_center'] is Map<String, dynamic>) {
+        final sc = safeJson['search_center'] as Map<String, dynamic>;
+        final lat = sc['latitude'] ?? sc['lat'];
+        final lng = sc['longitude'] ?? sc['lng'];
+        if (lat is num && lng is num) {
+          searchCenter = SearchCenter(latitude: lat.toDouble(), longitude: lng.toDouble());
+        } else if (lat is String && lng is String) {
+          final dLat = double.tryParse(lat);
+          final dLng = double.tryParse(lng);
+          if (dLat != null && dLng != null) {
+            searchCenter = SearchCenter(latitude: dLat, longitude: dLng);
           }
         }
-        
-        if (failedCount > 0) {
-          DebugLogger.warning('⚠️ Failed to parse $failedCount out of ${propertiesList.length} properties');
-        }
-        
-        // Replace with validated properties
-        json['properties'] = validProperties;
       }
-      
-      return UnifiedPropertyResponse.fromJson(json);
-    } catch (e, stackTrace) {
+
+      return UnifiedPropertyResponse(
+        properties: parsed,
+        total: total,
+        page: page,
+        limit: limit,
+        totalPages: totalPages,
+        filtersApplied: filtersApplied,
+        searchCenter: searchCenter,
+      );
+    } catch (e) {
       DebugLogger.error('❌ Error parsing unified property response: $e');
       DebugLogger.api('📊 Raw JSON: $json');
       rethrow;
@@ -536,9 +593,6 @@ class ApiService extends getx.GetConnect {
       },
     );
 
-    if (response.user != null) {
-      await _syncUserProfile();
-    }
 
     return response;
   }
@@ -549,9 +603,6 @@ class ApiService extends getx.GetConnect {
       password: password,
     );
 
-    if (response.user != null) {
-      await _syncUserProfile();
-    }
 
     return response;
   }
@@ -564,27 +615,15 @@ class ApiService extends getx.GetConnect {
     await _supabase.auth.resetPasswordForEmail(email);
   }
 
-  Future<Map<String, dynamic>> checkSession() async {
-    return await _makeRequest('/auth/session', (json) => json, operationName: 'Check Session');
-  }
 
   Future<UserModel> getCurrentUser() async {
-    return await _makeRequest('/auth/me', (json) {
+    return await _makeRequest('/users/profile', (json) {
       // Handle both direct user object and wrapped response
       final userData = json['data'] ?? json;
       return _parseUserModel(userData);
     }, operationName: 'Get Current User');
   }
 
-  Future<void> _syncUserProfile() async {
-    try {
-      DebugLogger.api('🔄 Syncing user profile with backend...');
-      await _makeRequest('/auth/sync', (json) => json, method: 'POST', operationName: 'Sync User Profile');
-      DebugLogger.success('✅ User profile synced successfully');
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to sync user profile: $e');
-    }
-  }
 
   // User Management
   Future<UserModel> updateUserProfile(Map<String, dynamic> profileData) async {
@@ -623,37 +662,6 @@ class ApiService extends getx.GetConnect {
     );
   }
 
-  Future<List<PropertyModel>> getLikedProperties() async {
-    return await _makeRequest(
-      '/users/liked-properties',
-      (json) {
-        final propertiesData = json['data'] ?? json;
-        
-        if (propertiesData is List) {
-          return propertiesData.map((item) => _parsePropertyModel(item)).toList();
-        } else {
-          throw Exception('Expected list of properties but got: ${propertiesData.runtimeType}');
-        }
-      },
-      operationName: 'Get Liked Properties',
-    );
-  }
-  
-  Future<List<PropertyModel>> getDislikedProperties() async {
-    return await _makeRequest(
-      '/users/disliked-properties',
-      (json) {
-        final propertiesData = json['data'] ?? json;
-        
-        if (propertiesData is List) {
-          return propertiesData.map((item) => _parsePropertyModel(item)).toList();
-        } else {
-          throw Exception('Expected list of properties but got: ${propertiesData.runtimeType}');
-        }
-      },
-      operationName: 'Get Disliked Properties',
-    );
-  }
 
   // Unified property search method that supports all filters
   Future<UnifiedPropertyResponse> searchProperties({
@@ -661,15 +669,31 @@ class ApiService extends getx.GetConnect {
     int page = 1,
     int limit = 20,
   }) async {
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+    
+    // Convert filters to query parameters
+    final filterMap = filters.toJson();
+    filterMap.forEach((key, value) {
+      if (value != null) {
+        if (value is List) {
+          // Handle list parameters (like amenities, property_type)
+          if (value.isNotEmpty) {
+            queryParams[key] = value.join(',');
+          }
+        } else {
+          queryParams[key] = value.toString();
+        }
+      }
+    });
+
     return await _makeRequest(
-      '/properties/search',
+      '/properties/',
       (json) => _parseUnifiedPropertyResponse(json),
-      method: 'POST',
-      queryParams: {
-        'page': page.toString(),
-        'limit': limit.toString(),
-      },
-      body: filters.toJson(),
+      method: 'GET',
+      queryParams: queryParams,
       operationName: 'Search Properties',
     );
   }
@@ -682,17 +706,15 @@ class ApiService extends getx.GetConnect {
     int page = 1,
   }) async {
     return await _makeRequest(
-      '/properties/search',
+      '/properties/',
       (json) => _parseUnifiedPropertyResponse(json),
-      method: 'POST',
+      method: 'GET',
       queryParams: {
         'page': page.toString(),
         'limit': limit.toString(),
-      },
-      body: {
-        'latitude': latitude,
-        'longitude': longitude,
-        'radius_km': 10, // Large radius for discovery
+        'lat': latitude.toString(),
+        'lng': longitude.toString(),
+        'radius': '10', // Large radius for discovery
         'sort_by': 'distance',
       },
       operationName: 'Discover Properties',
@@ -707,23 +729,35 @@ class ApiService extends getx.GetConnect {
     int limit = 20,
     Map<String, dynamic>? filters,
   }) async {
-    final body = {
-      'latitude': latitude,
-      'longitude': longitude,
-      'radius_km': radiusKm.toInt(),
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+      'lat': latitude.toString(),
+      'lng': longitude.toString(),
+      'radius': radiusKm.toInt().toString(),
       'sort_by': 'distance',
-      ...?filters,
     };
 
+    // Add additional filters as query parameters
+    if (filters != null) {
+      filters.forEach((key, value) {
+        if (value != null) {
+          if (value is List) {
+            if (value.isNotEmpty) {
+              queryParams[key] = value.join(',');
+            }
+          } else {
+            queryParams[key] = value.toString();
+          }
+        }
+      });
+    }
+
     return await _makeRequest(
-      '/properties/search',
+      '/properties/',
       (json) => _parseUnifiedPropertyResponse(json),
-      method: 'POST',
-      queryParams: {
-        'page': page.toString(),
-        'limit': limit.toString(),
-      },
-      body: body,
+      method: 'GET',
+      queryParams: queryParams,
       operationName: 'Explore Properties',
     );
   }
@@ -735,22 +769,32 @@ class ApiService extends getx.GetConnect {
     int page = 1,
     int limit = 20,
   }) async {
-    final body = {
-      'latitude': latitude,
-      'longitude': longitude,
-      'radius_km': filters['radius_km'] ?? 10,
-      ...filters,
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+      'lat': latitude.toString(),
+      'lng': longitude.toString(),
+      'radius': (filters['radius_km'] ?? 10).toString(),
     };
 
+    // Add all filters as query parameters
+    filters.forEach((key, value) {
+      if (value != null && key != 'radius_km') { // Skip radius_km as we already added it as 'radius'
+        if (value is List) {
+          if (value.isNotEmpty) {
+            queryParams[key] = value.join(',');
+          }
+        } else {
+          queryParams[key] = value.toString();
+        }
+      }
+    });
+
     return await _makeRequest(
-      '/properties/search',
+      '/properties/',
       (json) => _parseUnifiedPropertyResponse(json),
-      method: 'POST',
-      queryParams: {
-        'page': page.toString(),
-        'limit': limit.toString(),
-      },
-      body: body,
+      method: 'GET',
+      queryParams: queryParams,
       operationName: 'Filter Properties',
     );
   }
@@ -766,59 +810,8 @@ class ApiService extends getx.GetConnect {
     );
   }
 
-  Future<List<PropertyModel>> getPropertyRecommendations({int limit = 10}) async {
-    return await _makeRequest(
-      '/properties/recommendations',
-      (json) {
-        final propertiesData = json['data'] ?? json;
-        
-        if (propertiesData is List) {
-          return propertiesData.map((item) => _parsePropertyModel(item)).toList();
-        } else {
-          throw Exception('Expected list of properties but got: ${propertiesData.runtimeType}');
-        }
-      },
-      queryParams: {'limit': limit.toString()},
-      operationName: 'Get Property Recommendations',
-    );
-  }
 
-  Future<void> showPropertyInterest(int propertyId, {
-    required String interestType,
-    String? message,
-    String? preferredTime,
-  }) async {
-    await _makeRequest(
-      '/properties/interest',
-      (json) => json,
-      method: 'POST',
-      body: {
-        'property_id': propertyId,
-        'interest_type': interestType,
-        if (message != null) 'message': message,
-        if (preferredTime != null) 'preferred_time': preferredTime,
-      },
-      operationName: 'Show Property Interest',
-    );
-  }
 
-  Future<Map<String, dynamic>> checkPropertyAvailability(
-    int propertyId, {
-    String? checkInDate,
-    String? checkOutDate,
-    int? guests,
-  }) async {
-    return await _makeRequest(
-      '/properties/$propertyId/availability',
-      (json) => json,
-      queryParams: {
-        if (checkInDate != null) 'check_in_date': checkInDate,
-        if (checkOutDate != null) 'check_out_date': checkOutDate,
-        if (guests != null) 'guests': guests.toString(),
-      },
-      operationName: 'Check Property Availability',
-    );
-  }
 
   // Connection Testing
   Future<bool> testConnection() async {
@@ -832,11 +825,19 @@ class ApiService extends getx.GetConnect {
       );
       
       DebugLogger.api('🏥 Health check response: ${response.statusCode}');
-      DebugLogger.api('🏥 Health check body: ${response.bodyString}');
       
-      return response.statusCode == 200;
-    } catch (e, stackTrace) {
-      DebugLogger.error('💔 Backend connection test failed: $e');
+      // Consider 200, 404, and 405 as "server is reachable"
+      final isReachable = response.statusCode == 200 || 
+                         response.statusCode == 404 || 
+                         response.statusCode == 405;
+      
+      if (isReachable) {
+        DebugLogger.success('✅ Backend server is reachable (status: ${response.statusCode})');
+      }
+      
+      return isReachable;
+    } catch (e) {
+      DebugLogger.warning('🔍 Primary health check failed: $e');
       // Try alternative endpoint for testing
       try {
         final response = await get('/').timeout(
@@ -846,9 +847,19 @@ class ApiService extends getx.GetConnect {
           },
         );
         DebugLogger.api('🔄 Alternative endpoint test: ${response.statusCode}');
-        return response.statusCode == 200 || response.statusCode == 404; // 404 is ok, means server is running
+        
+        // Server is reachable if we get any HTTP response (including 405, 404)
+        final isReachable = response.statusCode == 200 || 
+                           response.statusCode == 404 || 
+                           response.statusCode == 405;
+                           
+        if (isReachable) {
+          DebugLogger.success('✅ Backend server is reachable via alternative test (status: ${response.statusCode})');
+        }
+        
+        return isReachable;
       } catch (e2) {
-        DebugLogger.error('💔 Alternative endpoint test also failed: $e2');
+        DebugLogger.warning('💔 Backend server unreachable: $e2');
         return false;
       }
     }
@@ -856,8 +867,9 @@ class ApiService extends getx.GetConnect {
 
   // Swipe System
   Future<void> swipeProperty(int propertyId, bool isLiked, {
-    String? swipeDirection,
-    int? interactionTimeSeconds,
+    double? userLocationLat,
+    double? userLocationLng,
+    String? sessionId,
   }) async {
     await _makeRequest(
       '/swipes/',
@@ -866,53 +878,59 @@ class ApiService extends getx.GetConnect {
       body: {
         'property_id': propertyId,
         'is_liked': isLiked,
-        'swipe_direction': swipeDirection ?? (isLiked ? 'right' : 'left'),
-        if (interactionTimeSeconds != null) 'interaction_time_seconds': interactionTimeSeconds,
+        'user_location_lat': userLocationLat,
+        'user_location_lng': userLocationLng,
+        'session_id': sessionId,
       },
       operationName: 'Swipe Property',
     );
   }
 
-  Future<List<Map<String, dynamic>>> getSwipeHistory({int limit = 100}) async {
+  // Get swipes with pagination and property details
+  Future<SwipeHistory> getSwipes({
+    bool? isLiked,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+    
+    if (isLiked != null) {
+      queryParams['is_liked'] = isLiked.toString();
+    }
+
     return await _makeRequest(
-      '/swipes/history',
-      (json) => (json as List).cast<Map<String, dynamic>>(),
-      queryParams: {'limit': limit.toString()},
-      operationName: 'Get Swipe History',
+      '/swipes/',
+      (json) => SwipeHistory.fromJson(json),
+      queryParams: queryParams,
+      operationName: 'Get Swipes',
     );
   }
+
 
   Future<Map<String, dynamic>> getSwipeStats() async {
     return await _makeRequest('/swipes/stats', (json) => json, operationName: 'Get Swipe Stats');
   }
 
-  Future<void> undoLastSwipe() async {
-    await _makeRequest('/swipes/undo', (json) => json, method: 'POST', operationName: 'Undo Last Swipe');
+  Future<Map<String, dynamic>> toggleSwipeStatus(int swipeId) async {
+    return await _makeRequest(
+      '/swipes/$swipeId/toggle',
+      (json) => json,
+      method: 'PUT',
+      operationName: 'Toggle Swipe Status',
+    );
   }
 
   // Location Services
-  Future<List<Map<String, dynamic>>> searchLocations(String query, {int limit = 10}) async {
-    return await _makeRequest(
-      '/locations/search',
-      (json) => (json as List).cast<Map<String, dynamic>>(),
-      queryParams: {
-        'query': query,
-        'limit': limit.toString(),
-      },
-      operationName: 'Search Locations',
-    );
-  }
 
 
   // Visit Scheduling
   Future<Map<String, dynamic>> scheduleVisit({
     required int propertyId,
-    required String visitDate,
-    required String visitTime,
-    String visitType = 'physical',
-    String? notes,
-    String contactPreference = 'phone',
-    int guestsCount = 1,
+    required String scheduledDate,
+    String? specialRequirements,
   }) async {
     return await _makeRequest(
       '/visits/',
@@ -920,191 +938,68 @@ class ApiService extends getx.GetConnect {
       method: 'POST',
       body: {
         'property_id': propertyId,
-        'visit_date': visitDate,
-        'visit_time': visitTime,
-        'visit_type': visitType,
-        if (notes != null) 'notes': notes,
-        'contact_preference': contactPreference,
-        'guests_count': guestsCount,
+        'scheduled_date': scheduledDate,
+        if (specialRequirements != null) 'special_requirements': specialRequirements,
       },
       operationName: 'Schedule Visit',
     );
   }
 
-  Future<VisitListResponse> getMyVisits() async {
-    return await _makeRequest(
+  Future<List<VisitModel>> getMyVisits({String? visitType}) async {
+    final queryParams = <String, String>{};
+    if (visitType != null) {
+      queryParams['visit_type'] = visitType;
+    }
+
+    final response = await _makeRequest<List<dynamic>>(
       '/visits/',
-      (json) => VisitListResponse.fromJson(json),
+      (json) => json['visits'] as List<dynamic>,
+      queryParams: queryParams,
       operationName: 'Get My Visits',
     );
+
+    // Convert the list to VisitModel objects
+    return response.map((item) => VisitModel.fromJson(item as Map<String, dynamic>)).toList();
   }
 
-  Future<List<VisitModel>> getUpcomingVisits() async {
-    return await _makeRequest(
-      '/visits/upcoming',
-      (json) {
-        final visitsData = json['data'] ?? json;
-        
-        if (visitsData is List) {
-          return visitsData.map((item) => VisitModel.fromJson(item)).toList();
-        } else {
-          throw Exception('Expected list of visits but got: ${visitsData.runtimeType}');
-        }
-      },
-      operationName: 'Get Upcoming Visits',
-    );
-  }
   
-  Future<List<VisitModel>> getPastVisits() async {
+
+  // Generic method to update visit (reschedule or cancel)
+  Future<VisitModel> updateVisit(int visitId, Map<String, dynamic> updateData) async {
     return await _makeRequest(
-      '/visits/past',
-      (json) {
-        final visitsData = json['data'] ?? json;
-        
-        if (visitsData is List) {
-          return visitsData.map((item) => VisitModel.fromJson(item)).toList();
-        } else {
-          throw Exception('Expected list of visits but got: ${visitsData.runtimeType}');
-        }
-      },
-      operationName: 'Get Past Visits',
+      '/visits/$visitId',
+      (json) => VisitModel.fromJson(json),
+      method: 'PATCH',
+      body: updateData,
+      operationName: 'Update Visit',
     );
   }
 
-  Future<void> rescheduleVisit(int visitId, String newDate, {String? reason}) async {
-    await _makeRequest(
-      '/visits/reschedule',
-      (json) => json,
-      method: 'POST',
-      body: {
-        'visit_id': visitId,
-        'new_date': newDate,
-        if (reason != null) 'reason': reason,
-      },
-      operationName: 'Reschedule Visit',
-    );
+  // Convenience method for rescheduling
+  Future<VisitModel> rescheduleVisit(int visitId, String newScheduledDate) async {
+    return await updateVisit(visitId, {'scheduled_date': newScheduledDate});
   }
 
-  Future<void> cancelVisit(int visitId, {String? reason}) async {
-    await _makeRequest(
-      '/visits/cancel',
-      (json) => json,
-      method: 'POST',
-      body: {
-        'visit_id': visitId,
-        if (reason != null) 'reason': reason,
-      },
-      operationName: 'Cancel Visit',
-    );
+  // Convenience method for cancelling  
+  Future<VisitModel> cancelVisit(int visitId, {String? reason}) async {
+    final updateData = <String, dynamic>{};
+    if (reason != null) {
+      updateData['cancellation_reason'] = reason;
+    }
+    return await updateVisit(visitId, updateData);
   }
 
-  Future<RelationshipManagerModel> getRelationshipManager() async {
+  Future<AgentModel> getRelationshipManager() async {
     return await _makeRequest(
-      '/visits/relationship-manager',
+      '/agents/assigned/',
       (json) {
-        final rmData = json['data'] ?? json;
-        return RelationshipManagerModel.fromJson(rmData);
+        // The API returns the agent object directly, not wrapped in 'data'
+        return AgentModel.fromJson(json);
       },
-      operationName: 'Get Relationship Manager',
+      operationName: 'Get Assigned Agent',
     );
   }
 
-  // Analytics
-  Future<void> trackEvent(String eventType, Map<String, dynamic> eventData, {
-    String? sessionId,
-    String? userAgent,
-    String? ipAddress,
-  }) async {
-    // Get current user ID
-    final currentUser = _supabase.auth.currentUser;
-    final userId = currentUser?.id;
-    
-    await _makeRequest(
-      '/analytics/event',
-      (json) => json,
-      method: 'POST',
-      body: {
-        'user_id': userId != null ? int.tryParse(userId) ?? 0 : 0,
-        'event_type': eventType,
-        'event_data': eventData,
-        'timestamp': DateTime.now().toIso8601String(),
-        'session_id': sessionId ?? 'unknown',
-        'user_agent': userAgent ?? 'unknown',
-        'ip_address': ipAddress ?? 'unknown',
-      },
-      operationName: 'Track Event',
-    );
-  }
-
-  Future<Map<String, dynamic>> getAnalyticsDashboard() async {
-    return await _makeRequest('/analytics/dashboard', (json) => json, operationName: 'Get Analytics Dashboard');
-  }
-
-  Future<List<Map<String, dynamic>>> getSearchHistory() async {
-    return await _makeRequest(
-      '/analytics/search-history',
-      (json) {
-        // Handle both List and Map responses from backend
-        if (json is List) {
-          return (json as List).cast<Map<String, dynamic>>();
-        } else {
-          // If response is a Map, extract the array or return empty list
-          final resultsData = json['data'] ?? json['history'] ?? json['results'];
-          if (resultsData is List) {
-            return resultsData.cast<Map<String, dynamic>>();
-          }
-        }
-      
-        // Return empty list if parsing fails
-        return <Map<String, dynamic>>[];
-      },
-      operationName: 'Get Search History',
-    );
-  }
-
-  Future<SwipeStatsModel> getSwipeAnalytics() async {
-    return await _makeRequest(
-      '/analytics/swipe-stats',
-      (json) {
-        final statsData = json['data'] ?? json;
-        return SwipeStatsModel.fromJson(statsData);
-      },
-      operationName: 'Get Swipe Analytics',
-    );
-  }
-
-  Future<SearchAnalyticsModel> getSearchAnalytics() async {
-    return await _makeRequest(
-      '/analytics/search-stats',
-      (json) {
-        final statsData = json['data'] ?? json;
-        return SearchAnalyticsModel.fromJson(statsData);
-      },
-      operationName: 'Get Search Analytics',
-    );
-  }
-
-  Future<PropertyViewAnalyticsModel> getPropertyViewAnalytics() async {
-    return await _makeRequest(
-      '/analytics/property-view-stats',
-      (json) {
-        final statsData = json['data'] ?? json;
-        return PropertyViewAnalyticsModel.fromJson(statsData);
-      },
-      operationName: 'Get Property View Analytics',
-    );
-  }
-
-  Future<UserPreferencesInsightsModel> getUserInsights() async {
-    return await _makeRequest(
-      '/analytics/user-insights',
-      (json) {
-        final insightsData = json['data'] ?? json;
-        return UserPreferencesInsightsModel.fromJson(insightsData);
-      },
-      operationName: 'Get User Insights',
-    );
-  }
 
   // Booking System APIs
   Future<BookingModel> createBooking({
@@ -1254,75 +1149,95 @@ class ApiService extends getx.GetConnect {
     );
   }
 
-  // Enhanced Analytics Tracking
-  Future<void> trackPropertyView(int propertyId, {
-    int? viewDurationSeconds,
-    String? source,
-    Map<String, dynamic>? additionalData,
-  }) async {
-    await trackEvent('property_view', {
-      'property_id': propertyId,
-      if (viewDurationSeconds != null) 'view_duration_seconds': viewDurationSeconds,
-      if (source != null) 'source': source,
-      ...?additionalData,
-    });
+  // Amenities Management
+  Future<List<AmenityModel>> getAllAmenities() async {
+    return await _makeRequest(
+      '/amenities',
+      (json) {
+        final amenitiesData = json['data'] ?? json;
+        
+        if (amenitiesData is List) {
+          return amenitiesData.map((item) => AmenityModel.fromJson(item)).toList();
+        } else {
+          throw Exception('Expected list of amenities but got: ${amenitiesData.runtimeType}');
+        }
+      },
+      operationName: 'Get All Amenities',
+    );
   }
-
-  Future<void> trackPropertySearch({
-    required Map<String, dynamic> searchFilters,
-    required int resultCount,
+  // User Search History
+  Future<void> recordSearchHistory({
+    String? searchQuery,
+    Map<String, dynamic>? searchFilters,
     String? searchLocation,
-    Map<String, dynamic>? additionalData,
+    int? searchRadius,
+    int? resultsCount,
+    double? userLocationLat,
+    double? userLocationLng,
+    String? searchType,
+    String? sessionId,
   }) async {
-    await trackEvent('property_search', {
-      'search_filters': searchFilters,
-      'result_count': resultCount,
-      if (searchLocation != null) 'search_location': searchLocation,
-      ...?additionalData,
-    });
+    await _makeRequest(
+      '/users/search-history',
+      (json) => json,
+      method: 'POST',
+      body: {
+        'search_query': searchQuery,
+        'search_filters': searchFilters,
+        'search_location': searchLocation,
+        'search_radius': searchRadius,
+        'results_count': resultsCount,
+        'user_location_lat': userLocationLat,
+        'user_location_lng': userLocationLng,
+        'search_type': searchType,
+        'session_id': sessionId,
+      },
+      operationName: 'Record Search History',
+    );
+  }
+  
+  // Enhanced user settings
+  Future<void> updateNotificationSettings(NotificationSettings settings) async {
+    await _makeRequest(
+      '/users/notification-settings',
+      (json) => json,
+      method: 'PUT',
+      body: settings.toJson(),
+      operationName: 'Update Notification Settings',
+    );
   }
 
-  Future<void> trackSwipeAction({
-    required int propertyId,
-    required bool isLiked,
-    String? swipeDirection,
-    int? interactionTimeSeconds,
-    Map<String, dynamic>? additionalData,
-  }) async {
-    await trackEvent('property_swipe', {
-      'property_id': propertyId,
-      'is_liked': isLiked,
-      'swipe_direction': swipeDirection ?? (isLiked ? 'right' : 'left'),
-      if (interactionTimeSeconds != null) 'interaction_time_seconds': interactionTimeSeconds,
-      ...?additionalData,
-    });
+  Future<NotificationSettings> getNotificationSettings() async {
+    return await _makeRequest(
+      '/users/notification-settings',
+      (json) {
+        final settingsData = json['data'] ?? json;
+        return NotificationSettings.fromJson(settingsData);
+      },
+      operationName: 'Get Notification Settings',
+    );
   }
 
-  Future<void> trackVisitScheduling({
-    required int propertyId,
-    required String visitType,
-    required String visitDate,
-    Map<String, dynamic>? additionalData,
-  }) async {
-    await trackEvent('visit_scheduled', {
-      'property_id': propertyId,
-      'visit_type': visitType,
-      'visit_date': visitDate,
-      ...?additionalData,
-    });
+  Future<void> updatePrivacySettings(PrivacySettings settings) async {
+    await _makeRequest(
+      '/users/privacy-settings',
+      (json) => json,
+      method: 'PUT',
+      body: settings.toJson(),
+      operationName: 'Update Privacy Settings',
+    );
   }
 
-  Future<void> trackBookingAction({
-    required String action, // 'created', 'cancelled', 'payment_initiated', etc.
-    required int bookingId,
-    int? propertyId,
-    Map<String, dynamic>? additionalData,
-  }) async {
-    await trackEvent('booking_$action', {
-      'booking_id': bookingId,
-      if (propertyId != null) 'property_id': propertyId,
-      ...?additionalData,
-    });
+  Future<PrivacySettings> getPrivacySettings() async {
+    return await _makeRequest(
+      '/users/privacy-settings',
+      (json) {
+        final settingsData = json['data'] ?? json;
+        return PrivacySettings.fromJson(settingsData);
+      },
+      operationName: 'Get Privacy Settings',
+    );
   }
+
 
 }

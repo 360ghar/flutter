@@ -48,18 +48,18 @@ class DashboardController extends GetxController {
       isLoading.value = true;
       error.value = '';
       
-      // Load all dashboard data concurrently
+      // Load dashboard data (analytics removed)
       final results = await Future.wait([
-        _apiService.getAnalyticsDashboard(),
-        _apiService.getSearchHistory(),
         _loadUserStats(),
         _loadRecentActivity(),
       ]);
       
-      dashboardData.value = results[0] as Map<String, dynamic>;
-      searchHistory.value = results[1] as List<Map<String, dynamic>>;
-      userStats.value = results[2] as Map<String, dynamic>;
-      recentActivity.value = results[3] as List<Map<String, dynamic>>;
+      userStats.value = results[0] as Map<String, dynamic>;
+      recentActivity.value = results[1] as List<Map<String, dynamic>>;
+      
+      // Clear analytics data that's no longer available
+      dashboardData.value = {};
+      searchHistory.value = [];
       
     } catch (e, stackTrace) {
       error.value = 'Failed to load dashboard data';
@@ -88,15 +88,14 @@ class DashboardController extends GetxController {
 
   Future<Map<String, dynamic>> _loadUserStats() async {
     try {
-      // This would be a separate API call for user statistics
-      // For now, we'll extract it from dashboard data or create mock data
+      // Analytics removed - return basic stats or empty data
       return {
-        'properties_viewed': dashboardData['total_views'] ?? 0,
-        'properties_liked': dashboardData['total_likes'] ?? 0,
-        'visits_scheduled': dashboardData['total_visits_scheduled'] ?? 0,
-        'searches_made': searchHistory.length,
-        'time_spent_minutes': dashboardData['time_spent_minutes'] ?? 0,
-        'favorite_location': dashboardData['favorite_location'] ?? 'N/A',
+        'properties_viewed': 0,
+        'properties_liked': 0,
+        'visits_scheduled': 0,
+        'searches_made': 0,
+        'time_spent_minutes': 0,
+        'favorite_location': 'N/A',
       };
     } catch (e, stackTrace) {
       DebugLogger.error('Error loading user stats', e, stackTrace);
@@ -166,16 +165,9 @@ class DashboardController extends GetxController {
   int get timeSpentMinutes => userStats['time_spent_minutes'] ?? 0;
   String get favoriteLocation => userStats['favorite_location'] ?? 'N/A';
 
-  // Search history methods
+  // Search history methods (analytics removed)
   Future<void> refreshSearchHistory() async {
-    if (!_authController.isAuthenticated) return;
-
-    try {
-      final history = await _apiService.getSearchHistory();
-      searchHistory.value = history;
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error refreshing search history', e, stackTrace);
-    }
+    searchHistory.clear();
   }
 
   void clearSearchHistory() {

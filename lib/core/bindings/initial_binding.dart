@@ -1,11 +1,9 @@
 import 'package:get/get.dart';
-import '../data/providers/api_provider.dart';
 import '../data/providers/api_service.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/location_controller.dart';
 import '../controllers/localization_controller.dart';
 import '../controllers/theme_controller.dart';
-import '../controllers/analytics_controller.dart';
 import '../controllers/filter_service.dart';
 import '../utils/debug_logger.dart';
 
@@ -18,8 +16,8 @@ class InitialBinding extends Bindings {
     Get.put<ApiService>(ApiService(), permanent: true);
     DebugLogger.success('✅ ApiService registered');
 
-    // Register API Providers with better error handling
-    _initializeApiProviders();
+    // Test API connection
+    _initializeApiService();
 
     // Register Core Controllers in proper order
     _initializeCoreControllers();
@@ -30,19 +28,15 @@ class InitialBinding extends Bindings {
     DebugLogger.success('✅ InitialBinding: Core dependencies registered successfully');
   }
 
-  void _initializeApiProviders() {
+  void _initializeApiService() {
     try {
-      final apiProvider = RealApiProvider();
-      Get.put<IApiProvider>(apiProvider, permanent: true);
-      DebugLogger.success('✅ RealApiProvider registered for backend integration');
-      
       // Test connection asynchronously without blocking initialization
       Future.delayed(const Duration(milliseconds: 500), () {
         _testBackendConnection();
       });
     } catch (e) {
-      DebugLogger.error('💥 Failed to initialize RealApiProvider: $e');
-      throw Exception('Critical error: Cannot initialize API provider');
+      DebugLogger.error('💥 Failed to initialize ApiService: $e');
+      throw Exception('Critical error: Cannot initialize API service');
     }
   }
 
@@ -60,9 +54,6 @@ class InitialBinding extends Bindings {
       
       Get.put<ThemeController>(ThemeController(), permanent: true);
       DebugLogger.success('✅ ThemeController registered');
-      
-      Get.put<AnalyticsController>(AnalyticsController(), permanent: true);
-      DebugLogger.success('✅ AnalyticsController registered');
       
       Get.put<FilterService>(FilterService(), permanent: true);
       DebugLogger.success('✅ FilterService registered');

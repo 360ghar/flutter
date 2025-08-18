@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/unified_filter_model.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
+import '../../../core/data/providers/api_service.dart';
 import '../../../core/controllers/filter_service.dart';
 import '../../../core/utils/debug_logger.dart';
 
@@ -20,9 +21,13 @@ enum LikesState {
 class LikesController extends GetxController {
   final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
   final FilterService _filterService = Get.find<FilterService>();
+  final ApiService _apiService = Get.find<ApiService>();
 
   // Current segment (Liked or Passed)
   final Rx<LikesSegment> currentSegment = LikesSegment.liked.obs;
+  
+  // Map to store property ID to swipe ID mapping for liked properties
+  final RxMap<int, int> _propertyToSwipeIdMap = <int, int>{}.obs;
 
   // State management for liked properties
   final Rx<LikesState> likedState = LikesState.initial.obs;
@@ -118,20 +123,34 @@ class LikesController extends GetxController {
 
       DebugLogger.api('❤️ Loading liked properties: page $page');
 
-      final properties = await _swipesRepository.getLikedProperties(
+      final propertiesWithSwipeIds = await _swipesRepository.getLikedPropertiesWithSwipeIds(
         filters: _buildFiltersWithSearch(),
         page: page,
         limit: _limit,
       );
 
+      // Extract properties and populate swipe ID mapping
+      final properties = propertiesWithSwipeIds.map((item) => item.property).toList();
+      
       if (isInitial) {
         likedProperties.assignAll(properties);
-        // No aggregate counts required
+        _propertyToSwipeIdMap.clear();
+        // Populate swipe ID mapping
+        for (final item in propertiesWithSwipeIds) {
+          _propertyToSwipeIdMap[item.property.id] = item.swipeId;
+        }
       } else {
         // Remove duplicates and add new properties
         final existingIds = likedProperties.map((p) => p.id).toSet();
         final newProperties = properties.where((p) => !existingIds.contains(p.id)).toList();
         likedProperties.addAll(newProperties);
+        
+        // Update swipe ID mapping for new properties
+        for (final item in propertiesWithSwipeIds) {
+          if (!existingIds.contains(item.property.id)) {
+            _propertyToSwipeIdMap[item.property.id] = item.swipeId;
+          }
+        }
       }
 
       // Update pagination
@@ -306,17 +325,32 @@ class LikesController extends GetxController {
     Get.toNamed('/property-details', arguments: {'property': property});
   }
 
-  // Remove property from likes (if API supports it)
+  // Remove property from likes using toggle API
   Future<void> removeFromLikes(PropertyModel property) async {
     try {
       DebugLogger.api('🗑️ Removing property from likes: ${property.title}');
       
+      // Get the swipe ID for this property
+      final swipeId = _propertyToSwipeIdMap[property.id];
+      if (swipeId == null) {
+        DebugLogger.error('❌ No swipe ID found for property ${property.id}');
+        Get.snackbar(
+          'Error',
+          'Unable to remove property. Please try refreshing.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+      
       // Optimistically remove from UI
       likedProperties.removeWhere((p) => p.id == property.id);
       filteredLikedProperties.removeWhere((p) => p.id == property.id);
+      _propertyToSwipeIdMap.remove(property.id);
       
-      // TODO: Implement API call to remove like
-      // await _swipesRepository.removeLike(property.id);
+      // Call API to toggle swipe status (this will unlike the property)
+      await _apiService.toggleSwipeStatus(swipeId);
+      
+      DebugLogger.success('✅ Property successfully removed from likes');
       
       Get.snackbar(
         'Removed',
@@ -327,7 +361,15 @@ class LikesController extends GetxController {
       
     } catch (e) {
       DebugLogger.error('❌ Failed to remove from likes: $e');
+      
       // Revert optimistic update
+      Get.snackbar(
+        'Error',
+        'Failed to remove property. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      
+      // Refresh to restore correct state
       refreshLiked();
     }
   }

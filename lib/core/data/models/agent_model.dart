@@ -1,43 +1,131 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'agent_model.g.dart';
+
+enum AgentType {
+  @JsonValue('general')
+  general,
+  @JsonValue('specialist')
+  specialist,
+  @JsonValue('senior')
+  senior,
+}
+
+enum ExperienceLevel {
+  @JsonValue('beginner')
+  beginner,
+  @JsonValue('intermediate')
+  intermediate,
+  @JsonValue('expert')
+  expert,
+}
+
+@JsonSerializable()
 class AgentModel {
-  final String id;
+  final int id;
   final String name;
-  final String phone;
-  final String email;
-  final String image;
-  final double rating;
-  final String experience;
-  final String specialization;
+  final String? description;
+  @JsonKey(name: 'avatar_url')
+  final String? avatarUrl;
+  final List<String>? languages;
+  @JsonKey(name: 'agent_type')
+  final AgentType agentType;
+  @JsonKey(name: 'experience_level')
+  final ExperienceLevel experienceLevel;
+  @JsonKey(name: 'is_active', defaultValue: true)
+  final bool isActive;
+  @JsonKey(name: 'is_available', defaultValue: true)
+  final bool isAvailable;
+  @JsonKey(name: 'working_hours')
+  final Map<String, dynamic>? workingHours;
+  @JsonKey(name: 'total_users_assigned', defaultValue: 0)
+  final int totalUsersAssigned;
+  @JsonKey(name: 'user_satisfaction_rating', defaultValue: 0.0)
+  final double userSatisfactionRating;
+  @JsonKey(name: 'created_at')
+  final DateTime createdAt;
+  @JsonKey(name: 'updated_at')
+  final DateTime? updatedAt;
 
   AgentModel({
     required this.id,
     required this.name,
-    required this.phone,
-    required this.email,
-    required this.image,
-    required this.rating,
-    required this.experience,
-    required this.specialization,
+    this.description,
+    this.avatarUrl,
+    this.languages,
+    required this.agentType,
+    required this.experienceLevel,
+    this.isActive = true,
+    this.isAvailable = true,
+    this.workingHours,
+    this.totalUsersAssigned = 0,
+    this.userSatisfactionRating = 0.0,
+    required this.createdAt,
+    this.updatedAt,
   });
 
+  factory AgentModel.fromJson(Map<String, dynamic> json) => _$AgentModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AgentModelToJson(this);
+
   AgentModel copyWith({
-    String? id,
+    int? id,
     String? name,
-    String? phone,
-    String? email,
-    String? image,
-    double? rating,
-    String? experience,
-    String? specialization,
+    String? description,
+    String? avatarUrl,
+    List<String>? languages,
+    AgentType? agentType,
+    ExperienceLevel? experienceLevel,
+    bool? isActive,
+    bool? isAvailable,
+    Map<String, dynamic>? workingHours,
+    int? totalUsersAssigned,
+    double? userSatisfactionRating,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return AgentModel(
       id: id ?? this.id,
       name: name ?? this.name,
-      phone: phone ?? this.phone,
-      email: email ?? this.email,
-      image: image ?? this.image,
-      rating: rating ?? this.rating,
-      experience: experience ?? this.experience,
-      specialization: specialization ?? this.specialization,
+      description: description ?? this.description,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      languages: languages ?? this.languages,
+      agentType: agentType ?? this.agentType,
+      experienceLevel: experienceLevel ?? this.experienceLevel,
+      isActive: isActive ?? this.isActive,
+      isAvailable: isAvailable ?? this.isAvailable,
+      workingHours: workingHours ?? this.workingHours,
+      totalUsersAssigned: totalUsersAssigned ?? this.totalUsersAssigned,
+      userSatisfactionRating: userSatisfactionRating ?? this.userSatisfactionRating,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  // Convenience getters
+  String get agentTypeString {
+    switch (agentType) {
+      case AgentType.general:
+        return 'General';
+      case AgentType.specialist:
+        return 'Specialist';
+      case AgentType.senior:
+        return 'Senior';
+    }
+  }
+
+  String get experienceLevelString {
+    switch (experienceLevel) {
+      case ExperienceLevel.beginner:
+        return 'Beginner';
+      case ExperienceLevel.intermediate:
+        return 'Intermediate';
+      case ExperienceLevel.expert:
+        return 'Expert';
+    }
+  }
+
+  String get languagesDisplay => languages?.join(', ') ?? 'Not specified';
+  
+  bool get hasWorkingHours => workingHours?.isNotEmpty == true;
 } 

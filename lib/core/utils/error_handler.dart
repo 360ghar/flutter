@@ -300,7 +300,7 @@ class ApiErrorHandler {
   }
 
   static String _handleTypeCastingError(String error, String? context) {
-    DebugLogger.warning('Type casting error detected - Backend data types don\'t match frontend expectations');
+    DebugLogger.warning('Type casting error detected: backend data types don\'t match frontend expectations');
     
     if (error.contains("'int' is not a subtype of type 'String'")) {
       DebugLogger.info('Solution: Backend is returning integer where string is expected');
@@ -326,11 +326,11 @@ class ApiErrorHandler {
   static String _handleHttpError(int statusCode, String? context) {
     switch (statusCode) {
       case 401:
-        DebugLogger.warning('Authentication error - Invalid or expired token');
+        DebugLogger.warning('Authentication error: invalid or expired token');
         return 'Please log in again';
         
       case 403:
-        DebugLogger.warning('Authorization error - Insufficient permissions');
+        DebugLogger.warning('Authorization error: insufficient permissions');
         return 'Access denied - insufficient permissions';
         
       case 404:
@@ -338,7 +338,7 @@ class ApiErrorHandler {
         return 'Requested data not found';
         
       case 500:
-        DebugLogger.error('Server error - Backend is experiencing issues');
+        DebugLogger.error('Server error: backend is experiencing issues');
         return 'Server error - please try again later';
         
       default:
@@ -348,7 +348,7 @@ class ApiErrorHandler {
   }
 
   static String _handleJsonError(String error, String? context) {
-    DebugLogger.warning('JSON parsing error - Invalid response format');
+    DebugLogger.warning('JSON parsing error: invalid response format');
     DebugLogger.debug('Check backend response format and verify valid JSON');
     
     return 'Invalid data format received - please try again';

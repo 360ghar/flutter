@@ -5,7 +5,6 @@ import '../controllers/property_controller.dart';
 import '../../visits/controllers/visits_controller.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/controller_helper.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 
 class PropertyDetailsView extends StatelessWidget {
@@ -56,7 +55,7 @@ class PropertyDetailsView extends StatelessWidget {
     }
 
     // Ensure PropertyController is available
-    ControllerHelper.ensurePropertyController();
+    // PropertyController should be registered via PropertyDetailsBinding
     final controller = Get.find<PropertyController>();
     final visitsController = Get.find<VisitsController>();
     
@@ -343,7 +342,7 @@ class PropertyDetailsView extends StatelessWidget {
                             border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
                           ),
                                                      child: Text(
-                             amenity,
+                             amenity.title,
                              style: TextStyle(
                                color: AppColors.textPrimary,
                                fontWeight: FontWeight.w500,

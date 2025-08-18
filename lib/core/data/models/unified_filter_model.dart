@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'api_response_models.dart';
 
 part 'unified_filter_model.g.dart';
 
@@ -55,7 +56,11 @@ class UnifiedFilterModel {
   final DateTime? checkOutDate;
   final int? guests;
   @JsonKey(name: 'sort_by')
-  final String? sortBy;
+  final SortBy? sortBy;
+  
+  // Search query for text-based search
+  @JsonKey(name: 'search_query')
+  final String? searchQuery;
   @JsonKey(name: 'include_unavailable')
   final bool? includeUnavailable;
 
@@ -91,6 +96,7 @@ class UnifiedFilterModel {
     this.checkOutDate,
     this.guests,
     this.sortBy,
+    this.searchQuery,
     this.includeUnavailable,
     this.propertyIds,
   });
@@ -99,7 +105,7 @@ class UnifiedFilterModel {
     return UnifiedFilterModel(
       radiusKm: 10.0,
       purpose: 'buy',
-      sortBy: 'distance',
+      sortBy: SortBy.distance,
       includeUnavailable: false,
       propertyType: [],
       amenities: [],
@@ -144,7 +150,8 @@ class UnifiedFilterModel {
     DateTime? checkInDate,
     DateTime? checkOutDate,
     int? guests,
-    String? sortBy,
+    SortBy? sortBy,
+    String? searchQuery,
     bool? includeUnavailable,
     List<int>? propertyIds,
   }) {
@@ -176,6 +183,7 @@ class UnifiedFilterModel {
       checkOutDate: checkOutDate ?? this.checkOutDate,
       guests: guests ?? this.guests,
       sortBy: sortBy ?? this.sortBy,
+      searchQuery: searchQuery ?? this.searchQuery,
       includeUnavailable: includeUnavailable ?? this.includeUnavailable,
       propertyIds: propertyIds ?? this.propertyIds,
     );

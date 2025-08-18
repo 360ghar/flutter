@@ -19,6 +19,15 @@ class AuthController extends GetxController {
   final Rxn<UserModel> currentUser = Rxn<UserModel>();
   final RxString errorMessage = ''.obs;
   
+  // Notification settings
+  final RxMap<String, bool> notificationSettings = <String, bool>{
+    'email_notifications': true,
+    'push_notifications': true,
+    'visit_reminders': true,
+    'price_alerts': false,
+    'new_properties': true,
+  }.obs;
+  
 
   @override
   void onInit() {
@@ -64,6 +73,7 @@ class AuthController extends GetxController {
           currentSupabaseUser.value = null;
           currentUser.value = null;
           isLoggedIn.value = false;
+          _resetNotificationSettings();
           // Only navigate to login if not already on auth screens
           if (!_isOnAuthScreen()) {
             Get.offAllNamed(AppRoutes.onboarding);
@@ -96,6 +106,7 @@ class AuthController extends GetxController {
     try {
       final userProfile = await apiService.getCurrentUser();
       currentUser.value = userProfile;
+      _loadNotificationSettings();
     } catch (e, stackTrace) {
       DebugLogger.error('Failed to load user profile', e, stackTrace);
     }
@@ -353,9 +364,8 @@ class AuthController extends GetxController {
         return false;
       }
 
-      // Validate with backend
-      final response = await apiService.checkSession();
-      return response['valid'] == true;
+      // Session is valid - backend sync removed
+      return true;
     } catch (e, stackTrace) {
       DebugLogger.error('Session validation failed', e, stackTrace);
       return false;
@@ -448,4 +458,68 @@ class AuthController extends GetxController {
       isLoading.value = false;
     }
   }
+
+  // Notification Settings Management (from UserController)
+  Future<bool> updateNotificationSettings(Map<String, bool> settings) async {
+    try {
+      final profileData = {
+        'notification_settings': settings,
+      };
+      
+      final success = await updateUserProfile(profileData);
+      if (success) {
+        notificationSettings.addAll(settings);
+      }
+      return success;
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to update notification settings', snackPosition: SnackPosition.TOP);
+      return false;
+    }
+  }
+
+  void _loadNotificationSettings() {
+    if (currentUser.value?.toJson()['notification_settings'] != null) {
+      final settings = Map<String, bool>.from(
+        currentUser.value!.toJson()['notification_settings'] as Map
+      );
+      notificationSettings.addAll(settings);
+    }
+  }
+
+  void _resetNotificationSettings() {
+    notificationSettings.assignAll({
+      'email_notifications': true,
+      'push_notifications': true,
+      'visit_reminders': true,
+      'price_alerts': false,
+      'new_properties': true,
+    });
+  }
+
+  // Profile completion percentage (from UserController)
+  RxInt get profileCompletionPercentage {
+    if (currentUser.value == null) return 0.obs;
+    
+    int completedFields = 0;
+    int totalFields = 4; // name, email, phone, profileImage
+    
+    final user = currentUser.value!;
+    
+    if (user.name.isNotEmpty) completedFields++;
+    if (user.email.isNotEmpty) completedFields++;
+    if (user.phone != null && user.phone!.isNotEmpty) completedFields++;
+    if (user.profileImage != null && user.profileImage!.isNotEmpty) completedFields++;
+    
+    return ((completedFields / totalFields) * 100).round().obs;
+  }
+
+  // Profile picture upload (from UserController)
+  Future<bool> updateProfilePicture(String imageUrl) async {
+    return await updateUserProfile({
+      'profile_image_url': imageUrl,
+    });
+  }
+
+  // Additional helpers (from UserController)
+  Map<String, dynamic>? get preferences => currentUser.value?.preferences;
 }

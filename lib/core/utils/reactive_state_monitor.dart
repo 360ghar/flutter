@@ -17,9 +17,9 @@ class ReactiveStateMonitor {
         
         // Log sample items if available
         if (newList.isNotEmpty && newList.length <= 3) {
-          DebugLogger.info('📝 [$name] Sample items:');
+          DebugLogger.info('📝 [$name] Sample items');
           for (int i = 0; i < newList.length; i++) {
-            DebugLogger.info('  - Item $i: ${_getItemDescription(newList[i])}');
+            DebugLogger.info('  item[$i]=${_getItemDescription(newList[i])}');
           }
         } else if (newList.isNotEmpty) {
           DebugLogger.info('📝 [$name] First item: ${_getItemDescription(newList.first)}');
@@ -63,15 +63,21 @@ class ReactiveStateMonitor {
       // Try to get useful information from common property models
       if (item.toString().contains('PropertyCardModel')) {
         final dynamic property = item;
-        return 'Property(id: ${property.id}, title: "${property.title.toString().substring(0, (property.title.toString().length).clamp(0, 30))}...")';
+        final String titleStr = property.title.toString();
+        final int end = titleStr.length < 30 ? titleStr.length : 30;
+        return 'Property(id: ${property.id}, title: "${titleStr.substring(0, end)}...")';
       }
       
       if (item.toString().contains('PropertyModel')) {
         final dynamic property = item;
-        return 'Property(id: ${property.id}, title: "${property.title.toString().substring(0, (property.title.toString().length).clamp(0, 30))}...")';
+        final String titleStr = property.title.toString();
+        final int end = titleStr.length < 30 ? titleStr.length : 30;
+        return 'Property(id: ${property.id}, title: "${titleStr.substring(0, end)}...")';
       }
       
-      return item.toString().substring(0, (item.toString().length).clamp(0, 50));
+      final String str = item.toString();
+      final int end = str.length < 50 ? str.length : 50;
+      return str.substring(0, end);
     } catch (e) {
       return item.runtimeType.toString();
     }

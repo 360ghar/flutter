@@ -16,13 +16,11 @@ class SwipeController extends GetxController {
   final RxList<PropertyModel> currentStack = <PropertyModel>[].obs;
   final RxInt currentIndex = 0.obs;
   final RxBool isLoading = false.obs;
-  final RxBool canUndo = false.obs;
   final RxMap<String, dynamic> swipeStats = <String, dynamic>{}.obs;
   
   // Track interaction timing
   DateTime? _cardViewStartTime;
   int _totalSwipes = 0;
-  String? _lastSwipeId;
 
   @override
   void onInit() {
@@ -132,13 +130,6 @@ class SwipeController extends GetxController {
       currentIndex.value = 0;
       _startCardViewTimer();
       
-      // Track stack load analytics
-      if (_authController.isAuthenticated) {
-        await _apiService.trackEvent('swipe_stack_loaded', {
-          'stack_size': currentStack.length,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-      }
     } catch (e) {
       DebugLogger.error('❌ Error loading initial stack: $e');
       Get.snackbar(
@@ -195,14 +186,6 @@ class SwipeController extends GetxController {
     // Navigate to property details
     Get.toNamed('/property-details', arguments: property);
     
-    // Track swipe up analytics
-    if (_authController.isAuthenticated) {
-      await _apiService.trackEvent('property_swipe_up', {
-        'property_id': property.id,
-        'interaction_time': _getInteractionTime(),
-        'timestamp': DateTime.now().toIso8601String(),
-      });
-    }
   }
 
   Future<void> _recordSwipe(PropertyModel property, bool isLiked, String direction) async {
@@ -212,39 +195,23 @@ class SwipeController extends GetxController {
       if (_authController.isAuthenticated) {
         DebugLogger.info('📝 Recording swipe in backend...');
         
-        await _apiService.trackSwipeAction(
-          propertyId: property.id,
-          isLiked: isLiked,
-          swipeDirection: direction,
-          interactionTimeSeconds: interactionTime,
-          additionalData: {
-            'property_title': property.title,
-            'property_type': property.propertyTypeString,
-            'base_price': property.basePrice,
-          },
-        );
-        
+        // Analytics removed - swipe recorded directly via swipeProperty endpoint
         DebugLogger.success('✅ Swipe recorded in backend');
-        
-        // Enable undo functionality
-        canUndo.value = true;
-        _lastSwipeId = property.id.toString();
-        
-        // Track additional analytics
-        await _apiService.trackEvent('property_swipe', {
-          'property_id': property.id,
-          'is_liked': isLiked,
-          'direction': direction,
-          'interaction_time_seconds': interactionTime,
-          'total_swipes_in_session': _totalSwipes + 1,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
       } else {
         DebugLogger.warning('⚠️ User not authenticated, recording locally');
       }
       
-      // Update local state
-      await _apiService.swipeProperty(property.id, isLiked);
+      // Update local state with user location
+      final currentLat = _locationController.currentLatitude;
+      final currentLng = _locationController.currentLongitude;
+      
+      await _apiService.swipeProperty(
+        property.id, 
+        isLiked,
+        userLocationLat: currentLat,
+        userLocationLng: currentLng,
+        sessionId: 'session_${DateTime.now().millisecondsSinceEpoch}',
+      );
       DebugLogger.info(isLiked 
         ? '❤️ Added to favorites: ${property.title}'
         : '👎 Added to passed: ${property.title}');
@@ -254,8 +221,17 @@ class SwipeController extends GetxController {
     } catch (e) {
       DebugLogger.error('❌ Error recording swipe: $e');
       
-      // Still update local state even if API fails
-      await _apiService.swipeProperty(property.id, isLiked);
+      // Still update local state even if API fails, with location
+      final currentLat = _locationController.currentLatitude;
+      final currentLng = _locationController.currentLongitude;
+      
+      await _apiService.swipeProperty(
+        property.id, 
+        isLiked,
+        userLocationLat: currentLat,
+        userLocationLng: currentLng,
+        sessionId: 'session_${DateTime.now().millisecondsSinceEpoch}',
+      );
       
       Get.snackbar(
         'Warning',
@@ -297,74 +273,12 @@ class SwipeController extends GetxController {
       
       DebugLogger.success('✅ Added $newCount new properties to stack');
       
-      // Track analytics
-      await _apiService.trackEvent('swipe_stack_extended', {
-        'new_properties_count': newCount,
-        'total_stack_size': currentStack.length,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
     } catch (e) {
       DebugLogger.error('❌ Error loading more properties: $e');
     }
   }
 
-  Future<void> undoLastSwipe() async {
-    if (!canUndo.value || _lastSwipeId == null) {
-      DebugLogger.warning('⚠️ Cannot undo: no recent swipe or undo not available');
-      return;
-    }
-    
-    if (!_authController.isAuthenticated) {
-      DebugLogger.warning('⚠️ Cannot undo: user not authenticated');
-      Get.snackbar(
-        'Authentication Required',
-        'Please log in to undo swipes',
-        snackPosition: SnackPosition.TOP,
-      );
-      return;
-    }
-    
-    try {
-      DebugLogger.info('🔄 Undoing last swipe...');
-      
-      await _apiService.undoLastSwipe();
-      
-      // Reset the current index to show the previous card
-      if (currentIndex.value > 0) {
-        currentIndex.value--;
-      }
-      
-      // Remove from local favorites/passed lists
-      await _apiService.undoLastSwipe();
-      // Note: No need to remove from passed as undoing will put it back in stack
-      
-      canUndo.value = false;
-      _lastSwipeId = null;
-      _totalSwipes = _totalSwipes > 0 ? _totalSwipes - 1 : 0;
-      
-      DebugLogger.success('✅ Swipe undone successfully');
-      
-      // Track undo analytics
-      await _apiService.trackEvent('swipe_undo', {
-        'timestamp': DateTime.now().toIso8601String(),
-      });
-      
-      Get.snackbar(
-        'Undo Successful',
-        'Last swipe has been undone',
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 2),
-      );
-      
-    } catch (e) {
-      DebugLogger.error('❌ Error undoing swipe: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to undo swipe. Please try again.',
-        snackPosition: SnackPosition.TOP,
-      );
-    }
-  }
+  // Undo functionality removed - users can unlike properties from the Likes screen
 
   Future<void> refreshSwipeStats() async {
     await _loadSwipeStats();
@@ -382,8 +296,6 @@ class SwipeController extends GetxController {
   void resetStack() {
     DebugLogger.info('🔄 Resetting swipe stack...');
     currentIndex.value = 0;
-    canUndo.value = false;
-    _lastSwipeId = null;
     _totalSwipes = 0;
     _loadInitialStack();
   }

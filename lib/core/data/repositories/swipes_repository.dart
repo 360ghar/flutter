@@ -3,40 +3,34 @@ import '../models/swipe_history_model.dart';
 import '../models/property_model.dart';
 import '../models/unified_filter_model.dart';
 import '../models/unified_property_response.dart';
-import '../providers/api_client.dart';
+import '../providers/api_service.dart';
 import '../../utils/debug_logger.dart';
-import '../../controllers/location_controller.dart';
+
+// Wrapper class to hold property with swipe ID
+class PropertyWithSwipeId {
+  final PropertyModel property;
+  final int swipeId;
+  
+  PropertyWithSwipeId({
+    required this.property,
+    required this.swipeId,
+  });
+}
 
 class SwipesRepository extends GetxService {
-  final ApiClient _apiClient = Get.find<ApiClient>();
-  final LocationController _locationController = Get.find<LocationController>();
+  final ApiService _apiService = Get.find<ApiService>();
 
   // Record a swipe action
   Future<void> recordSwipe({
     required int propertyId,
     required bool isLiked,
-    String? sessionId,
   }) async {
     try {
-      // Get current location if available
-      final position = _locationController.currentPosition.value;
-      
-      final swipeData = PropertySwipe(
-        propertyId: propertyId,
-        isLiked: isLiked,
-        userLocationLat: position?.latitude.toString(),
-        userLocationLng: position?.longitude.toString(),
-        sessionId: sessionId ?? _generateSessionId(),
-      );
-
       DebugLogger.api('👆 Recording swipe: ${isLiked ? 'LIKE' : 'PASS'} property $propertyId');
 
-      await _apiClient.request(
-        '/swipes',
-        (json) => json,
-        method: 'POST',
-        data: swipeData.toJson(),
-        operationName: 'Record Swipe',
+      await _apiService.swipeProperty(
+        propertyId,
+        isLiked,
       );
 
       DebugLogger.success('✅ Swipe recorded successfully');
@@ -54,25 +48,30 @@ class SwipesRepository extends GetxService {
     bool? isLiked,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page.toString(),
-        'limit': limit.toString(),
-        ..._convertFiltersToQueryParams(filters),
-      };
-
-      if (isLiked != null) {
-        queryParams['is_liked'] = isLiked.toString();
-      }
-
       DebugLogger.api(
         '📜 Fetching swipe history properties: page=$page, limit=$limit, liked=$isLiked, filters=${filters.activeFilterCount} active',
       );
 
-      final response = await _apiClient.request<UnifiedPropertyResponse>(
-        '/swipes/history',
-        (json) => _parseUnifiedPropertyResponse(json),
-        queryParameters: queryParams,
-        operationName: 'Get Swipe History Properties',
+      // Get swipe history using the new API
+      final swipeHistory = await _apiService.getSwipes(
+        isLiked: isLiked,
+        page: page,
+        limit: limit,
+      );
+      
+      // Extract properties from swipe history items using PropertyModel.fromJson
+      final properties = swipeHistory.items.map((item) {
+        return PropertyModel.fromJson(item.property);
+      }).toList();
+
+      // Create a UnifiedPropertyResponse using swipe history pagination data
+      final response = UnifiedPropertyResponse(
+        properties: properties,
+        total: swipeHistory.total,
+        page: swipeHistory.page,
+        totalPages: swipeHistory.totalPages,
+        limit: swipeHistory.limit,
+        filtersApplied: filters.toJson(),
       );
 
       DebugLogger.success(
@@ -127,6 +126,39 @@ class SwipesRepository extends GetxService {
     }
   }
 
+  // Get liked properties with swipe IDs for unlike functionality
+  Future<List<PropertyWithSwipeId>> getLikedPropertiesWithSwipeIds({
+    required UnifiedFilterModel filters,
+    int page = 1,
+    int limit = 50,
+  }) async {
+    try {
+      DebugLogger.api('❤️ Fetching liked properties with swipe IDs: page=$page, limit=$limit');
+      
+      final swipeHistory = await _apiService.getSwipes(
+        isLiked: true,
+        page: page,
+        limit: limit,
+      );
+      
+      // Create PropertyWithSwipeId objects that preserve both property and swipe ID
+      final propertiesWithSwipeIds = swipeHistory.items.map((item) {
+        final property = PropertyModel.fromJson(item.property);
+
+        return PropertyWithSwipeId(
+          property: property,
+          swipeId: item.id, // The swipe ID from SwipeHistoryItem
+        );
+      }).toList();
+      
+      DebugLogger.success('✅ Loaded ${propertiesWithSwipeIds.length} liked properties with swipe IDs');
+      return propertiesWithSwipeIds;
+    } catch (e) {
+      DebugLogger.error('❌ Failed to fetch liked properties with swipe IDs: $e');
+      rethrow;
+    }
+  }
+
   // (Counts not required per spec; stats method removed)
 
   // Check if property was already swiped (best-effort check)
@@ -144,37 +176,9 @@ class SwipesRepository extends GetxService {
     }
   }
 
-  // Helper to parse unified property response safely
-  UnifiedPropertyResponse _parseUnifiedPropertyResponse(Map<String, dynamic> json) {
-    try {
-      if (json['properties'] is List) {
-        final propertiesList = json['properties'] as List;
-        final validProperties = <PropertyModel>[];
-        for (int i = 0; i < propertiesList.length; i++) {
-          final propertyData = propertiesList[i];
-          if (propertyData is Map<String, dynamic>) {
-            try {
-              validProperties.add(PropertyModel.fromJson(propertyData));
-            } catch (e) {
-              DebugLogger.warning('⚠️ Skipping invalid property at index $i: $e');
-            }
-          }
-        }
-        json['properties'] = validProperties.map((p) => p.toJson()).toList();
-      }
-      return UnifiedPropertyResponse.fromJson(json);
-    } catch (e) {
-      DebugLogger.error('❌ Failed to parse unified property response (history): $e');
-      rethrow;
-    }
-  }
 
   // Local search removed in favor of server-side filtering
 
-  // Generate session ID for swipe tracking
-  String _generateSessionId() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
 
   // Batch record multiple swipes (useful for offline support)
   Future<void> recordBatchSwipes(List<PropertySwipe> swipes) async {
@@ -190,7 +194,6 @@ class SwipesRepository extends GetxService {
         final futures = batch.map((swipe) => recordSwipe(
           propertyId: swipe.propertyId,
           isLiked: swipe.isLiked,
-          sessionId: swipe.sessionId,
         ));
         
         try {
@@ -208,24 +211,4 @@ class SwipesRepository extends GetxService {
     }
   }
 
-  // Helper method to convert UnifiedFilterModel to query parameters
-  Map<String, String> _convertFiltersToQueryParams(UnifiedFilterModel filters) {
-    final params = <String, String>{};
-    final json = filters.toJson();
-    
-    // Convert each non-null value to string
-    json.forEach((key, value) {
-      if (value != null) {
-        if (value is List) {
-          if (value.isNotEmpty) {
-            params[key] = value.join(',');
-          }
-        } else {
-          params[key] = value.toString();
-        }
-      }
-    });
-    
-    return params;
-  }
 }

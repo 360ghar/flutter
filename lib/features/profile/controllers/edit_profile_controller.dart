@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/controllers/user_controller.dart';
+import '../../../core/controllers/auth_controller.dart';
 
 class EditProfileController extends GetxController {
-  final UserController _userController = Get.find<UserController>();
+  final AuthController _authController = Get.find<AuthController>();
   
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   
@@ -34,7 +34,7 @@ class EditProfileController extends GetxController {
   }
 
   void _loadUserData() {
-    final user = _userController.user.value;
+    final user = _authController.currentUser.value;
     if (user != null) {
       nameController.text = user.name;
       emailController.text = user.email;
@@ -116,7 +116,7 @@ class EditProfileController extends GetxController {
     try {
       isLoading.value = true;
 
-      final currentUser = _userController.user.value;
+      final currentUser = _authController.currentUser.value;
       if (currentUser == null) {
         Get.snackbar('Error', 'User data not found');
         return;
@@ -139,10 +139,10 @@ class EditProfileController extends GetxController {
       };
 
       // Update user profile
-      await _userController.updateProfile(profileData);
+      await _authController.updateUserProfile(profileData);
       
       // Update preferences separately
-      await _userController.updatePreferences(updatedPreferences);
+      await _authController.updateUserPreferences(updatedPreferences);
 
       Get.back();
       Get.snackbar(

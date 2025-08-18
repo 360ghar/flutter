@@ -4,7 +4,7 @@ part 'user_model.g.dart';
 
 @JsonSerializable()
 class UserModel {
-  final String id;
+  final int id;
   @JsonKey(name: 'supabase_user_id', defaultValue: '')
   final String supabaseUserId;
   @JsonKey(defaultValue: 'unknown@example.com')
@@ -22,15 +22,17 @@ class UserModel {
   final String? profileImageUrl;
   final Map<String, dynamic>? preferences;
   @JsonKey(name: 'current_latitude')
-  final String? currentLatitude;
+  final double? currentLatitude;
   @JsonKey(name: 'current_longitude')
-  final String? currentLongitude;
+  final double? currentLongitude;
   @JsonKey(name: 'preferred_locations')
   final List<String>? preferredLocations;
   @JsonKey(name: 'notification_settings')
   final Map<String, bool>? notificationSettings;
   @JsonKey(name: 'privacy_settings')
   final Map<String, dynamic>? privacySettings;
+  @JsonKey(name: 'agent_id')
+  final int? agentId;
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @JsonKey(name: 'updated_at')
@@ -55,6 +57,7 @@ class UserModel {
     this.preferredLocations,
     this.notificationSettings,
     this.privacySettings,
+    this.agentId,
     required this.createdAt,
     this.updatedAt,
     this.fcmToken,
@@ -65,7 +68,7 @@ class UserModel {
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
   UserModel copyWith({
-    String? id,
+    int? id,
     String? supabaseUserId,
     String? email,
     String? fullName,
@@ -75,11 +78,12 @@ class UserModel {
     bool? isVerified,
     String? profileImageUrl,
     Map<String, dynamic>? preferences,
-    String? currentLatitude,
-    String? currentLongitude,
+    double? currentLatitude,
+    double? currentLongitude,
     List<String>? preferredLocations,
     Map<String, bool>? notificationSettings,
     Map<String, dynamic>? privacySettings,
+    int? agentId,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? fcmToken,
@@ -100,6 +104,7 @@ class UserModel {
       preferredLocations: preferredLocations ?? this.preferredLocations,
       notificationSettings: notificationSettings ?? this.notificationSettings,
       privacySettings: privacySettings ?? this.privacySettings,
+      agentId: agentId ?? this.agentId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       fcmToken: fcmToken ?? this.fcmToken,
@@ -129,13 +134,11 @@ class UserModel {
   
   // Helper methods for location
   double? get latitudeAsDouble {
-    if (currentLatitude == null) return null;
-    return double.tryParse(currentLatitude!);
+    return currentLatitude;
   }
   
   double? get longitudeAsDouble {
-    if (currentLongitude == null) return null;
-    return double.tryParse(currentLongitude!);
+    return currentLongitude;
   }
   
   bool get hasLocation => currentLatitude != null && currentLongitude != null;

@@ -37,6 +37,24 @@ enum PropertyStatus {
   maintenance,
 }
 
+@JsonSerializable()
+class PropertyAmenity {
+  final int id;
+  final String title;
+  final String? icon;
+  final String? category;
+
+  PropertyAmenity({
+    required this.id,
+    required this.title,
+    this.icon,
+    this.category,
+  });
+
+  factory PropertyAmenity.fromJson(Map<String, dynamic> json) => _$PropertyAmenityFromJson(json);
+  Map<String, dynamic> toJson() => _$PropertyAmenityToJson(this);
+}
+
 @JsonSerializable(explicitToJson: true)
 class PropertyModel {
   final int id;
@@ -103,8 +121,8 @@ class PropertyModel {
   final int? minimumStayDays;
   
   // Features and amenities
-  final List<String>? amenities;
-  final Map<String, dynamic>? features;
+  final List<PropertyAmenity>? amenities;
+  final List<String>? features;
   @JsonKey(name: 'main_image_url')
   final String? mainImageUrl;
   @JsonKey(name: 'virtual_tour_url')
@@ -224,7 +242,6 @@ class PropertyModel {
       case PropertyPurpose.shortStay:
         return dailyRate ?? basePrice;
       case PropertyPurpose.buy:
-      default:
         return basePrice;
     }
   }
@@ -296,7 +313,8 @@ class PropertyModel {
   
   // Amenities convenience methods
   bool get hasAmenities => amenities?.isNotEmpty == true;
-  List<String> get amenitiesList => amenities ?? [];
+  List<String> get amenitiesList => amenities?.map((a) => a.title).toList() ?? [];
+  List<PropertyAmenity> get amenitiesData => amenities ?? [];
   
   // Virtual tour convenience methods
   bool get hasVirtualTour => virtualTourUrl?.isNotEmpty == true;
@@ -347,7 +365,8 @@ class PropertyModel {
     if (words.length >= 2) {
       return '${words[0][0]}${words[1][0]}'.toUpperCase();
     } else if (words.isNotEmpty) {
-      return words[0].substring(0, 1).toUpperCase();
+      final String first = words[0];
+      return first.isNotEmpty ? first.substring(0, 1).toUpperCase() : 'P';
     }
     return 'P';
   }

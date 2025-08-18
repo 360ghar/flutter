@@ -28,15 +28,8 @@ class DebugLogger {
 
     _logger = Logger(
       filter: _LoggerFilter(),
-      printer: kDebugMode ? PrettyPrinter(
-        stackTraceBeginIndex: 0,
-        methodCount: 2,
-        errorMethodCount: 8,
-        lineLength: 120,
-        colors: true,
-        printEmojis: true,
-        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-      ) : SimplePrinter(),
+      // Use a clean printer to avoid boxes and divider lines
+      printer: SimplePrinter(),
       output: ConsoleOutput(),
     );
     _initialized = true;
@@ -198,7 +191,7 @@ class DebugLogger {
       message.write('   Time: ${responseTime}ms\n');
     }
     if (body != null) {
-      message.write('   Body: ${_sanitizeBody(body)}');
+      message.write('   Body Type: ${_sanitizeBody(body).runtimeType}');
     }
     
     if (statusCode >= 200 && statusCode < 300) {

@@ -7,57 +7,54 @@ part of 'booking_model.dart';
 // **************************************************************************
 
 BookingModel _$BookingModelFromJson(Map<String, dynamic> json) => BookingModel(
-      id: (json['id'] as num).toInt(),
-      userId: (json['user_id'] as num).toInt(),
-      propertyId: (json['property_id'] as num).toInt(),
-      checkInDate: DateTime.parse(json['check_in_date'] as String),
-      checkOutDate: DateTime.parse(json['check_out_date'] as String),
-      guests: (json['guests'] as num).toInt(),
-      primaryGuestName:
-          json['primary_guest_name'] as String? ?? 'Unknown Guest',
-      primaryGuestPhone: json['primary_guest_phone'] as String? ?? '',
-      primaryGuestEmail: json['primary_guest_email'] as String? ?? '',
-      specialRequests: json['special_requests'] as String?,
-      bookingReference: json['booking_reference'] as String,
-      nights: (json['nights'] as num).toInt(),
-      baseAmount: (json['base_amount'] as num).toDouble(),
-      taxesAmount: (json['taxes_amount'] as num).toDouble(),
-      serviceCharges: (json['service_charges'] as num).toDouble(),
-      discountAmount: (json['discount_amount'] as num).toDouble(),
-      totalAmount: (json['total_amount'] as num).toDouble(),
-      bookingStatus:
-          $enumDecode(_$BookingStatusEnumMap, json['booking_status']),
-      paymentStatus:
-          $enumDecode(_$PaymentStatusEnumMap, json['payment_status']),
-      guestDetails: json['guest_details'] as Map<String, dynamic>?,
-      internalNotes: json['internal_notes'] as String?,
-      actualCheckIn: json['actual_check_in'] == null
-          ? null
-          : DateTime.parse(json['actual_check_in'] as String),
-      actualCheckOut: json['actual_check_out'] == null
-          ? null
-          : DateTime.parse(json['actual_check_out'] as String),
-      earlyCheckIn: json['early_check_in'] as bool? ?? false,
-      lateCheckOut: json['late_check_out'] as bool? ?? false,
-      cancellationDate: json['cancellation_date'] == null
-          ? null
-          : DateTime.parse(json['cancellation_date'] as String),
-      cancellationReason: json['cancellation_reason'] as String?,
-      refundAmount: (json['refund_amount'] as num?)?.toDouble(),
-      paymentMethod: json['payment_method'] as String?,
-      transactionId: json['transaction_id'] as String?,
-      paymentDate: json['payment_date'] == null
-          ? null
-          : DateTime.parse(json['payment_date'] as String),
-      guestRating: (json['guest_rating'] as num?)?.toInt(),
-      guestReview: json['guest_review'] as String?,
-      hostRating: (json['host_rating'] as num?)?.toInt(),
-      hostReview: json['host_review'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] == null
-          ? null
-          : DateTime.parse(json['updated_at'] as String),
-    );
+  id: (json['id'] as num).toInt(),
+  userId: (json['user_id'] as num).toInt(),
+  propertyId: (json['property_id'] as num).toInt(),
+  checkInDate: DateTime.parse(json['check_in_date'] as String),
+  checkOutDate: DateTime.parse(json['check_out_date'] as String),
+  guests: (json['guests'] as num).toInt(),
+  primaryGuestName: json['primary_guest_name'] as String? ?? 'Unknown Guest',
+  primaryGuestPhone: json['primary_guest_phone'] as String? ?? '',
+  primaryGuestEmail: json['primary_guest_email'] as String? ?? '',
+  specialRequests: json['special_requests'] as String?,
+  bookingReference: json['booking_reference'] as String,
+  nights: (json['nights'] as num).toInt(),
+  baseAmount: (json['base_amount'] as num).toDouble(),
+  taxesAmount: (json['taxes_amount'] as num).toDouble(),
+  serviceCharges: (json['service_charges'] as num).toDouble(),
+  discountAmount: (json['discount_amount'] as num).toDouble(),
+  totalAmount: (json['total_amount'] as num).toDouble(),
+  bookingStatus: $enumDecode(_$BookingStatusEnumMap, json['booking_status']),
+  paymentStatus: $enumDecode(_$PaymentStatusEnumMap, json['payment_status']),
+  guestDetails: json['guest_details'] as Map<String, dynamic>?,
+  internalNotes: json['internal_notes'] as String?,
+  actualCheckIn: json['actual_check_in'] == null
+      ? null
+      : DateTime.parse(json['actual_check_in'] as String),
+  actualCheckOut: json['actual_check_out'] == null
+      ? null
+      : DateTime.parse(json['actual_check_out'] as String),
+  earlyCheckIn: json['early_check_in'] as bool? ?? false,
+  lateCheckOut: json['late_check_out'] as bool? ?? false,
+  cancellationDate: json['cancellation_date'] == null
+      ? null
+      : DateTime.parse(json['cancellation_date'] as String),
+  cancellationReason: json['cancellation_reason'] as String?,
+  refundAmount: (json['refund_amount'] as num?)?.toDouble(),
+  paymentMethod: json['payment_method'] as String?,
+  transactionId: json['transaction_id'] as String?,
+  paymentDate: json['payment_date'] == null
+      ? null
+      : DateTime.parse(json['payment_date'] as String),
+  guestRating: (json['guest_rating'] as num?)?.toInt(),
+  guestReview: json['guest_review'] as String?,
+  hostRating: (json['host_rating'] as num?)?.toInt(),
+  hostReview: json['host_review'] as String?,
+  createdAt: DateTime.parse(json['created_at'] as String),
+  updatedAt: json['updated_at'] == null
+      ? null
+      : DateTime.parse(json['updated_at'] as String),
+);
 
 Map<String, dynamic> _$BookingModelToJson(BookingModel instance) =>
     <String, dynamic>{
@@ -129,11 +126,11 @@ BookingListResponse _$BookingListResponseFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$BookingListResponseToJson(
-        BookingListResponse instance) =>
-    <String, dynamic>{
-      'bookings': instance.bookings,
-      'total': instance.total,
-      'upcoming': instance.upcoming,
-      'completed': instance.completed,
-      'cancelled': instance.cancelled,
-    };
+  BookingListResponse instance,
+) => <String, dynamic>{
+  'bookings': instance.bookings,
+  'total': instance.total,
+  'upcoming': instance.upcoming,
+  'completed': instance.completed,
+  'cancelled': instance.cancelled,
+};

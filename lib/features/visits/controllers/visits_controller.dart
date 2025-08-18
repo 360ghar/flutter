@@ -16,7 +16,6 @@ class VisitsController extends GetxController {
   final RxBool isLoadingAgent = false.obs;
   final RxBool isBookingVisit = false.obs;
   final RxString error = ''.obs;
-  final Rxn<RelationshipManagerModel> relationshipManagerData = Rxn<RelationshipManagerModel>();
   final Rxn<AgentModel> relationshipManager = Rxn<AgentModel>();
   
   // Track if data has been loaded to prevent infinite loops
@@ -55,7 +54,6 @@ class VisitsController extends GetxController {
   void _clearAllData() {
     visits.clear();
     upcomingVisitsList.clear();
-    relationshipManagerData.value = null;
     relationshipManager.value = null;
     error.value = '';
     hasLoadedVisits.value = false;
@@ -75,43 +73,48 @@ class VisitsController extends GetxController {
     await loadRelationshipManager();
   }
 
-  Future<void> loadVisits() async {
+  Future<void> loadVisits({bool isRefresh = false}) async {
     if (!_authController.isAuthenticated) {
       error.value = 'User not authenticated';
       return;
     }
 
     try {
+      if (isRefresh) {
+        // For pull-to-refresh, clear existing data
+        visits.clear();
+        upcomingVisitsList.clear();
+      }
+      
       isLoading.value = true;
       error.value = '';
       
-      final visitResponse = await _apiService.getMyVisits();
-      final List<VisitModel> visitsData = visitResponse.visits;
+      // Load all visits using single endpoint
+      final allVisits = await _apiService.getMyVisits();
       
-      // Categorize visits based on status and date
-      final List<VisitModel> upcomingVisits = [];
-      
-      for (final visit in visitsData) {
-        // Categorize visits based on status and date
-        if (visit.isUpcoming && visit.scheduledDate.isAfter(DateTime.now())) {
-          upcomingVisits.add(visit);
-        }
-      }
+      // Separate upcoming and past visits locally
+      final upcomingVisits = allVisits.where((visit) => visit.isUpcoming).toList();
+      final pastVisits = allVisits.where((visit) => visit.isCompleted || visit.isCancelled).toList();
       
       // Update reactive variables
-      visits.assignAll(visitsData);
+      visits.assignAll(allVisits);
       upcomingVisitsList.assignAll(upcomingVisits);
       
       // Sort visits by date
       _sortVisits();
       
-      DebugLogger.success('✅ Visits loaded successfully: ${visitsData.length} total, ${upcomingVisits.length} upcoming');
+      DebugLogger.success('✅ Visits loaded successfully: ${allVisits.length} total, ${upcomingVisits.length} upcoming, ${pastVisits.length} past');
     } catch (e) {
       error.value = 'Failed to load visits: ${e.toString()}';
       DebugLogger.error('❌ Error loading visits: $e');
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Pull-to-refresh method
+  Future<void> refreshVisits() async {
+    await loadVisits(isRefresh: true);
   }
 
 
@@ -122,25 +125,30 @@ class VisitsController extends GetxController {
 
     try {
       isLoadingAgent.value = true;
-      final rmData = await _apiService.getRelationshipManager();
-      relationshipManagerData.value = rmData;
+      final agentData = await _apiService.getRelationshipManager();
       
-      // Update the AgentModel for backward compatibility
+      // Use updated AgentModel with simplified fields
       relationshipManager.value = AgentModel(
-        id: rmData.id.toString(),
-        name: rmData.name,
-        phone: rmData.phone,
-        email: rmData.email,
-        image: rmData.profileImageUrl ?? 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-        rating: rmData.customerRating != null ? double.tryParse(rmData.customerRating!) ?? 4.5 : 4.5,
-        experience: '${rmData.experienceYears ?? 3}+ years',
-        specialization: rmData.department,
+        id: agentData.id,
+        name: agentData.name,
+        description: agentData.description,
+        avatarUrl: agentData.avatarUrl,
+        languages: agentData.languages,
+        agentType: agentData.agentType,
+        experienceLevel: agentData.experienceLevel,
+        isActive: agentData.isActive,
+        isAvailable: agentData.isAvailable,
+        workingHours: agentData.workingHours,
+        totalUsersAssigned: agentData.totalUsersAssigned,
+        userSatisfactionRating: agentData.userSatisfactionRating,
+        createdAt: agentData.createdAt,
+        updatedAt: agentData.updatedAt,
       );
       
-      DebugLogger.success('✅ Relationship manager loaded successfully: ${rmData.name}');
+      DebugLogger.success('✅ Agent loaded successfully: ${agentData.name}');
     } catch (e) {
-      DebugLogger.error('❌ Error loading relationship manager: $e');
-      error.value = 'Failed to load relationship manager';
+      DebugLogger.error('❌ Error loading agent: $e');
+      error.value = 'Failed to load agent';
     } finally {
       isLoadingAgent.value = false;
     }
@@ -177,12 +185,8 @@ class VisitsController extends GetxController {
       
       final visitResponse = await _apiService.scheduleVisit(
         propertyId: propertyId,
-        visitDate: visitDateTime.toIso8601String().split('T')[0],
-        visitTime: '${visitDateTime.hour.toString().padLeft(2, '0')}:${visitDateTime.minute.toString().padLeft(2, '0')}:00',
-        visitType: visitType,
-        notes: notes ?? 'Property visit scheduled through 360ghar app',
-        contactPreference: contactPreference,
-        guestsCount: guestsCount,
+        scheduledDate: visitDateTime.toIso8601String(),
+        specialRequirements: notes ?? 'Property visit scheduled through 360ghar app',
       );
       
       DebugLogger.success('✅ Visit scheduled successfully: ${visitResponse['id']}');
@@ -191,16 +195,6 @@ class VisitsController extends GetxController {
       // Just reload visits to get the updated list
       await loadVisits();
       
-      // Track analytics
-      await _apiService.trackVisitScheduling(
-        propertyId: propertyId,
-        visitType: visitType,
-        visitDate: visitDateTime.toIso8601String().split('T')[0],
-        additionalData: {
-          'guests_count': guestsCount,
-          'contact_preference': contactPreference,
-        },
-      );
       
       Get.snackbar(
         'Visit Scheduled',
@@ -240,8 +234,6 @@ class VisitsController extends GetxController {
       userId: 1, // Default user ID
       propertyId: propertyId,
       scheduledDate: visitDateTime,
-      visitorName: 'Current User',
-      visitorPhone: '',
       status: VisitStatus.scheduled,
       visitNotes: 'Property visit scheduled through 360ghar app',
       createdAt: DateTime.now(),
@@ -271,12 +263,6 @@ class VisitsController extends GetxController {
       if (_authController.isAuthenticated) {
         await _apiService.cancelVisit(visitIdInt, reason: reason);
         
-        // Track analytics
-        await _apiService.trackEvent('visit_cancelled', {
-          'visit_id': visitIdInt,
-          'property_id': visit.propertyId,
-          'reason': reason ?? 'user_cancelled',
-        });
       }
       
       // Reload visits to get updated state from server
@@ -313,16 +299,8 @@ class VisitsController extends GetxController {
         await _apiService.rescheduleVisit(
           visitIdInt,
           newDateTime.toIso8601String(),
-          reason: reason,
         );
         
-        // Track analytics
-        await _apiService.trackEvent('visit_rescheduled', {
-          'visit_id': visitIdInt,
-          'property_id': visit.propertyId,
-          'new_date': newDateTime.toIso8601String(),
-          'reason': reason ?? 'user_rescheduled',
-        });
       }
       
       // Reload visits to get updated state from server

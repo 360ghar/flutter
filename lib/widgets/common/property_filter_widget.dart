@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../core/utils/app_colors.dart';
 import '../../features/property_details/controllers/property_controller.dart';
 import '../../core/controllers/filter_service.dart';
-import '../../core/utils/controller_helper.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'
@@ -104,7 +103,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   void initState() {
     super.initState();
     // Ensure controllers are available
-    ControllerHelper.ensurePropertyController();
+    // PropertyController should be registered via proper route bindings
     propertyController = Get.find<PropertyController>();
     filterService = Get.find<FilterService>();
     _initializeFilters();

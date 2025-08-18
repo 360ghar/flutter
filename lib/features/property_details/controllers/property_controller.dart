@@ -1,22 +1,22 @@
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/data/models/property_model.dart';
-import '../../../core/data/repositories/property_repository.dart';
+import '../../../core/data/models/unified_filter_model.dart';
+import '../../../core/data/models/api_response_models.dart';
 import '../../../core/data/providers/api_service.dart';
+import '../../../core/data/repositories/swipes_repository.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/controllers/location_controller.dart';
 import '../../../core/controllers/filter_service.dart';
-import '../../../core/controllers/analytics_controller.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/utils/reactive_state_monitor.dart';
 
 class PropertyController extends GetxController {
-  final PropertyRepository _repository;
   late final ApiService _apiService;
+  late final SwipesRepository _swipesRepository;
   late final AuthController _authController;
   late final LocationController _locationController;
   late final FilterService _filterService;
-  late final AnalyticsController _analyticsController;
   
   final RxList<PropertyModel> properties = <PropertyModel>[].obs;
   final RxList<PropertyModel> discoverProperties = <PropertyModel>[].obs;
@@ -40,22 +40,22 @@ class PropertyController extends GetxController {
   // Legacy filter properties - kept for backward compatibility
   final RxMap<String, dynamic> filters = <String, dynamic>{}.obs;
 
-  PropertyController(this._repository);
+  PropertyController();
 
   @override
   void onInit() {
     super.onInit();
     _apiService = Get.find<ApiService>();
+    _swipesRepository = Get.find<SwipesRepository>();
     _authController = Get.find<AuthController>();
     _locationController = Get.find<LocationController>();
     _filterService = Get.find<FilterService>();
-    _analyticsController = Get.find<AnalyticsController>();
     
     // Setup reactive state monitoring for debugging
     ReactiveStateMonitor.monitorPropertyController(this, 'PropertyController');
     
     // Listen to authentication state changes
-    ever(_authController.isLoggedIn, (bool isLoggedIn) {
+    ever(_authController.isLoggedIn, (isLoggedIn) {
       if (isLoggedIn) {
         // User is logged in, safe to fetch data
         _initializeController();
@@ -81,7 +81,8 @@ class PropertyController extends GetxController {
   Future<void> _initializeController() async {
     // Location is now handled by LocationController
     // Only load essential data on init - other data will be loaded lazily when needed
-    await fetchDiscoverProperties();
+    // Note: Discover properties are now handled by DiscoverController to avoid duplicate requests
+    DebugLogger.info('🏠 PropertyController initialized; discover properties handled by DiscoverController');
   }
   
   void _onFiltersChanged() {
@@ -126,84 +127,10 @@ class PropertyController extends GetxController {
 
   // API integration methods
   Future<void> fetchDiscoverProperties({int limit = 10, bool loadMore = false}) async {
-    try {
-      if (loadMore) {
-        if (!hasMoreDiscoverProperties.value || isLoadingMoreDiscover.value) return;
-        isLoadingMoreDiscover.value = true;
-      } else {
-        isLoadingDiscover.value = true;
-        currentDiscoverPage.value = 1;
-        hasMoreDiscoverProperties.value = true;
-      }
-      error.value = '';
-      
-      DebugLogger.info('🔍 Fetching discover properties - Page: ${loadMore ? currentDiscoverPage.value : 1}, Limit: $limit, LoadMore: $loadMore');
-      DebugLogger.info('📊 Current discover properties count: ${discoverProperties.length}');
-      
-      if (_authController.isAuthenticated) {
-        // Get user location for API call
-        final userLocation = await _getCurrentLocationSync();
-        final result = await _apiService.discoverProperties(
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          limit: limit,
-          page: loadMore ? currentDiscoverPage.value : 1,
-        );
-        
-        // Validate and filter out invalid properties before assignment
-        final validProperties = result.properties.where((property) {
-          final isValid = property.id > 0 && property.title.isNotEmpty;
-          if (!isValid) {
-            DebugLogger.warning('⚠️ Filtering out invalid property: ID=${property.id}, Title="${property.title}"');
-          }
-          return isValid;
-        }).toList();
-        
-        if (loadMore) {
-          discoverProperties.addAll(validProperties);
-          currentDiscoverPage.value++;
-          DebugLogger.info('📈 Added ${validProperties.length} more discover properties (Total: ${discoverProperties.length})');
-        } else {
-          discoverProperties.assignAll(validProperties);
-          currentDiscoverPage.value = 2; // Next page to load
-          DebugLogger.info('🔄 Replaced discover properties with ${validProperties.length} items');
-        }
-        
-        hasMoreDiscoverProperties.value = result.hasMore;
-        
-        DebugLogger.success('✅ Discover properties loaded: ${validProperties.length} valid items out of ${result.properties.length} total');
-        
-        // Trigger reactive update by accessing the value
-        final currentLength = discoverProperties.length;
-        DebugLogger.info('📊 Reactive state updated - discoverProperties.length: $currentLength');
-        
-        // Track analytics
-        await _apiService.trackEvent('properties_discovery_loaded', {
-          'count': result.properties.length,
-          'limit': limit,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-      } else {
-        DebugLogger.error('⚠️ User not authenticated, cannot fetch properties');
-        throw Exception('Authentication required to fetch discover properties');
-      }
-    } catch (e) {
-      error.value = e.toString();
-      DebugLogger.error('❌ Error fetching discover properties: $e');
-      
-      DebugLogger.error('💥 Failed to fetch discover properties: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load properties. Please check your connection.',
-        snackPosition: SnackPosition.TOP,
-      );
-    } finally {
-      if (loadMore) {
-        isLoadingMoreDiscover.value = false;
-      } else {
-        isLoadingDiscover.value = false;
-      }
-    }
+    // DISABLED: This method has been disabled to prevent duplicate API requests.
+    // Discover properties are now handled exclusively by DiscoverController.
+    DebugLogger.info('⚠️ fetchDiscoverProperties called but disabled; use DiscoverController instead');
+    return;
   }
 
   Future<void> fetchNearbyProperties({
@@ -227,14 +154,17 @@ class PropertyController extends GetxController {
         hasMoreNearbyProperties.value = true;
       }
       
-      DebugLogger.info('🔍 Fetching nearby properties - Page: ${loadMore ? currentNearbyPage.value : 1}, Radius: ${radiusKm}km, LoadMore: $loadMore');
+      DebugLogger.info('🔍 Fetching nearby properties: page=${loadMore ? currentNearbyPage.value : 1}, radiusKm=$radiusKm, loadMore=$loadMore');
       
-      final response = await _apiService.exploreProperties(
-        latitude: _locationController.currentLatitude!,
-        longitude: _locationController.currentLongitude!,
-        radiusKm: radiusKm,
-        limit: limit,
+      final response = await _apiService.searchProperties(
+        filters: UnifiedFilterModel(
+          latitude: _locationController.currentLatitude!,
+          longitude: _locationController.currentLongitude!,
+          radiusKm: radiusKm,
+          sortBy: SortBy.distance,
+        ),
         page: loadMore ? currentNearbyPage.value : 1,
+        limit: limit,
       );
       
       if (loadMore) {
@@ -249,15 +179,6 @@ class PropertyController extends GetxController {
       
       DebugLogger.success('✅ Nearby properties loaded: ${response.properties.length} items');
       
-      // Track analytics
-      await _apiService.trackEvent('nearby_properties_loaded', {
-        'count': response.properties.length,
-        'radius_km': radiusKm,
-        'latitude': _locationController.currentLatitude!,
-        'longitude': _locationController.currentLongitude!,
-        'total_available': response.total,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
     } catch (e) {
       DebugLogger.error('❌ Error fetching nearby properties: $e');
       Get.snackbar(
@@ -278,17 +199,23 @@ class PropertyController extends GetxController {
     try {
       DebugLogger.info('🔍 Fetching recommended properties with limit: $limit');
       
-      final result = await _apiService.getPropertyRecommendations(limit: limit);
+      // Recommendations endpoint removed - use regular search instead
+      final filters = _filterService.currentFilter.value.copyWith(
+        latitude: _locationController.currentLatitude,
+        longitude: _locationController.currentLongitude,
+        radiusKm: 10.0,
+      );
+      
+      final response = await _apiService.searchProperties(
+        filters: filters,
+        limit: limit,
+        page: 1,
+      );
+      final result = response.properties;
       recommendedProperties.assignAll(result);
       
       DebugLogger.success('✅ Recommended properties loaded: ${result.length} items');
       
-      // Track analytics
-      await _apiService.trackEvent('recommended_properties_loaded', {
-        'count': result.length,
-        'limit': limit,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
     } catch (e) {
       DebugLogger.error('❌ Error fetching recommended properties: $e');
     }
@@ -304,22 +231,18 @@ class PropertyController extends GetxController {
       if (_authController.isAuthenticated) {
         // Get user location for API call
         final userLocation = await _getCurrentLocationSync();
-        final response = await _apiService.filterProperties(
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          filters: searchFilters,
+        final filterModel = UnifiedFilterModel.fromJson(searchFilters);
+        final response = await _apiService.searchProperties(
+          filters: filterModel.copyWith(
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude,
+          ),
         );
         properties.assignAll(response.properties);
         
         DebugLogger.success('✅ Property search completed: ${response.properties.length} results');
         
-        // Track search analytics
-        await _apiService.trackEvent('property_search', {
-          'filters': searchFilters,
-          'results_count': response.properties.length,
-          'total_available': response.total,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
+        // Analytics tracking removed
       } else {
         DebugLogger.error('⚠️ User not authenticated, cannot search properties');
         throw Exception('Authentication required to search properties');
@@ -346,8 +269,7 @@ class PropertyController extends GetxController {
         
         DebugLogger.success('✅ Property details loaded: ${property.title}');
         
-        // Track property view using AnalyticsController
-        await _analyticsController.trackPropertyView(propertyId, source: 'property_details');
+        // Analytics tracking removed
         
         return property;
       } else {
@@ -375,30 +297,12 @@ class PropertyController extends GetxController {
     try {
       DebugLogger.info('🔍 Checking availability for property: $propertyId');
       
-      final availability = await _apiService.checkPropertyAvailability(
-        int.parse(propertyId),
-        checkInDate: checkInDate,
-        checkOutDate: checkOutDate,
-        guests: guests,
-      );
+      // Availability endpoint removed - show message to user
+      DebugLogger.info('🔍 Availability check endpoint removed');
       
-      DebugLogger.success('✅ Availability check completed');
-      
-      // Track availability check using AnalyticsController
-      await _analyticsController.trackEvent('property_availability_check', {
-        'property_id': int.parse(propertyId),
-        'check_in_date': checkInDate,
-        'check_out_date': checkOutDate,
-        'guests': guests,
-        'available': availability['available'] ?? false,
-      });
-      
-      // Show availability result to user
       Get.snackbar(
-        'Availability',
-        availability['available'] == true 
-            ? 'Property is available for selected dates'
-            : 'Property is not available for selected dates',
+        'Feature Unavailable',
+        'Availability checking is currently unavailable. Please contact the agent for availability information.',
         snackPosition: SnackPosition.TOP,
       );
     } catch (e) {
@@ -420,21 +324,12 @@ class PropertyController extends GetxController {
     try {
       DebugLogger.info('🔍 Showing interest in property: $propertyId');
       
-      await _apiService.showPropertyInterest(
-        int.parse(propertyId),
-        interestType: interestType,
-        message: message,
-        preferredTime: preferredTime,
-      );
-      
-      DebugLogger.success('✅ Interest shown successfully');
-      
-      // Track interest using AnalyticsController
-      await _analyticsController.trackPropertyInterest(propertyId, interestType);
+      // Property interest endpoint removed - show message to user
+      DebugLogger.info('🔍 Property interest endpoint removed');
       
       Get.snackbar(
-        'Interest Recorded',
-        'Your interest has been sent to the agent',
+        'Feature Unavailable',
+        'Interest recording is currently unavailable. Please contact the agent directly.',
         snackPosition: SnackPosition.TOP,
       );
     } catch (e) {
@@ -455,9 +350,13 @@ class PropertyController extends GetxController {
       if (_authController.isAuthenticated) {
         // Use API service for authenticated users with user location
         final userLocation = await _getCurrentLocationSync();
-        final response = await _apiService.exploreProperties(
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
+        final response = await _apiService.searchProperties(
+          filters: UnifiedFilterModel(
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude,
+            radiusKm: 10,
+            sortBy: SortBy.distance,
+          ),
         );
         properties.assignAll(response.properties);
         DebugLogger.success('✅ Properties loaded from API: ${response.properties.length} items');
@@ -475,7 +374,9 @@ class PropertyController extends GetxController {
 
   // Lazy loading methods
   Future<void> loadMoreDiscoverProperties() async {
-    await fetchDiscoverProperties(loadMore: true);
+    // DISABLED: Discover properties are handled by DiscoverController
+    DebugLogger.info('⚠️ loadMoreDiscoverProperties called but disabled; use DiscoverController instead');
+    return;
   }
 
   Future<void> loadMoreNearbyProperties() async {
@@ -503,37 +404,17 @@ class PropertyController extends GetxController {
       DebugLogger.info('🔍 Fetching favourite properties...');
       
       if (_authController.isAuthenticated) {
-        // First get liked property IDs
-        final likedProperties = await _apiService.getLikedProperties();
-        final likedPropertyIds = likedProperties.map((p) => p.id).toList();
+        // Get liked properties using SwipesRepository
+        final likedProperties = await _swipesRepository.getLikedProperties(
+          filters: _filterService.currentFilter.value,
+          page: 1,
+          limit: 50,
+        );
         
-        if (likedPropertyIds.isNotEmpty) {
-          // Use the unified search with property IDs filter
-          final currentFilters = _filterService.currentFilter.value.copyWith(
-            propertyIds: likedPropertyIds,
-          );
-          
-          DebugLogger.info('🎯 Fetching filtered favourites: ${likedPropertyIds.length} properties');
-          
-          final response = await _apiService.searchProperties(
-            filters: currentFilters,
-            page: 1,
-            limit: likedPropertyIds.length,
-          );
-          
-          favouriteProperties.assignAll(response.properties);
-          DebugLogger.success('✅ Filtered favourite properties loaded: ${response.properties.length} items');
-        } else {
-          favouriteProperties.clear();
-          DebugLogger.info('📭 No favourite properties found');
-        }
+        favouriteProperties.assignAll(likedProperties);
+        DebugLogger.success('✅ Favourite properties loaded: ${likedProperties.length} items');
         
-        // Track analytics
-        await _apiService.trackEvent('favourites_loaded', {
-          'count': likedPropertyIds.length,
-          'filtered_count': favouriteProperties.length,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
+        // Analytics tracking removed
       } else {
         DebugLogger.error('⚠️ User not authenticated, cannot fetch favourite properties');
         throw Exception('Authentication required to fetch favourite properties');
@@ -549,15 +430,17 @@ class PropertyController extends GetxController {
       DebugLogger.info('🔍 Fetching passed (disliked) properties...');
       
       if (_authController.isAuthenticated) {
-        final result = await _apiService.getDislikedProperties();
-        passedProperties.assignAll(result);
-        DebugLogger.success('✅ Passed properties loaded from API: ${result.length} items');
+        // Get passed properties using SwipesRepository
+        final passedPropertiesList = await _swipesRepository.getPassedProperties(
+          filters: _filterService.currentFilter.value,
+          page: 1,
+          limit: 50,
+        );
         
-        // Track analytics
-        await _apiService.trackEvent('passed_properties_loaded', {
-          'count': result.length,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
+        passedProperties.assignAll(passedPropertiesList);
+        DebugLogger.success('✅ Passed properties loaded: ${passedPropertiesList.length} items');
+        
+        // Analytics tracking removed
       } else {
         DebugLogger.error('⚠️ User not authenticated, cannot fetch passed properties');
         throw Exception('Authentication required to fetch passed properties');
@@ -570,7 +453,7 @@ class PropertyController extends GetxController {
 
   Future<void> addToFavourites(dynamic propertyId) async {
     try {
-      await _repository.addToFavourites(propertyId.toString());
+      await _apiService.swipeProperty(propertyId, true);
       await fetchFavouriteProperties();
     } catch (e) {
       error.value = e.toString();
@@ -579,7 +462,7 @@ class PropertyController extends GetxController {
 
   Future<void> removeFromFavourites(dynamic propertyId) async {
     try {
-      await _repository.removeFromFavourites(propertyId.toString());
+      // Analytics tracking removed
       await fetchFavouriteProperties();
     } catch (e) {
       error.value = e.toString();
@@ -588,7 +471,7 @@ class PropertyController extends GetxController {
 
   Future<void> addToPassedProperties(dynamic propertyId) async {
     try {
-      await _repository.addToPassedProperties(propertyId.toString());
+      await _apiService.swipeProperty(propertyId, false);
       await fetchPassedProperties();
     } catch (e) {
       error.value = e.toString();
@@ -597,7 +480,7 @@ class PropertyController extends GetxController {
 
   Future<void> removeFromPassedProperties(dynamic propertyId) async {
     try {
-      await _repository.removeFromPassedProperties(propertyId.toString());
+      // Analytics tracking removed
       await fetchPassedProperties();
     } catch (e) {
       error.value = e.toString();

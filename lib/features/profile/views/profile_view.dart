@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/controllers/user_controller.dart';
+import '../../../core/controllers/auth_controller.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../../widgets/common/theme_toggle_button.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 
-class ProfileView extends GetView<UserController> {
+class ProfileView extends GetView<AuthController> {
   const ProfileView({super.key});
 
   @override
@@ -40,7 +40,7 @@ class ProfileView extends GetView<UserController> {
           );
         }
 
-        final user = controller.user.value;
+        final user = controller.currentUser.value;
         if (user == null) {
           return Center(
             child: Text(
@@ -367,7 +367,7 @@ class ProfileView extends GetView<UserController> {
           TextButton(
             onPressed: () {
               Get.back();
-              controller.logout();
+              controller.signOut();
             },
             child: Text(
               'Logout',

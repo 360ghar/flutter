@@ -2,11 +2,11 @@ import 'package:get/get.dart';
 import '../models/property_model.dart';
 import '../models/unified_property_response.dart';
 import '../models/unified_filter_model.dart';
-import '../providers/api_client.dart';
+import '../providers/api_service.dart';
 import '../../utils/debug_logger.dart';
 
 class PropertiesRepository extends GetxService {
-  final ApiClient _apiClient = Get.find<ApiClient>();
+  final ApiService _apiService = Get.find<ApiService>();
 
   // Get properties with filters and pagination
   Future<UnifiedPropertyResponse> getProperties({
@@ -16,21 +16,12 @@ class PropertiesRepository extends GetxService {
     bool useCache = true,
   }) async {
     try {
-      final queryParams = {
-        'page': page.toString(),
-        'limit': limit.toString(),
-        // Convert UnifiedFilterModel to query params
-        ..._convertFiltersToQueryParams(filters),
-      };
+      DebugLogger.api('🔍 Fetching properties: page=$page, limit=$limit, activeFilters=${filters.activeFilterCount}');
 
-      DebugLogger.api('🔍 Fetching properties: page=$page, limit=$limit, filters=${filters.activeFilterCount} active');
-
-      final response = await _apiClient.request<UnifiedPropertyResponse>(
-        '/properties',
-        (json) => _parseUnifiedPropertyResponse(json),
-        queryParameters: queryParams,
-        useCache: useCache,
-        operationName: 'Get Properties',
+      final response = await _apiService.searchProperties(
+        filters: filters,
+        page: page,
+        limit: limit,
       );
 
       DebugLogger.success('✅ Fetched ${response.properties.length} properties (page $page/${response.totalPages})');
@@ -46,12 +37,7 @@ class PropertiesRepository extends GetxService {
     try {
       DebugLogger.api('🏠 Fetching property details: $propertyId');
 
-      final property = await _apiClient.request<PropertyModel>(
-        '/properties/$propertyId',
-        (json) => PropertyModel.fromJson(json),
-        useCache: true,
-        operationName: 'Get Property Detail',
-      );
+      final property = await _apiService.getPropertyDetails(propertyId);
 
       DebugLogger.success('✅ Property details fetched: ${property.title}');
       return property;
@@ -134,7 +120,7 @@ class PropertiesRepository extends GetxService {
         
         onProgress?.call(currentPage, totalPages);
         
-        DebugLogger.api('📄 Loaded page $currentPage/$totalPages (${allProperties.length} total properties)');
+        DebugLogger.api('📄 Loaded page $currentPage/$totalPages; totalProperties=${allProperties.length}');
         
         currentPage++;
       } while (currentPage <= totalPages);
@@ -147,63 +133,11 @@ class PropertiesRepository extends GetxService {
     }
   }
 
-  // Helper method to parse unified property response
-  UnifiedPropertyResponse _parseUnifiedPropertyResponse(Map<String, dynamic> json) {
-    try {
-      // Validate and clean properties data
-      if (json['properties'] is List) {
-        final propertiesList = json['properties'] as List;
-        // Keep as raw maps to avoid nested model instances in JSON
-        final validProperties = <Map<String, dynamic>>[];
-        
-        for (int i = 0; i < propertiesList.length; i++) {
-          final propertyData = propertiesList[i];
-          if (propertyData is Map<String, dynamic>) {
-            try {
-              // Validate by parsing, but store the raw JSON map
-              PropertyModel.fromJson(propertyData);
-              validProperties.add(propertyData);
-            } catch (e) {
-              DebugLogger.warning('⚠️ Skipping invalid property at index $i: $e');
-            }
-          }
-        }
-        
-        // Replace with validated properties
-        json['properties'] = validProperties;
-      }
-      
-      return UnifiedPropertyResponse.fromJson(json);
-    } catch (e) {
-      DebugLogger.error('❌ Failed to parse property response: $e');
-      rethrow;
-    }
-  }
 
   // Clear repository cache
   void clearCache() {
-    _apiClient.clearCache();
+    // Cache clearing functionality can be added to ApiService if needed
     DebugLogger.api('🧹 Properties repository cache cleared');
   }
 
-  // Helper method to convert UnifiedFilterModel to query parameters
-  Map<String, String> _convertFiltersToQueryParams(UnifiedFilterModel filters) {
-    final params = <String, String>{};
-    final json = filters.toJson();
-    
-    // Convert each non-null value to string
-    json.forEach((key, value) {
-      if (value != null) {
-        if (value is List) {
-          if (value.isNotEmpty) {
-            params[key] = value.join(',');
-          }
-        } else {
-          params[key] = value.toString();
-        }
-      }
-    });
-    
-    return params;
-  }
 }

@@ -106,14 +106,13 @@ The app follows a Core vs. Features modular architecture with clear separation o
 lib/
 ├── core/                  # Core infrastructure and shared components
 │   ├── bindings/          # Global dependency injection
+│   │   └── initial_binding.dart
 │   ├── controllers/       # Core business logic controllers
 │   │   ├── auth_controller.dart         # Authentication management
-│   │   ├── analytics_controller.dart    # User behavior tracking
-│   │   ├── booking_controller.dart      # Property booking system
-│   │   ├── location_controller.dart     # Location services
+│   │   ├── filter_service.dart          # Filtering and search service
 │   │   ├── localization_controller.dart # Multi-language support
-│   │   ├── theme_controller.dart        # Theme management (light/dark)
-│   │   └── user_controller.dart         # User profile
+│   │   ├── location_controller.dart     # Location services
+│   │   └── theme_controller.dart        # Theme management (light/dark)
 │   ├── data/
 │   │   ├── models/        # Data models with JSON serialization
 │   │   ├── providers/     # API clients and data sources
@@ -122,30 +121,28 @@ lib/
 │   ├── mixins/            # Reusable behavior mixins
 │   ├── routes/            # Navigation configuration
 │   ├── translations/      # Internationalization
-│   └── utils/             # Theme, constants, helpers, error handling
+│   ├── utils/             # Theme, constants, helpers, error handling
+│   └── widgets/           # Core shared widgets
 ├── features/              # Feature-based modules
+│   ├── auth/              # Authentication and profile completion
+│   ├── booking/           # Property booking system
 │   ├── dashboard/         # Dashboard feature
-│   │   ├── bindings/
-│   │   ├── controllers/
-│   │   └── views/
 │   ├── discover/          # Property discovery and swipe functionality
-│   │   ├── bindings/
-│   │   ├── controllers/
-│   │   └── views/
 │   ├── explore/           # Map exploration feature
-│   │   ├── bindings/
-│   │   ├── controllers/
-│   │   └── views/
 │   ├── filters/           # Advanced filtering system
-│   │   ├── bindings/
-│   │   ├── controllers/
-│   │   └── views/
 │   ├── likes/             # Liked/passed properties management
-│   │   ├── bindings/
-│   │   ├── controllers/
-│   │   └── views/
-│   └── [other features]/  # Auth, profile, visits, property details, etc.
+│   ├── location_search/   # Location search functionality
+│   ├── onboarding/        # App onboarding flow
+│   ├── profile/           # User profile management
+│   ├── property_details/  # Property details view
+│   ├── splash/            # Splash screen
+│   ├── tour/              # 360° tour feature
+│   └── visits/            # Property visits management
 ├── widgets/               # Reusable UI components
+│   ├── common/            # Common widgets
+│   ├── navigation/        # Navigation components
+│   ├── property/          # Property-specific widgets
+│   └── splash/            # Splash-specific widgets
 └── main.dart             # App entry point
 ```
 
@@ -155,39 +152,39 @@ lib/
 
 **Core Controllers** (`lib/core/controllers/`):
 - **AuthController**: User authentication and session management
-- **AnalyticsController**: Tracks user behavior and app usage
-- **BookingController**: Property booking and scheduling system
+- **FilterService**: Centralized filtering and search service (consolidated from FilterController)
 - **LocationController**: Handles location permissions and GPS services
 - **LocalizationController**: Multi-language support and localization
 - **ThemeController**: Light/dark theme management and user preferences
-- **UserController**: Handles user profile and preferences
 
 **Feature Controllers** (`lib/features/*/controllers/`):
 - **DashboardController**: Manages dashboard data and navigation (`features/dashboard/`)
+- **DiscoverController**: Property discovery main interface (`features/discover/`)
 - **SwipeController**: Swipe mechanics for Bumble-style interface (`features/discover/`)
 - **ExploreController**: Map functionality and location-based exploration (`features/explore/`)
-- **FiltersController**: Advanced property filtering and search parameters (`features/filters/`)
 - **LikesController**: Manages liked/passed properties and favorites (`features/likes/`)
+- **PropertyController**: Single property operations and details (`features/property_details/`)
+- **VisitsController**: Property visits and scheduling management (`features/visits/`)
+- **BookingController**: Property booking system (`features/booking/`)
+- **ProfileControllers**: Multiple controllers for profile management (`features/profile/`)
 
 #### 2. Data Layer (`lib/core/data/`)
 - **Models** (`core/data/models/`): JSON serializable with `json_annotation`
-  - PropertyModel, PropertyImageModel for property data
-  - UserModel with authentication details
-  - BookingModel, VisitModel for scheduling
-  - UnifiedPropertyResponse for API responses
-  - AnalyticsModels for tracking events
-  - FiltersModel for search and filter parameters
-  - SwipeHistoryModel for tracking user interactions
-  - UnifiedFilterModel for advanced filtering
+  - **PropertyModel**: Complete property data with images, pricing, and features
+  - **PropertyImageModel**: Property image metadata and URLs
+  - **UserModel**: User authentication and profile details
+  - **BookingModel**: Property booking and scheduling data
+  - **VisitModel**: Property visit tracking and management
+  - **FiltersModel**: Search and filter parameters
+  - **SwipeHistoryModel**: User swipe interactions tracking
+  - **UnifiedFilterModel**: Advanced filtering system
+  - **UnifiedPropertyResponse**: API response wrapper for properties
+  - **AgentModel**: Real estate agent information
 - **Providers** (`core/data/providers/`): 
-  - ApiService: Real API integration with error handling
-  - ApiClient: Modern API client with Dio integration
-  - ApiProvider: Legacy API provider (still in use)
+  - **ApiService**: Primary API integration with error handling and authentication
 - **Repositories** (`core/data/repositories/`): Abstraction layer between controllers and data sources
-  - PropertiesRepository: Property data access and caching
-  - PropertyRepository: Single property operations
-  - SwipesRepository: Swipe interaction tracking
-  - UserRepository: User profile and preferences
+  - **PropertiesRepository**: Property data access, caching, and filtering
+  - **SwipesRepository**: Swipe interaction tracking and history
 
 #### 3. Module Structure
 **Core Infrastructure** (`lib/core/`):
@@ -203,7 +200,8 @@ core/
 ├── mixins/            # Reusable behavior mixins
 ├── routes/            # Navigation configuration
 ├── translations/      # Internationalization
-└── utils/             # Shared utilities and helpers
+├── utils/             # Shared utilities and helpers
+└── widgets/           # Core shared widgets
 ```
 
 **Feature Modules** (`lib/features/<feature_name>/`):
@@ -220,23 +218,57 @@ feature_name/
     └── feature_widget.dart
 ```
 
+#### 4. Swipe Mechanics (Bumble-Style)
+**Core Implementation**: Located in `lib/features/discover/widgets/`:
+- **SwipeStack**: Main swipe container with card stack management
+- **PropertySwipeCard**: Individual property cards with swipe gestures
+- **SwipeController**: Handles swipe logic and state management
+
+**Swipe Actions**:
+- **Swipe Right**: Like property (mark as favorite)
+- **Swipe Left**: Pass on property (mark as not interested)  
+- **Swipe Up**: Quick view details (navigate to property details)
+- **Double Tap**: Super like (priority interest)
+
+**Visual Feedback**:
+- **Rotation**: ±12° during drag
+- **Scaling**: 0.98x during interaction
+- **Color Hints**: Green for like, red for pass
+- **Overlay Badges**: LIKE / PASS / DETAILS / SUPER using AppTheme colors
+- **Animation**: Spring curve for completion, snap-back on cancel
+
+**Data Integration**:
+- Records all swipe actions via `SwipesRepository.logSwipe(propertyId, action)`
+- Updates favorites through `LikesController` for like actions
+- Navigates to property details for swipe up actions
+- Supports undo functionality for last swipe action
+
 ### Navigation System
 - **GetX routing** with named routes
-- **AuthMiddleware** for protected routes (`core/middlewares/`)
-- **Bottom navigation** with 5 tabs: Profile → Discover → Properties → Liked → Visits
+- **AuthMiddleware** for protected routes (`core/middlewares/auth_middleware.dart`)
+- **Bottom navigation** with 5 tabs: **Profile → Explore → Discover → Likes → Visits**
+  - **Profile**: User management and preferences
+  - **Explore**: Map view with property markers  
+  - **Discover**: Main swipe interface (center/home position)
+  - **Likes**: Favorited and passed properties
+  - **Visits**: Agent appointments and scheduled tours
 - **Route definitions** in `core/routes/app_routes.dart`
-- **Page configuration** in `core/routes/app_pages.dart`
+- **Page configuration** in `core/routes/app_pages.dart` using `GetPage` with bindings
 - **Deep linking** support for sharing properties and direct navigation
 - **Localized navigation** with multi-language support
+- **Navigation consistency**: Tabs available across primary screens via `lib/widgets/navigation/bottom_nav_bar.dart`
 
 ## Theme and Design System
 
 ### Bumble-Inspired Color Palette
-Defined in `lib/core/utils/theme.dart`:
+Defined in `lib/core/utils/theme.dart` and `lib/core/utils/app_colors.dart`:
 - **Primary**: `Color(0xFFFFBC05)` (Bumble yellow)
-- **Accent**: `Color(0xFFFF6B35)` (Real estate orange)
+- **Accent**: `Color(0xFFFF6B35)` (Real estate orange), `Color(0xFF4A90E2)` (trust blue), `Color(0xFF50C878)` (success green)
 - **Background**: `Color(0xFFFFFFFF)` and `Color(0xFFF8F9FA)`
-- **Text**: Dark `Color(0xFF2C2C2C)`, Gray `Color(0xFF666666)`
+- **Text**: Dark `Color(0xFF2C2C2C)`, Gray `Color(0xFF666666)`, Light `Color(0xFF999999)`
+- **Status**: Success `Color(0xFF28A745)`, Warning `Color(0xFFFFC107)`, Error `Color(0xFFDC3545)`
+
+**IMPORTANT**: Never use hardcoded `Colors.*` - always use `AppTheme`/`AppColors` constants.
 
 ### Dark Theme Support
 Complete dark theme implementation with:
@@ -357,6 +389,45 @@ STORAGE_BUCKET=your_storage_bucket
 6. **Module structure**: Place feature code under `lib/features/<feature>/{views,controllers,bindings,widgets}`
 7. **Use dependency injection** through bindings instead of `Get.put` in widgets
 8. **Apply route guards** with `AuthMiddleware` where needed
+
+### Dart and GetX Coding Standards
+
+#### Naming Conventions
+- **Classes/types**: PascalCase
+- **Variables, methods, params**: camelCase
+- **Constants**: lowerCamelCase (unless part of enums)
+- **Prefer meaningful, verbose names** over abbreviations
+
+#### Type Safety and Control Flow
+- **Annotate public APIs** and exports; avoid `dynamic`/`var` when type is known
+- **Avoid force casts**; handle nullability explicitly with null-aware operators
+- **Use guard clauses** to avoid deep nesting; handle errors/edge cases first
+- **Handle errors gracefully** with try/catch blocks and proper error mapping
+
+#### GetX State Management Standards
+- **Use `.obs` for reactive state**; prefer `GetxController` over `StatefulWidget` for complex state
+- **Expose immutable getters** for external read; mutate only inside controller methods
+- **Initialize work in `onInit()`**; clean up in `onClose()`
+- **Use dependency injection** through bindings instead of `Get.put` in widgets
+- **Extend `SafeGetView<T>`** from `lib/core/widgets/safe_get_view.dart` for typed controller access
+
+#### Theme and Styling Standards
+- **Never hardcode colors**: Use `AppTheme`/`AppColors` from `lib/core/utils/theme.dart` and `lib/core/utils/app_colors.dart`
+- **Use predefined typography**: `AppTheme.headlineLarge`, `AppTheme.titleLarge`, etc.
+- **Consistent spacing**: Use standard paddings (8/12/16/24); avoid magic numbers
+- **Card styling**: 16px border radius, use `AppTheme.cardShadow` for shadows
+
+#### Internationalization Standards
+- **No hardcoded user-facing strings**: Add keys in `lib/core/translations/app_translations.dart`
+- **Use localization**: Always use `'translation_key'.tr` for user-facing text
+- **Test with multiple languages** to ensure proper text overflow handling
+
+#### Async and Error Handling Standards
+- **Wrap async calls** in try/catch blocks
+- **Map errors** via `lib/core/utils/error_mapper.dart`
+- **Handle errors** with `lib/core/utils/error_handler.dart`
+- **Log with DebugLogger**: Use `lib/core/utils/debug_logger.dart` for development logging
+- **Follow lint rules**: Adhere to `analysis_options.yaml`; fix lints in files you touch
 
 ### GetX Best Practices
 ```dart

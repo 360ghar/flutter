@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import '../data/providers/api_service.dart';
-import '../data/providers/api_provider.dart';
 import 'debug_logger.dart';
 
 class DependencyManager {
@@ -22,7 +21,6 @@ class DependencyManager {
       // List of controllers that should be disposed when not needed
       final controllersToCleanup = [
         'PropertyController',
-        'UserController', 
         'SwipeController',
         'VisitsController',
         'LocalizationController',
@@ -57,8 +55,7 @@ class DependencyManager {
   /// Check if critical services are available
   static bool areCriticalServicesAvailable() {
     try {
-      return Get.isRegistered<ApiService>() && 
-             (Get.isRegistered<IApiProvider>());
+      return Get.isRegistered<ApiService>();
     } catch (e, stackTrace) {
       DebugLogger.error('Error checking critical services', e, stackTrace);
       return false;

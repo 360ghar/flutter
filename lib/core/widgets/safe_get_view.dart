@@ -1,8 +1,6 @@
 import 'package:get/get.dart';
-import 'package:flutter/material.dart';
-import '../controllers/property_controller.dart';
-import '../controllers/user_controller.dart';
-import '../utils/controller_helper.dart';
+import '../../features/property_details/controllers/property_controller.dart';
+import '../controllers/auth_controller.dart';
 
 /// A safe version of GetView that ensures controllers are registered before access
 abstract class SafeGetView<T> extends GetView<T> {
@@ -10,13 +8,7 @@ abstract class SafeGetView<T> extends GetView<T> {
   
   @override
   T get controller {
-    // Ensure the controller is registered based on its type
-    if (T == PropertyController) {
-      ControllerHelper.ensurePropertyController();
-    } else if (T == UserController) {
-      ControllerHelper.ensureUserController();
-    }
-    
+    // Controllers should be registered via proper bindings
     return Get.find<T>();
   }
 }
@@ -29,10 +21,10 @@ abstract class SafePropertyView extends SafeGetView<PropertyController> {
   PropertyController get propertyController => controller;
 }
 
-/// Specialized SafeGetView for UserController
-abstract class SafeUserView extends SafeGetView<UserController> {
-  const SafeUserView({super.key});
+/// Specialized SafeGetView for AuthController (replaces UserController)
+abstract class SafeAuthView extends SafeGetView<AuthController> {
+  const SafeAuthView({super.key});
   
-  /// Direct access to UserController with safety guarantees
-  UserController get userController => controller;
+  /// Direct access to AuthController with safety guarantees
+  AuthController get authController => controller;
 }

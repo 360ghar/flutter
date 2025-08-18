@@ -4,13 +4,11 @@ import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../data/providers/api_service.dart';
 import '../data/models/unified_filter_model.dart';
 import '../utils/debug_logger.dart';
 import 'auth_controller.dart';
 
 class LocationController extends GetxController {
-  late final ApiService _apiService;
   late final AuthController _authController;
 
   final Rxn<Position> currentPosition = Rxn<Position>();
@@ -33,7 +31,6 @@ class LocationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _apiService = Get.find<ApiService>();
     _authController = Get.find<AuthController>();
     _initializeLocation();
   }
@@ -201,13 +198,10 @@ class LocationController extends GetxController {
     try {
       isLoading.value = true;
       
-      if (_authController.isAuthenticated) {
-        final results = await _apiService.searchLocations(query.trim());
-        searchResults.value = results;
-      } else {
-        // Fallback to local search or mock data
-        searchResults.clear();
-      }
+      // Use Google Places API for location search
+      final results = await _searchGooglePlaces(query.trim());
+      searchResults.value = results;
+      
     } catch (e, stackTrace) {
       DebugLogger.error('Error searching locations', e, stackTrace);
       Get.snackbar(
@@ -220,18 +214,55 @@ class LocationController extends GetxController {
     }
   }
 
+  Future<List<Map<String, dynamic>>> _searchGooglePlaces(String query) async {
+    try {
+      final apiKey = dotenv.env['GOOGLE_PLACES_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        DebugLogger.warning('Google Places API key not found');
+        return [];
+      }
+
+      final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json'
+        '?input=${Uri.encodeQueryComponent(query)}'
+        '&types=(cities)'
+        '&components=country:in'
+        '&key=$apiKey'
+      );
+
+      final response = await http.get(url);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['status'] == 'OK') {
+          final predictions = data['predictions'] as List;
+          
+          return predictions.map((prediction) => {
+            'id': prediction['place_id'],
+            'name': prediction['description'],
+            'city': prediction['structured_formatting']['main_text'],
+            'region': prediction['structured_formatting']['secondary_text'],
+            'type': 'google_places'
+          }).toList();
+        } else {
+          DebugLogger.warning('Google Places API error: ${data['status']}');
+          return [];
+        }
+      } else {
+        DebugLogger.error('Google Places API request failed: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      DebugLogger.error('Error calling Google Places API: $e');
+      return [];
+    }
+  }
+
 
   void selectLocation(Map<String, dynamic> location) {
     selectedCity.value = location['name'] ?? location['city'] ?? '';
     
-    // Track location selection
-    if (_authController.isAuthenticated) {
-      _apiService.trackEvent('location_selected', {
-        'location_id': location['id'],
-        'location_name': location['name'] ?? location['city'],
-        'selection_source': 'search',
-      });
-    }
     
     Get.snackbar(
       'Location Selected',
@@ -244,13 +275,6 @@ class LocationController extends GetxController {
   void selectCity(String cityName) {
     selectedCity.value = cityName;
     
-    // Track city selection
-    if (_authController.isAuthenticated) {
-      _apiService.trackEvent('city_selected', {
-        'city_name': cityName,
-        'selection_source': 'city_list',
-      });
-    }
   }
 
   Future<void> openLocationSettings() async {

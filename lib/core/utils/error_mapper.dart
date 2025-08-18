@@ -1,13 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
-import '../data/providers/api_client.dart';
+import '../data/providers/api_service.dart';
 import 'app_exceptions.dart';
 import 'debug_logger.dart';
 
 class ErrorMapper {
   // Map API errors to user-friendly messages
   static AppException mapApiError(dynamic error) {
-    DebugLogger.error('🗺️ Mapping error: ${error.runtimeType} - $error');
+    DebugLogger.error('🗺️ Mapping error: type=${error.runtimeType}, error=$error');
 
     if (error is DioException) {
       return _mapDioException(error);
@@ -15,6 +15,21 @@ class ErrorMapper {
     
     if (error is ApiException) {
       return _mapApiException(error);
+    }
+
+    // Handle wrapped ApiException (Exception: ApiException: ...)
+    if (error is Exception && error.toString().contains('ApiException:')) {
+      final errorString = error.toString();
+      final match = RegExp(r'ApiException: (.+) \(Status: (\d+)\)').firstMatch(errorString);
+      if (match != null) {
+        final message = match.group(1)!;
+        final statusCode = int.tryParse(match.group(2)!);
+        return _mapHttpStatusCode(statusCode, message);
+      }
+      return NetworkException(
+        'API error occurred. Please try again.',
+        details: error.toString(),
+      );
     }
 
     if (error is AppException) {
@@ -101,6 +116,13 @@ class ErrorMapper {
         return NotFoundException(
           'The requested resource was not found.',
           code: 'NOT_FOUND',
+          details: responseData,
+        );
+
+      case 405:
+        return ValidationException(
+          'This operation is not supported. Please try a different action.',
+          code: 'METHOD_NOT_ALLOWED',
           details: responseData,
         );
 
@@ -219,7 +241,7 @@ class ErrorMapper {
     );
 
     // Log the full error for debugging
-    DebugLogger.error('❌ Error shown to user: $title - ${error.message}');
+    DebugLogger.error('❌ Error shown to user: title=$title, message=${error.message}');
     if (error.details != null) {
       DebugLogger.error('Details: ${error.details}');
     }

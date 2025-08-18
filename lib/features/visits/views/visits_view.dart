@@ -24,7 +24,7 @@ class VisitsView extends GetView<VisitsController> {
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight + 48), // AppBar + TabBar height
+          preferredSize: const Size.fromHeight(kToolbarHeight + 50), // AppBar + TabBar height
           child: Column(
             children: [
               const SharedAppBar(title: 'My Visits'),
@@ -291,7 +291,7 @@ class VisitsView extends GetView<VisitsController> {
             Row(
               children: [
                 RobustNetworkImageExtension.avatar(
-                  imageUrl: agent.image,
+                  imageUrl: agent.avatarUrl ?? '',
                   size: 60,
                   placeholder: Container(
                     width: 60,
@@ -321,7 +321,7 @@ class VisitsView extends GetView<VisitsController> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        agent.specialization,
+                        agent.experienceLevelString,
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.textSecondary,
@@ -337,7 +337,7 @@ class VisitsView extends GetView<VisitsController> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            agent.rating.toString(),
+                            agent.userSatisfactionRating.toStringAsFixed(1),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -352,7 +352,7 @@ class VisitsView extends GetView<VisitsController> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            agent.experience,
+                            agent.experienceLevelString,
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -426,7 +426,7 @@ class VisitsView extends GetView<VisitsController> {
           Row(
             children: [
               RobustNetworkImage(
-                imageUrl: visit.propertyImage,
+                imageUrl: '', // Property image not available in new model structure
                 width: 60,
                 height: 60,
                 fit: BoxFit.cover,
@@ -459,7 +459,7 @@ class VisitsView extends GetView<VisitsController> {
                         Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
                         Text(
-                          controller.formatVisitDate(visit.visitDateTime),
+                          controller.formatVisitDate(visit.scheduledDate),
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
@@ -469,7 +469,7 @@ class VisitsView extends GetView<VisitsController> {
                         Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
                         Text(
-                          controller.formatVisitTime(visit.visitDateTime),
+                          controller.formatVisitTime(visit.scheduledDate),
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
@@ -614,8 +614,8 @@ class VisitsView extends GetView<VisitsController> {
   }
 
   void _showRescheduleDialog(VisitModel visit) {
-    DateTime selectedDate = visit.visitDateTime;
-    TimeOfDay selectedTime = TimeOfDay.fromDateTime(visit.visitDateTime);
+    DateTime selectedDate = visit.scheduledDate;
+    TimeOfDay selectedTime = TimeOfDay.fromDateTime(visit.scheduledDate);
     
     Get.dialog(
       AlertDialog(

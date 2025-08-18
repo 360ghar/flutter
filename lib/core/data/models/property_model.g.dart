@@ -6,6 +6,22 @@ part of 'property_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+PropertyAmenity _$PropertyAmenityFromJson(Map<String, dynamic> json) =>
+    PropertyAmenity(
+      id: (json['id'] as num).toInt(),
+      title: json['title'] as String,
+      icon: json['icon'] as String?,
+      category: json['category'] as String?,
+    );
+
+Map<String, dynamic> _$PropertyAmenityToJson(PropertyAmenity instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'title': instance.title,
+      'icon': instance.icon,
+      'category': instance.category,
+    };
+
 PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) =>
     PropertyModel(
       id: (json['id'] as num).toInt(),
@@ -42,9 +58,11 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) =>
       maxOccupancy: (json['max_occupancy'] as num?)?.toInt(),
       minimumStayDays: (json['minimum_stay_days'] as num?)?.toInt(),
       amenities: (json['amenities'] as List<dynamic>?)
+          ?.map((e) => PropertyAmenity.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      features: (json['features'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      features: json['features'] as Map<String, dynamic>?,
       mainImageUrl: json['main_image_url'] as String?,
       virtualTourUrl: json['virtual_tour_url'] as String?,
       isAvailable: json['is_available'] as bool? ?? true,
@@ -102,7 +120,7 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
       'age_of_property': instance.ageOfProperty,
       'max_occupancy': instance.maxOccupancy,
       'minimum_stay_days': instance.minimumStayDays,
-      'amenities': instance.amenities,
+      'amenities': instance.amenities?.map((e) => e.toJson()).toList(),
       'features': instance.features,
       'main_image_url': instance.mainImageUrl,
       'virtual_tour_url': instance.virtualTourUrl,

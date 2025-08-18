@@ -1,25 +1,22 @@
 import 'package:get/get.dart';
 import '../../features/property_details/controllers/property_controller.dart';
-import '../controllers/user_controller.dart';
-import '../utils/controller_helper.dart';
+import '../controllers/auth_controller.dart';
 
-/// A mixin that provides safe access to controllers with automatic registration
+/// A mixin that provides safe access to controllers
 mixin ControllerMixin {
-  /// Safely get PropertyController with automatic registration
-  PropertyController get safePropertyController {
-    ControllerHelper.ensurePropertyController();
-    return Get.find<PropertyController>();
+  /// Safely get PropertyController (should be registered via proper bindings)
+  PropertyController? get safePropertyController {
+    return Get.isRegistered<PropertyController>() ? Get.find<PropertyController>() : null;
   }
   
-  /// Safely get UserController with automatic registration  
-  UserController get safeUserController {
-    ControllerHelper.ensureUserController();
-    return Get.find<UserController>();
+  /// Safely get AuthController (replaces UserController functionality)
+  AuthController get safeAuthController {
+    return Get.find<AuthController>();
   }
   
-  /// Check if PropertyController is registered without triggering registration
+  /// Check if PropertyController is registered
   bool get isPropertyControllerRegistered => Get.isRegistered<PropertyController>();
   
-  /// Check if UserController is registered without triggering registration
-  bool get isUserControllerRegistered => Get.isRegistered<UserController>();
+  /// Check if AuthController is registered
+  bool get isAuthControllerRegistered => Get.isRegistered<AuthController>();
 }

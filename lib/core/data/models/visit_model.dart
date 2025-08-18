@@ -15,83 +15,68 @@ enum VisitStatus {
   rescheduled,
 }
 
-@JsonSerializable()
-class RelationshipManagerModel {
-  final int id;
-  @JsonKey(name: 'employee_id', defaultValue: 'EMP001')
-  final String employeeId;
-  @JsonKey(defaultValue: 'Unknown Agent')
-  final String name;
-  @JsonKey(defaultValue: 'unknown@example.com')
-  final String email;
-  @JsonKey(defaultValue: '')
-  final String phone;
-  @JsonKey(name: 'whatsapp_number')
-  final String? whatsappNumber;
-  @JsonKey(name: 'profile_image_url')
-  final String? profileImageUrl;
-  final String? bio;
-  @JsonKey(defaultValue: 'Customer Relations')
-  final String department;
-  @JsonKey(name: 'experience_years')
-  final int? experienceYears;
-  @JsonKey(name: 'is_active', defaultValue: true)
-  final bool isActive;
-  @JsonKey(name: 'working_hours')
-  final String? workingHours;
-  @JsonKey(name: 'total_visits_handled', defaultValue: 0)
-  final int totalVisitsHandled;
-  @JsonKey(name: 'customer_rating')
-  final String? customerRating;
 
-  RelationshipManagerModel({
+@JsonSerializable()
+class VisitPropertyInfo {
+  final int id;
+  final String title;
+  @JsonKey(name: 'property_type')
+  final String propertyType;
+  final String city;
+  final String locality;
+  @JsonKey(name: 'base_price')
+  final double basePrice;
+
+  VisitPropertyInfo({
     required this.id,
-    required this.employeeId,
-    required this.name,
-    required this.email,
-    required this.phone,
-    this.whatsappNumber,
-    this.profileImageUrl,
-    this.bio,
-    required this.department,
-    this.experienceYears,
-    required this.isActive,
-    this.workingHours,
-    required this.totalVisitsHandled,
-    this.customerRating,
+    required this.title,
+    required this.propertyType,
+    required this.city,
+    required this.locality,
+    required this.basePrice,
   });
 
-  factory RelationshipManagerModel.fromJson(Map<String, dynamic> json) => _$RelationshipManagerModelFromJson(json);
+  factory VisitPropertyInfo.fromJson(Map<String, dynamic> json) => _$VisitPropertyInfoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$RelationshipManagerModelToJson(this);
+  Map<String, dynamic> toJson() => _$VisitPropertyInfoToJson(this);
+}
+
+@JsonSerializable()
+class VisitAgentInfo {
+  final int id;
+  final String name;
+  @JsonKey(name: 'agent_code')
+  final String agentCode;
+  final String phone;
+
+  VisitAgentInfo({
+    required this.id,
+    required this.name,
+    required this.agentCode,
+    required this.phone,
+  });
+
+  factory VisitAgentInfo.fromJson(Map<String, dynamic> json) => _$VisitAgentInfoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$VisitAgentInfoToJson(this);
 }
 
 @JsonSerializable()
 class VisitModel {
   final int id;
-  @JsonKey(name: 'user_id')
-  final int userId;
   @JsonKey(name: 'property_id')
   final int propertyId;
+  @JsonKey(name: 'user_id')
+  final int userId;
+  @JsonKey(name: 'agent_id')
+  final int? agentId;
   @JsonKey(name: 'scheduled_date')
   final DateTime scheduledDate;
-  @JsonKey(name: 'visitor_name', defaultValue: 'Unknown Visitor')
-  final String visitorName;
-  @JsonKey(name: 'visitor_phone', defaultValue: '')
-  final String visitorPhone;
-  @JsonKey(name: 'visitor_email')
-  final String? visitorEmail;
-  @JsonKey(name: 'number_of_visitors', defaultValue: 1)
-  final int numberOfVisitors;
-  @JsonKey(name: 'preferred_time_slot')
-  final String? preferredTimeSlot;
-  @JsonKey(name: 'special_requirements')
-  final String? specialRequirements;
-  @JsonKey(name: 'relationship_manager_id')
-  final int? relationshipManagerId;
   @JsonKey(name: 'actual_date')
   final DateTime? actualDate;
   final VisitStatus status;
+  @JsonKey(name: 'special_requirements')
+  final String? specialRequirements;
   @JsonKey(name: 'visit_notes')
   final String? visitNotes;
   @JsonKey(name: 'visitor_feedback')
@@ -110,23 +95,18 @@ class VisitModel {
   final DateTime createdAt;
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
-  @JsonKey(name: 'relationship_manager')
-  final RelationshipManagerModel? relationshipManager;
+  final VisitPropertyInfo? properties;
+  final VisitAgentInfo? agents;
 
   VisitModel({
     required this.id,
-    required this.userId,
     required this.propertyId,
+    required this.userId,
+    this.agentId,
     required this.scheduledDate,
-    required this.visitorName,
-    required this.visitorPhone,
-    this.visitorEmail,
-    this.numberOfVisitors = 1,
-    this.preferredTimeSlot,
-    this.specialRequirements,
-    this.relationshipManagerId,
     this.actualDate,
     required this.status,
+    this.specialRequirements,
     this.visitNotes,
     this.visitorFeedback,
     this.interestLevel,
@@ -136,19 +116,18 @@ class VisitModel {
     this.rescheduledFrom,
     required this.createdAt,
     this.updatedAt,
-    this.relationshipManager,
+    this.properties,
+    this.agents,
   });
 
   factory VisitModel.fromJson(Map<String, dynamic> json) => _$VisitModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$VisitModelToJson(this);
 
-  // Convenience getters for backward compatibility
-  String get propertyTitle => 'Property #$propertyId';
-  String get propertyImage => 'https://via.placeholder.com/400x300?text=Property+Image';
-  DateTime get visitDateTime => scheduledDate;
-  String get agentName => relationshipManager?.name ?? 'Unknown Agent';
-  String get agentPhone => relationshipManager?.phone ?? '';
+  // Convenience getters  
+  String get propertyTitle => properties?.title ?? 'Property #$propertyId';
+  String get agentName => agents?.name ?? 'Unknown Agent';
+  String get agentPhone => agents?.phone ?? '';
   String get notes => visitNotes ?? '';
   
   bool get isUpcoming => DateTime.now().isBefore(scheduledDate) && (status == VisitStatus.scheduled || status == VisitStatus.confirmed);
@@ -174,21 +153,15 @@ class VisitModel {
   bool get canReschedule => status == VisitStatus.scheduled || status == VisitStatus.confirmed;
   bool get canCancel => status == VisitStatus.scheduled || status == VisitStatus.confirmed;
   
-  // Add copyWith method for backward compatibility
   VisitModel copyWith({
     int? id,
-    int? userId,
     int? propertyId,
+    int? userId,
+    int? agentId,
     DateTime? scheduledDate,
-    String? visitorName,
-    String? visitorPhone,
-    String? visitorEmail,
-    int? numberOfVisitors,
-    String? preferredTimeSlot,
-    String? specialRequirements,
-    int? relationshipManagerId,
     DateTime? actualDate,
     VisitStatus? status,
+    String? specialRequirements,
     String? visitNotes,
     String? visitorFeedback,
     String? interestLevel,
@@ -198,24 +171,18 @@ class VisitModel {
     DateTime? rescheduledFrom,
     DateTime? createdAt,
     DateTime? updatedAt,
-    RelationshipManagerModel? relationshipManager,
-    String? propertyTitle,
-    String? propertyImage,
+    VisitPropertyInfo? properties,
+    VisitAgentInfo? agents,
   }) {
     return VisitModel(
       id: id ?? this.id,
-      userId: userId ?? this.userId,
       propertyId: propertyId ?? this.propertyId,
+      userId: userId ?? this.userId,
+      agentId: agentId ?? this.agentId,
       scheduledDate: scheduledDate ?? this.scheduledDate,
-      visitorName: visitorName ?? this.visitorName,
-      visitorPhone: visitorPhone ?? this.visitorPhone,
-      visitorEmail: visitorEmail ?? this.visitorEmail,
-      numberOfVisitors: numberOfVisitors ?? this.numberOfVisitors,
-      preferredTimeSlot: preferredTimeSlot ?? this.preferredTimeSlot,
-      specialRequirements: specialRequirements ?? this.specialRequirements,
-      relationshipManagerId: relationshipManagerId ?? this.relationshipManagerId,
       actualDate: actualDate ?? this.actualDate,
       status: status ?? this.status,
+      specialRequirements: specialRequirements ?? this.specialRequirements,
       visitNotes: visitNotes ?? this.visitNotes,
       visitorFeedback: visitorFeedback ?? this.visitorFeedback,
       interestLevel: interestLevel ?? this.interestLevel,
@@ -225,7 +192,8 @@ class VisitModel {
       rescheduledFrom: rescheduledFrom ?? this.rescheduledFrom,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      relationshipManager: relationshipManager ?? this.relationshipManager,
+      properties: properties ?? this.properties,
+      agents: agents ?? this.agents,
     );
   }
 }
