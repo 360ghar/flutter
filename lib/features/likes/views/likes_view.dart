@@ -49,6 +49,15 @@ class LikesView extends GetView<LikesController> {
                       },
                     ),
                   ],
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(4.0),
+                    child: Obx(() => controller.isRefreshing.value
+                        ? LinearProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                            backgroundColor: AppColors.surface,
+                          )
+                        : const SizedBox.shrink()),
+                  ),
                 ),
                 
                 // Search bar

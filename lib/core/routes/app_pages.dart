@@ -75,12 +75,37 @@ class AppPages {
       binding: ProfileCompletionBinding(),
     ),
     GetPage(
-      name: AppRoutes.dashboard,
-      page: () => const DashboardView(),
-      binding: DashboardBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-    // Legacy /home retained only if needed. Prefer /discover
+        name: AppRoutes.dashboard,
+        page: () => const DashboardView(),
+        binding: DashboardBinding(),
+        middlewares: [AuthMiddleware()],
+        children: [
+          GetPage(
+            name: AppRoutes.discover,
+            page: () => const DiscoverView(),
+            binding: DiscoverBinding(),
+          ),
+          GetPage(
+            name: AppRoutes.explore,
+            page: () => ExploreView(),
+            binding: ExploreBinding(),
+          ),
+          GetPage(
+            name: AppRoutes.likes,
+            page: () => LikesView(),
+            binding: LikesBinding(),
+          ),
+          GetPage(
+            name: AppRoutes.visits,
+            page: () => const VisitsView(),
+            binding: VisitsBinding(),
+          ),
+          GetPage(
+            name: AppRoutes.profile,
+            page: () => const ProfileView(),
+            binding: ProfileBinding(),
+          ),
+        ]),
     GetPage(
       name: AppRoutes.propertyDetails,
       page: () => const PropertyDetailsView(),
@@ -88,33 +113,9 @@ class AppPages {
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.profile,
-      page: () => const ProfileView(),
-      binding: ProfileBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
       name: AppRoutes.editProfile,
       page: () => const EditProfileView(),
       binding: ProfileBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: AppRoutes.likes,
-      page: () => LikesView(),
-      binding: LikesBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: AppRoutes.visits,
-      page: () => const VisitsView(),
-      binding: VisitsBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: AppRoutes.explore,
-      page: () => ExploreView(),
-      binding: ExploreBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
@@ -181,13 +182,6 @@ class AppPages {
       name: AppRoutes.locationSearch,
       page: () => const LocationSearchView(),
       binding: LocationSearchBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-  
-    GetPage(
-      name: AppRoutes.discover,
-      page: () => const DiscoverView(), // Swipe deck interface
-      binding: DiscoverBinding(),
       middlewares: [AuthMiddleware()],
     ),
   ];

@@ -54,9 +54,6 @@ void main() async {
     DebugLogger.info('Continuing without Supabase');
   }
   
-  // Initialize dependencies before running the app
-  InitialBinding().dependencies();
-  
   runApp(const MyApp());
 }
 
@@ -65,31 +62,38 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Access pre-initialized controllers from InitialBinding
-    final ThemeController themeController = Get.find<ThemeController>();
-    final LocalizationController localizationController = Get.find<LocalizationController>();
-    
-    return Obx(() => GetMaterialApp(
-      title: 'app_name'.tr,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeController.themeMode,
-      locale: localizationController.currentLocale,
-      supportedLocales: LocalizationController.supportedLocales,
-      translations: AppTranslations(),
-      fallbackLocale: const Locale('en', 'US'),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      initialRoute: AppRoutes.splash,
-      getPages: AppPages.routes,
-      debugShowCheckedModeBanner: false,
-      // Add proper lifecycle management
-      routingCallback: (routing) {
-        DebugLogger.debug('Routing to: ${routing?.current}');
+    // Let GetX manage the controllers through bindings
+    return GetBuilder<ThemeController>(
+      init: ThemeController(),
+      builder: (themeController) {
+        return GetBuilder<LocalizationController>(
+          init: LocalizationController(),
+          builder: (localizationController) {
+            return GetMaterialApp(
+              title: 'app_name'.tr,
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeController.themeMode,
+              locale: localizationController.currentLocale,
+              supportedLocales: LocalizationController.supportedLocales,
+              translations: AppTranslations(),
+              fallbackLocale: const Locale('en', 'US'),
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              initialRoute: AppRoutes.splash,
+              getPages: AppPages.routes,
+              initialBinding: InitialBinding(), // Correctly use bindings
+              debugShowCheckedModeBanner: false,
+              routingCallback: (routing) {
+                DebugLogger.debug('Routing to: ${routing?.current}');
+              },
+            );
+          },
+        );
       },
-    ));
+    );
   }
 } 

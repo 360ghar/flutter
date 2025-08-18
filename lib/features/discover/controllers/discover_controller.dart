@@ -5,6 +5,7 @@ import '../../../core/data/repositories/properties_repository.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/controllers/filter_service.dart';
+import '../../likes/controllers/likes_controller.dart';
 
 enum DiscoverState {
   initial,
@@ -136,7 +137,7 @@ class DiscoverController extends GetxController {
       _moveToNextCard();
 
       // Record swipe in background
-      _recordSwipeAsync(property.id, isLiked);
+      _recordSwipeAsync(property, isLiked);
 
       // Check if we need to prefetch more properties
       _checkForPrefetch();
@@ -160,13 +161,33 @@ class DiscoverController extends GetxController {
     }
   }
 
-  void _recordSwipeAsync(int propertyId, bool isLiked) {
+  void _recordSwipeAsync(PropertyModel property, bool isLiked) {
     // Record swipe asynchronously without blocking UI
-    _swipesRepository.recordSwipe(
-      propertyId: propertyId,
+    _swipesRepository
+        .recordSwipe(
+      propertyId: property.id,
       isLiked: isLiked,
-    ).catchError((e) {
-      DebugLogger.error('❌ Failed to record swipe for property $propertyId: $e');
+    )
+        .then((swipeResult) {
+      // On success, update the LikesController
+      try {
+        final likesController = Get.find<LikesController>();
+        likesController.addOptimisticSwipe(
+          property: property,
+          isLiked: isLiked,
+          swipeId: swipeResult.id,
+        );
+        DebugLogger.success(
+            '✅ Optimistically updated LikesController for property ${property.id}');
+      } catch (e) {
+        DebugLogger.warning(
+            '⚠️ LikesController not found or failed to update: $e');
+        // If LikesController is not active, this is not a critical error.
+        // It will fetch fresh data when it's next initialized.
+      }
+    }).catchError((e) {
+      DebugLogger.error(
+          '❌ Failed to record swipe for property ${property.id}: $e');
       // Could add to retry queue here
     });
   }

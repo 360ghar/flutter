@@ -21,19 +21,20 @@ class SwipesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
 
   // Record a swipe action
-  Future<void> recordSwipe({
+  Future<SwipeHistoryItem> recordSwipe({
     required int propertyId,
     required bool isLiked,
   }) async {
     try {
       DebugLogger.api('👆 Recording swipe: ${isLiked ? 'LIKE' : 'PASS'} property $propertyId');
 
-      await _apiService.swipeProperty(
+      final swipeResult = await _apiService.swipeProperty(
         propertyId,
         isLiked,
       );
 
       DebugLogger.success('✅ Swipe recorded successfully');
+      return swipeResult;
     } catch (e) {
       DebugLogger.error('❌ Failed to record swipe: $e');
       rethrow;

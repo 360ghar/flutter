@@ -22,6 +22,9 @@ class VisitsController extends GetxController {
   final RxBool hasLoadedVisits = false.obs;
   final RxBool hasLoadedAgent = false.obs;
 
+  // Background refresh state
+  final RxBool isRefreshing = false.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -86,7 +89,9 @@ class VisitsController extends GetxController {
         upcomingVisitsList.clear();
       }
       
-      isLoading.value = true;
+      if (!isRefreshing.value) {
+        isLoading.value = true;
+      }
       error.value = '';
       
       // Load all visits using single endpoint
@@ -114,7 +119,13 @@ class VisitsController extends GetxController {
 
   // Pull-to-refresh method
   Future<void> refreshVisits() async {
-    await loadVisits(isRefresh: true);
+    if (isRefreshing.value) return;
+    try {
+      isRefreshing.value = true;
+      await loadVisits(isRefresh: true);
+    } finally {
+      isRefreshing.value = false;
+    }
   }
 
 

@@ -866,14 +866,14 @@ class ApiService extends getx.GetConnect {
   }
 
   // Swipe System
-  Future<void> swipeProperty(int propertyId, bool isLiked, {
+  Future<SwipeHistoryItem> swipeProperty(int propertyId, bool isLiked, {
     double? userLocationLat,
     double? userLocationLng,
     String? sessionId,
   }) async {
-    await _makeRequest(
+    return await _makeRequest(
       '/swipes/',
-      (json) => json,
+      (json) => SwipeHistoryItem.fromJson(json['data'] ?? json),
       method: 'POST',
       body: {
         'property_id': propertyId,

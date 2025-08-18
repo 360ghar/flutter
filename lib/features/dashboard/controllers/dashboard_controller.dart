@@ -23,19 +23,24 @@ class DashboardController extends GetxController {
     super.onInit();
     _apiService = Get.find<ApiService>();
     _authController = Get.find<AuthController>();
-    
+
+    // Set initial tab based on the route
+    _updateCurrentIndex(Get.currentRoute);
+
+    // Listen to route changes to update the active tab
+    Get.routing.listen((routing) {
+      _updateCurrentIndex(routing.current);
+    });
+
     // Listen to authentication state changes
     ever(_authController.isLoggedIn, (bool isLoggedIn) {
       if (isLoggedIn) {
-        // User is logged in, safe to fetch data
         loadDashboardData();
       } else {
-        // User logged out, clear all data
         _clearAllData();
       }
     });
-    
-    // If already logged in, load dashboard data
+
     if (_authController.isLoggedIn.value) {
       loadDashboardData();
     }
@@ -260,6 +265,68 @@ class DashboardController extends GetxController {
   
   // Navigation methods
   void changeTab(int index) {
+    if (currentIndex.value == index) return;
     currentIndex.value = index;
+
+    // Navigate to the corresponding route
+    final newRoute = _getRouteForIndex(index);
+    if (newRoute != null) {
+      Get.toNamed(newRoute);
+    }
+
+    // Trigger background refresh for the new tab
+    _refreshTab(index);
+  }
+
+  String? _getRouteForIndex(int index) {
+    switch (index) {
+      case 0: return '/profile';
+      case 1: return '/explore';
+      case 2: return '/discover';
+      case 3: return '/likes';
+      case 4: return '/visits';
+      default: return null;
+    }
+  }
+
+  void _refreshTab(int index) {
+    switch (index) {
+      case 1: // Explore
+        if (Get.isRegistered<ExploreController>()) {
+          Get.find<ExploreController>().refreshProperties();
+        }
+        break;
+      case 3: // Likes
+        if (Get.isRegistered<LikesController>()) {
+          Get.find<LikesController>().refreshAll();
+        }
+        break;
+      case 4: // Visits
+        if (Get.isRegistered<VisitsController>()) {
+          Get.find<VisitsController>().refreshVisits();
+        }
+        break;
+      // No refresh for Profile (0) or Discover (2)
+    }
+  }
+
+  void _updateCurrentIndex(String route) {
+    switch (route) {
+      case '/profile':
+        currentIndex.value = 0;
+        break;
+      case '/explore':
+        currentIndex.value = 1;
+        break;
+      case '/discover':
+        currentIndex.value = 2;
+        break;
+      case '/likes':
+        currentIndex.value = 3;
+        break;
+      case '/visits':
+        currentIndex.value = 4;
+        break;
+    }
   }
 }

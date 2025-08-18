@@ -48,6 +48,9 @@ class ExploreController extends GetxController {
   // Selected property for bottom sheet
   final Rx<PropertyModel?> selectedProperty = Rx<PropertyModel?>(null);
 
+  // Background refresh state
+  final RxBool isRefreshing = false.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -86,7 +89,9 @@ class ExploreController extends GetxController {
   Future<void> _initializeMap() async {
     try {
       // Try to use current location or saved location from filters
-      if (_filterService.hasLocation) {
+      if (_filterService.hasLocation &&
+          _filterService.currentFilter.value.latitude != null &&
+          _filterService.currentFilter.value.longitude != null) {
         final filters = _filterService.currentFilter.value;
         _updateMapCenter(LatLng(filters.latitude!, filters.longitude!), currentZoom.value);
       } else {
@@ -173,15 +178,17 @@ class ExploreController extends GetxController {
 
   // Load all properties for current map view
   Future<void> _loadPropertiesForCurrentView() async {
-    if (state.value == ExploreState.loading) return;
+    if (state.value == ExploreState.loading && !isRefreshing.value) return;
 
     try {
-      state.value = ExploreState.loading;
+      if (!isRefreshing.value) {
+        state.value = ExploreState.loading;
+      }
       error.value = null;
       properties.clear();
       selectedProperty.value = null;
 
-      DebugLogger.api('🗺️ Loading all properties for map view');
+      DebugLogger.api('🗺️ Loading all properties for map view (background: ${isRefreshing.value})');
 
       // Load all pages sequentially for map display
       final allProperties = await _propertiesRepository.loadAllPropertiesForMap(
@@ -314,7 +321,13 @@ class ExploreController extends GetxController {
 
   // Refresh
   Future<void> refreshProperties() async {
-    await _loadPropertiesForCurrentView();
+    if (isRefreshing.value) return;
+    try {
+      isRefreshing.value = true;
+      await _loadPropertiesForCurrentView();
+    } finally {
+      isRefreshing.value = false;
+    }
   }
 
   // Error handling

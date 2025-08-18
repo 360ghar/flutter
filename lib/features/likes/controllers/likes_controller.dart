@@ -51,7 +51,8 @@ class LikesController extends GetxController {
   final RxnString likedError = RxnString();
   final RxnString passedError = RxnString();
 
-  // Pagination totals tracked via server pages; counts not required per spec
+  // Background refresh state
+  final RxBool isRefreshing = false.obs;
 
   // Constants
   static const int _limit = 50;
@@ -111,14 +112,17 @@ class LikesController extends GetxController {
     }
 
     try {
-      if (isInitial) {
+      if (isInitial && !isRefreshing.value) {
         likedState.value = LikesState.loading;
+      } else if (isLoadMore) {
+        likedState.value = LikesState.loadingMore;
+      }
+
+      if (isInitial) {
         likedError.value = null;
         likedProperties.clear();
         _likedPage = 1;
         _likedHasMore = true;
-      } else if (isLoadMore) {
-        likedState.value = LikesState.loadingMore;
       }
 
       DebugLogger.api('❤️ Loading liked properties: page $page');
@@ -190,14 +194,17 @@ class LikesController extends GetxController {
     }
 
     try {
-      if (isInitial) {
+      if (isInitial && !isRefreshing.value) {
         passedState.value = LikesState.loading;
+      } else if (isLoadMore) {
+        passedState.value = LikesState.loadingMore;
+      }
+
+      if (isInitial) {
         passedError.value = null;
         passedProperties.clear();
         _passedPage = 1;
         _passedHasMore = true;
-      } else if (isLoadMore) {
-        passedState.value = LikesState.loadingMore;
       }
 
       DebugLogger.api('👎 Loading passed properties: page $page');
@@ -306,11 +313,23 @@ class LikesController extends GetxController {
   }
 
   Future<void> refreshLiked() async {
-    await _loadLikedProperties(page: 1, isInitial: true);
+    if (isRefreshing.value) return;
+    try {
+      isRefreshing.value = true;
+      await _loadLikedProperties(page: 1, isInitial: true);
+    } finally {
+      isRefreshing.value = false;
+    }
   }
 
   Future<void> refreshPassed() async {
-    await _loadPassedProperties(page: 1, isInitial: true);
+    if (isRefreshing.value) return;
+    try {
+      isRefreshing.value = true;
+      await _loadPassedProperties(page: 1, isInitial: true);
+    } finally {
+      isRefreshing.value = false;
+    }
   }
 
   Future<void> refreshAll() async {
@@ -432,6 +451,34 @@ class LikesController extends GetxController {
     return currentSegment.value == LikesSegment.liked 
         ? 'No liked properties yet.\nStart swiping to see properties you love!'
         : 'No passed properties yet.\nProperties you swipe left on will appear here.';
+  }
+
+  // Called from DiscoverController for optimistic update
+  void addOptimisticSwipe({
+    required PropertyModel property,
+    required bool isLiked,
+    required int swipeId,
+  }) {
+    if (isLiked) {
+      // Add to liked properties if not already present
+      if (!likedProperties.any((p) => p.id == property.id)) {
+        likedProperties.insert(0, property);
+        _propertyToSwipeIdMap[property.id] = swipeId;
+        _applySearchFilter(); // Re-apply search if active
+        if (likedState.value == LikesState.empty) {
+          likedState.value = LikesState.loaded;
+        }
+      }
+    } else {
+      // Add to passed properties if not already present
+      if (!passedProperties.any((p) => p.id == property.id)) {
+        passedProperties.insert(0, property);
+        _applySearchFilter(); // Re-apply search if active
+        if (passedState.value == LikesState.empty) {
+          passedState.value = LikesState.loaded;
+        }
+      }
+    }
   }
 
   // Helper getters
