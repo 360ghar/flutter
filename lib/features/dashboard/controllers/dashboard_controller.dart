@@ -2,6 +2,9 @@ import 'package:get/get.dart';
 import '../../../core/data/providers/api_service.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/utils/debug_logger.dart';
+import '../../explore/controllers/explore_controller.dart';
+import '../../likes/controllers/likes_controller.dart';
+import '../../visits/controllers/visits_controller.dart';
 
 class DashboardController extends GetxController {
   late final ApiService _apiService;
@@ -26,11 +29,6 @@ class DashboardController extends GetxController {
 
     // Set initial tab based on the route
     _updateCurrentIndex(Get.currentRoute);
-
-    // Listen to route changes to update the active tab
-    Get.routing.listen((routing) {
-      _updateCurrentIndex(routing.current);
-    });
 
     // Listen to authentication state changes
     ever(_authController.isLoggedIn, (bool isLoggedIn) {
@@ -278,6 +276,11 @@ class DashboardController extends GetxController {
     _refreshTab(index);
   }
 
+  // Public method to sync tab with current route (called from routing callback)
+  void syncTabWithRoute(String route) {
+    _updateCurrentIndex(route);
+  }
+
   String? _getRouteForIndex(int index) {
     switch (index) {
       case 0: return '/profile';
@@ -293,17 +296,26 @@ class DashboardController extends GetxController {
     switch (index) {
       case 1: // Explore
         if (Get.isRegistered<ExploreController>()) {
-          Get.find<ExploreController>().refreshProperties();
+          final controller = Get.find<ExploreController>();
+          if (!controller.isRefreshing.value) {
+            controller.refreshProperties();
+          }
         }
         break;
       case 3: // Likes
         if (Get.isRegistered<LikesController>()) {
-          Get.find<LikesController>().refreshAll();
+          final controller = Get.find<LikesController>();
+          if (!controller.isRefreshing.value) {
+            controller.refreshAll();
+          }
         }
         break;
       case 4: // Visits
         if (Get.isRegistered<VisitsController>()) {
-          Get.find<VisitsController>().refreshVisits();
+          final controller = Get.find<VisitsController>();
+          if (!controller.isRefreshing.value) {
+            controller.refreshVisits();
+          }
         }
         break;
       // No refresh for Profile (0) or Discover (2)

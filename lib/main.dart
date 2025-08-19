@@ -13,6 +13,7 @@ import 'core/controllers/theme_controller.dart';
 import 'core/controllers/localization_controller.dart';
 import 'core/translations/app_translations.dart';
 import 'core/utils/debug_logger.dart';
+import 'features/dashboard/controllers/dashboard_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,6 +90,12 @@ class MyApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               routingCallback: (routing) {
                 DebugLogger.debug('Routing to: ${routing?.current}');
+                
+                // Update dashboard tab when DashboardController is registered
+                if (Get.isRegistered<DashboardController>()) {
+                  final currentRoute = routing?.current ?? '';
+                  Get.find<DashboardController>().syncTabWithRoute(currentRoute);
+                }
               },
             );
           },
