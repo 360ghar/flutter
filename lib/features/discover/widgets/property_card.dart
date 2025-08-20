@@ -23,7 +23,7 @@ class PropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Obx(() => Card(
       margin: const EdgeInsets.only(bottom: 16),
       color: AppColors.propertyCardBackground,
       shadowColor: AppColors.shadowColor,
@@ -212,7 +212,7 @@ class PropertyCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildFeature(IconData icon, String label) {

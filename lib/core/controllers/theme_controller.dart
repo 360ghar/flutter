@@ -2,55 +2,145 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+enum AppThemeMode { light, dark, system }
+
 class ThemeController extends GetxController {
   final GetStorage _storage = GetStorage();
   
+  final Rx<AppThemeMode> _themeMode = AppThemeMode.system.obs;
   final RxBool isDarkMode = false.obs;
+  
+  AppThemeMode get currentThemeMode => _themeMode.value;
   
   @override
   void onInit() {
     super.onInit();
     _loadThemeFromStorage();
+    _updateThemeBasedOnMode();
   }
   
   void _loadThemeFromStorage() {
-    final storedTheme = _storage.read('darkTheme');
-    if (storedTheme != null) {
-      isDarkMode.value = storedTheme;
-      _updateAppTheme();
+    final storedThemeMode = _storage.read('themeMode');
+    if (storedThemeMode != null) {
+      try {
+        // Try to parse as .name first (preferred format)
+        _themeMode.value = AppThemeMode.values.firstWhere(
+          (mode) => mode.name == storedThemeMode,
+          orElse: () {
+            // Fallback: try legacy .toString() format
+            return AppThemeMode.values.firstWhere(
+              (mode) => mode.toString() == storedThemeMode,
+              orElse: () => AppThemeMode.system,
+            );
+          },
+        );
+      } catch (e) {
+        _themeMode.value = AppThemeMode.system;
+      }
     } else {
-      // If no preference stored, follow system theme
-      isDarkMode.value = Get.isDarkMode;
+      _themeMode.value = AppThemeMode.system;
+      _storage.write('themeMode', _themeMode.value.name);
     }
   }
   
-  void toggleTheme() {
-    isDarkMode.value = !isDarkMode.value;
+  void _updateThemeBasedOnMode() {
+    switch (_themeMode.value) {
+      case AppThemeMode.light:
+        isDarkMode.value = false;
+        break;
+      case AppThemeMode.dark:
+        isDarkMode.value = true;
+        break;
+      case AppThemeMode.system:
+        isDarkMode.value = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+        break;
+    }
     _updateAppTheme();
+  }
+  
+  void toggleTheme() {
+    // Cycle through: light -> dark -> system -> light...
+    switch (_themeMode.value) {
+      case AppThemeMode.light:
+        setThemeMode(AppThemeMode.dark);
+        break;
+      case AppThemeMode.dark:
+        setThemeMode(AppThemeMode.system);
+        break;
+      case AppThemeMode.system:
+        setThemeMode(AppThemeMode.light);
+        break;
+    }
+  }
+  
+  void setThemeMode(AppThemeMode mode) {
+    _themeMode.value = mode;
+    _updateThemeBasedOnMode();
     _saveThemeToStorage();
+    // Force app update to ensure immediate rebuilds
+    Get.forceAppUpdate();
   }
   
   void setTheme(bool darkMode) {
-    isDarkMode.value = darkMode;
-    _updateAppTheme();
-    _saveThemeToStorage();
+    setThemeMode(darkMode ? AppThemeMode.dark : AppThemeMode.light);
   }
   
   void _updateAppTheme() {
-    Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
+    ThemeMode flutterThemeMode;
+    switch (_themeMode.value) {
+      case AppThemeMode.light:
+        flutterThemeMode = ThemeMode.light;
+        break;
+      case AppThemeMode.dark:
+        flutterThemeMode = ThemeMode.dark;
+        break;
+      case AppThemeMode.system:
+        flutterThemeMode = ThemeMode.system;
+        break;
+    }
+    Get.changeThemeMode(flutterThemeMode);
   }
   
   void _saveThemeToStorage() {
-    _storage.write('darkTheme', isDarkMode.value);
+    _storage.write('themeMode', _themeMode.value.name);
   }
   
   // Sync with preferences controller
   void syncWithPreferences(bool darkThemeFromPreferences) {
-    if (isDarkMode.value != darkThemeFromPreferences) {
-      setTheme(darkThemeFromPreferences);
+    final newMode = darkThemeFromPreferences ? AppThemeMode.dark : AppThemeMode.light;
+    if (_themeMode.value != newMode) {
+      setThemeMode(newMode);
     }
   }
   
-  ThemeMode get themeMode => isDarkMode.value ? ThemeMode.dark : ThemeMode.light;
-  String get currentThemeName => isDarkMode.value ? 'Dark' : 'Light';
+  // Listen to system theme changes when in system mode
+  void handleSystemThemeChange() {
+    if (_themeMode.value == AppThemeMode.system) {
+      _updateThemeBasedOnMode();
+    }
+  }
+  
+  ThemeMode get themeMode {
+    switch (_themeMode.value) {
+      case AppThemeMode.light:
+        return ThemeMode.light;
+      case AppThemeMode.dark:
+        return ThemeMode.dark;
+      case AppThemeMode.system:
+        return ThemeMode.system;
+    }
+  }
+  
+  String get currentThemeName {
+    switch (_themeMode.value) {
+      case AppThemeMode.light:
+        return 'Light';
+      case AppThemeMode.dark:
+        return 'Dark';
+      case AppThemeMode.system:
+        return 'System';
+    }
+  }
+  
+  bool get isSystemMode => _themeMode.value == AppThemeMode.system;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'theme.dart';
+import '../controllers/theme_controller.dart';
 
 class AppColors {
   // Primary colors (consistent across themes)
@@ -14,54 +15,69 @@ class AppColors {
   static const Color warningAmber = AppTheme.warningAmber;
   static const Color errorRed = AppTheme.errorRed;
 
+  // Helper to get theme controller safely
+  static ThemeController? get _themeController {
+    try {
+      return Get.find<ThemeController>();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Helper to check if dark mode is enabled
+  static bool get _isDarkMode {
+    final controller = _themeController;
+    return controller?.isDarkMode.value ?? Get.isDarkMode;
+  }
+
   // Basic theme-aware colors
   static Color get background {
-    return Get.isDarkMode ? AppTheme.darkBackground : AppTheme.backgroundGray;
+    return _isDarkMode ? AppTheme.darkBackground : AppTheme.backgroundGray;
   }
 
   static Color get surface {
-    return Get.isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
+    return _isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
   }
 
   static Color get cardBackground {
-    return Get.isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
+    return _isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
   }
 
   static Color get textPrimary {
-    return Get.isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
+    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
   }
 
   static Color get textSecondary {
-    return Get.isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
+    return _isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
   }
 
   static Color get textTertiary {
-    return Get.isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
+    return _isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
   }
 
   static Color get iconColor {
-    return Get.isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
+    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
   }
 
   static Color get divider {
-    return Get.isDarkMode ? AppTheme.darkBorder : AppTheme.textLight.withOpacity(0.3);
+    return _isDarkMode ? AppTheme.darkBorder : AppTheme.textLight.withValues(alpha: 0.3);
   }
 
   static Color get border {
-    return Get.isDarkMode ? AppTheme.darkBorder : AppTheme.textLight.withOpacity(0.2);
+    return _isDarkMode ? AppTheme.darkBorder : AppTheme.textLight.withValues(alpha: 0.2);
   }
 
   static Color get inputBackground {
-    return Get.isDarkMode ? AppTheme.darkCard : AppTheme.backgroundGray;
+    return _isDarkMode ? AppTheme.darkCard : AppTheme.backgroundGray;
   }
 
   static Color get shadowColor {
-    return Get.isDarkMode ? AppTheme.darkShadow : AppTheme.cardShadow;
+    return _isDarkMode ? AppTheme.darkShadow : AppTheme.cardShadow;
   }
 
   // Navigation specific colors
   static Color get navigationBackground {
-    return Get.isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
+    return _isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
   }
 
   static Color get navigationSelected {
@@ -69,38 +85,38 @@ class AppColors {
   }
 
   static Color get navigationUnselected {
-    return Get.isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
+    return _isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
   }
 
   // App bar colors
   static Color get appBarBackground {
-    return Get.isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
+    return _isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
   }
 
   static Color get appBarText {
-    return Get.isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
+    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
   }
 
   static Color get appBarIcon {
-    return Get.isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
+    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
   }
 
   // Scaffold colors
   static Color get scaffoldBackground {
-    return Get.isDarkMode ? AppTheme.darkBackground : AppTheme.backgroundGray;
+    return _isDarkMode ? AppTheme.darkBackground : AppTheme.backgroundGray;
   }
 
   // Property card specific colors
   static Color get propertyCardBackground {
-    return Get.isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
+    return _isDarkMode ? AppTheme.darkSurface : AppTheme.backgroundWhite;
   }
 
   static Color get propertyCardText {
-    return Get.isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
+    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
   }
 
   static Color get propertyCardSubtext {
-    return Get.isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
+    return _isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
   }
 
   static Color get propertyCardPrice {
@@ -117,11 +133,11 @@ class AppColors {
   }
 
   static Color get buttonSecondaryBackground {
-    return Get.isDarkMode ? AppTheme.darkCard : AppTheme.backgroundGray;
+    return _isDarkMode ? AppTheme.darkCard : AppTheme.backgroundGray;
   }
 
   static Color get buttonSecondaryText {
-    return Get.isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
+    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
   }
 
   // Loading and state colors
@@ -130,29 +146,29 @@ class AppColors {
   }
 
   static Color get placeholderText {
-    return Get.isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
+    return _isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
   }
 
   static Color get disabledColor {
-    return Get.isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
+    return _isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
   }
 
   // Snackbar colors
   static Color get snackbarBackground {
-    return Get.isDarkMode ? AppTheme.darkCard : AppTheme.backgroundWhite;
+    return _isDarkMode ? AppTheme.darkCard : AppTheme.backgroundWhite;
   }
 
   static Color get snackbarText {
-    return Get.isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
+    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
   }
 
   // Property feature colors
   static Color get propertyFeatureIcon {
-    return Get.isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
+    return _isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
   }
 
   static Color get propertyFeatureText {
-    return Get.isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
+    return _isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
   }
 
   // Favorite colors
@@ -161,20 +177,20 @@ class AppColors {
   }
 
   static Color get favoriteInactive {
-    return Get.isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
+    return _isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
   }
 
   // Filter colors
   static Color get filterBackground {
-    return Get.isDarkMode ? AppTheme.darkCard : AppTheme.backgroundGray;
+    return _isDarkMode ? AppTheme.darkCard : AppTheme.backgroundGray;
   }
 
   static Color get filterText {
-    return Get.isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
+    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
   }
 
   static Color get filterBorder {
-    return Get.isDarkMode ? AppTheme.darkBorder : AppTheme.textLight.withOpacity(0.3);
+    return _isDarkMode ? AppTheme.darkBorder : AppTheme.textLight.withValues(alpha: 0.3);
   }
 
   // Tab colors
@@ -183,7 +199,7 @@ class AppColors {
   }
 
   static Color get tabUnselected {
-    return Get.isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
+    return _isDarkMode ? AppTheme.darkTextSecondary : AppTheme.textGray;
   }
 
   static Color get tabIndicator {
@@ -192,15 +208,15 @@ class AppColors {
 
   // Search colors
   static Color get searchBackground {
-    return Get.isDarkMode ? AppTheme.darkCard : AppTheme.backgroundGray;
+    return _isDarkMode ? AppTheme.darkCard : AppTheme.backgroundGray;
   }
 
   static Color get searchText {
-    return Get.isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
+    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.textDark;
   }
 
   static Color get searchHint {
-    return Get.isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
+    return _isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
   }
 
   // Switch colors
@@ -209,15 +225,15 @@ class AppColors {
   }
 
   static Color get switchInactive {
-    return Get.isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
+    return _isDarkMode ? AppTheme.darkTextTertiary : AppTheme.textLight;
   }
 
   static Color get switchTrackActive {
-    return primaryYellow.withOpacity(0.3);
+    return primaryYellow.withValues(alpha: 0.3);
   }
 
   static Color get switchTrackInactive {
-    return Get.isDarkMode ? AppTheme.darkTextTertiary.withOpacity(0.3) : AppTheme.textLight.withOpacity(0.3);
+    return _isDarkMode ? AppTheme.darkTextTertiary.withValues(alpha: 0.3) : AppTheme.textLight.withValues(alpha: 0.3);
   }
 
   // Method to get appropriate text color for given background
@@ -235,16 +251,16 @@ class AppColors {
     return [
       BoxShadow(
         color: shadowColor,
-        blurRadius: Get.isDarkMode ? 8 : 10,
+        blurRadius: _isDarkMode ? 8 : 10,
         offset: const Offset(0, 4),
-        spreadRadius: Get.isDarkMode ? 0 : 1,
+        spreadRadius: _isDarkMode ? 0 : 1,
       ),
     ];
   }
 
   // Method to get theme-aware elevation color
   static Color getElevationColor(int level) {
-    if (Get.isDarkMode) {
+    if (_isDarkMode) {
       switch (level) {
         case 1:
           return AppTheme.darkSurface;

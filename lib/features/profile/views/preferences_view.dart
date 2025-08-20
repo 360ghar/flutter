@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/theme.dart';
 import '../../../core/mixins/theme_mixin.dart';
+import '../../../core/controllers/theme_controller.dart';
 import '../controllers/preferences_controller.dart';
 
 class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
@@ -74,15 +75,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
               _buildSection(
                 'display_preferences'.tr,
                 [
-                  _buildSwitchTile(
-                    'dark_theme'.tr,
-                    'dark_theme_desc'.tr,
-                    controller.darkTheme.value,
-                    (value) {
-                      controller.darkTheme.value = value;
-                      controller.updateTheme(value);
-                    },
-                  ),
+                  _buildThemeSelector(),
                   _buildSwitchTile(
                     'show_property_tour'.tr,
                     'show_property_tour_desc'.tr,
@@ -309,6 +302,104 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
         Get.back();
       },
       trailing: controller.getCurrentLanguage() == languageName
+          ? Icon(Icons.check, color: AppTheme.primaryColor)
+          : null,
+    );
+  }
+
+  Widget _buildThemeSelector() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'app_theme'.tr,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'app_theme_desc'.tr,
+                  style: TextStyle(
+                    color: Theme.of(Get.context!).colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () => _showThemeDialog(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppTheme.primaryColor),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    controller.currentThemeName,
+                    style: TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.keyboard_arrow_down,
+                    color: AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showThemeDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: Text('app_theme'.tr),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildThemeOption('Light', AppThemeMode.light, Icons.light_mode),
+            const SizedBox(height: 8),
+            _buildThemeOption('Dark', AppThemeMode.dark, Icons.dark_mode),
+            const SizedBox(height: 8),
+            _buildThemeOption('System', AppThemeMode.system, Icons.settings_system_daydream),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('cancel'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeOption(String themeName, AppThemeMode mode, IconData icon) {
+    return ListTile(
+      leading: Icon(icon, color: AppTheme.primaryColor),
+      title: Text(themeName),
+      onTap: () {
+        controller.updateTheme(mode);
+        Get.back();
+      },
+      trailing: controller.currentThemeMode == mode
           ? Icon(Icons.check, color: AppTheme.primaryColor)
           : null,
     );

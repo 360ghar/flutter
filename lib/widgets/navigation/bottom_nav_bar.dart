@@ -14,7 +14,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
+    return Obx(() => BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       backgroundColor: AppColors.navigationBackground,
       selectedItemColor: AppColors.primaryYellow,
@@ -46,7 +46,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
           label: 'Visits',
         ),
       ],
-    );
+    ));
   }
 
   void _onItemTapped(int index) {
