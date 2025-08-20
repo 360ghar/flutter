@@ -317,11 +317,12 @@ The app uses Supabase as the primary backend service:
 - **Loaded in main.dart**: `await dotenv.load(fileName: ".env.development");`
 
 ### Required Environment Variables
-```
-API_BASE_URL=your_api_base_url
-API_TOKEN=your_api_token
-DATABASE_URL=your_database_url
-STORAGE_BUCKET=your_storage_bucket
+```bash
+# .env.development and .env.production
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+API_BASE_URL=your_api_base_url  # Optional, defaults to localhost:8000
+GOOGLE_PLACES_API_KEY=your_google_places_key  # For location search
 ```
 
 ### Platform Support
@@ -484,21 +485,57 @@ Use `DependencyManager` in `lib/core/utils/dependency_manager.dart`:
 ## Testing
 
 ### Test Structure
-- **Model tests**: `test/model_test.dart` - JSON serialization testing
-- **Widget tests**: `test/widget_test.dart` - UI component testing
-- **Unit tests**: Test business logic in controllers
-- **Integration tests**: Full app flow testing
+Currently, the project structure supports testing but test files need to be created:
+- **Model tests**: Create `test/models/` for JSON serialization testing  
+- **Widget tests**: Create `test/widgets/` for UI component testing
+- **Unit tests**: Create `test/controllers/` for business logic testing
+- **Integration tests**: Create `test/integration/` for full app flow testing
 
 ### Running Tests
 ```bash
-# Run all tests
+# Run all tests (once test files are created)
 flutter test
 
 # Run with coverage
 flutter test --coverage
 
-# Generate coverage report
+# Generate coverage report (requires lcov installed)
 genhtml coverage/lcov.info -o coverage/html
+
+# Create test directory structure
+mkdir -p test/{models,widgets,controllers,integration}
+```
+
+## Debugging and Development Workflow
+
+### DebugLogger Usage
+The app includes a comprehensive debugging system via `lib/core/utils/debug_logger.dart`:
+```dart
+// In controllers and services
+DebugLogger.info('User login initiated');
+DebugLogger.success('API call completed successfully'); 
+DebugLogger.warning('Location permission denied');
+DebugLogger.error('Failed to load properties', error, stackTrace);
+DebugLogger.api('🔍 Searching properties with filters');
+```
+
+### Development Workflow
+1. **Hot reload** for UI changes: `r` in terminal or IDE shortcut
+2. **Hot restart** for logic changes: `R` in terminal
+3. **Check reactive state**: Use ReactiveStateMonitor for debugging GetX state
+4. **Monitor API calls**: Check DebugLogger output for API request/response logging
+5. **Location testing**: Use device simulator location or physical device GPS
+
+### GetX DevTools Integration
+Monitor GetX state and routing:
+```dart
+// Enable GetX logging in main.dart (development only)
+GetMaterialApp(
+  enableLog: true,  // Shows navigation logs
+  logWriterCallback: (text, {isError = false}) {
+    DebugLogger.debug('GetX: $text');
+  },
+);
 ```
 
 ## Common Issues and Solutions
@@ -601,3 +638,33 @@ The app supports multiple languages with complete localization:
 2. Update LocalizationController with new locale
 3. Test all screens with new language
 4. Ensure proper text overflow handling
+
+## Quick Reference
+
+### Most Used Commands
+```bash
+flutter run                                              # Start development  
+dart run build_runner build --delete-conflicting-outputs # Regenerate models
+flutter analyze && dart format .                         # Code quality check
+cd ios && pod install                                     # iOS dependencies
+```
+
+### Key File Locations  
+- **Controllers**: `lib/core/controllers/` and `lib/features/*/controllers/`
+- **Models**: `lib/core/data/models/` (with .g.dart generated files)
+- **API Service**: `lib/core/data/providers/api_service.dart`
+- **Routes**: `lib/core/routes/app_routes.dart` and `app_pages.dart`
+- **Theme**: `lib/core/utils/theme.dart` and `app_colors.dart`  
+- **Translations**: `lib/core/translations/app_translations.dart`
+- **Environment**: `.env.development` and `.env.production`
+
+### Architecture Pattern
+```
+View (SafeGetView) → Controller (GetxController) → Repository → ApiService → Supabase
+```
+
+### Essential GetX Patterns
+- Use `Get.find<ControllerType>()` to access controllers
+- Reactive variables: `final RxBool isLoading = false.obs;`
+- Update UI: `isLoading.value = true;` triggers automatic rebuilds
+- Bindings handle dependency injection in `onInit()` methods
