@@ -55,7 +55,13 @@ void main() async {
   }
   
   // Initialize dependencies before running the app
-  InitialBinding().dependencies();
+  try {
+    InitialBinding().dependencies();
+    DebugLogger.success('✅ Initial dependencies registered successfully');
+  } catch (e) {
+    DebugLogger.error('❌ Failed to initialize dependencies: $e');
+    // Continue anyway - some controllers might still work
+  }
   
   runApp(const MyApp());
 }

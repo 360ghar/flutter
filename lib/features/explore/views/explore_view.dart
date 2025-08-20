@@ -5,6 +5,7 @@ import '../controllers/explore_controller.dart';
 import '../../../core/controllers/filter_service.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
+import '../../../core/utils/debug_logger.dart';
 import '../../../../widgets/common/loading_states.dart';
 import '../../../../widgets/common/error_states.dart';
 import '../../../../widgets/common/robust_network_image.dart';
@@ -16,6 +17,7 @@ class ExploreView extends GetView<ExploreController> {
 
   @override
   Widget build(BuildContext context) {
+    DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,

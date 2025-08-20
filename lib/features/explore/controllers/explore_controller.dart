@@ -51,9 +51,34 @@ class ExploreController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    DebugLogger.info('🚀 ExploreController onInit() started.');
+    
+    // Add state listener for debugging
+    ever(state, (ExploreState currentState) {
+      DebugLogger.info('📊 ExploreState changed to: $currentState');
+    });
+    
+    // Set state to loading immediately to prevent blank page
+    state.value = ExploreState.loading;
+    
     _setupFilterListener();
     _setupLocationListener();
-    _initializeMap();
+    
+    // Use addPostFrameCallback to ensure all bindings are ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeMapAndLoadProperties();
+    });
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    DebugLogger.success('✅ ExploreController is ready! Current state: ${state.value}');
+    
+    // Perform additional validation
+    if (state.value == ExploreState.initial) {
+      DebugLogger.warning('⚠️ Controller is ready but still in initial state. This may indicate an initialization issue.');
+    }
   }
 
   @override
@@ -83,28 +108,57 @@ class ExploreController extends GetxController {
     });
   }
 
-  Future<void> _initializeMap() async {
+  // New combined initialization method
+  Future<void> _initializeMapAndLoadProperties() async {
     try {
-      // Try to use current location or saved location from filters
+      DebugLogger.info('🗺️ Initializing map and loading properties...');
+      LatLng initialCenter = const LatLng(28.6139, 77.2090); // Default to Delhi
+      double initialZoom = 12.0;
+
+      // Prioritize location from FilterService if available
       if (_filterService.hasLocation) {
         final filters = _filterService.currentFilter.value;
-        _updateMapCenter(LatLng(filters.latitude!, filters.longitude!), currentZoom.value);
+        initialCenter = LatLng(filters.latitude!, filters.longitude!);
+        DebugLogger.info('🗺️ Using location from FilterService: $initialCenter');
       } else {
-        await _useCurrentLocation();
+        // Try to get current device location, but don't block if it fails
+        DebugLogger.info('🗺️ Attempting to get current device location...');
+        await _locationController.getCurrentLocation();
+        if (_locationController.hasLocation) {
+          final pos = _locationController.currentPosition.value!;
+          initialCenter = LatLng(pos.latitude, pos.longitude);
+          initialZoom = 14.0; // Zoom in closer for current location
+          DebugLogger.info('🗺️ Using current device location: $initialCenter');
+        } else {
+          DebugLogger.warning('⚠️ Could not get device location. Using default.');
+        }
       }
-      
-      _loadPropertiesForCurrentView();
+
+      // Update map and filters with the determined location
+      _updateMapCenter(initialCenter, initialZoom);
+      _filterService.updateLocationWithCoordinates(
+        latitude: initialCenter.latitude,
+        longitude: initialCenter.longitude,
+        radiusKm: _calculateRadiusFromZoom(initialZoom),
+      );
+
+      // Now, load properties
+      await _loadPropertiesForCurrentView();
+
     } catch (e) {
-      DebugLogger.error('❌ Failed to initialize map: $e');
-      _loadPropertiesForCurrentView(); // Load with default location
+      DebugLogger.error('❌ CRITICAL: Failed during initialization: $e');
+      state.value = ExploreState.error;
+      error.value = "Failed to initialize the map. Please check location services and try again.";
     }
   }
 
   Future<void> _useCurrentLocation() async {
     try {
+      DebugLogger.info('📍 Getting current location...');
       await _locationController.getCurrentLocation();
       final position = _locationController.currentPosition.value;
       if (position != null) {
+        DebugLogger.success('✅ Current location obtained: lat=${position.latitude}, lng=${position.longitude}');
         _updateMapCenter(LatLng(position.latitude, position.longitude), 14.0);
         
         // Update filters with current location
@@ -113,20 +167,41 @@ class ExploreController extends GetxController {
           longitude: position.longitude,
           radiusKm: currentRadius.value,
         );
+      } else {
+        DebugLogger.warning('⚠️ LocationController returned null position, using default location');
+        // Use default location (Delhi) if location is not available
+        _updateMapCenter(const LatLng(28.6139, 77.2090), 12.0);
+        _filterService.updateLocationWithCoordinates(
+          latitude: 28.6139,
+          longitude: 77.2090,
+          radiusKm: currentRadius.value,
+        );
       }
     } catch (e) {
       DebugLogger.warning('⚠️ Could not get current location: $e');
+      // Always fallback to default location
+      DebugLogger.info('🗺️ Falling back to default location (Delhi)');
+      _updateMapCenter(const LatLng(28.6139, 77.2090), 12.0);
+      _filterService.updateLocationWithCoordinates(
+        latitude: 28.6139,
+        longitude: 77.2090,
+        radiusKm: currentRadius.value,
+      );
     }
   }
 
   void _updateMapCenter(LatLng center, double zoom) {
-    currentCenter.value = center;
-    currentZoom.value = zoom;
-    
     try {
+      currentCenter.value = center;
+      currentZoom.value = zoom;
+      DebugLogger.info('🗺️ Updated map center to $center with zoom $zoom');
+      
       mapController.move(center, zoom);
     } catch (e) {
       DebugLogger.warning('⚠️ Could not move map: $e');
+      // Still update the reactive values even if map move fails
+      currentCenter.value = center;
+      currentZoom.value = zoom;
     }
   }
 
@@ -173,15 +248,20 @@ class ExploreController extends GetxController {
 
   // Load all properties for current map view
   Future<void> _loadPropertiesForCurrentView() async {
-    if (state.value == ExploreState.loading) return;
-
     try {
-      state.value = ExploreState.loading;
+      // Don't check if already loading - the state is managed by caller
+      DebugLogger.info('⏳ Starting property loading...');
+      
+      // Only set loading if not already in a loading state
+      if (state.value != ExploreState.loading) {
+        state.value = ExploreState.loading;
+      }
+      
       error.value = null;
       properties.clear();
       selectedProperty.value = null;
 
-      DebugLogger.api('🗺️ Loading all properties for map view');
+      DebugLogger.api('🗺️ Loading all properties for map view with filters: ${_filterService.currentFilter.value.toJson()}');
 
       // Load all pages sequentially for map display
       final allProperties = await _propertiesRepository.loadAllPropertiesForMap(
@@ -194,12 +274,14 @@ class ExploreController extends GetxController {
       );
 
       properties.assignAll(allProperties);
+      DebugLogger.success('✅ Loaded ${properties.length} properties for map.');
 
       if (properties.isEmpty) {
+        DebugLogger.info('📭 No properties found, setting empty state');
         state.value = ExploreState.empty;
       } else {
+        DebugLogger.success('✅ Setting loaded state with ${properties.length} properties');
         state.value = ExploreState.loaded;
-        DebugLogger.success('✅ Loaded ${properties.length} properties for map');
       }
 
     } catch (e) {
@@ -209,6 +291,7 @@ class ExploreController extends GetxController {
     } finally {
       loadingProgress.value = 0;
       totalPages.value = 1;
+      DebugLogger.info('🔄 Cleanup completed for property loading');
     }
   }
 
