@@ -217,6 +217,8 @@ class LocationController extends GetxController {
   Future<List<Map<String, dynamic>>> _searchGooglePlaces(String query) async {
     try {
       final apiKey = dotenv.env['GOOGLE_PLACES_API_KEY'];
+      final countryCode = dotenv.env['DEFAULT_COUNTRY'] ?? 'in';
+
       if (apiKey == null || apiKey.isEmpty) {
         DebugLogger.warning('Google Places API key not found');
         return [];
@@ -225,8 +227,8 @@ class LocationController extends GetxController {
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/place/autocomplete/json'
         '?input=${Uri.encodeQueryComponent(query)}'
-        '&types=(cities)'
-        '&components=country:in'
+        '&types=(locality)'
+        '&components=country:$countryCode'
         '&key=$apiKey'
       );
 
@@ -365,11 +367,13 @@ class LocationController extends GetxController {
         return [];
       }
 
+      final countryCode = dotenv.env['DEFAULT_COUNTRY'] ?? 'in';
+
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/place/autocomplete/json'
-        '?input=$query'
-        '&types=(cities)'
-        '&components=country:in'
+        '?input=${Uri.encodeQueryComponent(query)}'
+        '&types=(locality)'
+        '&components=country:$countryCode'
         '&key=$apiKey'
       );
 
