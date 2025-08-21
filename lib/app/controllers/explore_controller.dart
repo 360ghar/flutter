@@ -360,10 +360,10 @@ class ExploreController extends GetxController {
     }
   }
 
-  void onPositionChanged(MapPosition position, bool hasGesture) {
-    if (hasGesture) {
-      currentLocation.value = position.center!;
-      currentZoom.value = position.zoom!;
+  void onPositionChanged(MapEvent position, bool hasGesture) {
+    if (hasGesture && position is MapEventMove) {
+      currentLocation.value = position.camera.center;
+      currentZoom.value = position.camera.zoom;
     }
   }
 

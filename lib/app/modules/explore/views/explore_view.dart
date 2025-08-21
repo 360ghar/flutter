@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../controllers/explore_controller.dart';
 import '../../../controllers/theme_controller.dart';
 import '../../../data/models/property_model.dart';
@@ -26,7 +27,12 @@ class ExploreView extends GetView<ExploreController> {
               initialCenter: controller.currentLocation.value,
               initialZoom: controller.currentZoom.value,
               onMapReady: controller.onMapReady,
-              onPositionChanged: controller.onPositionChanged,
+              onPositionChanged: (MapCamera position, bool hasGesture) {
+                if (hasGesture) {
+                  controller.currentLocation.value = position.center;
+                  controller.currentZoom.value = position.zoom;
+                }
+              },
               onMapEvent: controller.onMapEvent,
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all,
