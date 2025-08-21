@@ -47,15 +47,15 @@ class LocationController extends GetxController {
     try {
       isLocationEnabled.value = await Geolocator.isLocationServiceEnabled();
       if (!isLocationEnabled.value) {
-        locationError.value = 'Location services are disabled';
+        locationError.value = 'location_services_disabled'.tr;
         Get.snackbar(
-          'Location Services',
-          'Please enable location services to use location features',
+          'location_services'.tr,
+          'enable_location_services_message'.tr,
           snackPosition: SnackPosition.TOP,
         );
       }
     } catch (e, stackTrace) {
-      locationError.value = 'Failed to check location service';
+      locationError.value = 'failed_to_check_location_service'.tr;
       DebugLogger.error('Error checking location service', e, stackTrace);
     }
   }
@@ -70,10 +70,10 @@ class LocationController extends GetxController {
       
       if (permission == LocationPermission.deniedForever) {
         isLocationPermissionGranted.value = false;
-        locationError.value = 'Location permission permanently denied';
+        locationError.value = 'location_permission_permanently_denied'.tr;
         Get.snackbar(
-          'Location Permission',
-          'Location access is permanently denied. Please enable it in settings.',
+          'location_permission'.tr,
+          'location_access_permanently_denied_message'.tr,
           snackPosition: SnackPosition.TOP,
         );
         return;
@@ -81,10 +81,10 @@ class LocationController extends GetxController {
       
       if (permission == LocationPermission.denied) {
         isLocationPermissionGranted.value = false;
-        locationError.value = 'Location permission denied';
+        locationError.value = 'location_permission_denied'.tr;
         Get.snackbar(
-          'Location Permission',
-          'Location access is required for nearby properties and better recommendations.',
+          'location_permission'.tr,
+          'location_access_required_message'.tr,
           snackPosition: SnackPosition.TOP,
         );
         return;
@@ -93,7 +93,7 @@ class LocationController extends GetxController {
       isLocationPermissionGranted.value = true;
       locationError.value = '';
     } catch (e, stackTrace) {
-      locationError.value = 'Error requesting location permission';
+      locationError.value = 'error_requesting_location_permission'.tr;
       DebugLogger.error('Error requesting location permission', e, stackTrace);
     }
   }
@@ -136,12 +136,12 @@ class LocationController extends GetxController {
       
       
     } catch (e, stackTrace) {
-      locationError.value = 'Failed to get current location';
+      locationError.value = 'failed_to_get_current_location'.tr;
       DebugLogger.error('Error getting current location', e, stackTrace);
-      
+
       Get.snackbar(
-        'Location Error',
-        'Failed to get your current location. Please try again.',
+        'location_error'.tr,
+        'failed_to_get_location_message'.tr,
         snackPosition: SnackPosition.TOP,
       );
     } finally {
@@ -205,8 +205,8 @@ class LocationController extends GetxController {
     } catch (e, stackTrace) {
       DebugLogger.error('Error searching locations', e, stackTrace);
       Get.snackbar(
-        'Search Error',
-        'Failed to search locations',
+        'search_error'.tr,
+        'failed_to_search_locations'.tr,
         snackPosition: SnackPosition.TOP,
       );
     } finally {
@@ -265,8 +265,8 @@ class LocationController extends GetxController {
     
     
     Get.snackbar(
-      'Location Selected',
-      'Selected: ${selectedCity.value}',
+      'location_selected'.tr,
+      'location_selected_message'.tr + selectedCity.value,
       snackPosition: SnackPosition.TOP,
       duration: const Duration(seconds: 2),
     );
@@ -280,10 +280,10 @@ class LocationController extends GetxController {
   Future<void> openLocationSettings() async {
     try {
       await Geolocator.openLocationSettings();
-    } catch (e, stackTrace) {
+    } catch (e) {
       Get.snackbar(
-        'Error',
-        'Unable to open location settings',
+        'error'.tr,
+        'unable_to_open_location_settings'.tr,
         snackPosition: SnackPosition.TOP,
       );
     }
@@ -292,10 +292,10 @@ class LocationController extends GetxController {
   Future<void> openAppSettings() async {
     try {
       await Geolocator.openAppSettings();
-    } catch (e, stackTrace) {
+    } catch (e) {
       Get.snackbar(
-        'Error',
-        'Unable to open app settings',
+        'error'.tr,
+        'unable_to_open_app_settings'.tr,
         snackPosition: SnackPosition.TOP,
       );
     }
@@ -307,11 +307,11 @@ class LocationController extends GetxController {
   bool get hasLocation => currentPosition.value != null;
   
   String get locationStatusText {
-    if (!isLocationEnabled.value) return 'Location services disabled';
-    if (!isLocationPermissionGranted.value) return 'Location permission denied';
-    if (isLoading.value) return 'Getting location...';
-    if (hasLocation) return currentAddress.value.isNotEmpty ? currentAddress.value : 'Location found';
-    return 'Location not available';
+    if (!isLocationEnabled.value) return 'location_services_disabled'.tr;
+    if (!isLocationPermissionGranted.value) return 'location_permission_denied'.tr;
+    if (isLoading.value) return 'getting_location'.tr;
+    if (hasLocation) return currentAddress.value.isNotEmpty ? currentAddress.value : 'location_found'.tr;
+    return 'location_not_available'.tr;
   }
 
   Map<String, dynamic> get locationSummary => {
