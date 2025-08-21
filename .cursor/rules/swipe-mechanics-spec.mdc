@@ -1,39 +1,40 @@
 ---
 globs: lib/app/modules/home/widgets/*.dart,lib/app/modules/home/views/*.dart,lib/app/controllers/swipe_controller.dart,lib/app/data/repositories/swipes_repository.dart
-description: Bumble-style swipe stack behavior, gestures, animations, and data integration.
 ---
+# Swipe Mechanics Spec
 
-## Swipe Mechanics Spec
+## Widgets & Components
+- **Core stack**: `swipe_stack.dart` • **Cards**: `property_swipe_card.dart`
+- 5-card visible stack with parallax effect
 
-- **Widgets**
-  - Core stack: [lib/app/modules/home/widgets/swipe_stack.dart](mdc:lib/app/modules/home/widgets/swipe_stack.dart)
-  - Card: [lib/app/modules/home/widgets/property_swipe_card.dart](mdc:lib/app/modules/home/widgets/property_swipe_card.dart)
-- **Gestures → Actions**
-  - Swipe Right: mark favorite/interest and advance deck.
-  - Swipe Left: pass and advance deck.
-  - Swipe Up: open quick details (navigate to details view).
-  - Double Tap: super-like (highlight + record) and advance deck.
-- **Visual feedback**
-  - Rotation ±12°, scale 0.98 on drag. Color hints: successGreen for like, errorRed for pass.
-  - Overlay badges: LIKE / PASS / DETAILS / SUPER using `AppTheme` colors.
-- **Animation**
-  - Spring curve for completion; snap-back on cancel.
-  - Parallax for background cards; 5-card visible stack.
-- **Controller contract** ([lib/app/controllers/swipe_controller.dart](mdc:lib/app/controllers/swipe_controller.dart))
-  - `RxList<PropertyModel> deck`
-  - `RxInt currentIndex`
-  - `void onDragUpdate(Offset delta)`
-  - `Future<void> completeSwipe(SwipeAction action)`
-  - `void cancelSwipe()`
-  - `Future<void> undoLastSwipe()`
-- **Data integration**
-  - Record actions via [lib/app/data/repositories/swipes_repository.dart](mdc:lib/app/data/repositories/swipes_repository.dart): `logSwipe(propertyId, action)`.
-  - For likes, update favorites via `LikesController`/`PropertyController` and persist.
-  - For details, `Get.toNamed(Routes.propertyDetails, arguments: property)` → [lib/app/modules/property_details/views/property_details_view.dart](mdc:lib/app/modules/property_details/views/property_details_view.dart).
-- **Empty/edge states**
-  - When deck is empty, show a friendly empty state with CTA to Explore/Filters.
+## Gestures → Actions
+- **Swipe Right**: Like/interest + advance
+- **Swipe Left**: Pass + advance
+- **Swipe Up**: Quick details view
+- **Double Tap**: Super-like + advance
 
-Enum reference
+## Visual Feedback & Animation
+- **Rotation**: ±12° • **Scale**: 0.98 on drag
+- **Color hints**: Green for like, red for pass
+- **Badges**: LIKE/PASS/DETAILS/SUPER with `AppTheme` colors
+- **Animation**: Spring curve + snap-back
+
+## Controller Contract
+```dart
+RxList<PropertyModel> deck
+RxInt currentIndex
+void onDragUpdate(Offset delta)
+Future<void> completeSwipe(SwipeAction action)
+void cancelSwipe()
+Future<void> undoLastSwipe()
+```
+
+## Data Integration
+- **Repository**: `logSwipe(propertyId, action)` in `swipes_repository.dart`
+- **Favorites**: Update via `PropertyController` for likes
+- **Details**: Navigate to `Routes.propertyDetails`
+- **Empty state**: Show CTA to Explore/Filters
+
 ```dart
 enum SwipeAction { like, pass, details, superLike }
 ```

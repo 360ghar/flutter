@@ -1,0 +1,55 @@
+---
+alwaysApply: true
+---
+# Project Structure & Key Files
+
+## Core Architecture Files
+- [lib/main.dart](mdc:lib/main.dart) - App entry point
+- [lib/app/utils/theme.dart](mdc:lib/app/utils/theme.dart) - Complete theme system
+- [lib/app/routes/app_pages.dart](mdc:lib/app/routes/app_pages.dart) - Route definitions
+- [lib/app/bindings/initial_binding.dart](mdc:lib/app/bindings/initial_binding.dart) - Dependency injection
+
+## Data Layer
+- [lib/app/data/models/property_model.dart](mdc:lib/app/data/models/property_model.dart) - Property data model
+- [lib/app/data/providers/mock_api_provider.dart](mdc:lib/app/data/providers/mock_api_provider.dart) - Mock API implementation
+- [assets/mock_api/properties.json](mdc:assets/mock_api/properties.json) - Property mock data (6 diverse properties)
+
+## Controllers & Views
+- [lib/app/controllers/property_controller.dart](mdc:lib/app/controllers/property_controller.dart) - Property state management
+- [lib/app/modules/home/views/home_view.dart](mdc:lib/app/modules/home/views/home_view.dart) - Main property listings (needs swipe UI)
+- [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart) - Bottom navigation
+
+## Module Structure
+```
+lib/
+├── app/
+│   ├── bindings/          # Dependency injection setup
+│   ├── controllers/       # GetX controllers with reactive state
+│   ├── data/
+│   │   ├── models/        # Data models with JSON serialization
+│   │   ├── providers/     # API clients and services
+│   │   └── repositories/  # Data access layer
+│   ├── modules/           # Feature modules
+│   │   ├── splash/        # App launch screen
+│   │   ├── home/          # Property listings (swipe interface)
+│   │   ├── auth/          # Authentication (placeholders)
+│   │   ├── property_details/ # Property details view
+│   │   ├── favourites/    # Liked properties
+│   │   ├── profile/       # User profile and preferences
+│   │   ├── visits/        # Agent appointments
+│   │   └── explore/       # Map view with markers
+│   ├── routes/            # Route definitions and constants
+│   └── utils/             # Utilities, theme, constants
+├── widgets/
+│   ├── common/            # Reusable UI components
+│   └── property/          # Property-specific widgets
+└── assets/mock_api/       # Mock data (properties, user, favourites)
+```
+
+## Navigation Structure
+Bottom Navigation Order: **Profile → Discover → Properties → Liked → Visits**
+- **Profile**: User management and preferences
+- **Discover**: Map view with property markers
+- **Properties**: Main swipe interface (center/home position)
+- **Liked**: Favorited properties
+- **Visits**: Agent appointments and scheduled tours

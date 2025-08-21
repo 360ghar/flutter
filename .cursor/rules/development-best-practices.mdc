@@ -1,0 +1,55 @@
+---
+alwaysApply: true
+---
+# Development Best Practices
+
+## Code Quality Principles
+- **DRY Principle**: No code duplication across pages, widgets, components
+- **Maintainability**: Single source of truth for business logic
+- **Consistency**: Uniform styling using AppTheme, same behavior patterns
+- **Scalability**: Modular architecture, clean separation of concerns
+
+## Implementation Guidelines
+### When Adding Features:
+- Check for existing similar components first
+- Follow established folder structure in `lib/app/modules/`
+- Create reusable widgets in `lib/widgets/` if used in multiple places
+- Use GetX controllers for state management, never StatefulWidget for complex state
+- Implement proper error handling with user-friendly messages
+- Add loading states for all async operations
+- Follow Bumble-inspired design system with colors from AppTheme
+- Test on both iOS and Android platforms
+
+### Widget Creation Standards:
+- Parameterize everything that might change (colors, sizes, callbacks)
+- Use AppTheme colors instead of hardcoded values
+- Add proper documentation with clear parameter descriptions
+- Make widgets responsive to different screen sizes
+- Include error states and loading indicators where appropriate
+- Follow naming conventions: PascalCase for classes, camelCase for variables
+
+### Code Review Checklist:
+- ✅ No hardcoded strings or colors
+- ✅ Proper error handling implemented
+- ✅ Loading states for async operations
+- ✅ Consistent with existing code patterns
+- ✅ Reusable components placed in correct directories
+- ✅ GetX reactivity used properly with `.obs`
+- ✅ Navigation follows established patterns
+- ✅ Accessibility considerations included
+- ✅ Performance optimizations applied
+- ✅ Cross-platform compatibility verified
+
+## Performance Optimization
+- Lazy loading where appropriate
+- Efficient memory management
+- Image caching and optimization
+- Minimal rebuilds with GetX reactivity
+- Background data processing
+
+## Architecture Patterns
+- Clean Architecture principles implemented
+- Business logic separated from UI
+- Repository pattern for data access
+- Proper error handling throughout
+- Modular structure with clear separation of concerns

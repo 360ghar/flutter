@@ -1,26 +1,25 @@
 ---
 globs: lib/app/utils/*.dart,lib/widgets/**/*.dart,lib/app/modules/**/widgets/**/*.dart
-description: Design system usage for colors, typography, elevation, and component styling.
 ---
+# Design System & Theme
 
-## Design System
+## Colors & Typography
+- **No hardcoded colors**: Use `AppTheme` from [lib/app/utils/theme.dart](mdc:lib/app/utils/theme.dart)
+- **Typography**: Use predefined styles like `AppTheme.headlineLarge`, `AppTheme.bodyLarge`
+- **Color palette**: Bumble yellows, accent orange/blue/green, status colors
 
-- **Colors**
-  - Use `AppTheme`/`AppColors` only. See [lib/app/utils/theme.dart](mdc:lib/app/utils/theme.dart) and [lib/app/utils/app_colors.dart](mdc:lib/app/utils/app_colors.dart).
-  - Primary: Bumble-inspired yellows; accents: orange/blue/green; status: success/warning/error.
-- **Typography**
-  - Use predefined text styles from `AppTheme` (e.g., `headlineLarge`, `headlineMedium`, `titleLarge`, `bodyLarge`, `bodyMedium`).
-- **Cards**
-  - Border radius: 16. Subtle shadow per `AppTheme.cardShadow`.
-  - Property cards use hero image with gradient overlay and info panel at bottom.
-- **Spacing**
-  - Keep consistent paddings (8/12/16/24). Avoid magic numbers; extract to constants where reusable.
-- **States**
-  - Provide loading and error UI using shared widgets under `lib/widgets/common/`.
-- **Do not**
-  - Hardcode `Colors.*` or font sizes; reuse tokens. Avoid inconsistent radii or shadows.
+## Cards & Components
+- **Border radius**: 16px • **Shadow**: Use `AppTheme.cardShadow`
+- **Property cards**: Hero image with gradient overlay and bottom info panel
+- **Spacing**: Use consistent values (8/12/16/24) • Avoid magic numbers
 
-Reference components
-- Bottom nav: [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart)
-- Loading/Error states: [lib/widgets/common/loading_states.dart](mdc:lib/widgets/common/loading_states.dart), [lib/widgets/common/error_states.dart](mdc:lib/widgets/common/error_states.dart)
-- Property cards: [lib/app/modules/home/widgets/property_swipe_card.dart](mdc:lib/app/modules/home/widgets/property_swipe_card.dart)
+## States & Components
+- **Loading/Error UI**: Use shared widgets from `lib/widgets/common/`
+- **Reference components**:
+  - Bottom nav: [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart)
+  - Property cards: [lib/app/modules/home/widgets/property_swipe_card.dart](mdc:lib/app/modules/home/widgets/property_swipe_card.dart)
+
+## Do Not
+- Hardcode `Colors.*` or font sizes
+- Use inconsistent radii or shadows
+- Create duplicate components

@@ -1,17 +1,18 @@
 ---
 globs: lib/widgets/navigation/*.dart,lib/app/modules/**/views/*.dart
-description: Bottom navigation order, tab routing, and implementation notes.
 ---
+# Bottom Navigation & Tabs
 
-## Bottom Navigation & Tabs
+## Order & Implementation
+- **Tab Order**: Profile → Discover → Properties → Liked → Visits
+- **Primary widget**: [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart)
+- **Center tab**: Routes to main swipe interface (Home/Properties module)
 
-- **Order**: Profile → Discover → Properties → Liked → Visits.
-- **Implementation**
-  - Primary widget: [lib/widgets/navigation/bottom_nav_bar.dart](mdc:lib/widgets/navigation/bottom_nav_bar.dart).
-  - Center tab routes to the main swipe interface (Home/Properties module).
-- **Routes**
-  - Ensure each tab maps to a named route defined in [lib/app/routes/app_routes.dart](mdc:lib/app/routes/app_routes.dart) and page in [lib/app/routes/app_pages.dart](mdc:lib/app/routes/app_pages.dart).
-- **Consistency**
-  - Tabs available across primary screens. Do not add ad-hoc nav bars per view.
-- **Accessibility**
-  - Ensure labels are localized (`.tr`) and meet contrast/tap target guidelines.
+## Routes & Consistency
+- Each tab maps to named route in `app_routes.dart` and page in `app_pages.dart`
+- Tabs available across all primary screens
+- No ad-hoc navigation bars per view
+
+## Accessibility
+- Labels must be localized (`.tr`)
+- Meet contrast and tap target guidelines
