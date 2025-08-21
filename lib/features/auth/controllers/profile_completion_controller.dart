@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/utils/debug_logger.dart';
+import '../../../core/utils/theme.dart';
 
 class ProfileCompletionController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -153,8 +154,8 @@ class ProfileCompletionController extends GetxController {
         'Required',
         'Please select at least one property type',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
+        backgroundColor: AppTheme.warningAmber,
+        colorText: AppTheme.backgroundWhite,
       );
       return false;
     }
@@ -196,8 +197,8 @@ class ProfileCompletionController extends GetxController {
           'Permission Denied',
           'Location permission is permanently denied. Please enable it in settings.',
           snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+          backgroundColor: AppTheme.errorRed,
+          colorText: AppTheme.backgroundWhite,
         );
         return;
       }
@@ -207,8 +208,8 @@ class ProfileCompletionController extends GetxController {
           'Permission Required',
           'Location permission is required to use this feature.',
           snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
+          backgroundColor: AppTheme.warningAmber,
+          colorText: AppTheme.backgroundWhite,
         );
         return;
       }
@@ -230,16 +231,16 @@ class ProfileCompletionController extends GetxController {
         'Success',
         'Current location updated successfully',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppTheme.successGreen,
+        colorText: AppTheme.backgroundWhite,
       );
     } catch (e) {
       Get.snackbar(
         'Error',
         'Failed to get current location: $e',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppTheme.errorRed,
+        colorText: AppTheme.backgroundWhite,
       );
     } finally {
       isLoading.value = false;
@@ -261,8 +262,19 @@ class ProfileCompletionController extends GetxController {
         try {
           final date = DateFormat('dd/MM/yyyy').parse(dateOfBirthController.text);
           profileData['date_of_birth'] = DateFormat('yyyy-MM-dd').format(date);
-        } catch (e) {
-          // Invalid date format, skip
+        } catch (e, stackTrace) {
+          // Log the parsing error
+          DebugLogger.error('Invalid date format in date of birth field', e, stackTrace);
+
+          // Clear the invalid date and show user feedback
+          dateOfBirthController.clear();
+          Get.snackbar(
+            'Invalid Date',
+            'Please enter a valid date in DD/MM/YYYY format',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: AppTheme.warningAmber,
+            colorText: AppTheme.backgroundWhite,
+          );
         }
       }
       
@@ -311,8 +323,8 @@ class ProfileCompletionController extends GetxController {
         'Success',
         'Profile completed successfully!',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: AppTheme.successGreen,
+        colorText: AppTheme.backgroundWhite,
       );
       
       // Navigate to home
@@ -322,8 +334,8 @@ class ProfileCompletionController extends GetxController {
         'Error',
         'Failed to complete profile: $e',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppTheme.errorRed,
+        colorText: AppTheme.backgroundWhite,
       );
     } finally {
       isLoading.value = false;

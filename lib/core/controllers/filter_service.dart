@@ -203,7 +203,7 @@ class FilterService extends GetxController {
       radiusKm: radiusKm ?? currentFilter.value.radiusKm,
       city: city,
       locality: locality,
-      sortBy: SortBy.distance, // Always sort by distance when location is set
+      sortBy: null, // Don't force sort by distance when location is set
     );
     DebugLogger.info('Location updated: lat=$latitude, lng=$longitude');
   }
@@ -268,7 +268,7 @@ class FilterService extends GetxController {
         updateLocationWithCoordinates(
           latitude: position.latitude,
           longitude: position.longitude,
-          radiusKm: currentFilter.value.radiusKm ?? 5.0,
+          radiusKm: currentFilter.value.radiusKm ?? 10.0,
         );
         
         Get.snackbar(

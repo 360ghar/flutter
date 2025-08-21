@@ -40,7 +40,6 @@ class _FilterBottomSheet extends StatefulWidget {
   final VoidCallback? onFiltersApplied;
 
   const _FilterBottomSheet({
-    super.key,
     required this.pageType,
     this.onFiltersApplied,
   });
@@ -111,7 +110,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
   void _initializeFilters() {
     final currentFilter = filterService.currentFilter.value;
-    _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'buy');
+    _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'all');
     // Clamp values to ensure they're within the slider range
     final maxRange = filterService.getPriceMax();
     _minPrice = (currentFilter.priceMin ?? filterService.getPriceMin()).clamp(0.0, maxRange);

@@ -21,13 +21,11 @@ enum LikesState {
 class LikesController extends GetxController {
   final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
   final FilterService _filterService = Get.find<FilterService>();
-  final ApiService _apiService = Get.find<ApiService>();
 
   // Current segment (Liked or Passed)
   final Rx<LikesSegment> currentSegment = LikesSegment.liked.obs;
   
-  // Map to store property ID to swipe ID mapping for liked properties
-  final RxMap<int, int> _propertyToSwipeIdMap = <int, int>{}.obs;
+  // No longer need swipe ID mapping since properties have liked attribute
 
   // State management for liked properties
   final Rx<LikesState> likedState = LikesState.initial.obs;
@@ -123,34 +121,19 @@ class LikesController extends GetxController {
 
       DebugLogger.api('❤️ Loading liked properties: page $page');
 
-      final propertiesWithSwipeIds = await _swipesRepository.getLikedPropertiesWithSwipeIds(
+      final properties = await _swipesRepository.getLikedPropertiesWithSwipeIds(
         filters: _buildFiltersWithSearch(),
         page: page,
         limit: _limit,
       );
 
-      // Extract properties and populate swipe ID mapping
-      final properties = propertiesWithSwipeIds.map((item) => item.property).toList();
-      
       if (isInitial) {
         likedProperties.assignAll(properties);
-        _propertyToSwipeIdMap.clear();
-        // Populate swipe ID mapping
-        for (final item in propertiesWithSwipeIds) {
-          _propertyToSwipeIdMap[item.property.id] = item.swipeId;
-        }
       } else {
         // Remove duplicates and add new properties
         final existingIds = likedProperties.map((p) => p.id).toSet();
         final newProperties = properties.where((p) => !existingIds.contains(p.id)).toList();
         likedProperties.addAll(newProperties);
-        
-        // Update swipe ID mapping for new properties
-        for (final item in propertiesWithSwipeIds) {
-          if (!existingIds.contains(item.property.id)) {
-            _propertyToSwipeIdMap[item.property.id] = item.swipeId;
-          }
-        }
       }
 
       // Update pagination
@@ -325,50 +308,40 @@ class LikesController extends GetxController {
     Get.toNamed('/property-details', arguments: {'property': property});
   }
 
-  // Remove property from likes using toggle API
+  // Remove property from likes by recording a "dislike" swipe
   Future<void> removeFromLikes(PropertyModel property) async {
     try {
       DebugLogger.api('🗑️ Removing property from likes: ${property.title}');
-      
-      // Get the swipe ID for this property
-      final swipeId = _propertyToSwipeIdMap[property.id];
-      if (swipeId == null) {
-        DebugLogger.error('❌ No swipe ID found for property ${property.id}');
-        Get.snackbar(
-          'Error',
-          'Unable to remove property. Please try refreshing.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        return;
-      }
-      
+
       // Optimistically remove from UI
       likedProperties.removeWhere((p) => p.id == property.id);
       filteredLikedProperties.removeWhere((p) => p.id == property.id);
-      _propertyToSwipeIdMap.remove(property.id);
-      
-      // Call API to toggle swipe status (this will unlike the property)
-      await _apiService.toggleSwipeStatus(swipeId);
-      
+
+      // Record a "dislike" swipe to remove it from liked properties
+      await _swipesRepository.recordSwipe(
+        propertyId: property.id,
+        isLiked: false, // This will unlike the property
+      );
+
       DebugLogger.success('✅ Property successfully removed from likes');
-      
+
       Get.snackbar(
         'Removed',
         '${property.title} removed from liked properties',
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 3),
       );
-      
+
     } catch (e) {
       DebugLogger.error('❌ Failed to remove from likes: $e');
-      
+
       // Revert optimistic update
       Get.snackbar(
         'Error',
         'Failed to remove property. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
+
       // Refresh to restore correct state
       refreshLiked();
     }

@@ -35,7 +35,11 @@ class LoginController extends GetxController {
   }
 
   Future<void> signIn() async {
-    if (!formKey.currentState!.validate()) return;
+    // Early guard to prevent double submissions
+    if (isLoading.value) return;
+
+    // Null-safe form validation
+    if (!(formKey.currentState?.validate() ?? false)) return;
 
     try {
       isLoading.value = true;
@@ -51,7 +55,7 @@ class LoginController extends GetxController {
       if (success) {
         DebugLogger.success('Login controller: Authentication successful');
         // AuthController will handle navigation and JWT token logging
-        ErrorHandler.showSuccess('Welcome back!');
+        ErrorHandler.showSuccess('welcome_back'.tr);
       } else {
         DebugLogger.warning('Login controller: Authentication failed');
       }
@@ -75,7 +79,7 @@ class LoginController extends GetxController {
       
       if (success) {
         DebugLogger.success('Google sign-in successful');
-        ErrorHandler.showSuccess('Signed in with Google!');
+        ErrorHandler.showSuccess('signed_in_with_google'.tr);
       } else {
         DebugLogger.warning('Google sign-in failed');
       }
@@ -90,7 +94,7 @@ class LoginController extends GetxController {
 
   Future<void> resetPassword() async {
     if (emailController.text.isEmpty) {
-      ErrorHandler.handleValidationError('Email', 'Please enter your email address first');
+      ErrorHandler.handleValidationError('email'.tr, 'enter_email_first'.tr);
       return;
     }
 
@@ -103,7 +107,7 @@ class LoginController extends GetxController {
       
       if (success) {
         DebugLogger.success('Password reset email sent');
-        ErrorHandler.showSuccess('Password reset email sent! Please check your inbox.');
+        ErrorHandler.showSuccess('password_reset_email_sent'.tr);
       } else {
         DebugLogger.warning('Password reset failed');
       }

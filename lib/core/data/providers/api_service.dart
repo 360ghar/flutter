@@ -8,11 +8,12 @@ import '../models/booking_model.dart';
 import '../models/unified_property_response.dart';
 import '../models/unified_filter_model.dart';
 import '../models/agent_model.dart';
-import '../models/swipe_history_model.dart';
+
 import '../models/amenity_model.dart';
 import '../models/api_response_models.dart';
 import '../../utils/debug_logger.dart';
 import '../../utils/error_handler.dart';
+import '../../utils/theme.dart';
 
 class ApiAuthException implements Exception {
   final String message;
@@ -158,8 +159,10 @@ class ApiService extends getx.GetConnect {
     // Request modifier to add authentication token
     httpClient.addRequestModifier<Object?>((request) async {
       final token = await _authToken;
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
+      if (token != null && token.trim().isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer ${token.trim()}';
+      } else {
+        request.headers.remove('Authorization');
       }
       request.headers['Content-Type'] = 'application/json';
       return request;
@@ -173,16 +176,18 @@ class ApiService extends getx.GetConnect {
           await _supabase.auth.refreshSession();
           // Retry the original request
           final newToken = await _authToken;
-          if (newToken != null) {
-            request.headers['Authorization'] = 'Bearer $newToken';
-            // Retry the request
-            return await httpClient.request(
-              request.url.toString(),
-              request.method,
-              headers: request.headers,
-              body: request.files,
-            );
+          if (newToken != null && newToken.trim().isNotEmpty) {
+            request.headers['Authorization'] = 'Bearer ${newToken.trim()}';
+          } else {
+            request.headers.remove('Authorization');
           }
+          // Note: For requests with body (POST/PUT), the body will be lost on retry
+          // This is a limitation of the current GetConnect response interceptor design
+          return await httpClient.request(
+            request.url.toString(),
+            request.method,
+            headers: request.headers,
+          );
         } catch (e) {
           DebugLogger.error('Token refresh failed', e);
           _handleAuthenticationFailure();
@@ -290,6 +295,8 @@ class ApiService extends getx.GetConnect {
           'Please log in again to continue',
           snackPosition: getx.SnackPosition.TOP,
           duration: const Duration(seconds: 3),
+          backgroundColor: AppTheme.errorRed,
+          colorText: AppTheme.backgroundWhite,
         );
       }
     } catch (e) {
@@ -314,6 +321,11 @@ class ApiService extends getx.GetConnect {
         // Prepend /api/v1 to all endpoints
         final fullEndpoint = '/api/v1$endpoint';
         
+        // Single-line API request log for debugging
+        DebugLogger.api('🚀 API $method $fullEndpoint' +
+          (queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : '') +
+          (body != null && body.isNotEmpty ? ' | Body: $body' : ''));
+
         DebugLogger.logAPIRequest(
           method: method,
           endpoint: fullEndpoint,
@@ -338,6 +350,10 @@ class ApiService extends getx.GetConnect {
           default:
             throw Exception('Unsupported HTTP method: $method');
         }
+
+        // Single-line API response log for debugging
+        DebugLogger.api('📨 API $method $fullEndpoint → ${response.statusCode}');
+        DebugLogger.api('📨 API $method $fullEndpoint → ${response.bodyString}');
 
         // Log response
         DebugLogger.logAPIResponse(
@@ -715,7 +731,6 @@ class ApiService extends getx.GetConnect {
         'lat': latitude.toString(),
         'lng': longitude.toString(),
         'radius': '10', // Large radius for discovery
-        'sort_by': 'distance',
       },
       operationName: 'Discover Properties',
     );
@@ -724,7 +739,7 @@ class ApiService extends getx.GetConnect {
   Future<UnifiedPropertyResponse> exploreProperties({
     required double latitude,
     required double longitude,
-    double radiusKm = 5,
+    double radiusKm = 10,
     int page = 1,
     int limit = 20,
     Map<String, dynamic>? filters,
@@ -735,7 +750,6 @@ class ApiService extends getx.GetConnect {
       'lat': latitude.toString(),
       'lng': longitude.toString(),
       'radius': radiusKm.toInt().toString(),
-      'sort_by': 'distance',
     };
 
     // Add additional filters as query parameters
@@ -751,6 +765,11 @@ class ApiService extends getx.GetConnect {
           }
         }
       });
+    }
+
+    // Add sort_by only if explicitly provided in filters
+    if (filters != null && filters.containsKey('sort_by')) {
+      queryParams['sort_by'] = filters['sort_by'].toString();
     }
 
     return await _makeRequest(
@@ -886,9 +905,48 @@ class ApiService extends getx.GetConnect {
     );
   }
 
-  // Get swipes with pagination and property details
-  Future<SwipeHistory> getSwipes({
+  // Get swipes with comprehensive filtering and pagination
+  Future<Map<String, dynamic>> getSwipes({
+    // Location & Search
+    double? lat,
+    double? lng,
+    int? radius,
+    String? q,
+
+    // Property Filters
+    List<String>? propertyType,
+    String? purpose,
+    double? priceMin,
+    double? priceMax,
+    int? bedroomsMin,
+    int? bedroomsMax,
+    int? bathroomsMin,
+    int? bathroomsMax,
+    double? areaMin,
+    double? areaMax,
+
+    // Location Filters
+    String? city,
+    String? locality,
+    String? pincode,
+
+    // Additional Filters
+    List<String>? amenities,
+    int? parkingSpacesMin,
+    int? floorNumberMin,
+    int? floorNumberMax,
+    int? ageMax,
+
+    // Short Stay Filters
+    String? checkIn,
+    String? checkOut,
+    int? guests,
+
+    // Swipe Filters
     bool? isLiked,
+
+    // Sorting & Pagination
+    String? sortBy,
     int page = 1,
     int limit = 20,
   }) async {
@@ -896,32 +954,62 @@ class ApiService extends getx.GetConnect {
       'page': page.toString(),
       'limit': limit.toString(),
     };
-    
-    if (isLiked != null) {
-      queryParams['is_liked'] = isLiked.toString();
+
+    // Location & Search
+    if (lat != null) queryParams['lat'] = lat.toString();
+    if (lng != null) queryParams['lng'] = lng.toString();
+    if (radius != null) queryParams['radius'] = radius.toString();
+    if (q != null && q.isNotEmpty) queryParams['q'] = q;
+
+    // Property Filters
+    if (propertyType != null && propertyType.isNotEmpty) {
+      queryParams['property_type'] = propertyType.join(',');
     }
+    if (purpose != null) queryParams['purpose'] = purpose;
+    if (priceMin != null) queryParams['price_min'] = priceMin.toString();
+    if (priceMax != null) queryParams['price_max'] = priceMax.toString();
+    if (bedroomsMin != null) queryParams['bedrooms_min'] = bedroomsMin.toString();
+    if (bedroomsMax != null) queryParams['bedrooms_max'] = bedroomsMax.toString();
+    if (bathroomsMin != null) queryParams['bathrooms_min'] = bathroomsMin.toString();
+    if (bathroomsMax != null) queryParams['bathrooms_max'] = bathroomsMax.toString();
+    if (areaMin != null) queryParams['area_min'] = areaMin.toString();
+    if (areaMax != null) queryParams['area_max'] = areaMax.toString();
+
+    // Location Filters
+    if (city != null) queryParams['city'] = city;
+    if (locality != null) queryParams['locality'] = locality;
+    if (pincode != null) queryParams['pincode'] = pincode;
+
+    // Additional Filters
+    if (amenities != null && amenities.isNotEmpty) {
+      queryParams['amenities'] = amenities.join(',');
+    }
+    if (parkingSpacesMin != null) queryParams['parking_spaces_min'] = parkingSpacesMin.toString();
+    if (floorNumberMin != null) queryParams['floor_number_min'] = floorNumberMin.toString();
+    if (floorNumberMax != null) queryParams['floor_number_max'] = floorNumberMax.toString();
+    if (ageMax != null) queryParams['age_max'] = ageMax.toString();
+
+    // Short Stay Filters
+    if (checkIn != null) queryParams['check_in'] = checkIn;
+    if (checkOut != null) queryParams['check_out'] = checkOut;
+    if (guests != null) queryParams['guests'] = guests.toString();
+
+    // Swipe Filters
+    if (isLiked != null) queryParams['is_liked'] = isLiked.toString();
+
+    // Sorting
+    if (sortBy != null) queryParams['sort_by'] = sortBy;
 
     return await _makeRequest(
       '/swipes/',
-      (json) => SwipeHistory.fromJson(json),
+      (json) => json,
       queryParams: queryParams,
       operationName: 'Get Swipes',
     );
   }
 
 
-  Future<Map<String, dynamic>> getSwipeStats() async {
-    return await _makeRequest('/swipes/stats', (json) => json, operationName: 'Get Swipe Stats');
-  }
 
-  Future<Map<String, dynamic>> toggleSwipeStatus(int swipeId) async {
-    return await _makeRequest(
-      '/swipes/$swipeId/toggle',
-      (json) => json,
-      method: 'PUT',
-      operationName: 'Toggle Swipe Status',
-    );
-  }
 
   // Location Services
 

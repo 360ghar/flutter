@@ -147,8 +147,6 @@ class UserModel {
   String get name => fullName ?? 'Unknown User';
   String? get profileImage => profileImageUrl;
   DateTime get lastLogin => updatedAt ?? createdAt;
-  List<String> get savedProperties => []; // To be handled via API
-  List<String> get viewedProperties => []; // To be handled via API
   
   // Profile completion percentage
   int get profileCompletionPercentage {

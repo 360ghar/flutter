@@ -166,6 +166,10 @@ class PropertyModel {
   @JsonKey(name: 'distance_km')
   final double? distanceKm;
 
+  // Swipe-related fields
+  @JsonKey(name: 'liked', defaultValue: false)
+  final bool liked;
+
   PropertyModel({
     required this.id,
     required this.title,
@@ -218,6 +222,7 @@ class PropertyModel {
     this.updatedAt,
     this.images,
     this.distanceKm,
+    this.liked = false,
   });
 
   factory PropertyModel.fromJson(Map<String, dynamic> json) => _$PropertyModelFromJson(json);

@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/unified_filter_model.dart';
-import '../../../core/data/models/api_response_models.dart';
+
 import '../../../core/data/providers/api_service.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
 import '../../../core/controllers/auth_controller.dart';
@@ -134,7 +134,7 @@ class PropertyController extends GetxController {
   }
 
   Future<void> fetchNearbyProperties({
-    double radiusKm = 5,
+    double radiusKm = 10,
     int limit = 20,
     bool loadMore = false,
   }) async {
@@ -161,7 +161,7 @@ class PropertyController extends GetxController {
           latitude: _locationController.currentLatitude!,
           longitude: _locationController.currentLongitude!,
           radiusKm: radiusKm,
-          sortBy: SortBy.distance,
+          sortBy: null,
         ),
         page: loadMore ? currentNearbyPage.value : 1,
         limit: limit,
@@ -355,7 +355,7 @@ class PropertyController extends GetxController {
             latitude: userLocation.latitude,
             longitude: userLocation.longitude,
             radiusKm: 10,
-            sortBy: SortBy.distance,
+            sortBy: null,
           ),
         );
         properties.assignAll(response.properties);

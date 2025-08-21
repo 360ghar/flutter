@@ -131,7 +131,7 @@ class SearchParams {
     this.query,
     this.latitude,
     this.longitude,
-    this.radiusKm = 5,
+    this.radiusKm = 10,
     this.page = 1,
     this.limit = 20,
   });

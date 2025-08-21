@@ -151,10 +151,11 @@ class SwipeController extends GetxController {
     try {
       DebugLogger.info('🔍 Loading swipe statistics...');
       
-      final stats = await _apiService.getSwipeStats();
-      swipeStats.value = stats;
+      // Swipe stats endpoint removed in new API format
+      // Stats are now embedded in property responses
+      swipeStats.value = {'note': 'Stats available via property responses'};
       
-      DebugLogger.success('✅ Swipe stats loaded: ${stats.length} entries');
+      DebugLogger.success('✅ Swipe stats loaded via new API format');
     } catch (e) {
       DebugLogger.error('❌ Error loading swipe stats: $e');
     }

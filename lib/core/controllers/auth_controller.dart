@@ -142,12 +142,6 @@ class AuthController extends GetxController {
         // If auto-confirm is enabled, user will be signed in automatically
         // Otherwise, they need to verify their email first
         if (response.session != null) {
-          DebugLogger.logJWTToken(
-            response.session!.accessToken,
-            expiresAt: DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000),
-            userEmail: response.user!.email,
-          );
-          
           currentSupabaseUser.value = response.user;
           isLoggedIn.value = true;
           await _loadUserProfile();
@@ -186,7 +180,9 @@ class AuthController extends GetxController {
         DebugLogger.user('User: ${response.user!.email}');
         DebugLogger.logJWTToken(
           response.session!.accessToken,
-          expiresAt: DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000),
+          expiresAt: response.session!.expiresAt != null 
+              ? DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000)
+              : DateTime.now().add(const Duration(hours: 2)),
           userEmail: response.user!.email,
         );
         
@@ -358,10 +354,12 @@ class AuthController extends GetxController {
       }
 
       // Check if session is expired
-      if (session.expiresAt != null && 
-          DateTime.now().isAfter(DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000))) {
-        await signOut();
-        return false;
+      if (session.expiresAt != null) {
+        final expiryTime = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+        if (DateTime.now().isAfter(expiryTime)) {
+          await signOut();
+          return false;
+        }
       }
 
       // Session is valid - backend sync removed

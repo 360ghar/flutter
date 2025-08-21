@@ -104,8 +104,8 @@ class UnifiedFilterModel {
   factory UnifiedFilterModel.initial() {
     return UnifiedFilterModel(
       radiusKm: 10.0,
-      purpose: 'buy',
-      sortBy: SortBy.distance,
+      purpose: null,
+      sortBy: null,
       includeUnavailable: false,
       propertyType: [],
       amenities: [],
