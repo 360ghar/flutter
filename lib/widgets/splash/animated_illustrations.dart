@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../../app/utils/theme.dart';
+import '../../core/utils/theme.dart';
 
 // 360 Tour Illustration with rotating animation
 class Tour360Illustration extends StatelessWidget {

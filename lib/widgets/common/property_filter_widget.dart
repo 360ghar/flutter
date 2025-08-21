@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../app/utils/app_colors.dart';
-import '../../app/controllers/property_controller.dart';
+import '../../core/utils/app_colors.dart';
+import '../../features/property_details/controllers/property_controller.dart';
+import '../../core/controllers/filter_service.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'
   final VoidCallback? onFiltersApplied;
 
   const PropertyFilterWidget({
-    Key? key,
+    super.key,
     required this.pageType,
     this.onFiltersApplied,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,17 +40,17 @@ class _FilterBottomSheet extends StatefulWidget {
   final VoidCallback? onFiltersApplied;
 
   const _FilterBottomSheet({
-    Key? key,
     required this.pageType,
     this.onFiltersApplied,
-  }) : super(key: key);
+  });
 
   @override
   State<_FilterBottomSheet> createState() => _FilterBottomSheetState();
 }
 
 class _FilterBottomSheetState extends State<_FilterBottomSheet> {
-  final PropertyController propertyController = Get.find<PropertyController>();
+  late final PropertyController propertyController;
+  late final FilterService filterService;
   
   late String _selectedPurpose;
   late double _minPrice;
@@ -100,19 +101,50 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   @override
   void initState() {
     super.initState();
+    // Ensure controllers are available
+    // PropertyController should be registered via proper route bindings
+    propertyController = Get.find<PropertyController>();
+    filterService = Get.find<FilterService>();
     _initializeFilters();
   }
 
   void _initializeFilters() {
-    _selectedPurpose = propertyController.selectedPurpose.value;
+    final currentFilter = filterService.currentFilter.value;
+    _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'all');
     // Clamp values to ensure they're within the slider range
-    final maxRange = propertyController.getPriceMax();
-    _minPrice = propertyController.minPrice.value.clamp(0.0, maxRange);
-    _maxPrice = propertyController.maxPrice.value.clamp(0.0, maxRange);
-    _minBedrooms = propertyController.minBedrooms.value.clamp(0, 10);
-    _maxBedrooms = propertyController.maxBedrooms.value.clamp(0, 10);
-    _propertyType = propertyController.propertyType.value;
-    _selectedAmenities = List<String>.from(propertyController.selectedAmenities);
+    final maxRange = filterService.getPriceMax();
+    _minPrice = (currentFilter.priceMin ?? filterService.getPriceMin()).clamp(0.0, maxRange);
+    _maxPrice = (currentFilter.priceMax ?? filterService.getPriceMax()).clamp(0.0, maxRange);
+    _minBedrooms = (currentFilter.bedroomsMin ?? 0).clamp(0, 10);
+    _maxBedrooms = (currentFilter.bedroomsMax ?? 10).clamp(0, 10);
+    _propertyType = (currentFilter.propertyType?.isNotEmpty == true) ? currentFilter.propertyType!.first : 'All';
+    _selectedAmenities = List<String>.from(currentFilter.amenities ?? []);
+  }
+
+  String _mapPurpose(String purpose) {
+    switch (purpose) {
+      case 'buy':
+        return 'Buy';
+      case 'rent':
+        return 'Rent';
+      case 'short_stay':
+        return 'Stay';
+      default:
+        return 'Buy';
+    }
+  }
+
+  String _mapPurposeToApi(String purpose) {
+    switch (purpose) {
+      case 'Buy':
+        return 'buy';
+      case 'Rent':
+        return 'rent';
+      case 'Stay':
+        return 'short_stay';
+      default:
+        return 'buy';
+    }
   }
 
   @override
@@ -202,11 +234,11 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               onTap: () {
                 setState(() {
                   _selectedPurpose = purpose;
-                  // Update controller purpose first
-                  propertyController.updateFilters(selectedPurposeValue: purpose);
-                  // Then get the updated price range
-                  _minPrice = propertyController.minPrice.value;
-                  _maxPrice = propertyController.maxPrice.value;
+                  // Update filter controller purpose
+                  filterService.updatePurpose(_mapPurposeToApi(purpose));
+                  // Update price range based on new purpose
+                  _minPrice = filterService.getPriceMin();
+                  _maxPrice = filterService.getPriceMax();
                   // Reset property type
                   _propertyType = 'All';
                 });
@@ -605,15 +637,19 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   void _applyFilters() {
-    propertyController.updateFilters(
-      selectedPurposeValue: _selectedPurpose,
-      minPriceValue: _minPrice,
-      maxPriceValue: _maxPrice,
-      minBedroomsValue: _minBedrooms,
-      maxBedroomsValue: _maxBedrooms,
-      propertyTypeValue: _propertyType,
-      selectedAmenitiesValue: _selectedAmenities,
-    );
+    // Apply filters to FilterController
+    filterService.updatePurpose(_mapPurposeToApi(_selectedPurpose));
+    filterService.updatePriceRange(_minPrice, _maxPrice);
+    filterService.updateBedrooms(_minBedrooms, _maxBedrooms);
+    
+    // Handle property type
+    if (_propertyType != 'All') {
+      filterService.updatePropertyTypes([_propertyType]);
+    } else {
+      filterService.updatePropertyTypes([]);
+    }
+    
+    filterService.updateAmenities(_selectedAmenities);
 
     Navigator.pop(context);
     

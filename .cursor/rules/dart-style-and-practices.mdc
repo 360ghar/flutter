@@ -1,0 +1,463 @@
+---
+globs: *.dart
+description: Dart code style and best practices
+---
+
+# Dart Style and Best Practices
+
+## Code Style Guidelines
+
+### Naming Conventions
+```dart
+// ✅ Good: Proper naming conventions
+class UserProfileController extends GetxController {
+  final RxBool isLoading = false.obs;
+  final RxString userName = ''.obs;
+
+  Future<void> fetchUserData() async {}
+  void _validateInput() {}
+}
+
+class UserModel {
+  final String id;
+  final String firstName;
+  final String lastName;
+
+  const UserModel({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+  });
+}
+
+// ❌ Avoid: Incorrect naming
+class userprofilecontroller extends GetxController {
+  var isloading = false.obs;           // Should be isLoading
+  var username = ''.obs;               // Should be userName
+
+  Future<void> fetch_user_data() {}    // Should be fetchUserData
+  void _validate_input() {}            // Should be _validateInput
+}
+```
+
+### File and Class Organization
+```dart
+// ✅ Good: Proper file structure
+// user_model.dart
+class UserModel {
+  // Model definition
+}
+
+// user_repository.dart
+class UserRepository {
+  // Repository implementation
+}
+
+// user_controller.dart
+class UserController extends GetxController {
+  // Controller logic
+}
+
+// user_view.dart
+class UserView extends GetView<UserController> {
+  // UI implementation
+}
+```
+
+## Code Formatting
+
+### Import Organization
+```dart
+// ✅ Good: Organized imports
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import 'package:app/core/models/user_model.dart';
+import 'package:app/core/controllers/user_controller.dart';
+import 'package:app/features/user/widgets/user_card.dart';
+
+import '../models/local_models.dart';  // Relative imports
+```
+
+### Line Length and Wrapping
+```dart
+// ✅ Good: Proper line wrapping
+// Bad - too long
+final user = await repository.getUser(id, includeProfile: true, includeSettings: true);
+
+// Good - wrapped
+final user = await repository.getUser(
+  id,
+  includeProfile: true,
+  includeSettings: true,
+);
+
+// Good - using intermediate variables
+const includeProfile = true;
+const includeSettings = true;
+final user = await repository.getUser(id, includeProfile, includeSettings);
+```
+
+### Spacing and Indentation
+```dart
+// ✅ Good: Proper spacing
+class Example {
+  final String name;
+  final int age;
+
+  const Example({
+    required this.name,
+    required this.age,
+  });
+
+  void exampleMethod() {
+    if (condition) {
+      doSomething();
+    } else {
+      doSomethingElse();
+    }
+  }
+}
+
+// ❌ Avoid: Poor spacing
+class Example{ final String name; final int age; const Example({required this.name,required this.age,}); void exampleMethod(){if(condition){doSomething();}else{doSomethingElse();}} }
+```
+
+## Best Practices
+
+### Null Safety
+```dart
+// ✅ Good: Null safety patterns
+class UserController extends GetxController {
+  final Rx<UserModel?> currentUser = Rxn<UserModel>();
+
+  void setUser(UserModel user) {
+    currentUser.value = user;
+  }
+
+  void clearUser() {
+    currentUser.value = null;
+  }
+
+  String getUserName() {
+    return currentUser.value?.name ?? 'Guest';
+  }
+}
+
+// ❌ Avoid: Unsafe null handling
+String getUserName() {
+  return currentUser.value.name; // Runtime error if null
+}
+```
+
+### Error Handling
+```dart
+// ✅ Good: Proper error handling
+Future<void> fetchData() async {
+  try {
+    final result = await apiService.getData();
+    data.assignAll(result);
+  } on NetworkException catch (e) {
+    error.value = 'Network error: ${e.message}';
+  } on ServerException catch (e) {
+    error.value = 'Server error: ${e.message}';
+  } catch (e) {
+    error.value = 'Unknown error occurred';
+    debugPrint('Unexpected error: $e');
+  }
+}
+
+// ❌ Avoid: Generic error handling
+Future<void> fetchData() async {
+  try {
+    final result = await apiService.getData();
+    data.assignAll(result);
+  } catch (e) {
+    error.value = 'Something went wrong';
+  }
+}
+```
+
+### Memory Management
+```dart
+// ✅ Good: Proper resource cleanup
+class DataController extends GetxController {
+  late Worker _worker;
+  late StreamSubscription _subscription;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _worker = ever(userId, _fetchUserData);
+    _subscription = someStream.listen(_handleStreamData);
+  }
+
+  @override
+  void onClose() {
+    _worker.dispose();
+    _subscription.cancel();
+    super.onClose();
+  }
+}
+
+// ❌ Avoid: Resource leaks
+class DataController extends GetxController {
+  late Worker _worker;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _worker = ever(userId, _fetchUserData);
+    // Worker never disposed
+  }
+}
+```
+
+### Performance Optimization
+```dart
+// ✅ Good: Efficient patterns
+class OptimizedController extends GetxController {
+  final RxList<Item> items = <Item>[].obs;
+
+  // Good: Update specific items
+  void updateItem(int index, Item newItem) {
+    if (index >= 0 && index < items.length) {
+      items[index] = newItem;
+    }
+  }
+
+  // Good: Use where for filtering
+  List<Item> getActiveItems() {
+    return items.where((item) => item.isActive).toList();
+  }
+}
+
+// ❌ Avoid: Inefficient patterns
+class InefficientController extends GetxController {
+  final RxList<Item> items = <Item>[].obs;
+
+  // Bad: Recreating entire list
+  void updateItem(int index, Item newItem) {
+    final newList = List<Item>.from(items);
+    newList[index] = newItem;
+    items.assignAll(newList);
+  }
+
+  // Bad: Inefficient filtering
+  List<Item> getActiveItems() {
+    return items.where((item) => item.isActive).toList(); // Called repeatedly
+  }
+}
+```
+
+## Flutter-Specific Best Practices
+
+### Widget Optimization
+```dart
+// ✅ Good: Optimized widgets
+class OptimizedListView extends StatelessWidget {
+  final List<Item> items;
+
+  const OptimizedListView({super.key, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        return ItemTile(item: items[index]);
+      },
+    );
+  }
+}
+
+// ❌ Avoid: Unnecessary rebuilds
+class InefficientListView extends StatelessWidget {
+  final List<Item> items;
+
+  const InefficientListView({super.key, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView( // Creates all items at once
+      children: items.map((item) => ItemTile(item: item)).toList(),
+    );
+  }
+}
+```
+
+### State Management
+```dart
+// ✅ Good: Proper state management
+class CounterController extends GetxController {
+  final RxInt counter = 0.obs;
+
+  void increment() => counter.value++;
+  void decrement() => counter.value--;
+}
+
+// ❌ Avoid: Improper state management
+class CounterWidget extends StatefulWidget {
+  @override
+  _CounterWidgetState createState() => _CounterWidgetState();
+}
+
+class _CounterWidgetState extends State<CounterWidget> {
+  int counter = 0;
+
+  void increment() {
+    setState(() {
+      counter++;
+    });
+  }
+}
+```
+
+## Code Quality
+
+### Documentation
+```dart
+// ✅ Good: Proper documentation
+/// A controller that manages user authentication and profile data.
+///
+/// This controller handles login, logout, and user profile management
+/// using the [AuthService] and [UserRepository].
+class AuthController extends GetxController {
+  /// The authentication service instance.
+  final AuthService _authService = Get.find();
+
+  /// Observable user state.
+  final Rx<UserModel?> currentUser = Rxn<UserModel>();
+
+  /// Whether the authentication process is loading.
+  final RxBool isLoading = false.obs;
+
+  /// Attempts to log in the user with the provided credentials.
+  ///
+  /// [email] The user's email address.
+  /// [password] The user's password.
+  /// Returns a [Future] that completes when the login process finishes.
+  Future<void> login(String email, String password) async {
+    // Implementation
+  }
+}
+
+// ❌ Avoid: Poor documentation
+class AuthController extends GetxController {
+  final _authService = Get.find<AuthService>();
+  final currentUser = Rxn<UserModel>();
+  final isLoading = false.obs;
+
+  Future<void> login(String email, String password) async {
+    // Login logic
+  }
+}
+```
+
+### Testing
+```dart
+// ✅ Good: Testable code
+class Calculator {
+  int add(int a, int b) => a + b;
+  int subtract(int a, int b) => a - b;
+}
+
+// Test file: calculator_test.dart
+void main() {
+  group('Calculator', () {
+    late Calculator calculator;
+
+    setUp(() {
+      calculator = Calculator();
+    });
+
+    test('adds two numbers correctly', () {
+      expect(calculator.add(2, 3), equals(5));
+    });
+
+    test('subtracts two numbers correctly', () {
+      expect(calculator.subtract(5, 3), equals(2));
+    });
+  });
+}
+```
+
+## Anti-Patterns to Avoid
+
+### God Objects
+```dart
+// ❌ Avoid: God object with multiple responsibilities
+class AppController extends GetxController {
+  // Auth logic
+  void login() {}
+  void logout() {}
+
+  // Navigation logic
+  void goToHome() {}
+  void goToProfile() {}
+
+  // Data fetching
+  void fetchUsers() {}
+  void fetchProducts() {}
+
+  // UI state
+  final isLoading = false.obs;
+  final errorMessage = ''.obs;
+  final currentPage = 0.obs;
+}
+
+// ✅ Good: Separated concerns
+class AuthController extends GetxController {
+  void login() {}
+  void logout() {}
+}
+
+class NavigationController extends GetxController {
+  void goToHome() {}
+  void goToProfile() {}
+}
+
+class DataController extends GetxController {
+  void fetchUsers() {}
+  void fetchProducts() {}
+}
+```
+
+### Tight Coupling
+```dart
+// ❌ Avoid: Tight coupling
+class UserController extends GetxController {
+  final ApiService _apiService = Get.put(ApiService()); // Direct instantiation
+
+  Future<void> fetchUser() async {
+    final result = await _apiService.getUser(); // Direct API call
+  }
+}
+
+// ✅ Good: Loose coupling with dependency injection
+class UserController extends GetxController {
+  final ApiService _apiService;
+
+  UserController(this._apiService); // Injected dependency
+
+  Future<void> fetchUser() async {
+    final result = await _apiService.getUser();
+  }
+}
+```
+
+## Code Review Checklist
+
+- [ ] Code follows naming conventions
+- [ ] Proper null safety implementation
+- [ ] Error handling is comprehensive
+- [ ] No resource leaks (streams, timers, etc.)
+- [ ] Performance optimizations applied
+- [ ] Documentation is complete
+- [ ] Code is testable
+- [ ] No anti-patterns present
+- [ ] Imports are organized
+- [ ] Line length is appropriate
+- [ ] Spacing and indentation is consistent
+
+This rule applies to all Dart files in the Flutter project.

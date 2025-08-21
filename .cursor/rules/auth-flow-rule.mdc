@@ -1,0 +1,559 @@
+---
+globs: lib/features/auth/**/*.dart,lib/core/middlewares/**/*.dart
+description: Authentication and authorization patterns
+---
+
+# Authentication Flow Guidelines
+
+## Auth Service Architecture
+Central authentication service managing user state and tokens.
+
+### Auth Service Implementation
+```dart
+// ✅ Good: Comprehensive auth service
+class AuthService extends GetxService {
+  final _storage = Get.find<LocalStorageProvider>();
+  final _apiService = Get.find<ApiService>();
+
+  final isAuthenticated = false.obs;
+  final user = Rxn<UserModel>();
+  final isLoading = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadStoredAuth();
+    _setupTokenRefresh();
+  }
+
+  Future<void> _loadStoredAuth() async {
+    final storedToken = _storage.getToken();
+    final storedUser = _storage.getUser();
+
+    if (storedToken != null && storedUser != null) {
+      // Validate token with server
+      try {
+        final isValid = await _validateToken(storedToken);
+        if (isValid) {
+          isAuthenticated.value = true;
+          user.value = storedUser;
+          _apiService.setAuthToken(storedToken);
+        } else {
+          await logout();
+        }
+      } catch (e) {
+        await logout();
+      }
+    }
+  }
+
+  Future<bool> _validateToken(String token) async {
+    try {
+      // Make API call to validate token
+      await _apiService.validateToken(token);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> login(String email, String password) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiService.login(email, password);
+      await _handleAuthResponse(response);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> register(Map<String, dynamic> userData) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiService.register(userData);
+      await _handleAuthResponse(response);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> _handleAuthResponse(AuthResponse response) async {
+    // Store token and user data
+    await _storage.saveToken(response.token);
+    await _storage.saveUser(response.user);
+
+    // Update service state
+    isAuthenticated.value = true;
+    user.value = response.user;
+    _apiService.setAuthToken(response.token);
+
+    // Navigate to appropriate screen
+    if (response.user.isProfileComplete) {
+      Get.offAllNamed(AppPages.dashboard);
+    } else {
+      Get.offAllNamed(AppPages.profileCompletion);
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      await _apiService.logout();
+    } catch (e) {
+      // Continue with local logout even if API fails
+    }
+
+    // Clear local data
+    await _storage.clearAuth();
+    isAuthenticated.value = false;
+    user.value = null;
+    _apiService.clearAuthToken();
+
+    // Navigate to login
+    Get.offAllNamed(AppPages.login);
+  }
+
+  void _setupTokenRefresh() {
+    // Setup automatic token refresh
+    Timer.periodic(const Duration(minutes: 5), (timer) async {
+      if (isAuthenticated.value) {
+        try {
+          final newToken = await _apiService.refreshToken();
+          await _storage.saveToken(newToken);
+          _apiService.setAuthToken(newToken);
+        } catch (e) {
+          // Handle refresh failure
+          await logout();
+        }
+      }
+    });
+  }
+}
+```
+
+### Auth Response Model
+```dart
+// ✅ Good: Structured auth response
+class AuthResponse {
+  final String token;
+  final String refreshToken;
+  final UserModel user;
+  final DateTime expiresAt;
+
+  const AuthResponse({
+    required this.token,
+    required this.refreshToken,
+    required this.user,
+    required this.expiresAt,
+  });
+
+  factory AuthResponse.fromJson(Map<String, dynamic> json) {
+    return AuthResponse(
+      token: json['access_token'],
+      refreshToken: json['refresh_token'],
+      user: UserModel.fromJson(json['user']),
+      expiresAt: DateTime.parse(json['expires_at']),
+    );
+  }
+}
+```
+
+## Auth Controllers
+### Login Controller
+```dart
+// ✅ Good: Login form handling
+class LoginController extends GetxController {
+  final AuthService _authService = Get.find();
+
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  final isLoading = false.obs;
+  final isFormValid = false.obs;
+  final errorMessage = Rxn<String>();
+
+  @override
+  void onInit() {
+    super.onInit();
+    _setupValidation();
+  }
+
+  void _setupValidation() {
+    everAll([emailController.text.obs, passwordController.text.obs], (_) {
+      isFormValid.value = _isEmailValid() && _isPasswordValid();
+    });
+  }
+
+  bool _isEmailValid() {
+    return GetUtils.isEmail(emailController.text);
+  }
+
+  bool _isPasswordValid() {
+    return passwordController.text.length >= 6;
+  }
+
+  Future<void> login() async {
+    if (!isFormValid.value) return;
+
+    isLoading.value = true;
+    errorMessage.value = null;
+
+    try {
+      await _authService.login(
+        emailController.text.trim(),
+        passwordController.text,
+      );
+    } catch (e) {
+      errorMessage.value = _handleLoginError(e);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  String _handleLoginError(dynamic error) {
+    if (error is NetworkException) {
+      return 'Network error. Please check your connection.';
+    } else if (error is UnauthorizedException) {
+      return 'Invalid email or password.';
+    } else if (error is ServerException) {
+      return 'Server error. Please try again later.';
+    }
+    return 'Login failed. Please try again.';
+  }
+
+  @override
+  void onClose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.onClose();
+  }
+}
+```
+
+### Profile Completion Controller
+```dart
+// ✅ Good: Profile completion with progress tracking
+class ProfileCompletionController extends GetxController {
+  final AuthService _authService = Get.find();
+  final ApiService _apiService = Get.find();
+
+  final currentStep = 0.obs;
+  final totalSteps = 4;
+  final isLoading = false.obs;
+
+  // Step 1: Personal Info
+  final nameController = TextEditingController();
+  final phoneController = TextEditingController();
+
+  // Step 2: Location
+  final selectedLocation = Rxn<LocationModel>();
+
+  // Step 3: Preferences
+  final selectedPropertyTypes = <String>[].obs;
+  final budgetRange = RangeValues(1000, 5000).obs;
+
+  // Step 4: Profile Picture
+  final profileImage = Rxn<File>();
+
+  double get progress => (currentStep.value + 1) / totalSteps;
+
+  void nextStep() {
+    if (currentStep.value < totalSteps - 1) {
+      currentStep.value++;
+    }
+  }
+
+  void previousStep() {
+    if (currentStep.value > 0) {
+      currentStep.value--;
+    }
+  }
+
+  bool get canProceed {
+    switch (currentStep.value) {
+      case 0:
+        return nameController.text.isNotEmpty &&
+               phoneController.text.isNotEmpty;
+      case 1:
+        return selectedLocation.value != null;
+      case 2:
+        return selectedPropertyTypes.isNotEmpty;
+      case 3:
+        return profileImage.value != null;
+      default:
+        return false;
+    }
+  }
+
+  Future<void> completeProfile() async {
+    if (!canProceed) return;
+
+    isLoading.value = true;
+    try {
+      final profileData = {
+        'name': nameController.text,
+        'phone': phoneController.text,
+        'location': selectedLocation.value!.toJson(),
+        'property_types': selectedPropertyTypes,
+        'budget_min': budgetRange.value.start,
+        'budget_max': budgetRange.value.end,
+        'profile_image': await _uploadImage(),
+      };
+
+      await _apiService.completeProfile(profileData);
+
+      // Update user in auth service
+      final updatedUser = _authService.user.value!.copyWith(
+        isProfileComplete: true,
+        name: nameController.text,
+        phone: phoneController.text,
+      );
+
+      await _authService.updateUser(updatedUser);
+
+      Get.offAllNamed(AppPages.dashboard);
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to complete profile. Please try again.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<String?> _uploadImage() async {
+    if (profileImage.value == null) return null;
+
+    try {
+      final imageUrl = await _apiService.uploadImage(profileImage.value!);
+      return imageUrl;
+    } catch (e) {
+      throw Exception('Failed to upload image');
+    }
+  }
+
+  @override
+  void onClose() {
+    nameController.dispose();
+    phoneController.dispose();
+    super.onClose();
+  }
+}
+```
+
+## Auth Middleware
+### Authentication Guard
+```dart
+// ✅ Good: Route protection middleware
+class AuthMiddleware extends GetMiddleware {
+  @override
+  RouteSettings? redirect(String? route) {
+    final authService = Get.find<AuthService>();
+
+    if (!authService.isAuthenticated.value) {
+      // Store the attempted route to redirect after login
+      if (route != null && route != AppPages.login) {
+        GetStorage().write('redirect_route', route);
+      }
+      return RouteSettings(name: AppPages.login);
+    }
+
+    // Check profile completion for certain routes
+    if (!authService.user.value!.isProfileComplete) {
+      final protectedRoutes = [AppPages.dashboard, AppPages.bookings];
+      if (protectedRoutes.contains(route)) {
+        return RouteSettings(name: AppPages.profileCompletion);
+      }
+    }
+
+    return null;
+  }
+
+  @override
+  GetPage? onPageCalled(GetPage? page) {
+    // Log authentication checks
+    debugPrint('Auth check for route: ${page?.name}');
+    return page;
+  }
+}
+```
+
+### Role-Based Access Middleware
+```dart
+// ✅ Good: Role-based route protection
+class RoleMiddleware extends GetMiddleware {
+  final List<String> allowedRoles;
+
+  RoleMiddleware(this.allowedRoles);
+
+  @override
+  RouteSettings? redirect(String? route) {
+    final authService = Get.find<AuthService>();
+    final userRole = authService.user.value?.role;
+
+    if (userRole == null || !allowedRoles.contains(userRole)) {
+      return RouteSettings(name: AppPages.unauthorized);
+    }
+    return null;
+  }
+}
+```
+
+## Secure Storage
+### Local Storage Provider
+```dart
+// ✅ Good: Secure token storage
+class LocalStorageProvider {
+  static const String _tokenKey = 'auth_token';
+  static const String _refreshTokenKey = 'refresh_token';
+  static const String _userKey = 'user_data';
+
+  final GetStorage _storage = GetStorage();
+
+  Future<void> saveToken(String token) async {
+    await _storage.write(_tokenKey, token);
+  }
+
+  String? getToken() {
+    return _storage.read(_tokenKey);
+  }
+
+  Future<void> saveRefreshToken(String refreshToken) async {
+    await _storage.write(_refreshTokenKey, refreshToken);
+  }
+
+  String? getRefreshToken() {
+    return _storage.read(_refreshTokenKey);
+  }
+
+  Future<void> saveUser(UserModel user) async {
+    await _storage.write(_userKey, user.toJson());
+  }
+
+  UserModel? getUser() {
+    final userJson = _storage.read(_userKey);
+    return userJson != null ? UserModel.fromJson(userJson) : null;
+  }
+
+  Future<void> clearAuth() async {
+    await _storage.remove(_tokenKey);
+    await _storage.remove(_refreshTokenKey);
+    await _storage.remove(_userKey);
+  }
+}
+```
+
+## Auth Views
+### Login View
+```dart
+// ✅ Good: Clean login UI with validation
+class LoginView extends GetView<LoginController> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Welcome Back',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 32),
+
+              // Email Field
+              TextField(
+                controller: controller.emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  errorText: controller.emailError.value,
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+
+              // Password Field
+              Obx(() => TextField(
+                controller: controller.passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                    icon: Icon(controller.isPasswordVisible.value
+                        ? Icons.visibility_off
+                        : Icons.visibility),
+                    onPressed: controller.togglePasswordVisibility,
+                  ),
+                ),
+                obscureText: !controller.isPasswordVisible.value,
+              )),
+              const SizedBox(height: 24),
+
+              // Error Message
+              Obx(() {
+                if (controller.errorMessage.value != null) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      controller.errorMessage.value!,
+                      style: TextStyle(color: Colors.red.shade800),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+              const SizedBox(height: 24),
+
+              // Login Button
+              SizedBox(
+                width: double.infinity,
+                child: Obx(() => ElevatedButton(
+                  onPressed: controller.isFormValid.value && !controller.isLoading.value
+                      ? controller.login
+                      : null,
+                  child: controller.isLoading.value
+                      ? const CircularProgressIndicator()
+                      : const Text('Login'),
+                )),
+              ),
+
+              // Register Link
+              TextButton(
+                onPressed: () => Get.toNamed(AppPages.register),
+                child: const Text('Don\'t have an account? Sign up'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+## Auth Bindings
+```dart
+// ✅ Good: Auth feature binding
+class AuthBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut<LoginController>(() => LoginController());
+    Get.lazyPut<RegisterController>(() => RegisterController());
+    Get.lazyPut<ProfileCompletionController>(() => ProfileCompletionController());
+  }
+}
+```
+
+## Best Practices
+1. **Use secure storage** for tokens and sensitive data
+2. **Implement token refresh** mechanism
+3. **Handle authentication errors** gracefully
+4. **Validate user input** on both client and server
+5. **Use middleware** for route protection
+6. **Implement logout** functionality properly
+7. **Handle offline scenarios** appropriately
+8. **Log authentication events** for security monitoring
+
+This rule applies to authentication-related files and components.
