@@ -9,7 +9,9 @@
       "Bash(powershell:*)",
       "Bash(gradlew build:*)",
       "Bash(cmd.exe:*)",
-      "Bash(flutter build:*)"
+      "Bash(flutter build:*)",
+      "Bash(dart:*)",
+      "Bash(rm:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -201,8 +201,8 @@ class ApiService extends getx.GetConnect {
     try {
       // Initialize environment variables - use root URL for GetConnect
       final fullApiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000';
-      // Extract base URL without /api/v1 for GetConnect
-      _baseUrl = fullApiUrl.replaceAll('/api/v1', '');
+      // Extract base URL without /api for GetConnect since we add /api/v1 in requests
+      _baseUrl = fullApiUrl.replaceAll('/api', '');
       DebugLogger.startup('API Service initialized with base URL: $_baseUrl');
       
       // Check if Supabase is already initialized
