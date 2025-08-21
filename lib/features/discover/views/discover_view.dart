@@ -15,7 +15,7 @@ class DiscoverView extends GetView<DiscoverController> {
   Widget build(BuildContext context) {
     final filterService = Get.find<FilterService>();
 
-    return Scaffold(
+    return Obx(() => Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: AppColors.appBarBackground,
@@ -88,7 +88,7 @@ class DiscoverView extends GetView<DiscoverController> {
             return _buildLoadingState();
         }
       }),
-    );
+    ));
   }
 
   Widget _buildLoadingState() {

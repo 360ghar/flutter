@@ -20,7 +20,7 @@ class PreferencesController extends GetxController {
   final RxBool autoCompleteSearch = true.obs;
 
   // Display Preferences
-  final RxBool darkTheme = false.obs;
+  final Rx<AppThemeMode> themeMode = AppThemeMode.system.obs;
   final RxBool showPropertyTour = true.obs;
   final RxBool compactView = false.obs;
 
@@ -49,7 +49,7 @@ class PreferencesController extends GetxController {
     autoCompleteSearch.value = _storage.read('autoCompleteSearch') ?? true;
 
     // Display Preferences
-    darkTheme.value = _themeController.isDarkMode.value;
+    themeMode.value = _themeController.currentThemeMode;
     showPropertyTour.value = _storage.read('showPropertyTour') ?? true;
     compactView.value = _storage.read('compactView') ?? false;
 
@@ -58,8 +58,13 @@ class PreferencesController extends GetxController {
     personalizedAds.value = _storage.read('personalizedAds') ?? false;
   }
 
-  void updateTheme(bool isDark) {
-    _themeController.setTheme(isDark);
+  void updateTheme(AppThemeMode mode) {
+    _themeController.setThemeMode(mode);
+    themeMode.value = mode;
+  }
+
+  void updateThemeFromBoolean(bool isDark) {
+    updateTheme(isDark ? AppThemeMode.dark : AppThemeMode.light);
   }
 
   void changeLanguage(String languageCode, String countryCode) {
@@ -84,7 +89,7 @@ class PreferencesController extends GetxController {
       _storage.write('autoCompleteSearch', autoCompleteSearch.value);
 
       // Display Preferences
-      _themeController.setTheme(darkTheme.value);
+      _themeController.setThemeMode(themeMode.value);
       _storage.write('showPropertyTour', showPropertyTour.value);
       _storage.write('compactView', compactView.value);
 
@@ -118,7 +123,18 @@ class PreferencesController extends GetxController {
   bool get isSaveSearchHistoryEnabled => saveSearchHistory.value;
   bool get isLocationServicesEnabled => locationServices.value;
   bool get isAutoCompleteSearchEnabled => autoCompleteSearch.value;
-  bool get isDarkThemeEnabled => darkTheme.value;
+  bool get isDarkThemeEnabled => themeMode.value == AppThemeMode.dark;
+  AppThemeMode get currentThemeMode => themeMode.value;
+  String get currentThemeName {
+    switch (themeMode.value) {
+      case AppThemeMode.light:
+        return 'Light';
+      case AppThemeMode.dark:
+        return 'Dark';
+      case AppThemeMode.system:
+        return 'System';
+    }
+  }
   bool get isShowPropertyTourEnabled => showPropertyTour.value;
   bool get isCompactViewEnabled => compactView.value;
   bool get isShareAnalyticsEnabled => shareAnalytics.value;

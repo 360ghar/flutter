@@ -10,7 +10,7 @@ class ProfileView extends GetView<AuthController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Obx(() => Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: AppColors.appBarBackground,
@@ -114,7 +114,7 @@ class ProfileView extends GetView<AuthController> {
           ),
         );
       }),
-    );
+    ));
   }
 
   Widget _buildProfileHeader(user) {
