@@ -1,6 +1,10 @@
 import 'package:get/get.dart';
 import '../data/providers/api_service.dart';
 import 'debug_logger.dart';
+import '../../features/property_details/controllers/property_controller.dart';
+import '../../features/discover/controllers/swipe_controller.dart';
+import '../../features/visits/controllers/visits_controller.dart';
+import '../controllers/localization_controller.dart';
 
 class DependencyManager {
   static final Map<String, bool> _initializedServices = {};
@@ -18,26 +22,25 @@ class DependencyManager {
   /// Clean up all non-permanent dependencies
   static void cleanupDependencies() {
     try {
-      // List of controllers that should be disposed when not needed
-      final controllersToCleanup = [
-        'PropertyController',
-        'SwipeController',
-        'VisitsController',
-        'LocalizationController',
-      ];
-
-      for (String controllerName in controllersToCleanup) {
-        try {
-          if (Get.isRegistered(tag: controllerName)) {
-            Get.delete(tag: controllerName);
-            DebugLogger.info('Cleaned up $controllerName');
-          }
-        } catch (e, stackTrace) {
-          DebugLogger.warning('Failed to cleanup $controllerName', e);
-        }
-      }
+      // Clean up controllers by type instead of tag since they are registered without tags
+      _cleanupController<PropertyController>('PropertyController');
+      _cleanupController<SwipeController>('SwipeController');
+      _cleanupController<VisitsController>('VisitsController');
+      _cleanupController<LocalizationController>('LocalizationController');
     } catch (e, stackTrace) {
       DebugLogger.error('Error during dependency cleanup', e, stackTrace);
+    }
+  }
+
+  /// Helper method to clean up a specific controller type
+  static void _cleanupController<T>(String controllerName) {
+    try {
+      if (Get.isRegistered<T>()) {
+        Get.delete<T>();
+        DebugLogger.info('Cleaned up $controllerName');
+      }
+    } catch (e) {
+      DebugLogger.warning('Failed to cleanup $controllerName', e);
     }
   }
 

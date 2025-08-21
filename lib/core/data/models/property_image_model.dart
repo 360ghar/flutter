@@ -34,7 +34,10 @@ class PropertyImageModel {
   String get thumbnailUrl {
     // If using a CDN, can append thumbnail parameters
     if (imageUrl.contains('cloudinary.com') || imageUrl.contains('imgur.com')) {
-      return '$imageUrl?w=300&h=200&fit=crop';
+      final uri = Uri.parse(imageUrl);
+      final newParams = {'w': '300', 'h': '200', 'fit': 'crop'};
+      final mergedParams = {...uri.queryParameters, ...newParams};
+      return uri.replace(queryParameters: mergedParams).toString();
     }
     return imageUrl;
   }
@@ -42,7 +45,10 @@ class PropertyImageModel {
   String get fullSizeUrl {
     // If using a CDN, can append full size parameters
     if (imageUrl.contains('cloudinary.com') || imageUrl.contains('imgur.com')) {
-      return '$imageUrl?w=1200&h=800&fit=crop';
+      final uri = Uri.parse(imageUrl);
+      final newParams = {'w': '1200', 'h': '800', 'fit': 'crop'};
+      final mergedParams = {...uri.queryParameters, ...newParams};
+      return uri.replace(queryParameters: mergedParams).toString();
     }
     return imageUrl;
   }

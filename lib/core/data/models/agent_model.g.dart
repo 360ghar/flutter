@@ -14,10 +14,15 @@ AgentModel _$AgentModelFromJson(Map<String, dynamic> json) => AgentModel(
   languages: (json['languages'] as List<dynamic>?)
       ?.map((e) => e as String)
       .toList(),
-  agentType: $enumDecode(_$AgentTypeEnumMap, json['agent_type']),
+  agentType: $enumDecode(
+    _$AgentTypeEnumMap,
+    json['agent_type'],
+    unknownValue: AgentType.unknown,
+  ),
   experienceLevel: $enumDecode(
     _$ExperienceLevelEnumMap,
     json['experience_level'],
+    unknownValue: ExperienceLevel.unknown,
   ),
   isActive: json['is_active'] as bool? ?? true,
   isAvailable: json['is_available'] as bool? ?? true,
@@ -53,10 +58,12 @@ const _$AgentTypeEnumMap = {
   AgentType.general: 'general',
   AgentType.specialist: 'specialist',
   AgentType.senior: 'senior',
+  AgentType.unknown: 'unknown',
 };
 
 const _$ExperienceLevelEnumMap = {
   ExperienceLevel.beginner: 'beginner',
   ExperienceLevel.intermediate: 'intermediate',
   ExperienceLevel.expert: 'expert',
+  ExperienceLevel.unknown: 'unknown',
 };

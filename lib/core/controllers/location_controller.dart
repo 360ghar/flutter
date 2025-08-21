@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../data/models/unified_filter_model.dart';
 import '../utils/debug_logger.dart';
@@ -224,22 +225,28 @@ class LocationController extends GetxController {
         return [];
       }
 
-      final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json'
-        '?input=${Uri.encodeQueryComponent(query)}'
-        '&types=(locality)'
-        '&components=country:$countryCode'
-        '&key=$apiKey'
-      );
+      final url = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
+        'input': query,
+        'types': '(locality)',
+        'components': 'country:$countryCode',
+        'key': apiKey,
+      });
 
-      final response = await http.get(url);
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        
-        if (data['status'] == 'OK') {
+      // Add timeout and error handling
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        DebugLogger.error('Google Places API request failed: ${response.statusCode}');
+        DebugLogger.error('Response body: ${response.body}');
+        return [];
+      }
+
+      final data = json.decode(response.body);
+      final status = data['status'];
+
+      switch (status) {
+        case 'OK':
           final predictions = data['predictions'] as List;
-          
           return predictions.map((prediction) => {
             'id': prediction['place_id'],
             'name': prediction['description'],
@@ -247,16 +254,38 @@ class LocationController extends GetxController {
             'region': prediction['structured_formatting']['secondary_text'],
             'type': 'google_places'
           }).toList();
-        } else {
-          DebugLogger.warning('Google Places API error: ${data['status']}');
+
+        case 'ZERO_RESULTS':
+          DebugLogger.info('Google Places API returned no results for query: $query');
           return [];
-        }
-      } else {
-        DebugLogger.error('Google Places API request failed: ${response.statusCode}');
-        return [];
+
+        case 'OVER_QUERY_LIMIT':
+          DebugLogger.error('Google Places API quota exceeded for query: $query');
+          DebugLogger.error('Response: ${response.body}');
+          // Could implement retry logic with backoff here
+          return [];
+
+        case 'REQUEST_DENIED':
+          DebugLogger.error('Google Places API request denied for query: $query');
+          DebugLogger.error('Response: ${response.body}');
+          // Could check API key validity here
+          return [];
+
+        case 'INVALID_REQUEST':
+          DebugLogger.error('Invalid Google Places API request for query: $query');
+          DebugLogger.error('Response: ${response.body}');
+          return [];
+
+        default:
+          DebugLogger.warning('Unknown Google Places API status: $status for query: $query');
+          DebugLogger.warning('Response: ${response.body}');
+          return [];
       }
-    } catch (e) {
-      DebugLogger.error('Error calling Google Places API: $e');
+    } on TimeoutException catch (e) {
+      DebugLogger.error('Google Places API request timed out for query: $query', e);
+      return [];
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error calling Google Places API for query: $query', e, stackTrace);
       return [];
     }
   }
@@ -358,7 +387,7 @@ class LocationController extends GetxController {
 
     try {
       isSearchingPlaces.value = true;
-      
+
       final apiKey = dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
       if (apiKey.isEmpty) {
         DebugLogger.warning('Google Places API key not found');
@@ -369,37 +398,76 @@ class LocationController extends GetxController {
 
       final countryCode = dotenv.env['DEFAULT_COUNTRY'] ?? 'in';
 
-      final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json'
-        '?input=${Uri.encodeQueryComponent(query)}'
-        '&types=(locality)'
-        '&components=country:$countryCode'
-        '&key=$apiKey'
-      );
+      final url = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
+        'input': query,
+        'types': '(locality)',
+        'components': 'country:$countryCode',
+        'key': apiKey,
+      });
 
-      final response = await http.get(url);
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final predictions = data['predictions'] as List;
-        
-        final suggestions = predictions.map((prediction) {
-          return PlaceSuggestion(
-            placeId: prediction['place_id'],
-            description: prediction['description'],
-            mainText: prediction['structured_formatting']?['main_text'] ?? '',
-            secondaryText: prediction['structured_formatting']?['secondary_text'] ?? '',
-          );
-        }).toList();
-        
-        placeSuggestions.value = suggestions;
-        return suggestions;
-      } else {
-        DebugLogger.error('Google Places API error: ${response.statusCode}');
+      // Add timeout and error handling
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        DebugLogger.error('Google Places API request failed: ${response.statusCode}');
+        DebugLogger.error('Response body: ${response.body}');
         return [];
       }
+
+      final data = json.decode(response.body);
+      final status = data['status'];
+
+      switch (status) {
+        case 'OK':
+          final predictions = data['predictions'] as List;
+          final suggestions = predictions.map((prediction) {
+            return PlaceSuggestion(
+              placeId: prediction['place_id'],
+              description: prediction['description'],
+              mainText: prediction['structured_formatting']?['main_text'] ?? '',
+              secondaryText: prediction['structured_formatting']?['secondary_text'] ?? '',
+            );
+          }).toList();
+
+          placeSuggestions.value = suggestions;
+          return suggestions;
+
+        case 'ZERO_RESULTS':
+          DebugLogger.info('Google Places API returned no results for query: $query');
+          placeSuggestions.clear();
+          return [];
+
+        case 'OVER_QUERY_LIMIT':
+          DebugLogger.error('Google Places API quota exceeded for query: $query');
+          DebugLogger.error('Response: ${response.body}');
+          placeSuggestions.clear();
+          return [];
+
+        case 'REQUEST_DENIED':
+          DebugLogger.error('Google Places API request denied for query: $query');
+          DebugLogger.error('Response: ${response.body}');
+          placeSuggestions.clear();
+          return [];
+
+        case 'INVALID_REQUEST':
+          DebugLogger.error('Invalid Google Places API request for query: $query');
+          DebugLogger.error('Response: ${response.body}');
+          placeSuggestions.clear();
+          return [];
+
+        default:
+          DebugLogger.warning('Unknown Google Places API status: $status for query: $query');
+          DebugLogger.warning('Response: ${response.body}');
+          placeSuggestions.clear();
+          return [];
+      }
+    } on TimeoutException catch (e) {
+      DebugLogger.error('Google Places API request timed out for query: $query', e);
+      placeSuggestions.clear();
+      return [];
     } catch (e, stackTrace) {
-      DebugLogger.error('Error getting place suggestions', e, stackTrace);
+      DebugLogger.error('Error getting place suggestions for query: $query', e, stackTrace);
+      placeSuggestions.clear();
       return [];
     } finally {
       isSearchingPlaces.value = false;
@@ -409,61 +477,100 @@ class LocationController extends GetxController {
   Future<LocationData?> getPlaceDetails(String placeId) async {
     try {
       isLoading.value = true;
-      
+
       final apiKey = dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
       if (apiKey.isEmpty) {
         DebugLogger.warning('Google Places API key not found');
         return null;
       }
 
-      final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/details/json'
-        '?place_id=$placeId'
-        '&fields=name,geometry,address_components'
-        '&key=$apiKey'
-      );
+      final url = Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
+        'place_id': placeId,
+        'fields': 'name,geometry,address_components',
+        'key': apiKey,
+      });
 
-      final response = await http.get(url);
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final result = data['result'];
-        
-        if (result != null) {
-          final location = result['geometry']['location'];
-          final addressComponents = result['address_components'] as List;
-          
-          String? city;
-          String? locality;
-          
-          for (final component in addressComponents) {
-            final types = component['types'] as List;
-            if (types.contains('locality')) {
-              locality = component['long_name'];
-            }
-            if (types.contains('administrative_area_level_2')) {
-              city = component['long_name'];
-            }
-          }
-          
-          return LocationData(
-            name: result['name'] ?? '',
-            latitude: location['lat'].toDouble(),
-            longitude: location['lng'].toDouble(),
-            city: city,
-            locality: locality,
-          );
-        }
-      } else {
-        DebugLogger.error('Google Places Details API error: ${response.statusCode}');
+      // Add timeout and error handling
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        DebugLogger.error('Google Places Details API request failed: ${response.statusCode}');
+        DebugLogger.error('Response body: ${response.body}');
+        return null;
       }
+
+      final data = json.decode(response.body);
+      final status = data['status'];
+
+      switch (status) {
+        case 'OK':
+          final result = data['result'];
+          if (result != null) {
+            final location = result['geometry']['location'];
+            final addressComponents = result['address_components'] as List;
+
+            String? city;
+            String? locality;
+
+            for (final component in addressComponents) {
+              final types = component['types'] as List;
+              if (types.contains('locality')) {
+                locality = component['long_name'];
+              }
+              if (types.contains('administrative_area_level_2')) {
+                city = component['long_name'];
+              }
+            }
+
+            return LocationData(
+              name: result['name'] ?? '',
+              latitude: location['lat'].toDouble(),
+              longitude: location['lng'].toDouble(),
+              city: city,
+              locality: locality,
+            );
+          }
+          DebugLogger.warning('Google Places Details API returned null result for placeId: $placeId');
+          return null;
+
+        case 'ZERO_RESULTS':
+          DebugLogger.info('Google Places Details API returned no results for placeId: $placeId');
+          return null;
+
+        case 'OVER_QUERY_LIMIT':
+          DebugLogger.error('Google Places Details API quota exceeded for placeId: $placeId');
+          DebugLogger.error('Response: ${response.body}');
+          return null;
+
+        case 'REQUEST_DENIED':
+          DebugLogger.error('Google Places Details API request denied for placeId: $placeId');
+          DebugLogger.error('Response: ${response.body}');
+          return null;
+
+        case 'INVALID_REQUEST':
+          DebugLogger.error('Invalid Google Places Details API request for placeId: $placeId');
+          DebugLogger.error('Response: ${response.body}');
+          return null;
+
+        case 'NOT_FOUND':
+          DebugLogger.warning('Place not found for placeId: $placeId');
+          DebugLogger.warning('Response: ${response.body}');
+          return null;
+
+        default:
+          DebugLogger.warning('Unknown Google Places Details API status: $status for placeId: $placeId');
+          DebugLogger.warning('Response: ${response.body}');
+          return null;
+      }
+    } on TimeoutException catch (e) {
+      DebugLogger.error('Google Places Details API request timed out for placeId: $placeId', e);
+      return null;
     } catch (e, stackTrace) {
-      DebugLogger.error('Error getting place details', e, stackTrace);
+      DebugLogger.error('Error getting place details for placeId: $placeId', e, stackTrace);
+      return null;
     } finally {
       isLoading.value = false;
     }
-    
-    return null;
   }
 
   void clearPlaceSuggestions() {

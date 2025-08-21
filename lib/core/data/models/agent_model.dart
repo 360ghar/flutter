@@ -9,6 +9,8 @@ enum AgentType {
   specialist,
   @JsonValue('senior')
   senior,
+  @JsonValue('unknown')
+  unknown,
 }
 
 enum ExperienceLevel {
@@ -18,6 +20,8 @@ enum ExperienceLevel {
   intermediate,
   @JsonValue('expert')
   expert,
+  @JsonValue('unknown')
+  unknown,
 }
 
 @JsonSerializable()
@@ -28,9 +32,9 @@ class AgentModel {
   @JsonKey(name: 'avatar_url')
   final String? avatarUrl;
   final List<String>? languages;
-  @JsonKey(name: 'agent_type')
+  @JsonKey(name: 'agent_type', unknownEnumValue: AgentType.unknown)
   final AgentType agentType;
-  @JsonKey(name: 'experience_level')
+  @JsonKey(name: 'experience_level', unknownEnumValue: ExperienceLevel.unknown)
   final ExperienceLevel experienceLevel;
   @JsonKey(name: 'is_active', defaultValue: true)
   final bool isActive;
@@ -111,6 +115,8 @@ class AgentModel {
         return 'Specialist';
       case AgentType.senior:
         return 'Senior';
+      case AgentType.unknown:
+        return 'Unknown';
     }
   }
 
@@ -122,6 +128,8 @@ class AgentModel {
         return 'Intermediate';
       case ExperienceLevel.expert:
         return 'Expert';
+      case ExperienceLevel.unknown:
+        return 'Unknown';
     }
   }
 
