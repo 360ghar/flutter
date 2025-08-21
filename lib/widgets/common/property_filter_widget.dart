@@ -288,44 +288,50 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
           ),
         ),
         const SizedBox(height: 15),
-        RangeSlider(
-          values: RangeValues(
-            _minPrice.clamp(
-              _selectedPurpose == 'Stay' ? 500.0 
-                  : _selectedPurpose == 'Rent' ? 5000.0 
-                  : 500000.0,
-              _selectedPurpose == 'Stay' ? 50000.0 
-                  : _selectedPurpose == 'Rent' ? 5000000.0 
-                  : 150000000.0,
-            ),
-            _maxPrice.clamp(
-              _selectedPurpose == 'Stay' ? 500.0 
-                  : _selectedPurpose == 'Rent' ? 5000.0 
-                  : 500000.0,
-              _selectedPurpose == 'Stay' ? 50000.0 
-                  : _selectedPurpose == 'Rent' ? 5000000.0 
-                  : 150000000.0,
-            ),
+        SliderTheme(
+          data: SliderTheme.of(Get.context!).copyWith(
+            activeTrackColor: AppColors.primaryYellow,
+            inactiveTrackColor: AppColors.primaryYellow.withValues(alpha: 0.2),
+            thumbColor: AppColors.primaryYellow,
+            overlayColor: AppColors.primaryYellow.withValues(alpha: 0.2),
           ),
-          min: _selectedPurpose == 'Stay' ? 500.0 
-              : _selectedPurpose == 'Rent' ? 5000.0 
-              : 500000.0,
-          max: _selectedPurpose == 'Stay' ? 50000.0 
-              : _selectedPurpose == 'Rent' ? 5000000.0 
-              : 150000000.0,
-          divisions: 100,
-          activeColor: AppColors.primaryYellow,
-          inactiveColor: AppColors.primaryYellow.withOpacity(0.2),
-          labels: RangeLabels(
-            '₹${_formatPrice(_minPrice)}',
-            '₹${_formatPrice(_maxPrice)}',
+          child: RangeSlider(
+            values: RangeValues(
+              _minPrice.clamp(
+                _selectedPurpose == 'Stay' ? 500.0 
+                    : _selectedPurpose == 'Rent' ? 5000.0 
+                    : 500000.0,
+                _selectedPurpose == 'Stay' ? 50000.0 
+                    : _selectedPurpose == 'Rent' ? 5000000.0 
+                    : 150000000.0,
+              ),
+              _maxPrice.clamp(
+                _selectedPurpose == 'Stay' ? 500.0 
+                    : _selectedPurpose == 'Rent' ? 5000.0 
+                    : 500000.0,
+                _selectedPurpose == 'Stay' ? 50000.0 
+                    : _selectedPurpose == 'Rent' ? 5000000.0 
+                    : 150000000.0,
+              ),
+            ),
+            min: _selectedPurpose == 'Stay' ? 500.0 
+                : _selectedPurpose == 'Rent' ? 5000.0 
+                : 500000.0,
+            max: _selectedPurpose == 'Stay' ? 50000.0 
+                : _selectedPurpose == 'Rent' ? 5000000.0 
+                : 150000000.0,
+            divisions: 100,
+            labels: RangeLabels(
+              '₹${_formatPrice(_minPrice)}',
+              '₹${_formatPrice(_maxPrice)}',
+            ),
+            onChanged: (RangeValues values) {
+              setState(() {
+                _minPrice = values.start;
+                _maxPrice = values.end;
+              });
+            },
           ),
-          onChanged: (RangeValues values) {
-            setState(() {
-              _minPrice = values.start;
-              _maxPrice = values.end;
-            });
-          },
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -381,7 +387,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
-                    value: _minBedrooms,
+                    initialValue: _minBedrooms,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -422,7 +428,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
-                    value: _maxBedrooms,
+                    initialValue: _maxBedrooms,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -535,7 +541,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryYellow.withOpacity(0.1) : AppColors.inputBackground,
+                  color: isSelected ? AppColors.primaryYellow.withValues(alpha: 0.1) : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected ? AppColors.primaryYellow : AppColors.border,

@@ -198,16 +198,22 @@ class FiltersView extends GetView<FilterService> {
             ],
           ),
           const SizedBox(height: 8),
-          RangeSlider(
-            values: RangeValues(minPrice, maxPrice),
-            min: controller.getPriceMin(),
-            max: controller.getPriceMax(),
-            divisions: 20,
-            activeColor: AppColors.primaryYellow,
-            inactiveColor: AppColors.border,
-            onChanged: (values) {
-              controller.updatePriceRange(values.start, values.end);
-            },
+          SliderTheme(
+            data: SliderTheme.of(Get.context!).copyWith(
+              activeTrackColor: AppColors.primaryYellow,
+              inactiveTrackColor: AppColors.border,
+              thumbColor: AppColors.primaryYellow,
+              overlayColor: AppColors.primaryYellow.withValues(alpha: 0.2),
+            ),
+            child: RangeSlider(
+              values: RangeValues(minPrice, maxPrice),
+              min: controller.getPriceMin(),
+              max: controller.getPriceMax(),
+              divisions: 20,
+              onChanged: (values) {
+                controller.updatePriceRange(values.start, values.end);
+              },
+            ),
           ),
           Text(
             controller.getPriceLabel(),
@@ -231,28 +237,40 @@ class FiltersView extends GetView<FilterService> {
         children: [
           Text('Min: $min', style: TextStyle(color: AppColors.textSecondary)),
           Expanded(
-            child: Slider(
-              value: min.toDouble(),
-              min: 1,
-              max: 10,
-              divisions: 9,
-              activeColor: AppColors.primaryYellow,
-              onChanged: (value) {
-                controller.updateBedrooms(value.toInt(), max);
-              },
+            child: SliderTheme(
+              data: SliderTheme.of(Get.context!).copyWith(
+                activeTrackColor: AppColors.primaryYellow,
+                thumbColor: AppColors.primaryYellow,
+                overlayColor: AppColors.primaryYellow.withValues(alpha: 0.2),
+              ),
+              child: Slider(
+                value: min.toDouble(),
+                min: 1,
+                max: 10,
+                divisions: 9,
+                onChanged: (value) {
+                  controller.updateBedrooms(value.toInt(), max);
+                },
+              ),
             ),
           ),
           Text('Max: $max', style: TextStyle(color: AppColors.textSecondary)),
           Expanded(
-            child: Slider(
-              value: max.toDouble(),
-              min: 1,
-              max: 10,
-              divisions: 9,
-              activeColor: AppColors.primaryYellow,
-              onChanged: (value) {
-                controller.updateBedrooms(min, value.toInt());
-              },
+            child: SliderTheme(
+              data: SliderTheme.of(Get.context!).copyWith(
+                activeTrackColor: AppColors.primaryYellow,
+                thumbColor: AppColors.primaryYellow,
+                overlayColor: AppColors.primaryYellow.withValues(alpha: 0.2),
+              ),
+              child: Slider(
+                value: max.toDouble(),
+                min: 1,
+                max: 10,
+                divisions: 9,
+                onChanged: (value) {
+                  controller.updateBedrooms(min, value.toInt());
+                },
+              ),
             ),
           ),
         ],

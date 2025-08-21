@@ -151,9 +151,9 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return primaryYellow.withOpacity(0.3);
+            return primaryYellow.withValues(alpha: 0.3);
           }
-          return textLight.withOpacity(0.3);
+          return textLight.withValues(alpha: 0.3);
         }),
       ),
     );
@@ -272,9 +272,9 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return primaryYellow.withOpacity(0.3);
+            return primaryYellow.withValues(alpha: 0.3);
           }
-          return darkTextTertiary.withOpacity(0.3);
+          return darkTextTertiary.withValues(alpha: 0.3);
         }),
       ),
       dividerTheme: const DividerThemeData(

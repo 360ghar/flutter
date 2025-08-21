@@ -583,33 +583,6 @@ class PropertySwipeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSpecItem(IconData icon, String value, String label) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: AppTheme.accentBlue,
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -637,9 +610,6 @@ class PropertySwipeCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
 }
 
 class PropertySwipeStack extends StatefulWidget {

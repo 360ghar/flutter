@@ -165,10 +165,6 @@ class SwipeController extends GetxController {
     _cardViewStartTime = DateTime.now();
   }
 
-  int _getInteractionTime() {
-    if (_cardViewStartTime == null) return 0;
-    return DateTime.now().difference(_cardViewStartTime!).inSeconds;
-  }
 
   Future<void> swipeLeft(PropertyModel property) async {
     DebugLogger.info('👈 Swiping left on property: ${property.id} (${property.title})');
@@ -191,7 +187,7 @@ class SwipeController extends GetxController {
 
   Future<void> _recordSwipe(PropertyModel property, bool isLiked, String direction) async {
     try {
-      final interactionTime = _getInteractionTime();
+      // final interactionTime = _getInteractionTime(); // Unused for now
       
       if (_authController.isAuthenticated) {
         DebugLogger.info('📝 Recording swipe in backend...');

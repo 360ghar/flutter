@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
-import '../../../core/utils/app_colors.dart';
 import '../../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../profile/views/profile_view.dart';
 import '../../explore/views/explore_view.dart';

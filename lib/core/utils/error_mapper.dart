@@ -236,7 +236,7 @@ class ErrorMapper {
       error.message,
       snackPosition: SnackPosition.TOP,
       duration: const Duration(seconds: 4),
-      backgroundColor: Get.theme.colorScheme.error.withOpacity(0.9),
+      backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.9),
       colorText: Get.theme.colorScheme.onError,
     );
 

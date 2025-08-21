@@ -73,7 +73,7 @@ class SharedAppBar extends StatelessWidget implements PreferredSizeWidget {
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.2),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
             ),
           ),
           child: Row(

@@ -132,7 +132,7 @@ class WebViewHelper {
                 try {
                   // This would need url_launcher for proper implementation
                   DebugLogger.debug('Opening URL in new tab: $url');
-                } catch (e, stackTrace) {
+                } catch (e, _) {
                   DebugLogger.warning('Could not open URL', e);
                 }
               },
@@ -148,7 +148,7 @@ class WebViewHelper {
     try {
       ensureInitialized();
       return true;
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       return false;
     }
   }

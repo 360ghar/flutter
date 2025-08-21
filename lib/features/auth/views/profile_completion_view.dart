@@ -211,7 +211,7 @@ class ProfileCompletionView extends StatelessWidget {
         
         // Annual Income
         DropdownButtonFormField<String>(
-          value: controller.selectedIncome.value.isEmpty 
+          initialValue: controller.selectedIncome.value.isEmpty 
               ? null 
               : controller.selectedIncome.value,
           decoration: const InputDecoration(
@@ -342,7 +342,7 @@ class ProfileCompletionView extends StatelessWidget {
           children: [
             Expanded(
               child: DropdownButtonFormField<int>(
-                value: controller.selectedBedroomsMin.value == 0 
+                initialValue: controller.selectedBedroomsMin.value == 0 
                     ? null 
                     : controller.selectedBedroomsMin.value,
                 decoration: const InputDecoration(
@@ -366,7 +366,7 @@ class ProfileCompletionView extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: DropdownButtonFormField<int>(
-                value: controller.selectedBedroomsMax.value == 0 
+                initialValue: controller.selectedBedroomsMax.value == 0 
                     ? null 
                     : controller.selectedBedroomsMax.value,
                 decoration: const InputDecoration(
@@ -438,17 +438,23 @@ class ProfileCompletionView extends StatelessWidget {
         const SizedBox(height: 8),
         Column(
           children: [
-            Slider(
-              value: controller.maxDistance.value,
-              min: 1,
-              max: 50,
-              divisions: 49,
-              label: '${controller.maxDistance.value.round()} km',
-              onChanged: (value) {
-                controller.maxDistance.value = value;
-                controller.update();
-              },
-              activeColor: AppTheme.primaryColor,
+            SliderTheme(
+              data: SliderTheme.of(Get.context!).copyWith(
+                activeTrackColor: AppTheme.primaryColor,
+                thumbColor: AppTheme.primaryColor,
+                overlayColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+              ),
+              child: Slider(
+                value: controller.maxDistance.value,
+                min: 1,
+                max: 50,
+                divisions: 49,
+                label: '${controller.maxDistance.value.round()} km',
+                onChanged: (value) {
+                  controller.maxDistance.value = value;
+                  controller.update();
+                },
+              ),
             ),
             Text(
               '${controller.maxDistance.value.round()} km from preferred locations',

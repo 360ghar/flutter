@@ -1,10 +1,8 @@
 import 'package:get/get.dart';
-import '../../../core/data/providers/api_service.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/utils/debug_logger.dart';
 
 class DashboardController extends GetxController {
-  late final ApiService _apiService;
   late final AuthController _authController;
 
   final RxMap<String, dynamic> dashboardData = <String, dynamic>{}.obs;
@@ -21,7 +19,6 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _apiService = Get.find<ApiService>();
     _authController = Get.find<AuthController>();
     
     // Listen to authentication state changes

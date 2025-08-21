@@ -74,7 +74,7 @@ mixin ThemeMixin {
           if (icon != null) ...[
             Icon(
               icon,
-              color: enabled ? AppTheme.primaryColor : Get.theme.colorScheme.onSurface.withOpacity(0.5),
+              color: enabled ? AppTheme.primaryColor : Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
               size: 24,
             ),
             const SizedBox(width: 16),
@@ -88,14 +88,14 @@ mixin ThemeMixin {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: enabled ? Get.theme.colorScheme.onSurface : Get.theme.colorScheme.onSurface.withOpacity(0.5),
+                    color: enabled ? Get.theme.colorScheme.onSurface : Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -105,7 +105,7 @@ mixin ThemeMixin {
           Switch(
             value: value,
             onChanged: enabled ? onChanged : null,
-            activeColor: AppTheme.primaryColor,
+            activeThumbColor: AppTheme.primaryColor,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
@@ -154,7 +154,7 @@ mixin ThemeMixin {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -163,7 +163,7 @@ mixin ThemeMixin {
               ),
               Icon(
                 Icons.arrow_forward_ios,
-                color: Get.theme.colorScheme.onSurface.withOpacity(0.5),
+                color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 size: 16,
               ),
             ],

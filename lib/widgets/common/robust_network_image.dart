@@ -191,12 +191,12 @@ class RobustNetworkImage extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primaryYellow.withOpacity(0.1),
-            AppColors.primaryYellow.withOpacity(0.05),
+            AppColors.primaryYellow.withValues(alpha: 0.1),
+            AppColors.primaryYellow.withValues(alpha: 0.05),
           ],
         ),
         border: Border.all(
-          color: AppColors.primaryYellow.withOpacity(0.3),
+          color: AppColors.primaryYellow.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -207,7 +207,7 @@ class RobustNetworkImage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primaryYellow.withOpacity(0.2),
+                color: AppColors.primaryYellow.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(

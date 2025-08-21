@@ -195,7 +195,7 @@ class NotificationsView extends GetView<NotificationsController> with ThemeMixin
       trailing: Switch(
         value: value.value,
         onChanged: (_) => onChanged(),
-        activeColor: AppColors.switchActive,
+        activeThumbColor: AppColors.switchActive,
         activeTrackColor: AppColors.switchTrackActive,
         inactiveThumbColor: AppColors.switchInactive,
         inactiveTrackColor: AppColors.switchTrackInactive,
@@ -236,7 +236,7 @@ class NotificationsView extends GetView<NotificationsController> with ThemeMixin
           trailing: Switch(
             value: isEnabled.value,
             onChanged: (_) => onToggle(),
-            activeColor: AppColors.switchActive,
+            activeThumbColor: AppColors.switchActive,
             activeTrackColor: AppColors.switchTrackActive,
             inactiveThumbColor: AppColors.switchInactive,
             inactiveTrackColor: AppColors.switchTrackInactive,

@@ -254,15 +254,15 @@ class VisitsView extends GetView<VisitsController> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppColors.primaryYellow.withOpacity(0.1),
-              AppColors.primaryYellow.withOpacity(0.05),
+              AppColors.primaryYellow.withValues(alpha: 0.1),
+              AppColors.primaryYellow.withValues(alpha: 0.05),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.primaryYellow.withOpacity(0.2),
+            color: AppColors.primaryYellow.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -565,9 +565,9 @@ class VisitsView extends GetView<VisitsController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,

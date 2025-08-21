@@ -193,8 +193,8 @@ class ExploreView extends GetView<ExploreController> {
                     CircleMarker(
                       point: controller.currentCenter.value,
                       radius: controller.currentRadius.value * 1000, // Convert to meters
-                      color: AppColors.primaryYellow.withOpacity(0.1),
-                      borderColor: AppColors.primaryYellow.withOpacity(0.5),
+                      color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                      borderColor: AppColors.primaryYellow.withValues(alpha: 0.5),
                       borderStrokeWidth: 2,
                     ),
                   ],
@@ -218,7 +218,7 @@ class ExploreView extends GetView<ExploreController> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -273,7 +273,7 @@ class ExploreView extends GetView<ExploreController> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.surface.withOpacity(0.9),
+                color: AppColors.surface.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Row(
@@ -416,7 +416,7 @@ class ExploreView extends GetView<ExploreController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.9),
+        color: AppColors.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(25),
         boxShadow: AppColors.getCardShadow(),
       ),
@@ -551,7 +551,7 @@ class ExploreView extends GetView<ExploreController> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.accentBlue.withOpacity(0.1),
+                                    color: AppColors.accentBlue.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(

@@ -322,9 +322,7 @@ class ApiService extends getx.GetConnect {
         final fullEndpoint = '/api/v1$endpoint';
         
         // Single-line API request log for debugging
-        DebugLogger.api('🚀 API $method $fullEndpoint' +
-          (queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : '') +
-          (body != null && body.isNotEmpty ? ' | Body: $body' : ''));
+        DebugLogger.api('🚀 API $method $fullEndpoint${queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : ''}${body != null && body.isNotEmpty ? ' | Body: $body' : ''}');
 
         DebugLogger.logAPIRequest(
           method: method,
@@ -457,29 +455,29 @@ class ApiService extends getx.GetConnect {
       }
 
       // Ensure numeric fields are parsed as double when provided as int/strings
-      double? _toDouble(dynamic v) {
+      double? toDouble(dynamic v) {
         if (v == null) return null;
         if (v is num) return v.toDouble();
         if (v is String) return double.tryParse(v);
         return null;
       }
       if (safeJson.containsKey('base_price')) {
-        safeJson['base_price'] = _toDouble(safeJson['base_price']) ?? 0.0;
+        safeJson['base_price'] = toDouble(safeJson['base_price']) ?? 0.0;
       }
       if (safeJson.containsKey('price_per_sqft')) {
-        safeJson['price_per_sqft'] = _toDouble(safeJson['price_per_sqft']);
+        safeJson['price_per_sqft'] = toDouble(safeJson['price_per_sqft']);
       }
       if (safeJson.containsKey('monthly_rent')) {
-        safeJson['monthly_rent'] = _toDouble(safeJson['monthly_rent']);
+        safeJson['monthly_rent'] = toDouble(safeJson['monthly_rent']);
       }
       if (safeJson.containsKey('daily_rate')) {
-        safeJson['daily_rate'] = _toDouble(safeJson['daily_rate']);
+        safeJson['daily_rate'] = toDouble(safeJson['daily_rate']);
       }
       if (safeJson.containsKey('security_deposit')) {
-        safeJson['security_deposit'] = _toDouble(safeJson['security_deposit']);
+        safeJson['security_deposit'] = toDouble(safeJson['security_deposit']);
       }
       if (safeJson.containsKey('maintenance_charges')) {
-        safeJson['maintenance_charges'] = _toDouble(safeJson['maintenance_charges']);
+        safeJson['maintenance_charges'] = toDouble(safeJson['maintenance_charges']);
       }
 
       // Validate critical fields before parsing
@@ -836,51 +834,54 @@ class ApiService extends getx.GetConnect {
   Future<bool> testConnection() async {
     try {
       DebugLogger.api('🔍 Testing backend connection to $_baseUrl');
-      final response = await get('/health').timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          throw Exception('Connection timeout');
-        },
-      );
       
-      DebugLogger.api('🏥 Health check response: ${response.statusCode}');
-      
-      // Consider 200, 404, and 405 as "server is reachable"
-      final isReachable = response.statusCode == 200 || 
-                         response.statusCode == 404 || 
-                         response.statusCode == 405;
-      
-      if (isReachable) {
-        DebugLogger.success('✅ Backend server is reachable (status: ${response.statusCode})');
-      }
-      
-      return isReachable;
-    } catch (e) {
-      DebugLogger.warning('🔍 Primary health check failed: $e');
-      // Try alternative endpoint for testing
+      // First check if we have internet connectivity
       try {
-        final response = await get('/').timeout(
-          const Duration(seconds: 5),
-          onTimeout: () {
-            throw Exception('Connection timeout');
-          },
+        final internetTest = await get('https://www.google.com').timeout(
+          const Duration(seconds: 3),
+          onTimeout: () => throw Exception('Internet timeout'),
         );
-        DebugLogger.api('🔄 Alternative endpoint test: ${response.statusCode}');
         
-        // Server is reachable if we get any HTTP response (including 405, 404)
-        final isReachable = response.statusCode == 200 || 
-                           response.statusCode == 404 || 
-                           response.statusCode == 405;
-                           
-        if (isReachable) {
-          DebugLogger.success('✅ Backend server is reachable via alternative test (status: ${response.statusCode})');
+        if (internetTest.statusCode != 200) {
+          DebugLogger.warning('🌐 No internet connectivity');
+          return false;
         }
-        
-        return isReachable;
-      } catch (e2) {
-        DebugLogger.warning('💔 Backend server unreachable: $e2');
-        return false;
+        DebugLogger.success('✅ Internet connectivity confirmed');
+      } catch (e) {
+        DebugLogger.warning('🌐 Internet connectivity check failed: $e');
+        // Continue with backend test anyway
       }
+      
+      // Test backend endpoints
+      final endpoints = ['/health', '/api/v1/health', '/', '/api/v1/'];
+      
+      for (final endpoint in endpoints) {
+        try {
+          final response = await get('$_baseUrl$endpoint').timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              throw Exception('Backend timeout');
+            },
+          );
+          
+          DebugLogger.api('🏥 Backend endpoint $endpoint response: ${response.statusCode}');
+          
+          // Consider any HTTP response as "server is reachable"
+          if (response.statusCode != null && response.statusCode! < 600) {
+            DebugLogger.success('✅ Backend server is reachable at $endpoint (status: ${response.statusCode})');
+            return true;
+          }
+        } catch (e) {
+          DebugLogger.debug('🔄 Endpoint $endpoint failed: $e');
+          // Continue to next endpoint
+        }
+      }
+      
+      DebugLogger.warning('💔 Backend server unreachable at all endpoints');
+      return false;
+    } catch (e) {
+      DebugLogger.error('💥 Connection test error: $e');
+      return false;
     }
   }
 
