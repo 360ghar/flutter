@@ -10,32 +10,41 @@ class NetworkChecker {
     try {
       // First check connectivity status
       final connectivityResult = await Connectivity().checkConnectivity();
-      
+
       if (connectivityResult == ConnectivityResult.none) {
         DebugLogger.warning('📱 No network connection detected');
         return false;
       }
-      
-      // Test actual internet connectivity with a reliable endpoint
-      try {
-        final response = await _dio.get(
-          'https://www.google.com',
-          options: Options(
-            sendTimeout: const Duration(seconds: 5),
-            receiveTimeout: const Duration(seconds: 5),
-            headers: {'Cache-Control': 'no-cache'},
-          ),
-        );
-        
-        final isConnected = response.statusCode == 200;
-        DebugLogger.success(isConnected 
-          ? '✅ Internet connection verified' 
-          : '❌ Internet connection failed');
-        return isConnected;
-      } catch (e) {
-        DebugLogger.warning('🌐 Internet connectivity test failed: $e');
-        return false;
+
+      // Use a more reliable endpoint that's less likely to be blocked
+      final testUrls = [
+        'https://httpbin.org/status/200',  // Simple status endpoint
+        'https://www.cloudflare.com',      // CDN that's usually accessible
+      ];
+
+      for (final url in testUrls) {
+        try {
+          final response = await _dio.get(
+            url,
+            options: Options(
+              sendTimeout: const Duration(seconds: 5),
+              receiveTimeout: const Duration(seconds: 5),
+              headers: {'Cache-Control': 'no-cache'},
+            ),
+          );
+
+          if (response.statusCode == 200) {
+            DebugLogger.success('✅ Internet connection verified');
+            return true;
+          }
+        } catch (e) {
+          DebugLogger.debug('🔄 Test URL $url failed: $e');
+          // Continue to next URL
+        }
       }
+
+      DebugLogger.warning('🌐 Internet connectivity test failed - all test URLs unreachable');
+      return false;
     } catch (e) {
       DebugLogger.error('💥 Network check failed: $e');
       return false;

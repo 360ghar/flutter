@@ -254,38 +254,28 @@ class ExploreController extends GetxController {
   // Load all properties for current map view
   Future<void> _loadPropertiesForCurrentView() async {
     try {
-      // Don't check if already loading - the state is managed by caller
-      DebugLogger.info('⏳ Starting property loading...');
-      
-      // Only set loading if not already in a loading state
       if (state.value != ExploreState.loading) {
         state.value = ExploreState.loading;
       }
-      
       error.value = null;
       properties.clear();
       selectedProperty.value = null;
 
-      DebugLogger.api('🗺️ Loading all properties for map view with filters: ${_filterService.currentFilter.value.toJson()}');
+      DebugLogger.api('🗺️ Loading properties for map view with filters: ${_filterService.currentFilter.value.toJson()}');
 
-      // Load all pages sequentially for map display
-      final allProperties = await _propertiesRepository.loadAllPropertiesForMap(
+      // --- PERFORMANCE FIX: Load only the first page initially ---
+      final response = await _propertiesRepository.getProperties(
         filters: _filterService.currentFilter.value,
-        limit: 100,
-        onProgress: (current, total) {
-          loadingProgress.value = current;
-          totalPages.value = total;
-        },
+        page: 1,
+        limit: 100, // Load a decent amount for the initial view
       );
 
-      properties.assignAll(allProperties);
-      DebugLogger.success('✅ Loaded ${properties.length} properties for map.');
+      properties.assignAll(response.properties);
+      DebugLogger.success('✅ Loaded initial ${properties.length} properties for map.');
 
       if (properties.isEmpty) {
-        DebugLogger.info('📭 No properties found, setting empty state');
         state.value = ExploreState.empty;
       } else {
-        DebugLogger.success('✅ Setting loaded state with ${properties.length} properties');
         state.value = ExploreState.loaded;
       }
 
@@ -407,13 +397,21 @@ class ExploreController extends GetxController {
     if (propertiesWithLocation.isEmpty) return;
 
     try {
-      final lats = propertiesWithLocation.map((p) => p.latitude!).toList();
-      final lngs = propertiesWithLocation.map((p) => p.longitude!).toList();
+      // Optimize bounds calculation by avoiding multiple iterations
+      double minLat = double.infinity;
+      double maxLat = double.negativeInfinity;
+      double minLng = double.infinity;
+      double maxLng = double.negativeInfinity;
 
-      final minLat = lats.reduce((a, b) => a < b ? a : b);
-      final maxLat = lats.reduce((a, b) => a > b ? a : b);
-      final minLng = lngs.reduce((a, b) => a < b ? a : b);
-      final maxLng = lngs.reduce((a, b) => a > b ? a : b);
+      for (final property in propertiesWithLocation) {
+        final lat = property.latitude!;
+        final lng = property.longitude!;
+
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+      }
 
       final bounds = LatLngBounds(
         LatLng(minLat, minLng),
@@ -421,7 +419,7 @@ class ExploreController extends GetxController {
       );
 
       mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
-      
+
     } catch (e) {
       DebugLogger.warning('⚠️ Could not fit bounds: $e');
     }

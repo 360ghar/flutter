@@ -13,6 +13,11 @@ class LikesView extends GetView<LikesController> {
 
   @override
   Widget build(BuildContext context) {
+    // --- PERFORMANCE FIX: Trigger lazy loading when the view is built ---
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.loadDataIfNeeded();
+    });
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(

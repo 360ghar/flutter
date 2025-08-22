@@ -50,21 +50,23 @@ class LikesController extends GetxController {
 
   // Pagination totals tracked via server pages; counts not required per spec
 
+  // --- PERFORMANCE FIX: Add lazy loading flag ---
+  final RxBool hasLoadedData = false.obs;
+
   // Constants
   static const int _limit = 50;
 
   @override
   void onInit() {
     super.onInit();
-    _loadInitialData();
     _setupSearchListener();
   }
 
+  // --- PERFORMANCE FIX: Remove automatic loading from onReady ---
   @override
   void onReady() {
     super.onReady();
-    // Always refresh when the controller becomes ready (user navigates to likes page)
-    refreshAll();
+    // Do not load data automatically. Wait for the view to call loadDataIfNeeded.
   }
 
   @override
@@ -78,6 +80,13 @@ class LikesController extends GetxController {
     debounce(searchQuery, (_) {
       _applySearchFilter();
     }, time: const Duration(milliseconds: 300));
+  }
+
+  // --- PERFORMANCE FIX: New method to be called by the View ---
+  Future<void> loadDataIfNeeded() async {
+    if (hasLoadedData.value) return;
+    hasLoadedData.value = true;
+    await _loadInitialData();
   }
 
   Future<void> _loadInitialData() async {
