@@ -19,6 +19,18 @@ class ExploreView extends GetView<ExploreController> {
   Widget build(BuildContext context) {
     DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
 
+    // Safety check to ensure controller and its dependencies are ready
+    if (!Get.isRegistered<ExploreController>()) {
+      return Scaffold(
+        backgroundColor: AppColors.scaffoldBackground,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.loadingIndicator),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
@@ -202,41 +214,7 @@ class ExploreView extends GetView<ExploreController> {
               
               // Property markers
               MarkerLayer(
-                markers: controller.propertyMarkers.map((marker) => Marker(
-                  point: marker.position,
-                  width: 40,
-                  height: 40,
-                  child: GestureDetector(
-                    onTap: () => controller.selectProperty(marker.property),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: marker.isSelected ? AppColors.primaryYellow : AppColors.accentBlue,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          marker.property.formattedPrice.replaceAll('₹', '₹').substring(0, 4),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                )).toList(),
+                markers: _buildPropertyMarkers(),
               ),
             ],
           )),
@@ -599,6 +577,67 @@ class ExploreView extends GetView<ExploreController> {
       _isSearching.value = false;
     } else {
       _isSearching.value = true;
+    }
+  }
+
+  List<Marker> _buildPropertyMarkers() {
+    try {
+      return controller.propertyMarkers.map<Marker>((marker) => Marker(
+        point: marker.position,
+        width: 40,
+        height: 40,
+        child: GestureDetector(
+          onTap: () => controller.selectProperty(marker.property),
+          child: Container(
+            decoration: BoxDecoration(
+              color: marker.isSelected ? AppColors.primaryYellow : AppColors.accentBlue,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white,
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                _getMarkerText(marker.property.formattedPrice),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      )).toList();
+    } catch (e) {
+      DebugLogger.error('Failed to build property markers: $e');
+      return <Marker>[];
+    }
+  }
+
+  String _getMarkerText(String formattedPrice) {
+    try {
+      // Remove currency symbols and clean the price text
+      String cleanPrice = formattedPrice.replaceAll('₹', '').replaceAll(',', '').trim();
+      
+      // If the price is too short, return as is
+      if (cleanPrice.length <= 4) {
+        return cleanPrice;
+      }
+      
+      // Extract first 4 characters safely
+      return cleanPrice.substring(0, 4);
+    } catch (e) {
+      // Fallback to a default marker text if any error occurs
+      return '••••';
     }
   }
 }

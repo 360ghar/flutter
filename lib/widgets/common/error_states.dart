@@ -404,6 +404,73 @@ class ErrorStates {
     );
   }
 
+  // Backend server not running error
+  static Widget backendServerNotRunning({
+    VoidCallback? onRetry,
+    VoidCallback? onUseMockData,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.cloud_off,
+              size: 64,
+              color: Colors.orange[400],
+            ),
+            const SizedBox(height: 16),
+
+            const Text(
+              'Backend Server Not Running',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+
+            Text(
+              'The backend server is not running or not accessible. Please:\n\n'
+              '1. Make sure your backend server is running\n'
+              '2. Check the API_BASE_URL in .env.development\n'
+              '3. Verify the server is running on the correct port\n\n'
+              'For development, you can use mock data instead.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+
+            if (onUseMockData != null) ...[
+              ElevatedButton.icon(
+                onPressed: onUseMockData,
+                icon: const Icon(Icons.developer_mode),
+                label: const Text('Use Mock Data'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            if (onRetry != null)
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try Again'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Error banner (can be dismissed)
   static Widget errorBanner({
     required String message,
@@ -422,7 +489,7 @@ class ErrorStates {
             size: 20,
           ),
           const SizedBox(width: 8),
-          
+
           Expanded(
             child: Text(
               message,
@@ -432,7 +499,7 @@ class ErrorStates {
               ),
             ),
           ),
-          
+
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -443,7 +510,7 @@ class ErrorStates {
                 ),
                 const SizedBox(width: 4),
               ],
-              
+
               if (onDismiss != null)
                 IconButton(
                   onPressed: onDismiss,

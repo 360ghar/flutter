@@ -45,11 +45,20 @@ void main() async {
 
   // Initialize Supabase with error handling
   try {
-    await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL'] ?? '',
-      anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
-    );
-    DebugLogger.success('Supabase initialized successfully');
+    final supabaseUrl = dotenv.env['SUPABASE_URL'];
+    final supabaseKey = dotenv.env['SUPABASE_ANON_KEY'];
+
+    if (supabaseUrl != null && supabaseUrl.isNotEmpty &&
+        supabaseKey != null && supabaseKey.isNotEmpty) {
+      await Supabase.initialize(
+        url: supabaseUrl,
+        anonKey: supabaseKey,
+      );
+      DebugLogger.success('Supabase initialized successfully');
+    } else {
+      DebugLogger.warning('Supabase credentials not found in .env.development');
+      DebugLogger.info('Continuing without Supabase');
+    }
   } catch (e) {
     DebugLogger.warning('Failed to initialize Supabase', e);
     DebugLogger.info('Continuing without Supabase');

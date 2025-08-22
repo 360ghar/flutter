@@ -136,7 +136,21 @@ class DiscoverView extends GetView<DiscoverController> {
     return Obx(() {
       final errorMessage = controller.error.value;
       if (errorMessage == null) return const SizedBox();
-      
+
+      // Check if this is a backend server not running error
+      if (errorMessage.contains('Backend server is not running') ||
+          errorMessage.contains('backend server is not running') ||
+          errorMessage.contains('request not found') ||
+          errorMessage.contains('404')) {
+        return ErrorStates.backendServerNotRunning(
+          onRetry: controller.retryLoading,
+          onUseMockData: () {
+            // Force refresh to trigger mock data fallback
+            controller.refreshDeck();
+          },
+        );
+      }
+
       // Try to map the error for better user experience
       try {
         final exception = ErrorMapper.mapApiError(Exception(errorMessage));
@@ -168,7 +182,7 @@ class DiscoverView extends GetView<DiscoverController> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Obx(() => PropertySwipeStack(
-              properties: controller.deck.take(3).toList(), // Show max 3 cards in stack
+              properties: controller.visibleCards, // Use reactive visible cards based on currentIndex
               onSwipeLeft: controller.swipeLeft,
               onSwipeRight: controller.swipeRight,
               onSwipeUp: (property) => controller.viewPropertyDetails(property),

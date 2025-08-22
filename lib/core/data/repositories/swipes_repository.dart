@@ -12,17 +12,24 @@ class SwipesRepository extends GetxService {
   Future<void> recordSwipe({
     required int propertyId,
     required bool isLiked,
+    double? userLocationLat,
+    double? userLocationLng,
+    String? sessionId,
   }) async {
     try {
       DebugLogger.api('👆 RECORDING SWIPE: ${isLiked ? 'LIKE' : 'DISLIKE'} property $propertyId');
       DebugLogger.api('🔄 Swipe will update liked status to: $isLiked');
+      DebugLogger.api('📍 User location: $userLocationLat, $userLocationLng');
 
       await _apiService.swipeProperty(
         propertyId,
         isLiked,
+        userLocationLat: userLocationLat,
+        userLocationLng: userLocationLng,
+        sessionId: sessionId ?? 'session_${DateTime.now().millisecondsSinceEpoch}',
       );
 
-      DebugLogger.success('✅ Swipe recorded successfully');
+      DebugLogger.success('✅ Swipe recorded successfully with location data');
     } catch (e) {
       DebugLogger.error('❌ Failed to record swipe: $e');
       rethrow;

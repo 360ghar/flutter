@@ -351,7 +351,7 @@ class NotificationsView extends GetView<NotificationsController> with ThemeMixin
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: value.value,
+            initialValue: value.value,
             onChanged: (newValue) => onChanged(newValue!),
             style: TextStyle(color: AppColors.textPrimary),
             dropdownColor: AppColors.surface,

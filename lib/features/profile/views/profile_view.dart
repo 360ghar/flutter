@@ -117,7 +117,7 @@ class ProfileView extends GetView<AuthController> {
     ));
   }
 
-  Widget _buildProfileHeader(user) {
+  Widget _buildProfileHeader(dynamic user) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

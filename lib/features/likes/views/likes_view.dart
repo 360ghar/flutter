@@ -18,7 +18,7 @@ class LikesView extends GetView<LikesController> {
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(160), // Increased height to accommodate all content
+          preferredSize: const Size.fromHeight(180), // Increased height to prevent overflow
           child: SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -38,6 +38,39 @@ class LikesView extends GetView<LikesController> {
                     ),
                   ),
                   actions: [
+                    // Refresh button
+                    Obx(() => IconButton(
+                      icon: controller.isCurrentLoading
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.iconColor),
+                              ),
+                            )
+                          : Icon(
+                              Icons.refresh,
+                              color: AppColors.iconColor,
+                            ),
+                      onPressed: controller.isCurrentLoading
+                          ? null
+                          : () {
+                              Get.snackbar(
+                                '🔄 Refreshing',
+                                'Updating your ${controller.currentSegment.value == LikesSegment.liked ? 'liked' : 'passed'} properties...',
+                                snackPosition: SnackPosition.BOTTOM,
+                                backgroundColor: AppColors.primaryYellow.withValues(alpha: 0.9),
+                                colorText: Colors.white,
+                                duration: const Duration(seconds: 1),
+                                margin: const EdgeInsets.all(16),
+                                borderRadius: 8,
+                              );
+                              controller.refreshCurrentSegment();
+                            },
+                      tooltip: 'Refresh ${controller.currentSegment.value == LikesSegment.liked ? 'liked' : 'passed'} properties',
+                    )),
+                    
                     // View toggle (grid/list)
                     IconButton(
                       icon: Icon(
@@ -97,61 +130,77 @@ class LikesView extends GetView<LikesController> {
                     },
                     tabs: [
                       Tab(
-                        child: Obx(() => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.favorite, size: 18),
-                            const SizedBox(width: 8),
-                            Text('Liked'),
-                            if (controller.currentSegment.value == LikesSegment.liked && 
-                                controller.hasCurrentProperties) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryYellow,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                        child: Obx(() => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.favorite, size: 16),
+                              const SizedBox(width: 6),
+                              Flexible(
                                 child: Text(
-                                  '${controller.currentProperties.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  'Liked',
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (controller.currentSegment.value == LikesSegment.liked && 
+                                  controller.hasCurrentProperties) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryYellow,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${controller.currentProperties.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         )),
                       ),
                       Tab(
-                        child: Obx(() => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.not_interested, size: 18),
-                            const SizedBox(width: 8),
-                            Text('Passed'),
-                            if (controller.currentSegment.value == LikesSegment.passed && 
-                                controller.hasCurrentProperties) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                        child: Obx(() => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.not_interested, size: 16),
+                              const SizedBox(width: 6),
+                              Flexible(
                                 child: Text(
-                                  '${controller.currentProperties.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  'Passed',
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (controller.currentSegment.value == LikesSegment.passed && 
+                                  controller.hasCurrentProperties) ...[
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${controller.currentProperties.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         )),
                       ),
                     ],
@@ -211,7 +260,20 @@ class LikesView extends GetView<LikesController> {
 
   Widget _buildPropertyGrid() {
     return RefreshIndicator(
-      onRefresh: controller.refreshCurrentSegment,
+      onRefresh: () async {
+        // Show feedback when pull-to-refresh is triggered
+        Get.snackbar(
+          '🔄 Refreshing',
+          'Updating your ${controller.currentSegment.value == LikesSegment.liked ? 'liked' : 'passed'} properties...',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.primaryYellow.withValues(alpha: 0.9),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 1),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+        );
+        await controller.refreshCurrentSegment();
+      },
       color: AppColors.primaryYellow,
       child: CustomScrollView(
         slivers: [

@@ -675,9 +675,8 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
     
     _swipeAnimationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        if (_properties.isNotEmpty) {
-          _properties.removeAt(0);
-        }
+        // Remove manual property mutation - parent controller handles this
+        // The new properties list will be provided via didUpdateWidget
         _swipeAnimationController.reset();
         _sparklesAnimationController.reset();
         _dragPosition = Offset.zero;
@@ -693,11 +692,12 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
   void didUpdateWidget(PropertySwipeStack oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // Update properties when widget properties change
+    // Update properties when widget properties change from parent
     if (widget.properties != oldWidget.properties) {
-      _properties = List.from(widget.properties);
-      DebugLogger.debug('PropertySwipeStack updated with ${_properties.length} properties');
-      setState(() {});
+      setState(() {
+        _properties = List.from(widget.properties);
+      });
+      DebugLogger.debug('PropertySwipeStack updated with ${_properties.length} properties from parent');
     }
   }
 

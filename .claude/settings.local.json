@@ -11,7 +11,9 @@
       "Bash(cmd.exe:*)",
       "Bash(flutter build:*)",
       "Bash(dart:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "mcp__dart__get_runtime_errors",
+      "mcp__dart__analyze_files"
     ]
   },
   "enableAllProjectMcpServers": true,

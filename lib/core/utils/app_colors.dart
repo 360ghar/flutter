@@ -275,4 +275,17 @@ class AppColors {
       return AppTheme.backgroundWhite;
     }
   }
+
+  // Map-specific color overlays
+  static Color get mapDarkOverlay {
+    return Colors.black.withValues(alpha: 0.2);
+  }
+
+  static Color get mapLightOverlay {
+    return Colors.white.withValues(alpha: 0.1);
+  }
+
+  static Color get loadingOverlay {
+    return shadowColor.withValues(alpha: 0.3);
+  }
 }

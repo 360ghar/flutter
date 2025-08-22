@@ -1,10 +1,15 @@
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/unified_property_response.dart';
 import '../../../core/data/repositories/properties_repository.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/controllers/filter_service.dart';
+import '../../../core/controllers/location_controller.dart';
+import '../../../core/controllers/auth_controller.dart';
+import '../../../core/utils/app_colors.dart';
+import '../../likes/controllers/likes_controller.dart';
 
 enum DiscoverState {
   initial,
@@ -19,6 +24,8 @@ class DiscoverController extends GetxController {
   final PropertiesRepository _propertiesRepository = Get.find<PropertiesRepository>();
   final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
   final FilterService _filterService = Get.find<FilterService>();
+  final LocationController _locationController = Get.find<LocationController>();
+  final AuthController _authController = Get.find<AuthController>();
 
   // Reactive state
   final Rx<DiscoverState> state = DiscoverState.initial.obs;
@@ -73,7 +80,17 @@ class DiscoverController extends GetxController {
     } catch (e) {
       DebugLogger.error('❌ Failed to load initial deck: $e');
       state.value = DiscoverState.error;
-      error.value = e.toString();
+
+      // Provide more user-friendly error messages
+      if (e.toString().contains('404') || e.toString().contains('request not found')) {
+        error.value = 'Backend server is not running or API endpoints are incorrect. Please check your backend configuration.';
+      } else if (e.toString().contains('Connection refused') || e.toString().contains('Failed host lookup')) {
+        error.value = 'Unable to connect to the server. Please make sure your backend server is running.';
+      } else if (e.toString().contains('timeout')) {
+        error.value = 'Request timed out. The server might be overloaded or unreachable.';
+      } else {
+        error.value = 'Failed to load properties. Please check your connection and try again.';
+      }
     }
   }
 
@@ -121,11 +138,35 @@ class DiscoverController extends GetxController {
   Future<void> swipeRight(PropertyModel property) async {
     await _handleSwipe(property, true);
     _recordSwipeStats(true);
+    
+    // Show feedback to user
+    Get.snackbar(
+      '❤️ Liked!',
+      '${property.title} added to your favorites',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: AppColors.primaryYellow.withValues(alpha: 0.9),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+    );
   }
 
   Future<void> swipeLeft(PropertyModel property) async {
     await _handleSwipe(property, false);
     _recordSwipeStats(false);
+    
+    // Show feedback to user
+    Get.snackbar(
+      '👈 Passed',
+      '${property.title} added to passed properties',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.grey.withValues(alpha: 0.9),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 1),
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+    );
   }
 
   Future<void> _handleSwipe(PropertyModel property, bool isLiked) async {
@@ -138,12 +179,44 @@ class DiscoverController extends GetxController {
       // Record swipe in background
       _recordSwipeAsync(property.id, isLiked);
 
+      // Notify LikesController for both likes and passes
+      _notifyLikesController(isLiked);
+
       // Check if we need to prefetch more properties
       _checkForPrefetch();
 
     } catch (e) {
       DebugLogger.error('❌ Failed to handle swipe: $e');
       // Could implement rollback logic here if needed
+    }
+  }
+
+  void _notifyLikesController(bool isLiked) {
+    try {
+      // Wait a bit longer to ensure the swipe is fully recorded before refreshing
+      Future.delayed(const Duration(milliseconds: 500), () {
+        try {
+          if (Get.isRegistered<LikesController>()) {
+            final likesController = Get.find<LikesController>();
+            // Refresh both liked and passed properties to ensure sync
+            likesController.refreshAll();
+            DebugLogger.api('🔄 Notified LikesController to refresh all properties');
+
+            // Also update the current segment if user is viewing likes
+            if (likesController.currentSegment.value == LikesSegment.liked && isLiked) {
+              likesController.refreshLiked();
+            } else if (likesController.currentSegment.value == LikesSegment.passed && !isLiked) {
+              likesController.refreshPassed();
+            }
+          } else {
+            DebugLogger.api('ℹ️ LikesController not yet registered, will refresh when accessed');
+          }
+        } catch (e) {
+          DebugLogger.warning('⚠️ Could not notify LikesController: $e');
+        }
+      });
+    } catch (e) {
+      DebugLogger.warning('⚠️ Error setting up LikesController notification: $e');
     }
   }
 
@@ -161,13 +234,46 @@ class DiscoverController extends GetxController {
   }
 
   void _recordSwipeAsync(int propertyId, bool isLiked) {
+    // Check if user is authenticated
+    if (!_authController.isAuthenticated) {
+      DebugLogger.warning('⚠️ User not authenticated, cannot record swipe');
+      Get.snackbar(
+        'Authentication Required',
+        'Please log in to save your preferences',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange.withValues(alpha: 0.9),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    // Get current location for swipe recording
+    final currentLat = _locationController.currentLatitude;
+    final currentLng = _locationController.currentLongitude;
+    
+    DebugLogger.api('📍 Recording swipe with auth: ${_authController.isAuthenticated}, location: $currentLat, $currentLng');
+    
     // Record swipe asynchronously without blocking UI
     _swipesRepository.recordSwipe(
       propertyId: propertyId,
       isLiked: isLiked,
-    ).catchError((e) {
+      userLocationLat: currentLat,
+      userLocationLng: currentLng,
+      sessionId: 'session_${DateTime.now().millisecondsSinceEpoch}',
+    ).then((_) {
+      DebugLogger.success('✅ Swipe recorded successfully for property $propertyId with location and auth');
+    }).catchError((e) {
       DebugLogger.error('❌ Failed to record swipe for property $propertyId: $e');
-      // Could add to retry queue here
+      // Show error to user
+      Get.snackbar(
+        'Error',
+        'Failed to save your preference. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.9),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
     });
   }
 
@@ -265,6 +371,13 @@ class DiscoverController extends GetxController {
       return null;
     }
     return deck[currentIndex.value];
+  }
+
+  // Get current visible cards for swipe stack (current + next 2)
+  List<PropertyModel> get visibleCards {
+    final start = currentIndex.value;
+    final end = (start + 3).clamp(0, deck.length);
+    return deck.sublist(start, end);
   }
 
   // Get next few properties for preview
