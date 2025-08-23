@@ -15,6 +15,7 @@ import 'core/translations/app_translations.dart';
 import 'core/utils/debug_logger.dart';
 import 'features/dashboard/controllers/dashboard_controller.dart';
 
+
 // Use a separate async function for initialization to ensure proper order.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

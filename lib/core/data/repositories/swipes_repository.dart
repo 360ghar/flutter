@@ -44,45 +44,14 @@ class SwipesRepository extends GetxService {
       // Get swipe history using the new API with comprehensive filtering
       DebugLogger.api('🔍 Fetching swipes with new API format');
       final responseJson = await _apiService.getSwipes(
-        // Location & Search
+        // Only essential parameters
         lat: filters.latitude,
         lng: filters.longitude,
         radius: filters.radiusKm?.toInt(),
         q: filters.searchQuery,
-
-        // Property Filters
         propertyType: filters.propertyType,
         purpose: filters.purpose,
-        priceMin: filters.priceMin,
-        priceMax: filters.priceMax,
-        bedroomsMin: filters.bedroomsMin,
-        bedroomsMax: filters.bedroomsMax,
-        bathroomsMin: filters.bathroomsMin,
-        bathroomsMax: filters.bathroomsMax,
-        areaMin: filters.areaMin,
-        areaMax: filters.areaMax,
-
-        // Location Filters
-        city: filters.city,
-        locality: filters.locality,
-        pincode: filters.pincode,
-
-        // Additional Filters
-        amenities: filters.amenities,
-        parkingSpacesMin: filters.parkingSpacesMin,
-        floorNumberMin: filters.floorNumberMin,
-        floorNumberMax: filters.floorNumberMax,
-        ageMax: filters.ageMax,
-
-        // Short Stay Filters
-        checkIn: filters.checkInDate?.toIso8601String().split('T').first,
-        checkOut: filters.checkOutDate?.toIso8601String().split('T').first,
-        guests: filters.guests,
-
-        // Swipe Filters
         isLiked: isLiked,
-
-        // Sorting & Pagination
         sortBy: filters.sortBy?.toString().split('.').last,
         page: page,
         limit: limit,

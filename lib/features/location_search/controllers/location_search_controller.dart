@@ -54,9 +54,14 @@ class LocationSearchController extends GetxController {
     DebugLogger.info('🎯 Selecting place: ${suggestion.description} (placeId: ${suggestion.placeId})');
 
     try {
-      // --- THIS IS THE FIX ---
-      // We still need coordinates, so we will fetch them with better error handling.
-      final locationDetails = await locationController.getPlaceDetails(suggestion.placeId);
+      // Try to get location details with retry mechanism
+      LocationData? locationDetails = await locationController.getPlaceDetails(suggestion.placeId);
+
+      // If first attempt fails, try enhanced location resolution
+      if (locationDetails == null) {
+        DebugLogger.warning('⚠️ Standard location resolution failed, trying enhanced method for: ${suggestion.description}');
+        locationDetails = await locationController.getEnhancedLocationDetails(suggestion.placeId, suggestion.description);
+      }
 
       if (locationDetails != null) {
         filterService.updateLocation(locationDetails);
@@ -65,17 +70,89 @@ class LocationSearchController extends GetxController {
           'Location Updated',
           'Showing properties in ${locationDetails.name}',
           snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 2),
         );
       } else {
-        // Fallback if details fail
+        // Enhanced error handling with better user feedback
         DebugLogger.error('❌ Could not fetch location details for placeId: ${suggestion.placeId}');
-        Get.snackbar('Error', 'Failed to get location details. Please try another location.');
+
+        // Try to extract city name from suggestion description for better error message
+        final suggestionText = suggestion.description;
+        String cityName = 'this location';
+
+        // Try to extract city name from the suggestion
+        if (suggestionText.contains(',')) {
+          final parts = suggestionText.split(',');
+          if (parts.isNotEmpty) {
+            cityName = parts[0].trim();
+          }
+        }
+
+        Get.snackbar(
+          'Location Error',
+          'Unable to get details for $cityName. This might be due to network issues or API limits. Please try again or select a different location.',
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 4),
+          backgroundColor: Colors.orange.withOpacity(0.9),
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
       DebugLogger.error('❌ Error in selectPlace: $e');
-      Get.snackbar('Error', 'An unexpected error occurred.');
+      Get.snackbar(
+        'Error',
+        'An unexpected error occurred while selecting location.',
+        snackPosition: SnackPosition.TOP,
+      );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Try alternative methods to get location data when primary method fails
+  Future<LocationData?> _tryAlternativeLocationMethods(PlaceSuggestion suggestion) async {
+    try {
+      DebugLogger.info('🔄 Trying alternative location methods for: ${suggestion.description}');
+
+      // Method 1: Try to extract coordinates from suggestion description (if available)
+      // This is a fallback for when Google Places API completely fails
+
+      final description = suggestion.description.toLowerCase();
+
+      // Check if it's one of our major cities and provide coordinates
+      final majorCities = {
+        'mumbai': LocationData(name: 'Mumbai, Maharashtra, India', latitude: 19.0760, longitude: 72.8777, city: 'Mumbai', locality: 'Mumbai'),
+        'delhi': LocationData(name: 'Delhi, India', latitude: 28.7041, longitude: 77.1025, city: 'Delhi', locality: 'Delhi'),
+        'bangalore': LocationData(name: 'Bangalore, Karnataka, India', latitude: 12.9716, longitude: 77.5946, city: 'Bangalore', locality: 'Bangalore'),
+        'hyderabad': LocationData(name: 'Hyderabad, Telangana, India', latitude: 17.3850, longitude: 78.4867, city: 'Hyderabad', locality: 'Hyderabad'),
+        'chennai': LocationData(name: 'Chennai, Tamil Nadu, India', latitude: 13.0827, longitude: 80.2707, city: 'Chennai', locality: 'Chennai'),
+        'kolkata': LocationData(name: 'Kolkata, West Bengal, India', latitude: 22.5726, longitude: 88.3639, city: 'Kolkata', locality: 'Kolkata'),
+        'pune': LocationData(name: 'Pune, Maharashtra, India', latitude: 18.5204, longitude: 73.8567, city: 'Pune', locality: 'Pune'),
+        'ahmedabad': LocationData(name: 'Ahmedabad, Gujarat, India', latitude: 23.0225, longitude: 72.5714, city: 'Ahmedabad', locality: 'Ahmedabad'),
+        'jaipur': LocationData(name: 'Jaipur, Rajasthan, India', latitude: 26.9124, longitude: 75.7873, city: 'Jaipur', locality: 'Jaipur'),
+        'surat': LocationData(name: 'Surat, Gujarat, India', latitude: 21.1702, longitude: 72.8311, city: 'Surat', locality: 'Surat'),
+      };
+
+      for (final entry in majorCities.entries) {
+        if (description.contains(entry.key)) {
+          DebugLogger.success('✅ Found coordinates for ${entry.key} using alternative method');
+          return entry.value;
+        }
+      }
+
+      // Method 2: Try using the mainText from suggestion as a search term
+      if (suggestion.mainText.isNotEmpty) {
+        DebugLogger.info('🔍 Trying to search for coordinates using main text: ${suggestion.mainText}');
+        // This would require additional API calls, but for now we'll return null
+        // In a full implementation, you could call a geocoding service here
+      }
+
+      DebugLogger.warning('❌ All alternative location methods failed for: ${suggestion.description}');
+      return null;
+
+    } catch (e, stackTrace) {
+      DebugLogger.error('❌ Error in alternative location methods: $e', stackTrace);
+      return null;
     }
   }
 
@@ -90,6 +167,12 @@ class LocationSearchController extends GetxController {
       Get.snackbar('Error', 'Could not find details for $cityName.');
       isLoading.value = false;
     }
+  }
+
+  // Debug method to test location search for specific cities
+  Future<void> debugCitySearch(String cityName) async {
+    DebugLogger.info('🔧 Starting debug for city: $cityName');
+    await locationController.debugLocationSearch(cityName);
   }
 
 
