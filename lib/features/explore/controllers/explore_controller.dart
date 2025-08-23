@@ -36,6 +36,9 @@ class ExploreController extends GetxController {
   final RxDouble currentZoom = 12.0.obs;
   final RxDouble currentRadius = 5.0.obs;
 
+  // Add a new property to hold the initial map position
+  Rxn<MapPosition> initialMapPosition = Rxn<MapPosition>();
+
   // Search
   final RxString searchQuery = ''.obs;
   Timer? _searchDebouncer;
@@ -134,8 +137,12 @@ class ExploreController extends GetxController {
         }
       }
 
-      // Update map and filters with the determined location
-      _updateMapCenter(initialCenter, initialZoom);
+      // CHANGE: Instead of moving the map directly, store the position
+      // The view will use this after the map is built.
+      initialMapPosition.value = MapPosition(center: initialCenter, zoom: initialZoom);
+      DebugLogger.info('🗺️ Stored initial map position. View will move map when ready.');
+
+      // Update filters with the determined location
       _filterService.updateLocationWithCoordinates(
         latitude: initialCenter.latitude,
         longitude: initialCenter.longitude,
@@ -195,8 +202,15 @@ class ExploreController extends GetxController {
       currentCenter.value = center;
       currentZoom.value = zoom;
       DebugLogger.info('🗺️ Updated map center to $center with zoom $zoom');
-      
-      mapController.move(center, zoom);
+
+      // Check if mapController is ready before using it
+      try {
+        mapController.move(center, zoom);
+      } catch (e) {
+        // If not ready, store it for onMapReady to handle
+        initialMapPosition.value = MapPosition(center: center, zoom: zoom);
+        DebugLogger.warning('⚠️ Map not ready, stored position for later.');
+      }
     } catch (e) {
       DebugLogger.warning('⚠️ Could not move map: $e');
       // Still update the reactive values even if map move fails
@@ -279,6 +293,8 @@ class ExploreController extends GetxController {
       if (properties.isEmpty) {
         DebugLogger.info('📭 No properties found, setting empty state');
         state.value = ExploreState.empty;
+        // THIS IS THE NEW USER-FRIENDLY MESSAGE
+        error.value = "No properties found in this area. Try expanding your search or changing filters.";
       } else {
         DebugLogger.success('✅ Setting loaded state with ${properties.length} properties');
         state.value = ExploreState.loaded;
@@ -453,6 +469,28 @@ class ExploreController extends GetxController {
   bool get hasProperties => properties.isNotEmpty;
   bool get hasSelection => selectedProperty.value != null;
   bool get isLoadingMore => state.value == ExploreState.loadingMore;
+
+  // This new method will be called by the View once the map is ready
+  void onMapReady() {
+    if (initialMapPosition.value != null) {
+      mapController.move(
+        initialMapPosition.value!.center,
+        initialMapPosition.value!.zoom
+      );
+      DebugLogger.success("✅ Map is ready and moved to initial position.");
+    }
+  }
+}
+
+// Helper class for map positions
+class MapPosition {
+  final LatLng center;
+  final double zoom;
+
+  MapPosition({
+    required this.center,
+    required this.zoom,
+  });
 }
 
 // Helper class for property markers

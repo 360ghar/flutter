@@ -11,7 +11,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search Location'),
+        title: const Text('Select a Location'),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -28,23 +28,13 @@ class LocationSearchView extends GetView<LocationSearchController> {
   }
 
   Widget _buildSearchBar(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
       child: TextField(
         controller: controller.searchController,
         autofocus: true,
         decoration: InputDecoration(
-          hintText: 'Search for a city or area...',
+          hintText: 'Search for area, street name...',
           prefixIcon: const Icon(Icons.search),
           suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
               ? IconButton(
@@ -58,12 +48,6 @@ class LocationSearchView extends GetView<LocationSearchController> {
               color: Theme.of(context).dividerColor,
             ),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context).dividerColor.withOpacity(0.3),
-            ),
-          ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
@@ -71,8 +55,6 @@ class LocationSearchView extends GetView<LocationSearchController> {
               width: 2,
             ),
           ),
-          filled: true,
-          fillColor: Theme.of(context).scaffoldBackgroundColor,
         ),
         onChanged: controller.onSearchChanged,
       ),
@@ -80,29 +62,34 @@ class LocationSearchView extends GetView<LocationSearchController> {
   }
 
   Widget _buildCurrentLocationTile(BuildContext context) {
-    final locationController = Get.find<LocationController>();
-    
-    return Obx(() {
-      if (!locationController.hasLocation) {
-        return ListTile(
-          leading: const Icon(Icons.my_location, color: AppTheme.primaryColor),
-          title: const Text('Use Current Location'),
-          subtitle: const Text('Tap to get your current location'),
+    return Column(
+      children: [
+        ListTile(
+          leading: Obx(() {
+            final locationController = Get.find<LocationController>();
+            return Icon(
+              Icons.my_location,
+              color: locationController.hasLocation
+                  ? AppTheme.accentGreen
+                  : AppTheme.primaryColor,
+            );
+          }),
+          title: const Text('Use your current location'),
+          subtitle: Obx(() {
+            final locationController = Get.find<LocationController>();
+            if (locationController.isLoading.value) {
+              return const Text("Fetching location...");
+            }
+            if (locationController.currentAddress.value.isNotEmpty) {
+              return Text(locationController.currentAddress.value, maxLines: 1, overflow: TextOverflow.ellipsis);
+            }
+            return const Text("Requires location permissions");
+          }),
           onTap: controller.useCurrentLocation,
-        );
-      }
-      
-      return ListTile(
-        leading: const Icon(Icons.my_location, color: AppTheme.primaryColor),
-        title: const Text('Use Current Location'),
-        subtitle: Text(
-          locationController.currentAddress.value.isNotEmpty
-              ? locationController.currentAddress.value
-              : 'Location detected',
         ),
-        onTap: controller.useCurrentLocation,
-      );
-    });
+        const Divider(),
+      ],
+    );
   }
 
   Widget _buildSuggestionsList(BuildContext context) {

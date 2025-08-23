@@ -62,10 +62,25 @@ class DiscoverController extends GetxController {
       state.value = DiscoverState.loading;
       error.value = null;
 
+      // Log current filter state before loading
+      final currentFilter = _filterService.currentFilter.value;
+      DebugLogger.api('🔍 Loading initial deck with filters:');
+      DebugLogger.api('  📍 Location: lat=${currentFilter.latitude}, lng=${currentFilter.longitude}');
+      DebugLogger.api('  🏙️ City: ${currentFilter.city}, Locality: ${currentFilter.locality}');
+      DebugLogger.api('  📏 Radius: ${currentFilter.radiusKm}km');
+      DebugLogger.api('  🎯 Purpose: ${currentFilter.purpose}');
+      DebugLogger.api('  💰 Price: ${currentFilter.priceMin} - ${currentFilter.priceMax}');
+      DebugLogger.api('  🏠 Property types: ${currentFilter.propertyType}');
+      DebugLogger.api('  🛏️ Bedrooms: ${currentFilter.bedroomsMin} - ${currentFilter.bedroomsMax}');
+
       await _loadMoreProperties();
 
       if (deck.isEmpty) {
         state.value = DiscoverState.empty;
+        // --- THIS IS THE FIX ---
+        // Provide a clear message when no properties are found.
+        DebugLogger.warning('! No properties found with current filters');
+        DebugLogger.warning('🔍 Current location in filter: lat=${currentFilter.latitude}, lng=${currentFilter.longitude}, city=${currentFilter.city}, locality=${currentFilter.locality}');
       } else {
         state.value = DiscoverState.loaded;
         currentIndex.value = 0;

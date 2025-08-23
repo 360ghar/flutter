@@ -362,12 +362,28 @@ class ApiService extends getx.GetConnect {
           body: response.bodyString ?? '',
         );
 
-        if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+        // --- THIS IS THE FIX ---
+        // Modify the success condition to handle null responses gracefully
+        if (response.statusCode != null &&
+            response.statusCode! >= 200 &&
+            response.statusCode! < 300) {
+
           final responseData = response.body;
+
+          // ADDED: Check for null response body
+          if (responseData == null) {
+            DebugLogger.warning("⚠️ API returned a successful status code but the response body was null. Endpoint: $fullEndpoint");
+            // Treat null body as an error to prevent crashes in parsers
+            throw ApiException(
+              'Server returned an empty response.',
+              statusCode: response.statusCode,
+              response: response.bodyString,
+            );
+          }
+
           if (responseData is Map<String, dynamic>) {
             return fromJson(responseData);
           } else if (responseData is List) {
-            // Normalize bare list payloads to a map shape
             return fromJson({'data': responseData});
           } else {
             return fromJson({'data': responseData});
@@ -689,7 +705,7 @@ class ApiService extends getx.GetConnect {
       'page': page.toString(),
       'limit': limit.toString(),
     };
-    
+
     // Convert filters to query parameters
     final filterMap = filters.toJson();
     filterMap.forEach((key, value) {
@@ -705,13 +721,24 @@ class ApiService extends getx.GetConnect {
       }
     });
 
-    return await _makeRequest(
+    // Debug: Log the query parameters being sent
+    DebugLogger.api('🔍 API Request Parameters:');
+    queryParams.forEach((key, value) {
+      DebugLogger.api('  $key: $value');
+    });
+
+    final response = await _makeRequest(
       '/properties/',
       (json) => _parseUnifiedPropertyResponse(json),
       method: 'GET',
       queryParams: queryParams,
       operationName: 'Search Properties',
     );
+
+    // Debug: Log the response
+    DebugLogger.api('📊 API Response: ${response.properties.length} properties found, totalPages: ${response.totalPages}, hasMore: ${response.hasMore}');
+
+    return response;
   }
 
   // Property Discovery using unified search

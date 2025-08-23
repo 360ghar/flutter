@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/controllers/location_controller.dart';
 import '../../../core/controllers/filter_service.dart';
 import '../../../core/data/models/unified_filter_model.dart';
+import '../../../core/utils/debug_logger.dart';
 
 class LocationSearchController extends GetxController {
   late final LocationController locationController;
@@ -20,12 +21,12 @@ class LocationSearchController extends GetxController {
     super.onInit();
     locationController = Get.find<LocationController>();
     filterService = Get.find<FilterService>();
-    
-    // Setup debounce for search
+
+    // Setup debounce for search with reduced delay for faster feedback
     _debounceWorker = debounce(
       searchQuery,
       (_) => _performSearch(),
-      time: const Duration(milliseconds: 500),
+      time: const Duration(milliseconds: 300),
     );
   }
 
@@ -50,56 +51,48 @@ class LocationSearchController extends GetxController {
 
   Future<void> selectPlace(PlaceSuggestion suggestion) async {
     isLoading.value = true;
-    
+    DebugLogger.info('🎯 Selecting place: ${suggestion.description} (placeId: ${suggestion.placeId})');
+
     try {
-      final locationData = await locationController.getPlaceDetails(suggestion.placeId);
-      
-      if (locationData != null) {
-        // Update filter controller with selected location
-        filterService.updateLocation(locationData);
-        
+      // --- THIS IS THE FIX ---
+      // We still need coordinates, so we will fetch them with better error handling.
+      final locationDetails = await locationController.getPlaceDetails(suggestion.placeId);
+
+      if (locationDetails != null) {
+        filterService.updateLocation(locationDetails);
         Get.back();
         Get.snackbar(
-          'Location Selected',
-          'Selected: ${locationData.name}',
+          'Location Updated',
+          'Showing properties in ${locationDetails.name}',
           snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 2),
         );
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to get location details',
-          snackPosition: SnackPosition.TOP,
-        );
+        // Fallback if details fail
+        DebugLogger.error('❌ Could not fetch location details for placeId: ${suggestion.placeId}');
+        Get.snackbar('Error', 'Failed to get location details. Please try another location.');
       }
+    } catch (e) {
+      DebugLogger.error('❌ Error in selectPlace: $e');
+      Get.snackbar('Error', 'An unexpected error occurred.');
     } finally {
       isLoading.value = false;
     }
   }
 
-  void selectCity(String cityName, String stateName) {
-    // Create location data for the selected city
-    // In a real app, you might want to geocode this to get actual coordinates
-    final locationData = LocationData(
-      name: '$cityName, $stateName',
-      latitude: 0.0, // These would be fetched from geocoding API
-      longitude: 0.0,
-      city: cityName,
-      locality: null,
-    );
-    
-    // For now, just update the location without coordinates
-    // You could enhance this by geocoding the city name
-    filterService.updateLocation(locationData);
-    
-    Get.back();
-    Get.snackbar(
-      'City Selected',
-      'Selected: $cityName',
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 2),
-    );
+  void selectCity(String cityName, String stateName) async {
+    isLoading.value = true;
+    // First, get suggestions for the city to find its placeId
+    final suggestions = await locationController.getPlaceSuggestions('$cityName, $stateName');
+    if (suggestions.isNotEmpty) {
+      // Use the first suggestion
+      await selectPlace(suggestions.first);
+    } else {
+      Get.snackbar('Error', 'Could not find details for $cityName.');
+      isLoading.value = false;
+    }
   }
+
+
 
   Future<void> useCurrentLocation() async {
     isLoading.value = true;
@@ -125,10 +118,9 @@ class LocationSearchController extends GetxController {
         
         Get.back();
         Get.snackbar(
-          'Location Set',
+          'Location Updated',
           'Using your current location',
           snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 2),
         );
       } else {
         Get.snackbar(

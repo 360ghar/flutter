@@ -174,6 +174,9 @@ class ExploreView extends GetView<ExploreController> {
               initialCenter: controller.currentCenter.value,
               initialZoom: controller.currentZoom.value,
               onPositionChanged: controller.onMapMove,
+              // --- THIS IS THE FIX ---
+              // Add the onMapReady callback here
+              onMapReady: controller.onMapReady,
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all,
               ),

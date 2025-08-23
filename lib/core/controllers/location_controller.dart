@@ -227,7 +227,7 @@ class LocationController extends GetxController {
 
       final url = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
         'input': query,
-        'types': '(locality)',
+        'types': '(cities)',
         'components': 'country:$countryCode',
         'key': apiKey,
       });
@@ -378,7 +378,7 @@ class LocationController extends GetxController {
     }
   }
 
-  // Google Places API methods
+  // Google Places API methods with fallback
   Future<List<PlaceSuggestion>> getPlaceSuggestions(String query) async {
     if (query.trim().isEmpty || query.length < 2) {
       placeSuggestions.clear();
@@ -389,18 +389,16 @@ class LocationController extends GetxController {
       isSearchingPlaces.value = true;
 
       final apiKey = dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
-      if (apiKey.isEmpty) {
-        DebugLogger.warning('Google Places API key not found');
-        // Fallback to backend search
-        await searchLocations(query);
-        return [];
-      }
-
       final countryCode = dotenv.env['DEFAULT_COUNTRY'] ?? 'in';
+
+      if (apiKey.isEmpty) {
+        DebugLogger.error('CRITICAL: GOOGLE_PLACES_API_KEY is missing from your .env file. Location search will not work.');
+        return await _fallbackLocationSearch(query);
+      }
 
       final url = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
         'input': query,
-        'types': '(locality)',
+        'types': '(cities)',
         'components': 'country:$countryCode',
         'key': apiKey,
       });
@@ -411,7 +409,7 @@ class LocationController extends GetxController {
       if (response.statusCode != 200) {
         DebugLogger.error('Google Places API request failed: ${response.statusCode}');
         DebugLogger.error('Response body: ${response.body}');
-        return [];
+        return await _fallbackLocationSearch(query);
       }
 
       final data = json.decode(response.body);
@@ -420,6 +418,11 @@ class LocationController extends GetxController {
       switch (status) {
         case 'OK':
           final predictions = data['predictions'] as List;
+          if (predictions.isEmpty) {
+            DebugLogger.info('Google Places API returned no results for query: $query');
+            return await _fallbackLocationSearch(query);
+          }
+
           final suggestions = predictions.map((prediction) {
             return PlaceSuggestion(
               placeId: prediction['place_id'],
@@ -434,43 +437,89 @@ class LocationController extends GetxController {
 
         case 'ZERO_RESULTS':
           DebugLogger.info('Google Places API returned no results for query: $query');
-          placeSuggestions.clear();
-          return [];
+          return await _fallbackLocationSearch(query);
 
         case 'OVER_QUERY_LIMIT':
-          DebugLogger.error('Google Places API quota exceeded for query: $query');
-          DebugLogger.error('Response: ${response.body}');
-          placeSuggestions.clear();
-          return [];
-
         case 'REQUEST_DENIED':
-          DebugLogger.error('Google Places API request denied for query: $query');
-          DebugLogger.error('Response: ${response.body}');
-          placeSuggestions.clear();
-          return [];
-
         case 'INVALID_REQUEST':
-          DebugLogger.error('Invalid Google Places API request for query: $query');
+          DebugLogger.error('Google Places API error: $status for query: $query');
           DebugLogger.error('Response: ${response.body}');
-          placeSuggestions.clear();
-          return [];
+          return await _fallbackLocationSearch(query);
 
         default:
           DebugLogger.warning('Unknown Google Places API status: $status for query: $query');
-          DebugLogger.warning('Response: ${response.body}');
-          placeSuggestions.clear();
-          return [];
+          return await _fallbackLocationSearch(query);
       }
     } on TimeoutException catch (e) {
       DebugLogger.error('Google Places API request timed out for query: $query', e);
-      placeSuggestions.clear();
-      return [];
+      return await _fallbackLocationSearch(query);
     } catch (e, stackTrace) {
       DebugLogger.error('Error getting place suggestions for query: $query', e, stackTrace);
-      placeSuggestions.clear();
-      return [];
+      return await _fallbackLocationSearch(query);
     } finally {
       isSearchingPlaces.value = false;
+    }
+  }
+
+  // Fallback location search when Google Places API fails
+  Future<List<PlaceSuggestion>> _fallbackLocationSearch(String query) async {
+    try {
+      DebugLogger.info('Using fallback location search for: $query');
+
+      // Use static Indian cities as fallback
+      final fallbackCities = [
+        {'name': 'Mumbai', 'state': 'Maharashtra', 'lat': 19.0760, 'lng': 72.8777},
+        {'name': 'Delhi', 'state': 'Delhi', 'lat': 28.7041, 'lng': 77.1025},
+        {'name': 'Bangalore', 'state': 'Karnataka', 'lat': 12.9716, 'lng': 77.5946},
+        {'name': 'Hyderabad', 'state': 'Telangana', 'lat': 17.3850, 'lng': 78.4867},
+        {'name': 'Chennai', 'state': 'Tamil Nadu', 'lat': 13.0827, 'lng': 80.2707},
+        {'name': 'Kolkata', 'state': 'West Bengal', 'lat': 22.5726, 'lng': 88.3639},
+        {'name': 'Pune', 'state': 'Maharashtra', 'lat': 18.5204, 'lng': 73.8567},
+        {'name': 'Ahmedabad', 'state': 'Gujarat', 'lat': 23.0225, 'lng': 72.5714},
+        {'name': 'Jaipur', 'state': 'Rajasthan', 'lat': 26.9124, 'lng': 75.7873},
+        {'name': 'Surat', 'state': 'Gujarat', 'lat': 21.1702, 'lng': 72.8311},
+      ];
+
+      // Filter cities based on query
+      final filteredCities = fallbackCities.where((city) {
+        final name = city['name'] as String;
+        final state = city['state'] as String;
+        return name.toLowerCase().contains(query.toLowerCase()) ||
+               state.toLowerCase().contains(query.toLowerCase());
+      }).toList();
+
+      if (filteredCities.isEmpty) {
+        // Return all cities if no matches
+        final suggestions = fallbackCities.map((city) {
+          return PlaceSuggestion(
+            placeId: '${city['name']}_${city['state']}',
+            description: '${city['name']}, ${city['state']}, India',
+            mainText: city['name'] as String,
+            secondaryText: city['state'] as String,
+          );
+        }).toList();
+
+        placeSuggestions.value = suggestions;
+        return suggestions;
+      }
+
+      // Return filtered cities
+      final suggestions = filteredCities.map((city) {
+        return PlaceSuggestion(
+          placeId: '${city['name']}_${city['state']}',
+          description: '${city['name']}, ${city['state']}, India',
+          mainText: city['name'] as String,
+          secondaryText: city['state'] as String,
+        );
+      }).toList();
+
+      placeSuggestions.value = suggestions;
+      return suggestions;
+
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error in fallback location search: $e', stackTrace);
+      placeSuggestions.clear();
+      return [];
     }
   }
 
@@ -478,10 +527,15 @@ class LocationController extends GetxController {
     try {
       isLoading.value = true;
 
+      // Check if this is a fallback city (from our static list)
+      if (placeId.contains('_')) {
+        return await _getFallbackCityDetails(placeId);
+      }
+
       final apiKey = dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
       if (apiKey.isEmpty) {
-        DebugLogger.warning('Google Places API key not found');
-        return null;
+        DebugLogger.warning('Google Places API key not found, using fallback');
+        return await _getFallbackCityDetails(placeId);
       }
 
       final url = Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
@@ -496,7 +550,7 @@ class LocationController extends GetxController {
       if (response.statusCode != 200) {
         DebugLogger.error('Google Places Details API request failed: ${response.statusCode}');
         DebugLogger.error('Response body: ${response.body}');
-        return null;
+        return await _getFallbackCityDetails(placeId);
       }
 
       final data = json.decode(response.body);
@@ -531,45 +585,74 @@ class LocationController extends GetxController {
             );
           }
           DebugLogger.warning('Google Places Details API returned null result for placeId: $placeId');
-          return null;
+          return await _getFallbackCityDetails(placeId);
 
         case 'ZERO_RESULTS':
+        case 'NOT_FOUND':
           DebugLogger.info('Google Places Details API returned no results for placeId: $placeId');
-          return null;
+          return await _getFallbackCityDetails(placeId);
 
         case 'OVER_QUERY_LIMIT':
-          DebugLogger.error('Google Places Details API quota exceeded for placeId: $placeId');
-          DebugLogger.error('Response: ${response.body}');
-          return null;
-
         case 'REQUEST_DENIED':
-          DebugLogger.error('Google Places Details API request denied for placeId: $placeId');
-          DebugLogger.error('Response: ${response.body}');
-          return null;
-
         case 'INVALID_REQUEST':
-          DebugLogger.error('Invalid Google Places Details API request for placeId: $placeId');
-          DebugLogger.error('Response: ${response.body}');
-          return null;
-
-        case 'NOT_FOUND':
-          DebugLogger.warning('Place not found for placeId: $placeId');
-          DebugLogger.warning('Response: ${response.body}');
-          return null;
+          DebugLogger.error('Google Places Details API error: $status for placeId: $placeId');
+          return await _getFallbackCityDetails(placeId);
 
         default:
           DebugLogger.warning('Unknown Google Places Details API status: $status for placeId: $placeId');
-          DebugLogger.warning('Response: ${response.body}');
-          return null;
+          return await _getFallbackCityDetails(placeId);
       }
     } on TimeoutException catch (e) {
       DebugLogger.error('Google Places Details API request timed out for placeId: $placeId', e);
-      return null;
+      return await _getFallbackCityDetails(placeId);
     } catch (e, stackTrace) {
       DebugLogger.error('Error getting place details for placeId: $placeId', e, stackTrace);
-      return null;
+      return await _getFallbackCityDetails(placeId);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  // Get details for fallback cities
+  Future<LocationData?> _getFallbackCityDetails(String placeId) async {
+    try {
+      DebugLogger.info('Using fallback city details for: $placeId');
+
+      final fallbackCities = [
+        {'name': 'Mumbai', 'state': 'Maharashtra', 'lat': 19.0760, 'lng': 72.8777},
+        {'name': 'Delhi', 'state': 'Delhi', 'lat': 28.7041, 'lng': 77.1025},
+        {'name': 'Bangalore', 'state': 'Karnataka', 'lat': 12.9716, 'lng': 77.5946},
+        {'name': 'Hyderabad', 'state': 'Telangana', 'lat': 17.3850, 'lng': 78.4867},
+        {'name': 'Chennai', 'state': 'Tamil Nadu', 'lat': 13.0827, 'lng': 80.2707},
+        {'name': 'Kolkata', 'state': 'West Bengal', 'lat': 22.5726, 'lng': 88.3639},
+        {'name': 'Pune', 'state': 'Maharashtra', 'lat': 18.5204, 'lng': 73.8567},
+        {'name': 'Ahmedabad', 'state': 'Gujarat', 'lat': 23.0225, 'lng': 72.5714},
+        {'name': 'Jaipur', 'state': 'Rajasthan', 'lat': 26.9124, 'lng': 75.7873},
+        {'name': 'Surat', 'state': 'Gujarat', 'lat': 21.1702, 'lng': 72.8311},
+      ];
+
+      // Find the city by placeId
+      final city = fallbackCities.cast<Map<String, Object>>().firstWhere(
+        (city) => '${city['name']}_${city['state']}' == placeId,
+        orElse: () => <String, Object>{},
+      );
+
+      if (city.isNotEmpty) {
+        return LocationData(
+          name: '${city['name']}, ${city['state']}, India',
+          latitude: city['lat'] as double,
+          longitude: city['lng'] as double,
+          city: city['name'] as String,
+          locality: city['name'] as String,
+        );
+      }
+
+      DebugLogger.warning('Fallback city not found for placeId: $placeId');
+      return null;
+
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error getting fallback city details: $e', stackTrace);
+      return null;
     }
   }
 

@@ -103,7 +103,8 @@ class UnifiedFilterModel {
 
   factory UnifiedFilterModel.initial() {
     return UnifiedFilterModel(
-      radiusKm: 10.0,
+      radiusKm: 100.0, // --- THIS IS THE FIX ---
+      // Increased the default search radius to 100km as requested.
       purpose: null,
       sortBy: null,
       includeUnavailable: false,

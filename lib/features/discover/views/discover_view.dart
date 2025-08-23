@@ -1,73 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/discover_controller.dart';
-import '../../../core/controllers/filter_service.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
 import '../../../../widgets/common/loading_states.dart';
 import '../../../../widgets/common/error_states.dart';
 import '../widgets/property_swipe_card.dart';
+import '../../../core/widgets/common/shared_app_bar.dart';
 
 class DiscoverView extends GetView<DiscoverController> {
   const DiscoverView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final filterService = Get.find<FilterService>();
+    // The FilterService is already available via GetX
+    // final filterService = Get.find<FilterService>();
 
     return Obx(() => Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBackground,
-        elevation: 0,
-        title: Text(
-          'app_name'.tr,
-          style: TextStyle(
-            color: AppColors.appBarText,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          // Filters button
-          Obx(() => IconButton(
-            icon: Stack(
-              children: [
-                Icon(
-                  Icons.tune,
-                  color: AppColors.iconColor,
-                ),
-                if (filterService.activeFiltersCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryYellow,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '${filterService.activeFiltersCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: () => Get.toNamed('/filters'),
-          )),
-        ],
-      ),
+      // Replace the existing AppBar with the SharedAppBar
+      appBar: const SharedAppBar(), // This will now show the location selector
       body: Obx(() {
         // Show different states based on controller state
         switch (controller.state.value) {

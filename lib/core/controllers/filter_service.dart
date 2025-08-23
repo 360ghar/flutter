@@ -52,20 +52,23 @@ class FilterService extends GetxController {
 
   void _loadSavedFilters() {
     try {
-      // Load saved location
+      // THIS IS THE SECTION TO CHANGE
+      // REMOVE loading the saved location. The default will now be null.
+      /*
       final savedLocation = _storage.read('saved_location');
       if (savedLocation != null) {
         selectedLocation.value = LocationData.fromJson(savedLocation);
         _updateLocationInFilter();
       }
-      
-      // Load saved filters
+      */
+
+      // Keep loading other filters
       final savedFilters = _storage.read('saved_filters');
       if (savedFilters != null) {
         currentFilter.value = UnifiedFilterModel.fromJson(savedFilters);
       }
-      
-      DebugLogger.success('📂 Loaded saved filters');
+
+      DebugLogger.success('📂 Loaded saved filters (location is session-only)');
     } catch (e) {
       DebugLogger.error('Error loading saved filters: $e');
     }
@@ -77,11 +80,15 @@ class FilterService extends GetxController {
       _storage.write('saved_filters', filter.toJson());
       DebugLogger.info('Filters saved: ${filter.activeFilterCount} active');
     });
-    
-    // Save location whenever it changes
+
+    // THIS IS THE SECTION TO CHANGE
+    // CHANGE the listener for selectedLocation
     ever(selectedLocation, (location) {
+      // We no longer save to storage here.
+      // _storage.write('saved_location', location.toJson());
+
+      // Just update the location in the current filter model
       if (location != null) {
-        _storage.write('saved_location', location.toJson());
         _updateLocationInFilter();
       }
     });
@@ -188,6 +195,31 @@ class FilterService extends GetxController {
   void updateLocation(LocationData location) {
     selectedLocation.value = location;
     DebugLogger.info('Location updated: ${location.name}');
+
+    // Only update location coordinates if they are valid (not 0.0, 0.0)
+    double? latitude = location.latitude;
+    double? longitude = location.longitude;
+
+    if (latitude == 0.0 && longitude == 0.0) {
+      DebugLogger.warning('⚠️ Location has zero coordinates, using city-based search instead');
+      latitude = null;
+      longitude = null;
+    }
+
+    // Update the current filter with location coordinates and data
+    currentFilter.value = currentFilter.value.copyWith(
+      latitude: latitude,
+      longitude: longitude,
+      city: location.city,
+      locality: location.locality,
+      radiusKm: currentFilter.value.radiusKm ?? 10.0, // Default radius
+      sortBy: null, // Don't force sort by distance when location is set
+    );
+
+    DebugLogger.info('Filter updated with location: lat=${latitude}, lng=${longitude}, city=${location.city}, locality=${location.locality}');
+
+    // Force a filter update notification
+    update();
   }
 
   void updateLocationWithCoordinates({
@@ -327,7 +359,6 @@ class FilterService extends GetxController {
       city: null,
       locality: null,
     );
-    _storage.remove('saved_location');
     DebugLogger.info('Location cleared');
   }
 
@@ -415,8 +446,26 @@ class FilterService extends GetxController {
   Map<String, dynamic> getQueryParams() {
     final params = <String, dynamic>{};
     final filter = currentFilter.value;
-    
+
+    // Add search query if present
     if (searchQuery.value.isNotEmpty) params['q'] = searchQuery.value;
+
+    // --- THIS IS THE FIX ---
+    // Smart Location Logic: Either search by location name OR by coordinates, not both
+    // If a city or locality has been explicitly selected, prioritize that.
+    if (filter.city != null || filter.locality != null) {
+      if (filter.city != null) params['city'] = filter.city;
+      if (filter.locality != null) params['locality'] = filter.locality;
+      // DO NOT send lat/lng/radius when searching by name.
+    }
+    // Otherwise, use coordinates (for "current location" searches).
+    else if (filter.latitude != null && filter.longitude != null) {
+      params['lat'] = filter.latitude;
+      params['lng'] = filter.longitude;
+      params['radius'] = filter.radiusKm;
+    }
+
+    // Add other filters
     if (filter.purpose != null) params['purpose'] = filter.purpose;
     if (filter.priceMin != null) params['price_min'] = filter.priceMin;
     if (filter.priceMax != null) params['price_max'] = filter.priceMax;
@@ -432,11 +481,6 @@ class FilterService extends GetxController {
     if (filter.amenities != null && filter.amenities!.isNotEmpty) {
       params['amenities'] = filter.amenities!.join(',');
     }
-    if (filter.latitude != null) params['lat'] = filter.latitude;
-    if (filter.longitude != null) params['lng'] = filter.longitude;
-    if (filter.radiusKm != null) params['radius'] = filter.radiusKm;
-    if (filter.city != null) params['city'] = filter.city;
-    if (filter.locality != null) params['locality'] = filter.locality;
     if (filter.sortBy != null) params['sort_by'] = filter.sortBy;
     if (filter.parkingSpacesMin != null) params['parking_min'] = filter.parkingSpacesMin;
     if (filter.floorNumberMin != null) params['floor_min'] = filter.floorNumberMin;
@@ -445,7 +489,7 @@ class FilterService extends GetxController {
     if (filter.propertyIds != null && filter.propertyIds!.isNotEmpty) {
       params['property_ids'] = filter.propertyIds!.join(',');
     }
-    
+
     return params;
   }
 

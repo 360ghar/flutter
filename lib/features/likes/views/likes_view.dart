@@ -18,7 +18,8 @@ class LikesView extends GetView<LikesController> {
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
         appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(160), // Increased height to accommodate all content
+          preferredSize: const Size.fromHeight(200), // --- THIS IS THE FIX ---
+          // Increased height from 180 to 200 to prevent overflow.
           child: SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,

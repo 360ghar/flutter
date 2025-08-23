@@ -126,8 +126,9 @@ class VisitsController extends GetxController {
     try {
       isLoadingAgent.value = true;
       final agentData = await _apiService.getRelationshipManager();
-      
-      // Use updated AgentModel with simplified fields
+
+      // --- THIS IS THE FIX ---
+      // Try to create the AgentModel - if agentData is null or has null fields, it will throw an exception
       relationshipManager.value = AgentModel(
         id: agentData.id,
         name: agentData.name,
@@ -144,11 +145,12 @@ class VisitsController extends GetxController {
         createdAt: agentData.createdAt,
         updatedAt: agentData.updatedAt,
       );
-      
       DebugLogger.success('✅ Agent loaded successfully: ${agentData.name}');
+
     } catch (e) {
       DebugLogger.error('❌ Error loading agent: $e');
       error.value = 'Failed to load agent';
+      relationshipManager.value = null; // Ensure it's null on error
     } finally {
       isLoadingAgent.value = false;
     }
