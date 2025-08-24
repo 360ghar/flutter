@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:latlong2/latlong.dart';
 import 'property_image_model.dart';
 
 part 'property_model.g.dart';
@@ -168,7 +169,7 @@ class PropertyModel {
 
   // Swipe-related fields
   @JsonKey(name: 'liked', defaultValue: false)
-  final bool liked;
+  bool liked;
 
   PropertyModel({
     required this.id,
@@ -363,7 +364,7 @@ class PropertyModel {
   String get imageDescription {
     return '$propertyTypeString in ${city ?? 'Unknown Location'}';
   }
-  
+
   // Get initials for fallback display
   String get titleInitials {
     final words = title.split(' ');
@@ -400,4 +401,14 @@ class PropertyModel {
     return '';
   }
 
-} 
+  // Google Maps marker ID for this property
+  String get markerId => 'property_${id}';
+
+  // LatLng for this property
+  LatLng? get latLng {
+    if (latitude != null && longitude != null) {
+      return LatLng(latitude!, longitude!);
+    }
+    return null;
+  }
+}

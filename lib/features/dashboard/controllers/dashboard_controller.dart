@@ -267,20 +267,21 @@ class DashboardController extends GetxController {
   void syncTabWithRoute(String route) {
     switch (route) {
       case '/dashboard':
-      case '/':
-        currentIndex.value = 0;
+      case '/profile':
+        currentIndex.value = 0; // Profile tab
+        break;
+      case '/explore':
+        currentIndex.value = 1; // Explore (Map) tab
         break;
       case '/discover':
-        currentIndex.value = 1;
-        break;
-      case '/search':
-        currentIndex.value = 2;
+      case '/':
+        currentIndex.value = 2; // Discover (Swipe) tab
         break;
       case '/likes':
-        currentIndex.value = 3;
+        currentIndex.value = 3; // Likes tab
         break;
-      case '/profile':
-        currentIndex.value = 4;
+      case '/visits':
+        currentIndex.value = 4; // Visits tab
         break;
       default:
         // For other routes, don't change the tab

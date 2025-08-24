@@ -1,607 +1,511 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../controllers/explore_controller.dart';
+import '../widgets/property_card.dart';
+import '../widgets/location_search.dart';
 import '../../../core/controllers/filter_service.dart';
 import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/error_mapper.dart';
-import '../../../core/utils/debug_logger.dart';
-import '../../../../widgets/common/loading_states.dart';
-import '../../../../widgets/common/error_states.dart';
-import '../../../../widgets/common/robust_network_image.dart';
 
 class ExploreView extends GetView<ExploreController> {
-  ExploreView({super.key});
-  
-  FilterService get filterService => Get.find<FilterService>();
+  const ExploreView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
-
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBackground,
-        elevation: 0,
-        title: Text(
-          'Explore Properties',
-          style: TextStyle(
-            color: AppColors.appBarText,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          // Search toggle
-          Obx(() => IconButton(
-            icon: Icon(
-              controller.searchQuery.value.isEmpty ? Icons.search : Icons.search_off,
-              color: AppColors.iconColor,
-            ),
-            onPressed: () => _toggleSearch(context),
-          )),
-          
-          // Filters
-          Obx(() => IconButton(
-            icon: Stack(
-              children: [
-                Icon(
-                  Icons.tune,
-                  color: AppColors.iconColor,
-                ),
-                if (filterService.activeFiltersCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryYellow,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '${filterService.activeFiltersCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: () => Get.toNamed('/filters'),
-          )),
-        ],
-      ),
+      backgroundColor: Colors.white,
       body: Obx(() {
         switch (controller.state.value) {
           case ExploreState.loading:
+          case ExploreState.initial:
             return _buildLoadingState();
-            
           case ExploreState.error:
             return _buildErrorState();
-            
           case ExploreState.empty:
             return _buildEmptyState();
-            
           case ExploreState.loaded:
           case ExploreState.loadingMore:
-            return _buildMapInterface(context);
-            
-          default:
-            return _buildLoadingState();
+            return _buildMapWithProperties();
         }
       }),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildMapWithProperties() {
     return Stack(
       children: [
-        // Skeleton map
-        Container(
-          color: AppColors.surface,
-          child: Center(
-            child: Icon(
-              Icons.map,
-              size: 100,
-              color: AppColors.divider,
+        Obx(() {
+          final mapCenter = controller.mapCenter.value ?? const LatLng(28.6139, 77.2090); // Default to Delhi
+          return FlutterMap(
+            options: MapOptions(
+              initialCenter: mapCenter,
+              initialZoom: 12.0,
+              onPositionChanged: (position, hasGesture) {
+                if (hasGesture) {
+                  controller.onMapMoved(position.center);
+                }
+              },
             ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: const ['a', 'b', 'c'],
+              ),
+              Obx(() => MarkerLayer(
+                markers: controller.propertyMarkers.map((marker) {
+                  return Marker(
+                    width: marker.isSelected ? 50.0 : 40.0,
+                    height: marker.isSelected ? 50.0 : 40.0,
+                    point: marker.position,
+                    child: GestureDetector(
+                      onTap: () => controller.onPropertySelected(marker.property),
+                      child: Icon(
+                        Icons.location_pin,
+                        color: marker.markerColor,
+                        size: marker.markerSize,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              )),
+            ],
+          );
+        }),
+
+        // Property Carousel (only show if property is selected)
+        _buildPropertyCarousel(),
+
+        // App Bar Overlay
+        _buildAppBar(),
+
+        // Location Search
+        const LocationSearch(),
+
+        // Map Controls
+        _buildMapControls(),
+
+        // Info Panel
+        _buildInfoPanel(),
+      ],
+    );
+  }
+
+  Widget _buildPropertyCarousel() {
+    return Obx(() {
+      if (controller.selectedProperty.value == null) {
+        return const SizedBox.shrink();
+      }
+      return Positioned(
+        bottom: 20,
+        left: 0,
+        right: 0,
+        child: SizedBox(
+          height: 320,
+          child: PageView.builder(
+            controller: PageController(viewportFraction: 0.8),
+            itemCount: 1, // Show only the selected property for now
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: PropertyCard(
+                  property: controller.selectedProperty.value!,
+                ),
+              );
+            },
           ),
         ),
-        
-        // Loading overlay with progress
-        Obx(() {
-          if (controller.loadingProgress.value > 0) {
-            return LoadingStates.progressiveLoadingIndicator(
-              current: controller.loadingProgress.value,
-              total: controller.totalPages.value,
-              message: 'Loading properties for map...',
-            );
-          }
-          return LoadingStates.mapLoadingOverlay();
-        }),
-      ],
+      );
+    });
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Loading map...',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Setting up your location and loading properties',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildErrorState() {
-    return Obx(() {
-      final errorMessage = controller.error.value;
-      if (errorMessage == null) return const SizedBox();
-      
-      try {
-        final exception = ErrorMapper.mapApiError(Exception(errorMessage));
-        return ErrorStates.genericError(
-          error: exception,
-          onRetry: controller.retryLoading,
-        );
-      } catch (e) {
-        return ErrorStates.networkError(
-          onRetry: controller.retryLoading,
-          customMessage: errorMessage,
-        );
-      }
-    });
-  }
-
-  Widget _buildEmptyState() {
-    return ErrorStates.emptyState(
-      title: 'No Properties Found',
-      message: 'No properties found in this area.\nTry adjusting your search location or filters.',
-      icon: Icons.location_off,
-      onAction: () => Get.toNamed('/filters'),
-      actionText: 'Adjust Filters',
-    );
-  }
-
-  Widget _buildMapInterface(BuildContext context) {
-    return Stack(
-      children: [
-        // Main map
-        Positioned.fill(
-          child: Obx(() => FlutterMap(
-            mapController: controller.mapController,
-            options: MapOptions(
-              initialCenter: controller.currentCenter.value,
-              initialZoom: controller.currentZoom.value,
-              onPositionChanged: controller.onMapMove,
-              // --- THIS IS THE FIX ---
-              // Add the onMapReady callback here
-              onMapReady: controller.onMapReady,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red[400],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Unable to load map',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
-            children: [
-              // Map tiles
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.ghar360.app',
-                maxZoom: 19,
+            const SizedBox(height: 8),
+            Text(
+              controller.errorMessage.value,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
               ),
-              
-              // Search radius circle
-              if (filterService.hasLocation)
-                CircleLayer(
-                  circles: [
-                    CircleMarker(
-                      point: controller.currentCenter.value,
-                      radius: controller.currentRadius.value * 1000, // Convert to meters
-                      color: AppColors.primaryYellow.withOpacity(0.1),
-                      borderColor: AppColors.primaryYellow.withOpacity(0.5),
-                      borderStrokeWidth: 2,
-                    ),
-                  ],
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: controller.fetchPropertiesForMap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryYellow,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                 ),
-              
-              // Property markers
-              MarkerLayer(
-                markers: controller.propertyMarkers.map((marker) => Marker(
-                  point: marker.position,
-                  width: 40,
-                  height: 40,
-                  child: GestureDetector(
-                    onTap: () => controller.selectProperty(marker.property),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: marker.isSelected ? AppColors.primaryYellow : AppColors.accentBlue,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          marker.property.formattedPrice.replaceAll('₹', '₹').substring(0, 4),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                )).toList(),
-              ),
-            ],
-          )),
-        ),
-        
-        // Search bar (if active)
-        Obx(() {
-          if (controller.searchQuery.value.isNotEmpty || _isSearching.value) {
-            return _buildSearchBar(context);
-          }
-          return const SizedBox();
-        }),
-        
-        // Map controls
-        Positioned(
-          top: MediaQuery.of(context).padding.top + (controller.searchQuery.value.isNotEmpty || _isSearching.value ? 70 : 10),
-          right: 16,
-          child: _buildMapControls(),
-        ),
-        
-        // Info panel
-        Positioned(
-          top: MediaQuery.of(context).padding.top + (controller.searchQuery.value.isNotEmpty || _isSearching.value ? 70 : 10),
-          left: 16,
-          child: _buildInfoPanel(),
-        ),
-        
-        // Loading indicator for more properties
-        if (controller.state.value == ExploreState.loadingMore)
-          Positioned(
-            bottom: 100,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.surface.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Loading more properties...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
               ),
             ),
-          ),
-        
-        // Selected property bottom sheet
-        Obx(() {
-          if (controller.hasSelection) {
-            return _buildPropertyBottomSheet();
-          }
-          return const SizedBox();
-        }),
-      ],
-    );
-  }
-
-  // Track search state
-  final RxBool _isSearching = false.obs;
-
-  Widget _buildSearchBar(BuildContext context) {
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 10,
-      left: 16,
-      right: 16,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: AppColors.getCardShadow(),
-        ),
-        child: TextField(
-          onChanged: controller.updateSearchQuery,
-          onSubmitted: (value) {
-            if (value.isEmpty) _isSearching.value = false;
-          },
-          style: TextStyle(color: AppColors.textPrimary),
-          decoration: InputDecoration(
-            hintText: 'Search locations...',
-            hintStyle: TextStyle(color: AppColors.textSecondary),
-            prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
-            suffixIcon: IconButton(
-              icon: Icon(Icons.clear, color: AppColors.iconColor),
-              onPressed: () {
-                controller.clearSearch();
-                _isSearching.value = false;
-              },
-            ),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          ),
+          ],
         ),
       ),
     );
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.location_off,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No Properties Found',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your filters or moving the map to a different area.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: controller.fetchPropertiesForMap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryYellow,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text(
+                'Retry Search',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        color: Colors.white.withOpacity(0.95),
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(Get.context!).padding.top,
+          bottom: 8,
+        ),
+        child: Row(
+          children: [
+            // Location Button
+            Expanded(
+              child: InkWell(
+                onTap: () => LocationSearch.showLocationSearch(Get.context!),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.grey[600],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Obx(() => Expanded(
+                        child: Text(
+                          controller.currentLocationText.value,
+                          style: TextStyle(
+                            color: Colors.grey[800],
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      )),
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        color: Colors.grey[600],
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Filters Button
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              child: Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.tune),
+                    onPressed: () => Get.toNamed('/filters'),
+                    color: Colors.grey[700],
+                  ),
+                  Obx(() {
+                    final filterCount = Get.find<FilterService>().activeFiltersCount;
+                    if (filterCount > 0) {
+                      return Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryYellow,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            '$filterCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
   Widget _buildMapControls() {
-    return Column(
-      children: [
-        // Zoom controls
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: AppColors.getCardShadow(),
+    return Positioned(
+      right: 16,
+      bottom: 220,
+      child: Column(
+        children: [
+          // Zoom In
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: controller.zoomIn,
+              color: Colors.grey[700],
+            ),
           ),
-          child: Column(
-            children: [
-              IconButton(
-                icon: Icon(Icons.add, color: AppColors.iconColor),
-                onPressed: controller.zoomIn,
-              ),
-              Container(
-                width: 1,
-                height: 1,
-                color: AppColors.divider,
-              ),
-              IconButton(
-                icon: Icon(Icons.remove, color: AppColors.iconColor),
-                onPressed: controller.zoomOut,
-              ),
-            ],
+
+          const SizedBox(height: 8),
+
+          // Zoom Out
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.remove),
+              onPressed: controller.zoomOut,
+              color: Colors.grey[700],
+            ),
           ),
-        ),
-        
-        const SizedBox(height: 12),
-        
-        // Current location button
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: AppColors.getCardShadow(),
+
+          const SizedBox(height: 8),
+
+          // Current Location
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.my_location),
+              onPressed: controller.recenterToCurrentLocation,
+              color: AppColors.primaryYellow,
+            ),
           ),
-          child: IconButton(
-            icon: Icon(Icons.my_location, color: AppColors.primaryYellow),
-            onPressed: controller.recenterToCurrentLocation,
+
+          const SizedBox(height: 8),
+
+          // Fit Bounds
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.center_focus_strong),
+              onPressed: controller.fitBoundsToProperties,
+              color: Colors.grey[700],
+            ),
           ),
-        ),
-        
-        const SizedBox(height: 12),
-        
-        // Fit bounds button
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: AppColors.getCardShadow(),
-          ),
-          child: IconButton(
-            icon: Icon(Icons.center_focus_strong, color: AppColors.accentBlue),
-            onPressed: controller.fitBoundsToProperties,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildInfoPanel() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: AppColors.getCardShadow(),
-      ),
-      child: Obx(() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            controller.propertiesCountText,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+    return Positioned(
+      left: 16,
+      bottom: 220,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            controller.currentAreaText,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
+          ],
+        ),
+        child: Obx(() => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              controller.propertiesCountText,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          if (controller.locationDisplayText != 'All Locations') ...[
+            const SizedBox(height: 4),
+            Text(
+              controller.currentAreaText,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
             const SizedBox(height: 4),
             Text(
               controller.locationDisplayText,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.primaryYellow,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ],
-        ],
-      )),
-    );
-  }
-
-  Widget _buildPropertyBottomSheet() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 200,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          boxShadow: AppColors.getCardShadow(),
-        ),
-        child: Obx(() {
-          final property = controller.selectedProperty.value;
-          if (property == null) return const SizedBox();
-          
-          return Column(
-            children: [
-              // Handle bar
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              
-              // Property details
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // Property image
-                      RobustNetworkImage(
-                        imageUrl: property.mainImage,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        borderRadius: BorderRadius.circular(12),
-                        errorWidget: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: AppColors.inputBackground,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(Icons.home, color: AppColors.iconColor),
-                        ),
-                      ),
-                      
-                      const SizedBox(width: 16),
-                      
-                      // Property info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              property.title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              property.addressDisplay,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Text(
-                                  property.formattedPrice,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryYellow,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.accentBlue.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    property.purposeString,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.accentBlue,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Action buttons
-                      Column(
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.close, color: AppColors.textSecondary),
-                            onPressed: controller.clearSelection,
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.info, color: AppColors.primaryYellow),
-                            onPressed: () => controller.viewPropertyDetails(property),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        }),
+        )),
       ),
     );
   }
 
-  void _toggleSearch(BuildContext context) {
-    if (controller.searchQuery.value.isNotEmpty) {
-      controller.clearSearch();
-      _isSearching.value = false;
-    } else {
-      _isSearching.value = true;
-    }
-  }
+
+
+
 }

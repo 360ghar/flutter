@@ -15,16 +15,18 @@ class DashboardView extends GetView<DashboardController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Obx(() => IndexedStack(
-        index: controller.currentIndex.value,
-        children: [
-          ProfileView(),      // 0 - Profile
-          ExploreView(),      // 1 - Explore (Map)
-          DiscoverView(),         // 2 - Discover (Swipe)
-          LikesView(),   // 3 - Likes
-          const VisitsView(), // 4 - Visits
-        ],
-      )),
+      body: SafeArea(
+        child: Obx(() => IndexedStack(
+          index: controller.currentIndex.value,
+          children: [
+            ProfileView(),      // 0 - Profile
+            ExploreView(),      // 1 - Explore (Map)
+            DiscoverView(),     // 2 - Discover (Swipe)
+            LikesView(),        // 3 - Likes
+            const VisitsView(), // 4 - Visits
+          ],
+        )),
+      ),
       bottomNavigationBar: Obx(() => CustomBottomNavigationBar(
         currentIndex: controller.currentIndex.value,
         onTap: controller.changeTab,

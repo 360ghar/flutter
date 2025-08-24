@@ -1,13 +1,34 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../core/data/models/property_model.dart';
+import '../../../core/data/models/property_marker_model.dart';
+import '../../../core/data/models/location_model.dart';
+import '../../../core/data/providers/google_places_service.dart';
 import '../../../core/data/repositories/properties_repository.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/location_controller.dart';
+
+// Simple CameraPosition class for flutter_map compatibility
+class CameraPosition {
+  final LatLng target;
+  final double zoom;
+  
+  const CameraPosition({
+    required this.target,
+    this.zoom = 12.0,
+  });
+}
+
+// Simple LatLngBounds class for flutter_map compatibility
+class LatLngBounds {
+  final LatLng southWest;
+  final LatLng northEast;
+  
+  const LatLngBounds(this.southWest, this.northEast);
+}
 
 enum ExploreState {
   initial,
@@ -19,68 +40,136 @@ enum ExploreState {
 }
 
 class ExploreController extends GetxController {
-  final PropertiesRepository _propertiesRepository = Get.find<PropertiesRepository>();
-  final FilterService _filterService = Get.find<FilterService>();
-  final LocationController _locationController = Get.find<LocationController>();
-
-  // Map controller
-  final MapController mapController = MapController();
+  // Service dependencies
+  late final PropertiesRepository _propertiesRepository;
+  late final FilterService _filterService;
+  late final LocationController _locationController;
 
   // Reactive state
   final Rx<ExploreState> state = ExploreState.initial.obs;
   final RxList<PropertyModel> properties = <PropertyModel>[].obs;
-  final RxnString error = RxnString();
+  final RxList<PropertyMarker> propertyMarkers = <PropertyMarker>[].obs;
+  final Rxn<LatLng> mapCenter = Rxn<LatLng>();
+  final Rxn<PropertyModel> selectedProperty = Rxn<PropertyModel>();
+  final RxString errorMessage = ''.obs;
 
   // Map state
   final Rx<LatLng> currentCenter = const LatLng(28.6139, 77.2090).obs; // Default: Delhi
-  final RxDouble currentZoom = 12.0.obs;
-  final RxDouble currentRadius = 5.0.obs;
+  final RxDouble currentZoom = 10.0.obs; // More zoomed out for better visibility
+  final RxDouble currentRadius = 100.0.obs;
+  final Rx<CameraPosition> cameraPosition = const CameraPosition(
+    target: LatLng(28.6139, 77.2090),
+    zoom: 10.0, // More zoomed out for better visibility
+  ).obs;
 
-  // Add a new property to hold the initial map position
-  Rxn<MapPosition> initialMapPosition = Rxn<MapPosition>();
-
-  // Search
+  // Search and location
   final RxString searchQuery = ''.obs;
+  final RxBool isSearchActive = false.obs;
+  final RxList<LocationResult> searchResults = <LocationResult>[].obs;
   Timer? _searchDebouncer;
   Timer? _mapMoveDebouncer;
 
-  // Loading progress for sequential page loading
-  final RxInt loadingProgress = 0.obs;
-  final RxInt totalPages = 1.obs;
+  // Selected property for bottom sheet and sync
+  final RxInt selectedPropertyIndex = RxInt(-1);
 
-  // Selected property for bottom sheet
-  final Rx<PropertyModel?> selectedProperty = Rx<PropertyModel?>(null);
+  // Location and preferences
+  final RxBool locationPermissionGranted = false.obs;
+  final Rxn<CurrentLocation> currentLocation = Rxn<CurrentLocation>();
+  final RxString currentLocationText = 'Delhi, India'.obs;
+
+  // Loading states
+  final RxBool isLoadingLocation = false.obs;
+  final RxBool isLoadingProperties = false.obs;
+  final RxInt loadingProgress = 0.obs;
+
+  // Scroll controller for horizontal list
+  final ScrollController horizontalScrollController = ScrollController();
 
   @override
   void onInit() {
     super.onInit();
     DebugLogger.info('🚀 ExploreController onInit() started.');
-    
-    // Add state listener for debugging
-    ever(state, (ExploreState currentState) {
-      DebugLogger.info('📊 ExploreState changed to: $currentState');
-    });
-    
-    // Set state to loading immediately to prevent blank page
-    state.value = ExploreState.loading;
-    
-    _setupFilterListener();
-    _setupLocationListener();
-    
-    // Use addPostFrameCallback to ensure all bindings are ready
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeMapAndLoadProperties();
-    });
+
+    // Initialize dependencies with error handling
+    try {
+      _propertiesRepository = Get.find<PropertiesRepository>();
+      _filterService = Get.find<FilterService>();
+      _locationController = Get.find<LocationController>();
+      DebugLogger.success('✅ All dependencies initialized successfully');
+    } catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to initialize dependencies', e, stackTrace);
+      state.value = ExploreState.error;
+      errorMessage.value = "Failed to initialize services. Please restart the app.";
+      return;
+    }
+
+    // Set up reactive listeners
+    ever(_filterService.currentFilter, (_) => fetchPropertiesForMap());
+
+    // Initialize map and load properties
+    _initializeMap();
   }
 
   @override
   void onReady() {
     super.onReady();
     DebugLogger.success('✅ ExploreController is ready! Current state: ${state.value}');
-    
+
     // Perform additional validation
     if (state.value == ExploreState.initial) {
       DebugLogger.warning('⚠️ Controller is ready but still in initial state. This may indicate an initialization issue.');
+    }
+  }
+
+  Future<void> _initializeMap() async {
+    state.value = ExploreState.loading;
+    try {
+      // Wait for the location to become available
+      await _locationController.getCurrentLocation();
+      if (_locationController.currentPosition.value != null) {
+        final position = _locationController.currentPosition.value!;
+        mapCenter.value = LatLng(position.latitude, position.longitude);
+        await fetchPropertiesForMap();
+      } else {
+        errorMessage.value = "Could not determine your location. Please enable location services.";
+        state.value = ExploreState.error;
+      }
+    } catch (e) {
+      DebugLogger.error("Initialization Error: ", e);
+      errorMessage.value = "An error occurred while setting up the map.";
+      state.value = ExploreState.error;
+    }
+  }
+
+  Future<void> fetchPropertiesForMap() async {
+    state.value = ExploreState.loading;
+    selectedProperty.value = null; // Clear selection on new fetch
+
+    try {
+      final filter = _filterService.currentFilter.value;
+      // Ensure location is in the filter for the repository call
+      final enrichedFilter = filter.copyWith(
+        latitude: mapCenter.value?.latitude,
+        longitude: mapCenter.value?.longitude,
+      );
+
+      final fetchedProperties = await _propertiesRepository.loadAllPropertiesForMap(
+        filters: enrichedFilter,
+      );
+
+      if (fetchedProperties.isEmpty) {
+        state.value = ExploreState.empty;
+        properties.clear();
+        propertyMarkers.clear();
+      } else {
+        properties.assignAll(fetchedProperties);
+        _updatePropertyMarkers();
+        state.value = ExploreState.loaded;
+      }
+    } catch (e) {
+      DebugLogger.error("Failed to fetch map properties: ", e);
+      errorMessage.value = "Failed to load properties. Please try again.";
+      state.value = ExploreState.error;
     }
   }
 
@@ -88,129 +177,25 @@ class ExploreController extends GetxController {
   void onClose() {
     _searchDebouncer?.cancel();
     _mapMoveDebouncer?.cancel();
+    horizontalScrollController.dispose();
     super.onClose();
   }
 
-  void _setupFilterListener() {
-    // Listen to filter changes and reload properties
-    debounce(_filterService.currentFilter, (_) {
-      _loadPropertiesForCurrentView();
-    }, time: const Duration(milliseconds: 500));
-  }
 
-  void _setupLocationListener() {
-    // Listen to location updates
-    _locationController.currentPosition.listen((position) {
-      if (position != null) {
-        final newCenter = LatLng(position.latitude, position.longitude);
-        final distance = const Distance();
-        if (distance.as(LengthUnit.Meter, currentCenter.value, newCenter) > 1000) { // Only update if >1km difference
-          _updateMapCenter(newCenter, 14.0);
-        }
-      }
-    });
-  }
 
-  // New combined initialization method
-  Future<void> _initializeMapAndLoadProperties() async {
-    try {
-      DebugLogger.info('🗺️ Initializing map and loading properties...');
-      LatLng initialCenter = const LatLng(28.6139, 77.2090); // Default to Delhi
-      double initialZoom = 12.0;
 
-      // Prioritize location from FilterService if available
-      if (_filterService.hasLocation) {
-        final filters = _filterService.currentFilter.value;
-        initialCenter = LatLng(filters.latitude!, filters.longitude!);
-        DebugLogger.info('🗺️ Using location from FilterService: $initialCenter');
-      } else {
-        // Try to get current device location, but don't block if it fails
-        DebugLogger.info('🗺️ Attempting to get current device location...');
-        await _locationController.getCurrentLocation();
-        if (_locationController.hasLocation) {
-          final pos = _locationController.currentPosition.value!;
-          initialCenter = LatLng(pos.latitude, pos.longitude);
-          initialZoom = 14.0; // Zoom in closer for current location
-          DebugLogger.info('🗺️ Using current device location: $initialCenter');
-        } else {
-          DebugLogger.warning('⚠️ Could not get device location. Using default.');
-        }
-      }
 
-      // CHANGE: Instead of moving the map directly, store the position
-      // The view will use this after the map is built.
-      initialMapPosition.value = MapPosition(center: initialCenter, zoom: initialZoom);
-      DebugLogger.info('🗺️ Stored initial map position. View will move map when ready.');
 
-      // Update filters with the determined location
-      _filterService.updateLocationWithCoordinates(
-        latitude: initialCenter.latitude,
-        longitude: initialCenter.longitude,
-        radiusKm: _calculateRadiusFromZoom(initialZoom),
-      );
 
-      // Now, load properties
-      await _loadPropertiesForCurrentView();
 
-    } catch (e) {
-      DebugLogger.error('❌ CRITICAL: Failed during initialization: $e');
-      state.value = ExploreState.error;
-      error.value = "Failed to initialize the map. Please check location services and try again.";
-    }
-  }
-
-  Future<void> _useCurrentLocation() async {
-    try {
-      DebugLogger.info('📍 Getting current location...');
-      await _locationController.getCurrentLocation();
-      final position = _locationController.currentPosition.value;
-      if (position != null) {
-        DebugLogger.success('✅ Current location obtained: lat=${position.latitude}, lng=${position.longitude}');
-        _updateMapCenter(LatLng(position.latitude, position.longitude), 14.0);
-        
-        // Update filters with current location
-        _filterService.updateLocationWithCoordinates(
-          latitude: position.latitude,
-          longitude: position.longitude,
-          radiusKm: currentRadius.value,
-        );
-      } else {
-        DebugLogger.warning('⚠️ LocationController returned null position, using default location');
-        // Use default location (Delhi) if location is not available
-        _updateMapCenter(const LatLng(28.6139, 77.2090), 12.0);
-        _filterService.updateLocationWithCoordinates(
-          latitude: 28.6139,
-          longitude: 77.2090,
-          radiusKm: currentRadius.value,
-        );
-      }
-    } catch (e) {
-      DebugLogger.warning('⚠️ Could not get current location: $e');
-      // Always fallback to default location
-      DebugLogger.info('🗺️ Falling back to default location (Delhi)');
-      _updateMapCenter(const LatLng(28.6139, 77.2090), 12.0);
-      _filterService.updateLocationWithCoordinates(
-        latitude: 28.6139,
-        longitude: 77.2090,
-        radiusKm: currentRadius.value,
-      );
-    }
-  }
 
   void _updateMapCenter(LatLng center, double zoom) {
     try {
       currentCenter.value = center;
       currentZoom.value = zoom;
+      currentRadius.value = _calculateRadiusFromZoom(zoom);
+      cameraPosition.value = CameraPosition(target: center, zoom: zoom);
       DebugLogger.info('🗺️ Updated map center to $center with zoom $zoom');
-
-      // Check if mapController is ready before using it
-      try {
-        mapController.move(center, zoom);
-      } catch (e) {
-        // If not ready, store it for onMapReady to handle
-        initialMapPosition.value = MapPosition(center: center, zoom: zoom);
-        DebugLogger.warning('⚠️ Map not ready, stored position for later.');
-      }
     } catch (e) {
       DebugLogger.warning('⚠️ Could not move map: $e');
       // Still update the reactive values even if map move fails
@@ -219,18 +204,11 @@ class ExploreController extends GetxController {
     }
   }
 
-  // Map movement handler with debounce
-  void onMapMove(MapCamera position, bool hasGesture) {
-    if (!hasGesture) return; // Ignore programmatic moves
-    
-    currentCenter.value = position.center;
+  // Google Maps camera move handler
+  void onCameraMove(CameraPosition position) {
+    currentCenter.value = position.target;
     currentZoom.value = position.zoom;
-    
-    // Calculate radius from zoom level and visible bounds
-    final newRadius = _calculateRadiusFromZoom(position.zoom);
-    if ((newRadius - currentRadius.value).abs() > 0.5) {
-      currentRadius.value = newRadius;
-    }
+    currentRadius.value = _calculateRadiusFromZoom(position.zoom);
 
     // Debounce the map move to avoid too many API calls
     _mapMoveDebouncer?.cancel();
@@ -239,62 +217,76 @@ class ExploreController extends GetxController {
     });
   }
 
+  // Called when camera stops moving
+  void onCameraIdle() {
+    _onMapMoveCompleted();
+  }
+
   void _onMapMoveCompleted() {
     DebugLogger.api('🗺️ Map moved to ${currentCenter.value}, radius: ${currentRadius.value}km');
-    
+
     // Update filters with new location
     _filterService.updateLocationWithCoordinates(
       latitude: currentCenter.value.latitude,
       longitude: currentCenter.value.longitude,
       radiusKm: currentRadius.value,
     );
+
+    // Store location in backend (if API service available)
+    // _apiService.storeUserLocation(
+    //   latitude: currentCenter.value.latitude,
+    //   longitude: currentCenter.value.longitude,
+    // );
   }
 
   double _calculateRadiusFromZoom(double zoom) {
-    // Approximate radius calculation based on zoom level
-    if (zoom >= 16) return 1.0;
-    if (zoom >= 14) return 2.0;
-    if (zoom >= 12) return 5.0;
-    if (zoom >= 10) return 10.0;
-    if (zoom >= 8) return 25.0;
-    return 50.0;
+    // Approximate radius calculation based on zoom level - increased for better property coverage
+    if (zoom >= 16) return 5.0;
+    if (zoom >= 14) return 10.0;
+    if (zoom >= 12) return 25.0;
+    if (zoom >= 10) return 50.0;
+    if (zoom >= 8) return 75.0;
+    return 100.0;  // Maximum radius for wide area searches
   }
 
-  // Load all properties for current map view
+  // Load properties for current map view
   Future<void> _loadPropertiesForCurrentView() async {
     try {
-      // Don't check if already loading - the state is managed by caller
+      isLoadingProperties.value = true;
       DebugLogger.info('⏳ Starting property loading...');
-      
-      // Only set loading if not already in a loading state
+
       if (state.value != ExploreState.loading) {
         state.value = ExploreState.loading;
       }
-      
-      error.value = null;
+
+      errorMessage.value = '';
       properties.clear();
       selectedProperty.value = null;
 
-      DebugLogger.api('🗺️ Loading all properties for map view with filters: ${_filterService.currentFilter.value.toJson()}');
+      DebugLogger.api('🗺️ Loading properties for map view');
 
-      // Load all pages sequentially for map display
-      final allProperties = await _propertiesRepository.loadAllPropertiesForMap(
-        filters: _filterService.currentFilter.value,
-        limit: 100,
-        onProgress: (current, total) {
-          loadingProgress.value = current;
-          totalPages.value = total;
-        },
+      // Load properties using the regular getProperties method with location filters
+      // Use the current center and radius for fetching properties
+      final updatedFilters = _filterService.currentFilter.value.copyWith(
+        latitude: currentCenter.value.latitude,
+        longitude: currentCenter.value.longitude,
+        radiusKm: currentRadius.value,
       );
 
-      properties.assignAll(allProperties);
+      final propertiesList = await _propertiesRepository.loadAllPropertiesForMap(
+        filters: updatedFilters,
+      );
+
+      properties.assignAll(propertiesList);
       DebugLogger.success('✅ Loaded ${properties.length} properties for map.');
+
+      // Update markers
+      _updatePropertyMarkers();
 
       if (properties.isEmpty) {
         DebugLogger.info('📭 No properties found, setting empty state');
         state.value = ExploreState.empty;
-        // THIS IS THE NEW USER-FRIENDLY MESSAGE
-        error.value = "No properties found in this area. Try expanding your search or changing filters.";
+        errorMessage.value = "No properties found in this area. Try expanding your search or changing filters.";
       } else {
         DebugLogger.success('✅ Setting loaded state with ${properties.length} properties');
         state.value = ExploreState.loaded;
@@ -303,41 +295,121 @@ class ExploreController extends GetxController {
     } catch (e) {
       DebugLogger.error('❌ Failed to load properties: $e');
       state.value = ExploreState.error;
-      error.value = e.toString();
+      errorMessage.value = e.toString();
     } finally {
+      isLoadingProperties.value = false;
       loadingProgress.value = 0;
-      totalPages.value = 1;
       DebugLogger.info('🔄 Cleanup completed for property loading');
     }
+  }
+
+
+
+  void _updatePropertyMarkers() {
+    final markers = properties
+        .where((p) => p.hasLocation)
+        .map((property) => PropertyMarker.fromProperty(
+              property,
+              isSelected: selectedProperty.value?.id == property.id,
+            ))
+        .toList();
+
+    propertyMarkers.assignAll(markers);
+  }
+
+  void onPropertySelected(PropertyModel property) {
+    selectedProperty.value = property;
+    mapCenter.value = property.latLng; // Center map on selected property
+    // Highlight the selected marker
+    propertyMarkers.value = propertyMarkers.updateSelection(property.id);
+  }
+
+  void onMapMoved(LatLng newCenter) {
+    // Optional: Implement logic to fetch properties for the new map area
+    // For now, we just update the center
+    mapCenter.value = newCenter;
   }
 
   // Search functionality
   void updateSearchQuery(String query) {
     searchQuery.value = query;
-    
+
     _searchDebouncer?.cancel();
-    
+
     if (query.isEmpty) {
+      isSearchActive.value = false;
+      searchResults.clear();
       _filterService.updateSearchQuery('');
       return;
     }
 
+    isSearchActive.value = true;
+
     _searchDebouncer = Timer(const Duration(milliseconds: 300), () {
-      DebugLogger.api('🔍 Searching properties: "$query"');
-      _filterService.updateSearchQuery(query);
+      _performSearch(query);
     });
   }
 
+  Future<void> _performSearch(String query) async {
+    try {
+      DebugLogger.api('🔍 Searching places: "$query"');
+
+      final results = await GooglePlacesService.searchPlaces(
+        query,
+        locationBias: currentCenter.value,
+        radius: (currentRadius.value * 1000).toDouble(),
+      );
+
+      searchResults.assignAll(results);
+    } catch (e) {
+      DebugLogger.error('Error searching places: $e');
+      searchResults.clear();
+    }
+  }
+
+  Future<void> selectLocationResult(LocationResult result) async {
+    try {
+      isSearchActive.value = false;
+      searchQuery.value = result.description;
+      currentLocationText.value = result.description;
+
+      if (result.hasCoordinates) {
+        _updateMapCenter(result.coordinates!, 14.0);
+      } else {
+        // Geocode the address if coordinates not available
+        final coordinates = await GooglePlacesService.geocodeAddress(result.description);
+        if (coordinates != null) {
+          _updateMapCenter(coordinates, 14.0);
+        }
+      }
+
+      // Save location preference (if API service available)
+      // await _saveLocationPreference(result.description);
+
+    } catch (e) {
+      DebugLogger.error('Error selecting location: $e');
+    }
+  }
+
+
+
   void clearSearch() {
     searchQuery.value = '';
+    isSearchActive.value = false;
+    searchResults.clear();
     _filterService.updateSearchQuery('');
   }
 
-  // Property selection
+  // Property selection and sync
   void selectProperty(PropertyModel property) {
     selectedProperty.value = property;
+    selectedPropertyIndex.value = properties.indexOf(property);
+
+    // Update markers to highlight selected property
+    _updatePropertyMarkers();
+
     DebugLogger.api('🏠 Selected property: ${property.title}');
-    
+
     // Center map on selected property if it has location
     if (property.hasLocation) {
       _updateMapCenter(
@@ -345,10 +417,44 @@ class ExploreController extends GetxController {
         16.0, // Zoom in closer for selected property
       );
     }
+
+    // Scroll property list to selected property
+    _scrollToProperty(selectedPropertyIndex.value);
+  }
+
+  void selectPropertyFromList(PropertyModel property, int index) {
+    selectedProperty.value = property;
+    selectedPropertyIndex.value = index;
+
+    // Update markers to highlight selected property
+    _updatePropertyMarkers();
+
+    DebugLogger.api('🏠 Selected property from list: ${property.title}');
+
+    // Center map on selected property if it has location
+    if (property.hasLocation) {
+      _updateMapCenter(
+        LatLng(property.latitude!, property.longitude!),
+        16.0,
+      );
+    }
+  }
+
+  void _scrollToProperty(int index) {
+    if (index >= 0 && index < properties.length) {
+      final offset = index * 300.0; // Approximate card width
+      horizontalScrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   void clearSelection() {
     selectedProperty.value = null;
+    selectedPropertyIndex.value = -1;
+    _updatePropertyMarkers();
   }
 
   // Navigation to property details
@@ -356,17 +462,39 @@ class ExploreController extends GetxController {
     Get.toNamed('/property-details', arguments: {'property': property});
   }
 
+  // Like/Dislike property (swipe action)
+  Future<void> toggleLikeProperty(PropertyModel property) async {
+    try {
+      // Optimistic update
+      property.liked = !property.liked;
+      properties.refresh();
+
+      // API call (if API service available)
+      // final success = true; // Mock success for now
+      // if (!success) {
+      //   // Revert optimistic update on failure
+      //   property.liked = !property.liked;
+      //   properties.refresh();
+      // }
+    } catch (e) {
+      DebugLogger.error('Error toggling like: $e');
+      // Revert optimistic update on error
+      property.liked = !property.liked;
+      properties.refresh();
+    }
+  }
+
   // Filter shortcuts
   void showFilters() {
     Get.toNamed('/filters');
   }
 
-  void quickFilterByType(PropertyType type) {
-    _filterService.updatePropertyTypes([type.toString()]);
+  void quickFilterByType(String type) {
+    _filterService.updatePropertyTypes([type]);
   }
 
-  void quickFilterByPurpose(PropertyPurpose purpose) {
-    _filterService.updatePurpose(purpose.toString());
+  void quickFilterByPurpose(String purpose) {
+    _filterService.updatePurpose(purpose);
   }
 
   // Map controls
@@ -380,8 +508,17 @@ class ExploreController extends GetxController {
     _updateMapCenter(currentCenter.value, newZoom);
   }
 
-  void recenterToCurrentLocation() {
-    _useCurrentLocation();
+  void recenterToCurrentLocation() async {
+    if (currentLocation.value != null) {
+      _updateMapCenter(currentLocation.value!.coordinates, 14.0);
+    } else {
+      // Try to get current location
+      await _locationController.getCurrentLocation();
+      if (_locationController.currentPosition.value != null) {
+        final position = _locationController.currentPosition.value!;
+        _updateMapCenter(LatLng(position.latitude, position.longitude), 14.0);
+      }
+    }
   }
 
   void fitBoundsToProperties() {
@@ -399,39 +536,59 @@ class ExploreController extends GetxController {
       final minLng = lngs.reduce((a, b) => a < b ? a : b);
       final maxLng = lngs.reduce((a, b) => a > b ? a : b);
 
-      final bounds = LatLngBounds(
-        LatLng(minLat, minLng),
-        LatLng(maxLat, maxLng),
-      );
-
-      mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
+      // Calculate center and zoom to fit all properties
+      final centerLat = (minLat + maxLat) / 2;
+      final centerLng = (minLng + maxLng) / 2;
+      final center = LatLng(centerLat, centerLng);
       
+      // Calculate appropriate zoom level based on bounds
+      final latDiff = maxLat - minLat;
+      final lngDiff = maxLng - minLng;
+      final maxDiff = latDiff > lngDiff ? latDiff : lngDiff;
+      
+      double zoom = 12.0;
+      if (maxDiff > 0.1) zoom = 8.0;
+      else if (maxDiff > 0.05) zoom = 10.0;
+      else if (maxDiff > 0.01) zoom = 12.0;
+      else zoom = 14.0;
+
+      _updateMapCenter(center, zoom);
+
     } catch (e) {
       DebugLogger.warning('⚠️ Could not fit bounds: $e');
     }
   }
 
-  // Refresh
-  Future<void> refreshProperties() async {
-    await _loadPropertiesForCurrentView();
+  // Map initialization callback
+  void onMapReady() {
+    DebugLogger.success('✅ OpenStreetMap initialized');
+    
+    // Force a refresh after map is created
+    Future.delayed(const Duration(milliseconds: 500), () {
+      DebugLogger.info('🔄 Refreshing properties after map creation');
+      _loadPropertiesForCurrentView();
+    });
   }
+
+  // Refresh
+
 
   // Error handling
   void retryLoading() {
-    error.value = null;
-    _loadPropertiesForCurrentView();
+    errorMessage.value = '';
+    fetchPropertiesForMap();
   }
 
   void clearError() {
-    error.value = null;
+    errorMessage.value = '';
     if (state.value == ExploreState.error) {
       state.value = properties.isEmpty ? ExploreState.empty : ExploreState.loaded;
     }
   }
 
   // Statistics and info
-  String get locationDisplayText => _filterService.locationDisplayText;
-  
+  String get locationDisplayText => currentLocationText.value;
+
   String get propertiesCountText {
     if (properties.isEmpty) return 'No properties found';
     if (properties.length == 1) return '1 property';
@@ -445,22 +602,6 @@ class ExploreController extends GetxController {
     return '${currentRadius.value.toStringAsFixed(1)}km radius';
   }
 
-  // Get properties for clustering (if implemented)
-  List<PropertyModel> get propertiesWithLocation {
-    return properties.where((p) => p.hasLocation).toList();
-  }
-
-  // Get property markers for map
-  List<PropertyMarker> get propertyMarkers {
-    return propertiesWithLocation.map((property) {
-      return PropertyMarker(
-        property: property,
-        position: LatLng(property.latitude!, property.longitude!),
-        isSelected: selectedProperty.value?.id == property.id,
-      );
-    }).toList();
-  }
-
   // Helper getters
   bool get isLoading => state.value == ExploreState.loading;
   bool get isEmpty => state.value == ExploreState.empty;
@@ -469,39 +610,4 @@ class ExploreController extends GetxController {
   bool get hasProperties => properties.isNotEmpty;
   bool get hasSelection => selectedProperty.value != null;
   bool get isLoadingMore => state.value == ExploreState.loadingMore;
-
-  // This new method will be called by the View once the map is ready
-  void onMapReady() {
-    if (initialMapPosition.value != null) {
-      mapController.move(
-        initialMapPosition.value!.center,
-        initialMapPosition.value!.zoom
-      );
-      DebugLogger.success("✅ Map is ready and moved to initial position.");
-    }
-  }
-}
-
-// Helper class for map positions
-class MapPosition {
-  final LatLng center;
-  final double zoom;
-
-  MapPosition({
-    required this.center,
-    required this.zoom,
-  });
-}
-
-// Helper class for property markers
-class PropertyMarker {
-  final PropertyModel property;
-  final LatLng position;
-  final bool isSelected;
-
-  PropertyMarker({
-    required this.property,
-    required this.position,
-    required this.isSelected,
-  });
 }

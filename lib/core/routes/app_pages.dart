@@ -79,33 +79,36 @@ class AppPages {
       page: () => const DashboardView(),
       binding: DashboardBinding(),
       middlewares: [AuthMiddleware()],
-      children: [
-        GetPage(
-            name: AppRoutes.discover,
-            page: () => const DiscoverView(),
-            binding: DiscoverBinding(),
-          ),
-          GetPage(
-            name: AppRoutes.explore,
-            page: () => ExploreView(),
-            binding: ExploreBinding(),
-          ),
-          GetPage(
-            name: AppRoutes.likes,
-            page: () => LikesView(),
-            binding: LikesBinding(),
-          ),
-          GetPage(
-            name: AppRoutes.visits,
-            page: () => const VisitsView(),
-            binding: VisitsBinding(),
-          ),
-          GetPage(
-            name: AppRoutes.profile,
-            page: () => const ProfileView(),
-            binding: ProfileBinding(),
-          ),
-        ],
+    ),
+    GetPage(
+      name: AppRoutes.discover,
+      page: () => const DiscoverView(),
+      binding: DiscoverBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.explore,
+      page: () => const ExploreView(),
+      binding: ExploreBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.likes,
+      page: () => const LikesView(),
+      binding: LikesBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.visits,
+      page: () => const VisitsView(),
+      binding: VisitsBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.profile,
+      page: () => const ProfileView(),
+      binding: ProfileBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     // Legacy /home retained only if needed. Prefer /discover
     GetPage(
