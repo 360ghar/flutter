@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+      "dart": {
+      "command": "dart",
+      "args": [
+        "mcp-server",
+        "--experimental-mcp-server",
+        "--force-roots-fallback"
+      ]
+    }
+    }
+  }

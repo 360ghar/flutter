@@ -1,0 +1,357 @@
+---
+globs: lib/core/data/*.dart,lib/core/data/**/*.dart
+description: Data layer architecture and API integration patterns
+---
+
+# Data Layer and Networking Architecture
+
+## Data Layer Structure
+The data layer follows a clean architecture pattern with clear separation of concerns:
+
+```
+lib/core/data/
+├── models/          # Data models and entities
+├── providers/       # API and external data providers
+└── repositories/    # Business logic and data access abstraction
+```
+
+## Models
+Data models represent the core business entities and API response structures.
+
+### Model Best Practices
+```dart
+// ✅ Good: Clean data model with JSON serialization
+class UserModel {
+  final String id;
+  final String name;
+  final String email;
+  final DateTime? createdAt;
+
+  const UserModel({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.createdAt,
+  });
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      email: json['email'] as String,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'created_at': createdAt?.toIso8601String(),
+    };
+  }
+}
+
+// ❌ Avoid: Manual JSON parsing without factory methods
+class User {
+  String id;
+  String name;
+  String email;
+
+  User(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    email = json['email'];
+  }
+}
+```
+
+### Model Relationships
+```dart
+// ✅ Good: Proper model relationships
+class PropertyModel {
+  final String id;
+  final String title;
+  final UserModel owner;
+  final List<ImageModel> images;
+
+  const PropertyModel({
+    required this.id,
+    required this.title,
+    required this.owner,
+    required this.images,
+  });
+
+  factory PropertyModel.fromJson(Map<String, dynamic> json) {
+    return PropertyModel(
+      id: json['id'],
+      title: json['title'],
+      owner: UserModel.fromJson(json['owner']),
+      images: (json['images'] as List)
+          .map((img) => ImageModel.fromJson(img))
+          .toList(),
+    );
+  }
+}
+```
+
+## Providers
+Providers handle external data sources (APIs, local storage, etc.).
+
+### API Provider Structure
+```dart
+// ✅ Good: Clean API provider with Dio
+class ApiProvider {
+  final Dio _dio;
+  final String _baseUrl;
+
+  ApiProvider(this._baseUrl) : _dio = Dio(BaseOptions(
+    baseUrl: _baseUrl,
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+  ));
+
+  Future<List<UserModel>> getUsers() async {
+    try {
+      final response = await _dio.get('/users');
+      return (response.data as List)
+          .map((json) => UserModel.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Exception _handleDioError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+        return NetworkException('Connection timeout');
+      case DioExceptionType.receiveTimeout:
+        return NetworkException('Receive timeout');
+      case DioExceptionType.badResponse:
+        return ServerException(e.response?.statusCode, e.response?.data);
+      default:
+        return GenericException('Network error occurred');
+    }
+  }
+}
+```
+
+### Local Storage Provider
+```dart
+// ✅ Good: Abstract local storage operations
+class LocalStorageProvider {
+  final GetStorage _storage = GetStorage();
+
+  Future<void> saveUser(UserModel user) async {
+    await _storage.write('user', user.toJson());
+  }
+
+  UserModel? getUser() {
+    final json = _storage.read('user');
+    return json != null ? UserModel.fromJson(json) : null;
+  }
+
+  Future<void> clearUser() async {
+    await _storage.remove('user');
+  }
+}
+```
+
+## Repositories
+Repositories abstract data access logic and provide a clean interface for controllers.
+
+### Repository Pattern
+```dart
+// ✅ Good: Repository with multiple data sources
+class UserRepository {
+  final ApiProvider _apiProvider;
+  final LocalStorageProvider _localStorage;
+
+  UserRepository(this._apiProvider, this._localStorage);
+
+  Future<UserModel> getUser(String id) async {
+    try {
+      // Try API first
+      return await _apiProvider.getUser(id);
+    } catch (e) {
+      // Fallback to cache if available
+      final cachedUser = _localStorage.getUser();
+      if (cachedUser != null && cachedUser.id == id) {
+        return cachedUser;
+      }
+      throw e;
+    }
+  }
+
+  Future<void> updateUser(UserModel user) async {
+    await _apiProvider.updateUser(user);
+    await _localStorage.saveUser(user);
+  }
+}
+```
+
+### Repository Interface
+```dart
+// ✅ Good: Define repository interfaces
+abstract class IUserRepository {
+  Future<UserModel> getUser(String id);
+  Future<void> updateUser(UserModel user);
+  Future<List<UserModel>> getUsers();
+}
+
+class UserRepository implements IUserRepository {
+  // Implementation
+}
+```
+
+## API Service Integration
+Central API service that coordinates all API calls.
+
+### API Service Structure
+```dart
+// ✅ Good: Centralized API service
+class ApiService {
+  final ApiProvider _apiProvider;
+  final AuthProvider _authProvider;
+
+  ApiService(this._apiProvider, this._authProvider);
+
+  Future<T> authenticatedRequest<T>(Future<T> Function() request) async {
+    final token = await _authProvider.getToken();
+    _apiProvider.setAuthToken(token);
+
+    try {
+      return await request();
+    } on UnauthorizedException {
+      // Handle token refresh
+      await _authProvider.refreshToken();
+      final newToken = await _authProvider.getToken();
+      _apiProvider.setAuthToken(newToken);
+      return await request();
+    }
+  }
+
+  Future<UserModel> getCurrentUser() {
+    return authenticatedRequest(() => _apiProvider.getCurrentUser());
+  }
+}
+```
+
+## Error Handling
+Comprehensive error handling throughout the data layer.
+
+### Custom Exceptions
+```dart
+// ✅ Good: Custom exception hierarchy
+abstract class AppException implements Exception {
+  final String message;
+  const AppException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+class NetworkException extends AppException {
+  const NetworkException(String message) : super(message);
+}
+
+class ServerException extends AppException {
+  final int? statusCode;
+  final dynamic data;
+
+  const ServerException(this.statusCode, this.data)
+      : super('Server error: $statusCode');
+}
+
+class UnauthorizedException extends AppException {
+  const UnauthorizedException() : super('Unauthorized access');
+}
+```
+
+### Error Handling in Controllers
+```dart
+// ✅ Good: Error handling in controllers
+class UserController extends GetxController {
+  final isLoading = false.obs;
+  final error = Rxn<String>();
+
+  Future<void> fetchUser(String id) async {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      final user = await Get.find<UserRepository>().getUser(id);
+      // Handle success
+    } catch (e) {
+      error.value = _handleError(e);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  String _handleError(dynamic error) {
+    if (error is NetworkException) {
+      return 'Network error. Please check your connection.';
+    } else if (error is UnauthorizedException) {
+      return 'Session expired. Please login again.';
+    } else if (error is ServerException) {
+      return 'Server error. Please try again later.';
+    }
+    return 'An unexpected error occurred.';
+  }
+}
+```
+
+## Caching Strategy
+Implement intelligent caching for better performance.
+
+### Cache Implementation
+```dart
+// ✅ Good: Cache with TTL
+class CacheService {
+  final Map<String, CacheEntry> _cache = {};
+
+  Future<T?> get<T>(String key) async {
+    final entry = _cache[key];
+    if (entry != null && !entry.isExpired) {
+      return entry.data as T;
+    }
+    _cache.remove(key);
+    return null;
+  }
+
+  Future<void> set<T>(String key, T data, Duration ttl) async {
+    _cache[key] = CacheEntry(
+      data: data,
+      expiresAt: DateTime.now().add(ttl),
+    );
+  }
+}
+
+class CacheEntry {
+  final dynamic data;
+  final DateTime expiresAt;
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+
+  const CacheEntry({required this.data, required this.expiresAt});
+}
+```
+
+## Best Practices
+1. **Always use repository pattern** for data access abstraction
+2. **Implement proper error handling** with custom exceptions
+3. **Use caching** for frequently accessed data
+4. **Validate data models** before using them
+5. **Implement authentication handling** for API requests
+6. **Use dependency injection** for providers and repositories
+7. **Follow single responsibility** for each data layer component
+8. **Implement proper logging** for debugging API issues

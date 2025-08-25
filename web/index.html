@@ -1,38 +1,178 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
+  
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ghar360 - Transform your property search with 360° virtual tours, exact location mapping, and an engaging Bumble-inspired swipe interface.">
+  <meta name="keywords" content="real estate, property search, 360 tours, virtual tours, property listings, house hunting, apartment search, home buying">
+  
+  <!-- Preload critical images -->
+  <link rel="preload" as="image" href="icons/Icon-192.png">
+  <link rel="preload" as="image" href="favicon.png">
+  
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="ghar360">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ghar360">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
+  
+  <!-- Android PWA -->
+  <meta name="theme-color" content="#FFBC05">
+  
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
+  
+  <!-- Image optimization hints -->
+  <meta name="image-optimization" content="webp,avif">
+  
+  <!-- Loading Screen Management -->
+  <script>
+    // Hide loading screen when Flutter loads
+    function hideLoadingScreen() {
+      const loadingElement = document.getElementById('loading');
+      if (loadingElement && loadingElement.style.display !== 'none') {
+        console.log('Hiding loading screen...');
+        loadingElement.style.opacity = '0';
+        loadingElement.style.transition = 'opacity 0.5s ease-out';
+        setTimeout(() => {
+          loadingElement.style.display = 'none';
+          console.log('Loading screen hidden');
+        }, 500);
+      }
+    }
 
-  <title>ghar360</title>
+    // Multiple approaches to detect when Flutter is ready
+    let isHidden = false;
+    
+    function tryHideLoadingScreen() {
+      if (!isHidden) {
+        isHidden = true;
+        hideLoadingScreen();
+      }
+    }
+
+    // Method 1: Listen for Flutter-specific events
+    window.addEventListener('flutter-first-frame', tryHideLoadingScreen);
+    
+    // Method 2: Check for Flutter DOM elements
+    function checkForFlutterElements() {
+      const flutterElements = document.querySelectorAll('flt-glass-pane, flutter-view, [flt-renderer], .flt-glass-pane');
+      if (flutterElements.length > 0) {
+        console.log('Flutter elements detected');
+        tryHideLoadingScreen();
+        return true;
+      }
+      return false;
+    }
+    
+    // Method 3: MutationObserver to watch for DOM changes
+    if (typeof MutationObserver !== 'undefined') {
+      const observer = new MutationObserver(function(mutations) {
+        if (checkForFlutterElements()) {
+          observer.disconnect();
+        }
+      });
+      
+      document.addEventListener('DOMContentLoaded', function() {
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true
+        });
+      });
+    }
+    
+    // Method 4: Polling for Flutter elements
+    let pollCount = 0;
+    const pollInterval = setInterval(() => {
+      pollCount++;
+      if (checkForFlutterElements() || pollCount > 40) { // Stop after 20 seconds
+        clearInterval(pollInterval);
+      }
+    }, 500);
+    
+    // Method 5: Fallback timeout
+    setTimeout(() => {
+      console.log('Fallback timeout triggered');
+      tryHideLoadingScreen();
+    }, 5000);
+  </script>
+  
+  <title>Ghar360 - Real Estate with 360° Tours</title>
   <link rel="manifest" href="manifest.json">
+  
+  <style>
+    /* Loading screen styles */
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #FFBC05 0%, #FF6B35 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .loading-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 24px;
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    
+    .loading-text {
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Hide loading screen when Flutter app loads */
+    .flutter-loaded #loading {
+      display: none;
+    }
+  </style>
 </head>
 <body>
+  <!-- Loading Screen -->
+  <div id="loading">
+    <div class="loading-logo">360</div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading Ghar360...</div>
+  </div>
+  
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
