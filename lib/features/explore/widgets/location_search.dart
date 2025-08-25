@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 import '../controllers/explore_controller.dart';
 import '../../../core/data/models/location_model.dart';
 import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/debug_logger.dart';
 
 class LocationSearch extends GetView<ExploreController> {
   const LocationSearch({super.key});
@@ -64,8 +63,9 @@ class LocationSearch extends GetView<ExploreController> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: TextField(
+            child: Obx(() => TextField(
               onChanged: controller.updateSearchQuery,
+              controller: TextEditingController(text: controller.searchQuery.value),
               style: const TextStyle(fontSize: 16),
               decoration: InputDecoration(
                 hintText: 'Search for a city or area...',
@@ -77,18 +77,24 @@ class LocationSearch extends GetView<ExploreController> {
                 contentPadding: EdgeInsets.zero,
               ),
               autofocus: true,
-            ),
+            )),
           ),
-          IconButton(
-            icon: Icon(
-              Icons.close,
-              color: Colors.grey[600],
-              size: 20,
-            ),
-            onPressed: controller.clearSearch,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
+          Obx(() {
+            if (controller.isSearchActive.value) {
+              return IconButton(
+                icon: Icon(
+                  Icons.close,
+                  color: Colors.grey[600],
+                  size: 20,
+                ),
+                onPressed: controller.clearSearch,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              );
+            } else {
+              return const SizedBox.shrink();
+            }
+          }),
         ],
       ),
     );
@@ -168,7 +174,7 @@ class LocationSearch extends GetView<ExploreController> {
     );
   }
 
-  // Static method to show location search dialog
+  // Enhanced static method to show location search dialog
   static Future<void> showLocationSearch(BuildContext context) async {
     final controller = Get.find<ExploreController>();
 
@@ -194,7 +200,7 @@ class LocationSearch extends GetView<ExploreController> {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.location_searching,
                     color: Colors.white,
                   ),
@@ -218,6 +224,9 @@ class LocationSearch extends GetView<ExploreController> {
                 ],
               ),
             ),
+
+            // Current Location Option
+            _buildCurrentLocationOption(controller),
 
             // Popular Cities Section
             _buildPopularCities(),
@@ -247,6 +256,10 @@ class LocationSearch extends GetView<ExploreController> {
             // Search Results
             Expanded(
               child: Obx(() {
+                if (controller.searchQuery.value.isEmpty) {
+                  return _buildRecentSearches(controller);
+                }
+
                 if (controller.searchResults.isEmpty) {
                   return _buildEmptyState();
                 }
@@ -353,6 +366,95 @@ class LocationSearch extends GetView<ExploreController> {
                 ),
               );
             }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _buildCurrentLocationOption(ExploreController controller) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      child: InkWell(
+        onTap: () async {
+          await controller.recenterToCurrentLocation();
+          Get.back();
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.my_location,
+                color: Colors.blue[600],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Use Current Location',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      'Find properties near your current location',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.blue[600],
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget _buildRecentSearches(ExploreController controller) {
+    // This could be enhanced to show actual recent searches from storage
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.history,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Recent Searches',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your recent location searches will appear here',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

@@ -55,11 +55,11 @@ class ExploreController extends GetxController {
 
   // Map state
   final Rx<LatLng> currentCenter = const LatLng(28.6139, 77.2090).obs; // Default: Delhi
-  final RxDouble currentZoom = 10.0.obs; // More zoomed out for better visibility
-  final RxDouble currentRadius = 100.0.obs;
+  final RxDouble currentZoom = 12.0.obs; // Better initial zoom for property visibility
+  final RxDouble currentRadius = 25.0.obs; // Better initial radius for focused search
   final Rx<CameraPosition> cameraPosition = const CameraPosition(
     target: LatLng(28.6139, 77.2090),
-    zoom: 10.0, // More zoomed out for better visibility
+    zoom: 12.0,
   ).obs;
 
   // Search and location
@@ -81,6 +81,9 @@ class ExploreController extends GetxController {
   final RxBool isLoadingLocation = false.obs;
   final RxBool isLoadingProperties = false.obs;
   final RxInt loadingProgress = 0.obs;
+
+  // Map controls
+  final RxBool isMapReady = false.obs;
 
   // Scroll controller for horizontal list
   final ScrollController horizontalScrollController = ScrollController();
@@ -128,11 +131,29 @@ class ExploreController extends GetxController {
       await _locationController.getCurrentLocation();
       if (_locationController.currentPosition.value != null) {
         final position = _locationController.currentPosition.value!;
-        mapCenter.value = LatLng(position.latitude, position.longitude);
-        await fetchPropertiesForMap();
+        final initialCenter = LatLng(position.latitude, position.longitude);
+
+        // Update all map-related state
+        currentCenter.value = initialCenter;
+        mapCenter.value = initialCenter;
+        currentRadius.value = _calculateRadiusFromZoom(currentZoom.value);
+
+        // Update filter service with initial location
+        _filterService.updateLocationWithCoordinates(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          radiusKm: currentRadius.value,
+        );
+
+        await _loadPropertiesForCurrentView();
       } else {
-        errorMessage.value = "Could not determine your location. Please enable location services.";
-        state.value = ExploreState.error;
+        // Fallback to default location with better zoom
+        DebugLogger.warning('⚠️ Could not get current location, using default');
+        currentCenter.value = const LatLng(28.6139, 77.2090);
+        mapCenter.value = const LatLng(28.6139, 77.2090);
+        currentRadius.value = _calculateRadiusFromZoom(currentZoom.value);
+
+        await _loadPropertiesForCurrentView();
       }
     } catch (e) {
       DebugLogger.error("Initialization Error: ", e);
@@ -204,22 +225,40 @@ class ExploreController extends GetxController {
     }
   }
 
-  // Google Maps camera move handler
-  void onCameraMove(CameraPosition position) {
-    currentCenter.value = position.target;
-    currentZoom.value = position.zoom;
-    currentRadius.value = _calculateRadiusFromZoom(position.zoom);
+  // Enhanced map event handlers
+  void onMapMoved(LatLng newCenter) {
+    DebugLogger.info('🗺️ Map moved to: ${newCenter.latitude}, ${newCenter.longitude}');
 
-    // Debounce the map move to avoid too many API calls
+    // Update current center
+    currentCenter.value = newCenter;
+    mapCenter.value = newCenter;
+
+    // Cancel previous debounce
     _mapMoveDebouncer?.cancel();
-    _mapMoveDebouncer = Timer(const Duration(milliseconds: 600), () {
+
+    // Debounce the property loading to avoid too many API calls
+    _mapMoveDebouncer = Timer(const Duration(milliseconds: 800), () {
       _onMapMoveCompleted();
     });
   }
 
-  // Called when camera stops moving
-  void onCameraIdle() {
-    _onMapMoveCompleted();
+  void onMapZoomChanged(double newZoom) {
+    DebugLogger.info('🔍 Map zoom changed to: $newZoom');
+
+    currentZoom.value = newZoom;
+    currentRadius.value = _calculateRadiusFromZoom(newZoom);
+
+    // Update camera position
+    cameraPosition.value = CameraPosition(
+      target: currentCenter.value,
+      zoom: newZoom,
+    );
+
+    // Trigger property reload on zoom change
+    _mapMoveDebouncer?.cancel();
+    _mapMoveDebouncer = Timer(const Duration(milliseconds: 500), () {
+      _onMapMoveCompleted();
+    });
   }
 
   void _onMapMoveCompleted() {
@@ -324,11 +363,7 @@ class ExploreController extends GetxController {
     propertyMarkers.value = propertyMarkers.updateSelection(property.id);
   }
 
-  void onMapMoved(LatLng newCenter) {
-    // Optional: Implement logic to fetch properties for the new map area
-    // For now, we just update the center
-    mapCenter.value = newCenter;
-  }
+
 
   // Search functionality
   void updateSearchQuery(String query) {
@@ -369,26 +404,74 @@ class ExploreController extends GetxController {
 
   Future<void> selectLocationResult(LocationResult result) async {
     try {
+      DebugLogger.info('📍 Location selected: ${result.description}');
+
       isSearchActive.value = false;
       searchQuery.value = result.description;
       currentLocationText.value = result.description;
 
+      LatLng? coordinates;
+
       if (result.hasCoordinates) {
-        _updateMapCenter(result.coordinates!, 14.0);
+        coordinates = result.coordinates!;
       } else {
         // Geocode the address if coordinates not available
-        final coordinates = await GooglePlacesService.geocodeAddress(result.description);
-        if (coordinates != null) {
-          _updateMapCenter(coordinates, 14.0);
-        }
+        coordinates = await GooglePlacesService.geocodeAddress(result.description);
       }
 
-      // Save location preference (if API service available)
-      // await _saveLocationPreference(result.description);
+      if (coordinates != null) {
+        // Animate to the selected location
+        _animateToLocation(coordinates, 14.0);
+
+        // Update filter service with new location
+        _filterService.updateLocationWithCoordinates(
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude,
+          radiusKm: currentRadius.value,
+        );
+
+        // Load properties for the new location
+        await _loadPropertiesForCurrentView();
+
+        DebugLogger.success('✅ Successfully moved to selected location');
+        Get.snackbar(
+          'Location Updated',
+          'Showing properties near ${result.description}',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      } else {
+        DebugLogger.error('❌ Could not get coordinates for selected location');
+        Get.snackbar(
+          'Location Error',
+          'Could not find coordinates for the selected location',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
 
     } catch (e) {
       DebugLogger.error('Error selecting location: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to select location. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
+  }
+
+  // Animation helper for smooth map transitions
+  void _animateToLocation(LatLng location, double zoom) {
+    DebugLogger.info('🎯 Animating to location: ${location.latitude}, ${location.longitude} with zoom $zoom');
+
+    currentCenter.value = location;
+    mapCenter.value = location;
+    currentZoom.value = zoom;
+    currentRadius.value = _calculateRadiusFromZoom(zoom);
+
+    cameraPosition.value = CameraPosition(
+      target: location,
+      zoom: zoom,
+    );
   }
 
 
@@ -508,16 +591,49 @@ class ExploreController extends GetxController {
     _updateMapCenter(currentCenter.value, newZoom);
   }
 
-  void recenterToCurrentLocation() async {
-    if (currentLocation.value != null) {
-      _updateMapCenter(currentLocation.value!.coordinates, 14.0);
-    } else {
+  Future<void> recenterToCurrentLocation() async {
+    try {
+      DebugLogger.info('📍 Recentering to current location...');
+
       // Try to get current location
       await _locationController.getCurrentLocation();
       if (_locationController.currentPosition.value != null) {
         final position = _locationController.currentPosition.value!;
-        _updateMapCenter(LatLng(position.latitude, position.longitude), 14.0);
+        final currentLoc = LatLng(position.latitude, position.longitude);
+
+        _animateToLocation(currentLoc, 14.0);
+        currentLocationText.value = 'Current Location';
+
+        // Update filter service
+        _filterService.updateLocationWithCoordinates(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          radiusKm: currentRadius.value,
+        );
+
+        // Load properties for current location
+        await _loadPropertiesForCurrentView();
+
+        Get.snackbar(
+          'Location Updated',
+          'Centered on your current location',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      } else {
+        Get.snackbar(
+          'Location Error',
+          'Could not get your current location',
+          snackPosition: SnackPosition.BOTTOM,
+        );
       }
+    } catch (e) {
+      DebugLogger.error('Error getting current location: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to get current location',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -561,22 +677,28 @@ class ExploreController extends GetxController {
 
   // Map initialization callback
   void onMapReady() {
-    DebugLogger.success('✅ OpenStreetMap initialized');
-    
-    // Force a refresh after map is created
-    Future.delayed(const Duration(milliseconds: 500), () {
-      DebugLogger.info('🔄 Refreshing properties after map creation');
-      _loadPropertiesForCurrentView();
-    });
+    DebugLogger.success('✅ Map initialized successfully');
+    isMapReady.value = true;
+
+    // Force a refresh after map is created if needed
+    if (properties.isEmpty && state.value != ExploreState.loading) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        DebugLogger.info('🔄 Refreshing properties after map creation');
+        _loadPropertiesForCurrentView();
+      });
+    }
   }
 
-  // Refresh
-
+  // Refresh functionality
+  Future<void> refresh() async {
+    DebugLogger.info('🔄 Manual refresh triggered');
+    await _loadPropertiesForCurrentView();
+  }
 
   // Error handling
   void retryLoading() {
     errorMessage.value = '';
-    fetchPropertiesForMap();
+    _loadPropertiesForCurrentView();
   }
 
   void clearError() {

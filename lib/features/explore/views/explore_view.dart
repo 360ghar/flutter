@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -35,43 +36,8 @@ class ExploreView extends GetView<ExploreController> {
   Widget _buildMapWithProperties() {
     return Stack(
       children: [
-        Obx(() {
-          final mapCenter = controller.mapCenter.value ?? const LatLng(28.6139, 77.2090); // Default to Delhi
-          return FlutterMap(
-            options: MapOptions(
-              initialCenter: mapCenter,
-              initialZoom: 12.0,
-              onPositionChanged: (position, hasGesture) {
-                if (hasGesture) {
-                  controller.onMapMoved(position.center);
-                }
-              },
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                subdomains: const ['a', 'b', 'c'],
-              ),
-              Obx(() => MarkerLayer(
-                markers: controller.propertyMarkers.map((marker) {
-                  return Marker(
-                    width: marker.isSelected ? 50.0 : 40.0,
-                    height: marker.isSelected ? 50.0 : 40.0,
-                    point: marker.position,
-                    child: GestureDetector(
-                      onTap: () => controller.onPropertySelected(marker.property),
-                      child: Icon(
-                        Icons.location_pin,
-                        color: marker.markerColor,
-                        size: marker.markerSize,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              )),
-            ],
-          );
-        }),
+        // Map Layer with enhanced event handling
+        _buildMap(),
 
         // Property Carousel (only show if property is selected)
         _buildPropertyCarousel(),
@@ -87,9 +53,137 @@ class ExploreView extends GetView<ExploreController> {
 
         // Info Panel
         _buildInfoPanel(),
+
+        // Loading Overlay
+        _buildLoadingOverlay(),
       ],
     );
   }
+
+  Widget _buildMap() {
+    return Obx(() {
+      final mapCenter = controller.mapCenter.value ?? const LatLng(28.6139, 77.2090);
+      final zoom = controller.currentZoom.value;
+
+      return FlutterMap(
+        options: MapOptions(
+          initialCenter: mapCenter,
+          initialZoom: zoom,
+          minZoom: 3.0,
+          maxZoom: 18.0,
+          onPositionChanged: (position, hasGesture) {
+            if (hasGesture && controller.isMapReady.value) {
+              // Update zoom if changed significantly
+              if ((position.zoom - controller.currentZoom.value).abs() > 0.1) {
+                controller.onMapZoomChanged(position.zoom);
+              }
+
+              // Update center if moved significantly (more than 100 meters)
+              final distance = _calculateDistance(
+                controller.currentCenter.value,
+                position.center,
+              );
+
+              if (distance > 100) {
+                controller.onMapMoved(position.center);
+              }
+            }
+          },
+          onMapReady: () {
+            controller.onMapReady();
+          },
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            subdomains: const ['a', 'b', 'c'],
+            maxZoom: 18,
+          ),
+
+          // Property Markers Layer
+          Obx(() => MarkerLayer(
+            markers: controller.propertyMarkers.map((marker) {
+              return Marker(
+                width: marker.isSelected ? 50.0 : 40.0,
+                height: marker.isSelected ? 50.0 : 40.0,
+                point: marker.position,
+                child: GestureDetector(
+                  onTap: () => controller.onPropertySelected(marker.property),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: marker.isSelected
+                          ? AppColors.primaryYellow
+                          : Colors.white,
+                      border: Border.all(
+                        color: marker.isSelected
+                            ? Colors.white
+                            : AppColors.primaryYellow,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.home,
+                      color: marker.isSelected
+                          ? Colors.white
+                          : AppColors.primaryYellow,
+                      size: marker.isSelected ? 24 : 20,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          )),
+
+          // Current Location Marker
+          Obx(() {
+            final center = controller.currentCenter.value;
+            return MarkerLayer(
+              markers: [
+                Marker(
+                  width: 20.0,
+                  height: 20.0,
+                  point: center,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ],
+      );
+    });
+  }
+
+  // Helper method to calculate distance between two points
+  double _calculateDistance(LatLng point1, LatLng point2) {
+    const double earthRadius = 6371000; // Earth's radius in meters
+    final double lat1Rad = point1.latitude * (math.pi / 180);
+    final double lat2Rad = point2.latitude * (math.pi / 180);
+    final double deltaLat = (point2.latitude - point1.latitude) * (math.pi / 180);
+    final double deltaLng = (point2.longitude - point1.longitude) * (math.pi / 180);
+
+    final double a = (math.sin(deltaLat / 2) * math.sin(deltaLat / 2)) +
+        math.cos(lat1Rad) * math.cos(lat2Rad) *
+        (math.sin(deltaLng / 2) * math.sin(deltaLng / 2));
+    final double c = 2 * math.asin(math.sqrt(a));
+
+    return earthRadius * c;
+  }
+
+
 
   Widget _buildPropertyCarousel() {
     return Obx(() {
@@ -103,8 +197,8 @@ class ExploreView extends GetView<ExploreController> {
         child: SizedBox(
           height: 320,
           child: PageView.builder(
-            controller: PageController(viewportFraction: 0.8),
-            itemCount: 1, // Show only the selected property for now
+            controller: PageController(viewportFraction: 0.85),
+            itemCount: 1,
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -113,6 +207,59 @@ class ExploreView extends GetView<ExploreController> {
                 ),
               );
             },
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Obx(() {
+      if (!controller.isLoadingProperties.value) {
+        return const SizedBox.shrink();
+      }
+
+      return Positioned(
+        top: MediaQuery.of(Get.context!).padding.top + 70,
+        left: 0,
+        right: 0,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.black87,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Loading properties...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+              ),
+              if (controller.loadingProgress.value > 0) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '${controller.loadingProgress.value}%',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       );
@@ -362,95 +509,73 @@ class ExploreView extends GetView<ExploreController> {
   Widget _buildMapControls() {
     return Positioned(
       right: 16,
-      bottom: 220,
+      bottom: controller.hasSelection ? 360 : 220,
       child: Column(
         children: [
           // Zoom In
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: controller.zoomIn,
-              color: Colors.grey[700],
-            ),
+          _buildMapControlButton(
+            icon: Icons.add,
+            onPressed: controller.zoomIn,
           ),
 
           const SizedBox(height: 8),
 
           // Zoom Out
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.remove),
-              onPressed: controller.zoomOut,
-              color: Colors.grey[700],
-            ),
+          _buildMapControlButton(
+            icon: Icons.remove,
+            onPressed: controller.zoomOut,
           ),
 
           const SizedBox(height: 8),
 
           // Current Location
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.my_location),
-              onPressed: controller.recenterToCurrentLocation,
-              color: AppColors.primaryYellow,
-            ),
+          _buildMapControlButton(
+            icon: Icons.my_location,
+            onPressed: controller.recenterToCurrentLocation,
+            color: AppColors.primaryYellow,
           ),
 
           const SizedBox(height: 8),
 
           // Fit Bounds
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.center_focus_strong),
-              onPressed: controller.fitBoundsToProperties,
-              color: Colors.grey[700],
-            ),
+          _buildMapControlButton(
+            icon: Icons.center_focus_strong,
+            onPressed: controller.fitBoundsToProperties,
+          ),
+
+          const SizedBox(height: 8),
+
+          // Refresh
+          _buildMapControlButton(
+            icon: Icons.refresh,
+            onPressed: controller.refresh,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMapControlButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? color,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon),
+        onPressed: onPressed,
+        color: color ?? Colors.grey[700],
       ),
     );
   }
@@ -458,7 +583,7 @@ class ExploreView extends GetView<ExploreController> {
   Widget _buildInfoPanel() {
     return Positioned(
       left: 16,
-      bottom: 220,
+      bottom: controller.hasSelection ? 360 : 220,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
