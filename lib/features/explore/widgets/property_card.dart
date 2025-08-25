@@ -20,34 +20,37 @@ class PropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth > 400 ? 320.0 : (screenWidth - 48); // Responsive width
+    final cardHeight = 120.0;
+
     return GestureDetector(
       onTap: onTap ?? () => _viewPropertyDetails(),
       child: Container(
-        width: 280,
-        margin: const EdgeInsets.only(right: 16),
+        width: cardWidth,
+        height: cardHeight,
+        margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: isSelected ? Border.all(color: AppColors.primaryYellow, width: 2) : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            // Property Image
+            // Left: Property Image
             _buildImageSection(),
 
-            // Property Details
-            _buildDetailsSection(),
-
-            // Action Buttons
-            _buildActionSection(),
+            // Right: Property Details
+            Expanded(
+              child: _buildDetailsSection(),
+            ),
           ],
         ),
       ),
@@ -55,52 +58,43 @@ class PropertyCard extends StatelessWidget {
   }
 
   Widget _buildImageSection() {
+    final screenWidth = MediaQuery.of(Get.context!).size.width;
+    final imageWidth = screenWidth > 400 ? 100.0 : 80.0;
+
     return Stack(
       children: [
         // Main Image
         Container(
-          height: 140,
-          width: double.infinity,
+          width: imageWidth,
+          height: 120,
           decoration: BoxDecoration(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
             image: DecorationImage(
               image: NetworkImage(property.mainImage),
               fit: BoxFit.cover,
-            ),
-          ),
-        ),
-
-        // Gradient Overlay
-        Container(
-          height: 140,
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Colors.black.withOpacity(0.3),
-              ],
+              onError: (error, stackTrace) {
+                // Handle image loading errors
+                debugPrint('Error loading image: $error');
+              },
             ),
           ),
         ),
 
         // Price Badge
         Positioned(
-          top: 12,
-          left: 12,
+          top: 8,
+          left: 8,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
               color: AppColors.primaryYellow,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               property.formattedPrice,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -109,12 +103,12 @@ class PropertyCard extends StatelessWidget {
 
         // Like Button
         Positioned(
-          top: 12,
-          right: 12,
+          top: 8,
+          right: 8,
           child: GestureDetector(
             onTap: onLikeTap ?? () => _toggleLike(),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.9),
                 shape: BoxShape.circle,
@@ -122,7 +116,7 @@ class PropertyCard extends StatelessWidget {
               child: Icon(
                 property.liked ? Icons.favorite : Icons.favorite_border,
                 color: property.liked ? Colors.red : Colors.grey,
-                size: 20,
+                size: 16,
               ),
             ),
           ),
@@ -130,19 +124,19 @@ class PropertyCard extends StatelessWidget {
 
         // Property Type Badge
         Positioned(
-          bottom: 12,
-          left: 12,
+          bottom: 8,
+          left: 8,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               property.purposeString,
               style: const TextStyle(
                 color: Colors.black,
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -153,82 +147,104 @@ class PropertyCard extends StatelessWidget {
   }
 
   Widget _buildDetailsSection() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            Text(
-              property.title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title
+          Text(
+            property.title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          const SizedBox(height: 4),
+
+          // Location
+          Row(
+            children: [
+              Icon(
+                Icons.location_on,
+                size: 12,
+                color: Colors.grey[600],
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            const SizedBox(height: 4),
-
-            // Location
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on,
-                  size: 12,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    property.addressDisplay,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  property.addressDisplay,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
                   ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            // Property Features
-            Row(
-              children: [
-                if (property.bedrooms != null) ...[
-                  _buildFeatureIcon(Icons.bed, '${property.bedrooms}B'),
-                  const SizedBox(width: 12),
-                ],
-                if (property.bathrooms != null) ...[
-                  _buildFeatureIcon(Icons.bathtub, '${property.bathrooms}Ba'),
-                  const SizedBox(width: 12),
-                ],
-                if (property.areaSqft != null) ...[
-                  _buildFeatureIcon(Icons.square_foot, '${property.areaSqft}ft²'),
-                ],
-              ],
-            ),
-
-            const Spacer(),
-
-            // Distance (if available)
-            if (property.distanceKm != null) ...[
-              Text(
-                property.distanceText,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey[500],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Property Features
+          Row(
+            children: [
+              if (property.bedrooms != null) ...[
+                _buildFeatureIcon(Icons.bed, '${property.bedrooms}B'),
+                const SizedBox(width: 8),
+              ],
+              if (property.bathrooms != null) ...[
+                _buildFeatureIcon(Icons.bathtub, '${property.bathrooms}Ba'),
+                const SizedBox(width: 8),
+              ],
+              if (property.areaSqft != null) ...[
+                _buildFeatureIcon(Icons.square_foot, '${property.areaSqft}ft²'),
+              ],
+            ],
+          ),
+
+          const Spacer(),
+
+          // Distance and View Details Button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (property.distanceKm != null)
+                Text(
+                  property.distanceText,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey[500],
+                  ),
+                )
+              else
+                const SizedBox(),
+
+              // View Details Button
+              TextButton(
+                onPressed: onTap ?? () => _viewPropertyDetails(),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'View Details',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.primaryYellow,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -238,14 +254,14 @@ class PropertyCard extends StatelessWidget {
       children: [
         Icon(
           icon,
-          size: 14,
+          size: 12,
           color: Colors.grey[600],
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 2),
         Text(
           text,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 10,
             color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
@@ -254,54 +270,7 @@ class PropertyCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionSection() {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          // View Details Button
-          Expanded(
-            child: ElevatedButton(
-              onPressed: onTap ?? () => _viewPropertyDetails(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryYellow,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              child: const Text('View Details'),
-            ),
-          ),
 
-          const SizedBox(width: 8),
-
-          // Contact Button
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: IconButton(
-              onPressed: () => _contactOwner(),
-              icon: Icon(
-                Icons.phone,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-              padding: const EdgeInsets.all(8),
-              constraints: const BoxConstraints(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _viewPropertyDetails() {
     DebugLogger.api('Viewing property details: ${property.title}');
@@ -314,27 +283,5 @@ class PropertyCard extends StatelessWidget {
     onLikeTap?.call();
   }
 
-  void _contactOwner() {
-    DebugLogger.api('Contacting owner for property: ${property.title}');
 
-    if (property.ownerContact?.isNotEmpty == true) {
-      // You can implement phone call or WhatsApp functionality here
-      Get.snackbar(
-        'Contact Owner',
-        'Phone: ${property.ownerContact}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.primaryYellow,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
-    } else {
-      Get.snackbar(
-        'Contact Info',
-        'Contact information not available',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
 }

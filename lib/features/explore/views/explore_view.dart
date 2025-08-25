@@ -27,25 +27,22 @@ class ExploreView extends GetView<ExploreController> {
             return _buildEmptyState();
           case ExploreState.loaded:
           case ExploreState.loadingMore:
-            return _buildMapWithProperties();
+            return _buildExploreInterface();
         }
       }),
     );
   }
 
-  Widget _buildMapWithProperties() {
+  Widget _buildExploreInterface() {
     return Stack(
       children: [
-        // Map Layer with enhanced event handling
+        // Full Screen Map
         _buildMap(),
 
-        // Property Carousel (only show if property is selected)
-        _buildPropertyCarousel(),
+        // Top App Bar with Location, Search, and Filters
+        _buildTopAppBar(),
 
-        // App Bar Overlay
-        _buildAppBar(),
-
-        // Location Search
+        // Location Search Overlay (when active)
         const LocationSearch(),
 
         // Map Controls
@@ -53,6 +50,9 @@ class ExploreView extends GetView<ExploreController> {
 
         // Info Panel
         _buildInfoPanel(),
+
+        // Horizontal Property List at Bottom
+        _buildPropertyList(),
 
         // Loading Overlay
         _buildLoadingOverlay(),
@@ -185,32 +185,158 @@ class ExploreView extends GetView<ExploreController> {
 
 
 
-  Widget _buildPropertyCarousel() {
-    return Obx(() {
-      if (controller.selectedProperty.value == null) {
-        return const SizedBox.shrink();
-      }
-      return Positioned(
-        bottom: 20,
-        left: 0,
-        right: 0,
-        child: SizedBox(
-          height: 320,
-          child: PageView.builder(
-            controller: PageController(viewportFraction: 0.85),
-            itemCount: 1,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: PropertyCard(
-                  property: controller.selectedProperty.value!,
-                ),
-              );
-            },
-          ),
+  Widget _buildPropertyList() {
+    final screenHeight = MediaQuery.of(Get.context!).size.height;
+    final listHeight = screenHeight > 700 ? 220.0 : 200.0; // Responsive height
+
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        height: listHeight,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
-      );
-    });
+        child: Obx(() {
+          if (controller.properties.isEmpty) {
+            return Column(
+              children: [
+                // Handle for dragging
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  height: 4,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Expanded(
+                  child: Center(
+                    child: Text(
+                      'No properties found',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return Column(
+            children: [
+              // Handle for dragging
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                height: 4,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              // Property count and refresh indicator
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Obx(() => Text(
+                      '${controller.properties.length} properties',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    )),
+                    Obx(() => controller.isLoadingProperties.value
+                      ? Row(
+                          children: [
+                            const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Refreshing...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.refresh, size: 16),
+                          onPressed: controller.refresh,
+                          color: Colors.grey[600],
+                        )),
+                  ],
+                ),
+              ),
+
+              // Horizontal property list
+              Expanded(
+                child: ListView.builder(
+                  controller: controller.horizontalScrollController,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: controller.properties.length + (controller.isLoadingMore.value ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    // Loading indicator at the end
+                    if (index == controller.properties.length && controller.isLoadingMore.value) {
+                      return Container(
+                        width: 320,
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                          ),
+                        ),
+                      );
+                    }
+
+                    // Property card
+                    final property = controller.properties[index];
+                    final isSelected = controller.selectedProperty.value?.id == property.id;
+
+                    return PropertyCard(
+                      property: property,
+                      isSelected: isSelected,
+                      onTap: () => controller.onPropertySelectedFromList(property, index),
+                      onLikeTap: () => controller.toggleLikeProperty(property),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 8),
+            ],
+          );
+        }),
+      ),
+    );
   }
 
   Widget _buildLoadingOverlay() {
@@ -220,7 +346,7 @@ class ExploreView extends GetView<ExploreController> {
       }
 
       return Positioned(
-        top: MediaQuery.of(Get.context!).padding.top + 70,
+        top: MediaQuery.of(Get.context!).padding.top + 120,
         left: 0,
         right: 0,
         child: Container(
@@ -401,7 +527,7 @@ class ExploreView extends GetView<ExploreController> {
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildTopAppBar() {
     return Positioned(
       top: 0,
       left: 0,
@@ -412,90 +538,158 @@ class ExploreView extends GetView<ExploreController> {
           top: MediaQuery.of(Get.context!).padding.top,
           bottom: 8,
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Location Button
-            Expanded(
-              child: InkWell(
-                onTap: () => LocationSearch.showLocationSearch(Get.context!),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.location_on,
-                        color: Colors.grey[600],
-                        size: 20,
+            // First Row: Location and Filters
+            Row(
+              children: [
+                // Location Button
+                Expanded(
+                  flex: 2,
+                  child: InkWell(
+                    onTap: () => LocationSearch.showLocationSearch(Get.context!),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(width: 8),
-                      Obx(() => Expanded(
-                        child: Text(
-                          controller.currentLocationText.value,
-                          style: TextStyle(
-                            color: Colors.grey[800],
-                            fontSize: 14,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            color: Colors.grey[600],
+                            size: 20,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Colors.grey[600],
-                        size: 20,
+                          const SizedBox(width: 8),
+                          Obx(() => Expanded(
+                            child: Text(
+                              controller.currentLocationText.value,
+                              style: TextStyle(
+                                color: Colors.grey[800],
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )),
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.grey[600],
+                            size: 20,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+
+                // Filters Button
+                Flexible(
+                  flex: 1,
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 16),
+                    child: Stack(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.tune),
+                          onPressed: () => Get.toNamed('/filters'),
+                          color: Colors.grey[700],
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                        Obx(() {
+                          final filterCount = Get.find<FilterService>().activeFiltersCount;
+                          if (filterCount > 0) {
+                            return Positioned(
+                              right: 4,
+                              top: 4,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryYellow,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  '$filterCount',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
 
-            // Filters Button
+            // Second Row: Search Bar
             Container(
-              margin: const EdgeInsets.only(right: 16),
-              child: Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.tune),
-                    onPressed: () => Get.toNamed('/filters'),
-                    color: Colors.grey[700],
-                  ),
-                  Obx(() {
-                    final filterCount = Get.find<FilterService>().activeFiltersCount;
-                    if (filterCount > 0) {
-                      return Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryYellow,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Text(
-                            '$filterCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              constraints: const BoxConstraints(maxHeight: 50),
+              child: TextField(
+                controller: TextEditingController(text: controller.searchQuery.value),
+                onChanged: controller.updateSearchQuery,
+                onSubmitted: (value) {
+                  if (value.isNotEmpty) {
+                    controller.performSearch(value);
+                  }
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search properties, locations...',
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  suffixIcon: Obx(() {
+                    if (controller.isLoadingProperties.value) {
+                      return const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: Padding(
+                          padding: EdgeInsets.all(12.0),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
                           ),
                         ),
                       );
                     }
+                    if (controller.searchQuery.value.isNotEmpty) {
+                      return IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey),
+                        onPressed: controller.clearSearch,
+                      );
+                    }
                     return const SizedBox.shrink();
                   }),
-                ],
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primaryYellow),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
               ),
             ),
           ],
@@ -507,9 +701,13 @@ class ExploreView extends GetView<ExploreController> {
 
 
   Widget _buildMapControls() {
+    final screenHeight = MediaQuery.of(Get.context!).size.height;
+    final listHeight = screenHeight > 700 ? 220.0 : 200.0;
+    final bottomPosition = listHeight + 20;
+
     return Positioned(
       right: 16,
-      bottom: controller.hasSelection ? 360 : 220,
+      bottom: bottomPosition,
       child: Column(
         children: [
           // Zoom In
@@ -581,9 +779,13 @@ class ExploreView extends GetView<ExploreController> {
   }
 
   Widget _buildInfoPanel() {
+    final screenHeight = MediaQuery.of(Get.context!).size.height;
+    final listHeight = screenHeight > 700 ? 220.0 : 200.0;
+    final bottomPosition = listHeight + 20;
+
     return Positioned(
       left: 16,
-      bottom: controller.hasSelection ? 360 : 220,
+      bottom: bottomPosition, // Position above the property list
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
