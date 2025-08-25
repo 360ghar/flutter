@@ -1,0 +1,63 @@
+---
+alwaysApply: true
+description: Core project structure and organization patterns
+---
+
+# 360Ghar Flutter Project Structure
+
+## Overview
+This is a Flutter application using GetX for state management, following a feature-based architecture with clean separation of concerns.
+
+## Core Architecture (`lib/core/`)
+- **`bindings/`** - GetX dependency injection bindings
+- **`controllers/`** - Global controllers and base controller classes
+- **`data/`** - Data layer (models, providers, repositories)
+  - `models/` - Data models and entities
+  - `providers/` - API and data providers
+  - `repositories/` - Business logic and data access abstraction
+- **`middlewares/`** - Route middlewares for authentication/authorization
+- **`mixins/`** - Reusable controller/mixins
+- **`routes/`** - App routing configuration
+- **`translations/`** - Internationalization files
+- **`utils/`** - Utility functions and helpers
+- **`widgets/`** - Shared/common widgets
+
+## Feature Architecture (`lib/features/`)
+Each feature follows this structure:
+```
+feature_name/
+├── controllers/     # Feature-specific controllers
+├── views/          # UI screens and components
+├── bindings/       # Feature bindings
+└── widgets/        # Feature-specific widgets
+```
+
+## Main Entry Point
+- **`lib/main.dart`** - Application entry point with GetX initialization
+
+## Key Features
+- **auth/** - Authentication (login, registration, profile completion)
+- **dashboard/** - Main dashboard/home screen
+- **discover/** - Property discovery and search
+- **booking/** - Booking management
+- **profile/** - User profile management
+- **property_details/** - Property detail views
+- **location_search/** - Location search functionality
+- **onboarding/** - User onboarding flow
+
+## File Naming Conventions
+- Controllers: `*_controller.dart`
+- Views: `*_view.dart`
+- Models: `*_model.dart`
+- Providers: `*_provider.dart`
+- Bindings: `*_binding.dart`
+- Widgets: `*_widget.dart`
+
+## Asset Organization
+- **`assets/images/`** - Static images and icons
+- **`assets/icons/`** - Icon assets
+
+## Platform-Specific Code
+- **`android/`** - Android platform configuration
+- **`ios/`** - iOS platform configuration
+- **`web/`** - Web platform configuration

@@ -1,0 +1,489 @@
+---
+globs: lib/core/translations/*.dart,lib/**/*.dart
+description: Internationalization and localization patterns
+---
+
+# Internationalization (i18n) and Copy Guidelines
+
+## Translation Structure
+The app uses GetX internationalization with structured translation files.
+
+### Translation File Organization
+```dart
+// ✅ Good: Organized translation structure
+// lib/core/translations/app_translations.dart
+class AppTranslations extends Translations {
+  @override
+  Map<String, Map<String, String>> get keys => {
+    'en': {
+      // Common
+      'app_name': '360Ghar',
+      'ok': 'OK',
+      'cancel': 'Cancel',
+      'save': 'Save',
+      'delete': 'Delete',
+      'edit': 'Edit',
+      'back': 'Back',
+
+      // Auth
+      'login': 'Login',
+      'register': 'Register',
+      'logout': 'Logout',
+      'email': 'Email',
+      'password': 'Password',
+      'forgot_password': 'Forgot Password?',
+
+      // Navigation
+      'home': 'Home',
+      'discover': 'Discover',
+      'bookings': 'Bookings',
+      'profile': 'Profile',
+
+      // Dashboard
+      'welcome_back': 'Welcome back, @name',
+      'recent_properties': 'Recent Properties',
+      'view_all': 'View All',
+
+      // Property
+      'property_details': 'Property Details',
+      'price': 'Price',
+      'location': 'Location',
+      'bedrooms': 'Bedrooms',
+      'bathrooms': 'Bathrooms',
+      'area': 'Area',
+
+      // Booking
+      'book_now': 'Book Now',
+      'booking_confirmed': 'Booking Confirmed',
+      'booking_details': 'Booking Details',
+
+      // Errors
+      'network_error': 'Network error. Please check your connection.',
+      'server_error': 'Server error. Please try again later.',
+      'unauthorized': 'Session expired. Please login again.',
+      'validation_error': 'Please check your input and try again.',
+    },
+    'hi': {
+      // Hindi translations
+      'app_name': '360 घर',
+      'ok': 'ठीक है',
+      'cancel': 'रद्द करें',
+      'save': 'सहेजें',
+      'delete': 'हटाएं',
+      'edit': 'संपादित करें',
+      'back': 'वापस',
+
+      'login': 'लॉगिन',
+      'register': 'पंजीकरण',
+      'logout': 'लॉगआउट',
+      'email': 'ईमेल',
+      'password': 'पासवर्ड',
+
+      'home': 'होम',
+      'discover': 'खोजें',
+      'bookings': 'बुकिंग',
+      'profile': 'प्रोफाइल',
+
+      'welcome_back': 'वापसी पर स्वागत, @name',
+      'recent_properties': 'हाल की प्रॉपर्टी',
+      'view_all': 'सभी देखें',
+    },
+    'mr': {
+      // Marathi translations
+      'app_name': '360 घर',
+      'ok': 'ठीक आहे',
+      'cancel': 'रद्द करा',
+      'save': 'जतन करा',
+      'delete': 'हटवा',
+      'edit': 'संपादित करा',
+      'back': 'मागे',
+
+      'login': 'लॉगिन',
+      'register': 'नोंदणी',
+      'logout': 'लॉगआउट',
+      'email': 'ईमेल',
+      'password': 'पासवर्ड',
+
+      'home': 'होम',
+      'discover': 'शोधा',
+      'bookings': 'बुकिंग',
+      'profile': 'प्रोफाइल',
+    },
+  };
+}
+```
+
+### Translation Service
+```dart
+// ✅ Good: Centralized translation service
+class TranslationService {
+  static String get(String key, {Map<String, String>? params}) {
+    String translation = key.tr;
+
+    if (params != null) {
+      params.forEach((paramKey, paramValue) {
+        translation = translation.replaceAll('@$paramKey', paramValue);
+      });
+    }
+
+    return translation;
+  }
+
+  static void changeLanguage(String languageCode) {
+    Get.updateLocale(Locale(languageCode));
+  }
+
+  static String get currentLanguage => Get.locale?.languageCode ?? 'en';
+
+  static List<String> get supportedLanguages => ['en', 'hi', 'mr'];
+
+  static Map<String, String> get languageNames => {
+    'en': 'English',
+    'hi': 'हिंदी',
+    'mr': 'मराठी',
+  };
+}
+```
+
+## Using Translations in Widgets
+### Basic Text Translation
+```dart
+// ✅ Good: Using translations in widgets
+class LoginView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('login'.tr), // Simple translation
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text(
+              'welcome_back'.tr, // With parameter
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'email'.tr,
+                hintText: TranslationService.get('enter_email'),
+              ),
+            ),
+
+            ElevatedButton(
+              onPressed: () {},
+              child: Text('login'.tr),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+### Dynamic Translations with Parameters
+```dart
+// ✅ Good: Dynamic content with translations
+class PropertyCard extends StatelessWidget {
+  final PropertyModel property;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Column(
+        children: [
+          Text(
+            TranslationService.get('price_display', params: {
+              'price': property.price.toString(),
+              'currency': '₹',
+            }),
+          ),
+          Text(
+            TranslationService.get('bed_bath_display', params: {
+              'beds': property.bedrooms.toString(),
+              'baths': property.bathrooms.toString(),
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+## Language Management
+### Language Controller
+```dart
+// ✅ Good: Language management controller
+class LanguageController extends GetxController {
+  final currentLanguage = 'en'.obs;
+  final isLoading = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadSavedLanguage();
+  }
+
+  void _loadSavedLanguage() {
+    final savedLanguage = GetStorage().read<String>('language');
+    if (savedLanguage != null && TranslationService.supportedLanguages.contains(savedLanguage)) {
+      currentLanguage.value = savedLanguage;
+      TranslationService.changeLanguage(savedLanguage);
+    }
+  }
+
+  Future<void> changeLanguage(String languageCode) async {
+    if (!TranslationService.supportedLanguages.contains(languageCode)) {
+      return;
+    }
+
+    isLoading.value = true;
+    try {
+      // Save to storage
+      await GetStorage().write('language', languageCode);
+
+      // Update locale
+      TranslationService.changeLanguage(languageCode);
+      currentLanguage.value = languageCode;
+
+      // Show success message
+      Get.snackbar(
+        'language_changed'.tr,
+        TranslationService.get('language_changed_to', params: {
+          'language': TranslationService.languageNames[languageCode]!,
+        }),
+      );
+    } catch (e) {
+      Get.snackbar('error'.tr, 'language_change_failed'.tr);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  List<Map<String, String>> get availableLanguages {
+    return TranslationService.supportedLanguages.map((code) {
+      return {
+        'code': code,
+        'name': TranslationService.languageNames[code]!,
+        'native_name': _getNativeLanguageName(code),
+      };
+    }).toList();
+  }
+
+  String _getNativeLanguageName(String code) {
+    switch (code) {
+      case 'en': return 'English';
+      case 'hi': return 'हिंदी';
+      case 'mr': return 'मराठी';
+      default: return code;
+    }
+  }
+}
+```
+
+### Language Selection Widget
+```dart
+// ✅ Good: Language selection UI
+class LanguageSelectionWidget extends GetView<LanguageController> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('select_language'.tr),
+      ),
+      body: Obx(() {
+        return ListView.builder(
+          itemCount: controller.availableLanguages.length,
+          itemBuilder: (context, index) {
+            final language = controller.availableLanguages[index];
+            final isSelected = controller.currentLanguage.value == language['code'];
+
+            return ListTile(
+              title: Text(language['name']!),
+              subtitle: Text(language['native_name']!),
+              trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
+              onTap: controller.isLoading.value
+                  ? null
+                  : () => controller.changeLanguage(language['code']!),
+            );
+          },
+        );
+      }),
+    );
+  }
+}
+```
+
+## Pluralization and Formatting
+### Pluralization Rules
+```dart
+// ✅ Good: Handling pluralization
+class PluralizationService {
+  static String getPropertyCount(int count) {
+    if (Get.locale?.languageCode == 'en') {
+      if (count == 0) return 'no_properties'.tr;
+      if (count == 1) return 'one_property'.tr;
+      return 'properties_count'.tr.replaceAll('@count', count.toString());
+    } else if (Get.locale?.languageCode == 'hi') {
+      // Hindi pluralization rules
+      if (count == 0) return 'कोई_प्रॉपर्टी_नहीं'.tr;
+      if (count == 1) return 'एक_प्रॉपर्टी'.tr;
+      if (count <= 4) return 'कुछ_प्रॉपर्टी'.tr.replaceAll('@count', count.toString());
+      return 'प्रॉपर्टी'.tr.replaceAll('@count', count.toString());
+    }
+
+    return 'properties_count'.tr.replaceAll('@count', count.toString());
+  }
+
+  static String formatCurrency(double amount) {
+    final formatter = NumberFormat.currency(
+      locale: Get.locale?.toString() ?? 'en_IN',
+      symbol: '₹',
+      decimalDigits: 0,
+    );
+    return formatter.format(amount);
+  }
+
+  static String formatDate(DateTime date) {
+    final formatter = DateFormat.yMMMd(Get.locale?.toString() ?? 'en');
+    return formatter.format(date);
+  }
+}
+```
+
+### Number and Date Formatting
+```dart
+// ✅ Good: Localized formatting
+class LocalizedText extends StatelessWidget {
+  final String text;
+  final TextStyle? style;
+
+  const LocalizedText(this.text, {this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.tr,
+      style: style,
+      locale: Get.locale, // Important for proper text rendering
+    );
+  }
+}
+
+// Usage
+Text(PluralizationService.getPropertyCount(propertyCount)),
+Text(PluralizationService.formatCurrency(price)),
+Text(PluralizationService.formatDate(createdAt)),
+```
+
+## RTL Language Support
+### RTL Configuration
+```dart
+// ✅ Good: RTL language support
+class AppConfig {
+  static void configureRTL() {
+    final isRTL = Get.locale?.languageCode == 'ar'; // For Arabic
+    if (isRTL) {
+      Get.changeTheme(Get.theme.copyWith(
+        textTheme: Get.theme.textTheme.apply(
+          fontFamily: 'ArabicFont', // RTL font
+        ),
+      ));
+    }
+  }
+
+  static TextDirection get textDirection {
+    return Get.locale?.languageCode == 'ar'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
+  }
+}
+```
+
+### RTL-Aware Widgets
+```dart
+// ✅ Good: RTL-aware layout
+class RTLContainer extends StatelessWidget {
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: AppConfig.textDirection,
+      child: child,
+    );
+  }
+}
+```
+
+## Translation Management
+### Adding New Languages
+```dart
+// ✅ Good: Process for adding new languages
+class LanguageAdditionGuide {
+  static void addNewLanguage(String languageCode, String languageName) {
+    // 1. Add language to supported languages
+    TranslationService.supportedLanguages.add(languageCode);
+
+    // 2. Add language name mapping
+    TranslationService.languageNames[languageCode] = languageName;
+
+    // 3. Add translations to AppTranslations
+    // 4. Test all translations are complete
+    // 5. Update language controller
+    // 6. Add font support if needed
+    // 7. Test RTL if applicable
+  }
+}
+```
+
+### Translation Validation
+```dart
+// ✅ Good: Translation completeness validation
+class TranslationValidator {
+  static List<String> validateTranslations() {
+    final baseLanguage = 'en';
+    final baseTranslations = AppTranslations().keys[baseLanguage]!;
+    final missingKeys = <String>[];
+
+    for (final language in TranslationService.supportedLanguages) {
+      if (language == baseLanguage) continue;
+
+      final languageTranslations = AppTranslations().keys[language]!;
+      for (final key in baseTranslations.keys) {
+        if (!languageTranslations.containsKey(key)) {
+          missingKeys.add('$language: $key');
+        }
+      }
+    }
+
+    return missingKeys;
+  }
+
+  static void logMissingTranslations() {
+    final missing = validateTranslations();
+    if (missing.isNotEmpty) {
+      debugPrint('Missing translations:');
+      missing.forEach(debugPrint);
+    }
+  }
+}
+```
+
+## Best Practices
+1. **Use semantic keys** for translations, not literal text
+2. **Support parameters** in translations using @variable syntax
+3. **Handle pluralization** appropriately for each language
+4. **Test all languages** during development
+5. **Use proper fonts** for different languages
+6. **Consider RTL languages** from the beginning
+7. **Keep translations organized** by feature/domain
+8. **Validate translation completeness** before releases
+9. **Use translation service** for consistency
+10. **Support locale-specific formatting** (dates, numbers, currency)
+
+This rule applies to all translation-related files and widgets that display text.

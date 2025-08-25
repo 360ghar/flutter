@@ -1,72 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../app/utils/app_colors.dart';
+import '../../core/utils/app_colors.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
+  final Function(int)? onTap;
   
   const CustomBottomNavigationBar({
-    Key? key,
+    super.key,
     required this.currentIndex,
-  }) : super(key: key);
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
+    return Obx(() => BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       backgroundColor: AppColors.navigationBackground,
-      selectedItemColor: AppColors.navigationSelected,
+      selectedItemColor: AppColors.primaryYellow,
       unselectedItemColor: AppColors.navigationUnselected,
       currentIndex: currentIndex,
       onTap: _onItemTapped,
       elevation: 8,
       selectedFontSize: 12,
       unselectedFontSize: 12,
-      items: [
+      items: const [
         BottomNavigationBarItem(
-          icon: const Icon(Icons.person),
-          label: 'profile'.tr,
+          icon: Icon(Icons.person),
+          label: 'Profile',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.explore),
-          label: 'discover'.tr,
+          icon: Icon(Icons.explore),
+          label: 'Explore',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.home),
-          label: 'properties'.tr,
+          icon: Icon(Icons.home),
+          label: 'Discover',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.favorite),
-          label: 'liked'.tr,
+          icon: Icon(Icons.favorite),
+          label: 'Likes',
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.calendar_today),
-          label: 'visits'.tr,
+          icon: Icon(Icons.calendar_today),
+          label: 'Visits',
         ),
       ],
-    );
+    ));
   }
 
   void _onItemTapped(int index) {
     // Prevent unnecessary navigation if already on the same page
     if (index == currentIndex) return;
     
-    switch (index) {
-      case 0:
-        Get.offNamed('/profile');
-        break;
-      case 1:
-        Get.offNamed('/explore');
-        break;
-      case 2:
-        Get.offNamed('/home');
-        break;
-      case 3:
-        Get.offNamed('/favourites');
-        break;
-      case 4:
-        Get.offNamed('/visits');
-        break;
+    // Use custom onTap if provided, otherwise use default navigation
+    if (onTap != null) {
+      onTap!(index);
+    } else {
+      // Updated navigation with new routes
+      switch (index) {
+        case 0:
+          Get.offNamed('/profile');
+          break;
+        case 1:
+          Get.offNamed('/explore'); // Map interface
+          break;
+        case 2:
+          Get.offNamed('/discover'); // Swipe interface (was /home)
+          break;
+        case 3:
+          Get.offNamed('/likes'); // Updated from /favourites
+          break;
+        case 4:
+          Get.offNamed('/visits');
+          break;
+      }
     }
   }
-} 
+}
