@@ -146,7 +146,7 @@ class AppTranslations extends Translations {
       'language_changed_message': 'Language has been changed successfully',
       
       // Explore/Map
-      'explore_properties': 'Explore Properties',
+      'explore_properties': 'Explore',
       'map_view': 'Map View',
       'list_view': 'List View',
       'nearby_properties': 'Nearby Properties',

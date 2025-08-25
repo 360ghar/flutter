@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/discover_controller.dart';
-import '../../../core/controllers/filter_service.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
+import '../../../core/utils/debug_logger.dart';
+import '../../../core/controllers/page_state_service.dart';
 import '../../../../widgets/common/loading_states.dart';
 import '../../../../widgets/common/error_states.dart';
+import '../../../../widgets/common/unified_top_bar.dart';
+import '../../../widgets/common/property_filter_widget.dart';
 import '../widgets/property_swipe_card.dart';
 
 class DiscoverView extends GetView<DiscoverController> {
@@ -13,82 +16,65 @@ class DiscoverView extends GetView<DiscoverController> {
 
   @override
   Widget build(BuildContext context) {
-    final filterService = Get.find<FilterService>();
+    final pageStateService = Get.find<PageStateService>();
 
-    return Obx(() => Scaffold(
+    return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBackground,
-        elevation: 0,
-        title: Text(
-          'app_name'.tr,
-          style: TextStyle(
-            color: AppColors.appBarText,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          // Filters button
-          Obx(() => IconButton(
-            icon: Stack(
-              children: [
-                Icon(
-                  Icons.tune,
-                  color: AppColors.iconColor,
-                ),
-                if (filterService.activeFiltersCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryYellow,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '${filterService.activeFiltersCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: () => Get.toNamed('/filters'),
-          )),
-        ],
+      appBar: DiscoverTopBar(
+        onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'discover'),
       ),
       body: Obx(() {
-        // Show different states based on controller state
-        switch (controller.state.value) {
-          case DiscoverState.loading:
-            return _buildLoadingState();
-            
-          case DiscoverState.error:
-            return _buildErrorState();
-            
-          case DiscoverState.empty:
-            return _buildEmptyState();
-            
-          case DiscoverState.loaded:
-          case DiscoverState.prefetching:
-            return _buildSwipeInterface(context);
-            
-          default:
-            return _buildLoadingState();
-        }
+        // Debug snapshot of controller and page state for diagnosing stuck loaders
+        // ignore: unused_local_variable
+        final _debug = () {
+          try {
+            final ps = pageStateService.discoverState.value;
+            // Lightweight log; avoid spamming every frame
+            if (controller.state.value == DiscoverState.loading && (DateTime.now().millisecond % 7 == 0)) {
+              DebugLogger.info('🧭 DiscoverView: state=${controller.state.value}, deck=${controller.deck.length}, ps.loading=${ps.isLoading}, ps.refreshing=${ps.isRefreshing}, ps.props=${ps.properties.length}');
+            }
+          } catch (_) {}
+        }();
+        final isRefreshing = pageStateService.discoverState.value.isRefreshing;
+        
+        return Column(
+          children: [
+            // Subtle refresh indicator
+            if (isRefreshing)
+              LinearProgressIndicator(
+                minHeight: 2,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+              ),
+            // Main content
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  // Show different states based on controller state
+                  switch (controller.state.value) {
+                    case DiscoverState.loading:
+                      return _buildLoadingState();
+                      
+                    case DiscoverState.error:
+                      return _buildErrorState();
+                      
+                    case DiscoverState.empty:
+                      return _buildEmptyState(context);
+                      
+                    case DiscoverState.loaded:
+                    case DiscoverState.prefetching:
+                      return _buildSwipeInterface(context);
+                      
+                    default:
+                      return _buildLoadingState();
+                  }
+                },
+              ),
+            ),
+          ],
+        );
       }),
-    ));
+    );
   }
 
   Widget _buildLoadingState() {
@@ -153,18 +139,17 @@ class DiscoverView extends GetView<DiscoverController> {
     });
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return ErrorStates.swipeDeckEmpty(
       onRefresh: controller.refreshDeck,
-      onChangeFilters: () => Get.toNamed('/filters'),
+      onChangeFilters: () => showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'discover'),
     );
   }
 
   Widget _buildSwipeInterface(BuildContext context) {
-    return Stack(
+    return Column(
       children: [
-        // Main swipe cards
-        Positioned.fill(
+        Expanded(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Obx(() => PropertySwipeStack(
@@ -176,8 +161,6 @@ class DiscoverView extends GetView<DiscoverController> {
             )),
           ),
         ),
-        
-        
       ],
     );
   }

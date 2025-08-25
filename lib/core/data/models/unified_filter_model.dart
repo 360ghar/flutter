@@ -10,9 +10,6 @@ class UnifiedFilterModel {
   final double? longitude;
   @JsonKey(name: 'radius_km')
   final double? radiusKm;
-  final String? city;
-  final String? locality;
-  final String? pincode;
 
   // Core property filters
   final String? purpose; // buy, rent, short_stay
@@ -72,9 +69,6 @@ class UnifiedFilterModel {
     this.latitude,
     this.longitude,
     this.radiusKm,
-    this.city,
-    this.locality,
-    this.pincode,
     this.purpose,
     this.propertyType,
     this.priceMin,
@@ -127,9 +121,6 @@ class UnifiedFilterModel {
     double? latitude,
     double? longitude,
     double? radiusKm,
-    String? city,
-    String? locality,
-    String? pincode,
     String? purpose,
     List<String>? propertyType,
     double? priceMin,
@@ -159,9 +150,6 @@ class UnifiedFilterModel {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       radiusKm: radiusKm ?? this.radiusKm,
-      city: city ?? this.city,
-      locality: locality ?? this.locality,
-      pincode: pincode ?? this.pincode,
       purpose: purpose ?? this.purpose,
       propertyType: propertyType ?? this.propertyType,
       priceMin: priceMin ?? this.priceMin,
@@ -211,15 +199,11 @@ class LocationData {
   final String name;
   final double latitude;
   final double longitude;
-  final String? city;
-  final String? locality;
 
   LocationData({
     required this.name,
     required this.latitude,
     required this.longitude,
-    this.city,
-    this.locality,
   });
 
   factory LocationData.fromJson(Map<String, dynamic> json) {
@@ -227,8 +211,6 @@ class LocationData {
       name: json['name'] ?? '',
       latitude: json['latitude']?.toDouble() ?? 0.0,
       longitude: json['longitude']?.toDouble() ?? 0.0,
-      city: json['city'],
-      locality: json['locality'],
     );
   }
 
@@ -237,8 +219,6 @@ class LocationData {
       'name': name,
       'latitude': latitude,
       'longitude': longitude,
-      'city': city,
-      'locality': locality,
     };
   }
 }

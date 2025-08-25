@@ -40,12 +40,12 @@ class SwipeController extends GetxController {
   }
 
   void _setupFilterListener() {
-    // Listen to filter changes with debounce
-    debounce(
-      _filterService.currentFilter,
-      (_) => _refreshStackWithFilters(),
-      time: const Duration(milliseconds: 800), // Longer debounce for swipe stack
-    );
+    // TODO: Listen to filter changes with debounce - needs update for new page-specific state system
+    // debounce(
+    //   _filterService.currentFilter,
+    //   (_) => _refreshStackWithFilters(),
+    //   time: const Duration(milliseconds: 800), // Longer debounce for swipe stack
+    // );
     
     // Listen to location changes
     ever(_locationController.currentPosition, (position) {
@@ -67,7 +67,7 @@ class SwipeController extends GetxController {
       }
       
       // Update filter with current location
-      final currentFilters = _filterService.currentFilter.value.copyWith(
+      final currentFilters = _filterService.currentFilter.copyWith(
         latitude: latitude,
         longitude: longitude,
         radiusKm: 10.0, // 10km radius for swipe stack
@@ -101,16 +101,7 @@ class SwipeController extends GetxController {
     }
   }
   
-  Future<void> _refreshStackWithFilters() async {
-    if (isLoading.value) return; // Don't refresh if already loading
-    
-    try {
-      await _fetchPropertiesWithCurrentFilters(isInitialLoad: false);
-      DebugLogger.info('🔄 Swipe stack refreshed with new filters');
-    } catch (e) {
-      DebugLogger.error('❌ Error refreshing swipe stack: $e');
-    }
-  }
+
 
   Future<void> _loadInitialStack() async {
     isLoading.value = true;
@@ -191,7 +182,7 @@ class SwipeController extends GetxController {
 
   Future<void> _recordSwipe(PropertyModel property, bool isLiked, String direction) async {
     try {
-      final interactionTime = _getInteractionTime();
+
       
       if (_authController.isAuthenticated) {
         DebugLogger.info('📝 Recording swipe in backend...');

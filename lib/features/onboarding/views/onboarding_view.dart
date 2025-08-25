@@ -174,7 +174,7 @@ class _OnboardingViewState extends State<OnboardingView> {
         shape: BoxShape.circle,
         color: _currentPage == index
             ? AppTheme.primaryColor
-            : Colors.grey.withOpacity(0.5),
+            : Colors.grey.withValues(alpha: 0.5),
       ),
     );
   }

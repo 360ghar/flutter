@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import '../../../core/data/models/property_model.dart';
+import '../../../core/data/models/page_state_model.dart';
 import '../../../core/data/models/unified_filter_model.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
-import '../../../core/data/providers/api_service.dart';
+
 import '../../../core/controllers/filter_service.dart';
+import '../../../core/controllers/page_state_service.dart';
 import '../../../core/utils/debug_logger.dart';
 
 enum LikesSegment { liked, passed }
@@ -21,6 +23,7 @@ enum LikesState {
 class LikesController extends GetxController {
   final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
   final FilterService _filterService = Get.find<FilterService>();
+  final PageStateService _pageStateService = Get.find<PageStateService>();
 
   // Current segment (Liked or Passed)
   final Rx<LikesSegment> currentSegment = LikesSegment.liked.obs;
@@ -54,22 +57,70 @@ class LikesController extends GetxController {
   // Constants
   static const int _limit = 50;
 
+  // Page activation listener
+  Worker? _pageActivationWorker;
+
   @override
   void onInit() {
     super.onInit();
-    _loadInitialData();
+    // Don't set current page here - let navigation handle it
     _setupSearchListener();
+    // LAZY LOADING: Remove initial data loading from onInit
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    
+    // Set up listener for page activation
+    _pageActivationWorker = ever(_pageStateService.currentPageType, (pageType) {
+      if (pageType == PageType.likes) {
+        activatePage();
+      }
+    });
+    
+    // Initial activation if already on this page (with delay to ensure full initialization)
+    if (_pageStateService.currentPageType.value == PageType.likes) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        activatePage();
+      });
+    }
+  }
+
+  void activatePage() {
+    final state = _pageStateService.likesState.value;
+    if (state.properties.isEmpty && likedState.value == LikesState.initial) {
+      // Initialize location and load initial data
+      _pageStateService.useCurrentLocationForPage(PageType.likes).whenComplete(() {
+        _loadInitialData();
+      });
+    } else if (state.isDataStale) {
+      _refreshInBackground();
+    }
+  }
+
+  Future<void> _refreshInBackground() async {
+    try {
+      await _loadLikedProperties(page: 1, backgroundRefresh: true);
+      await _loadPassedProperties(page: 1, backgroundRefresh: true);
+    } catch (e) {
+      DebugLogger.error('❌ Background refresh failed: $e');
+      // Handle silently or with subtle notification
+    }
   }
 
   @override
   void onClose() {
     _searchDebouncer?.cancel();
+    _pageActivationWorker?.dispose();
     super.onClose();
   }
 
   void _setupSearchListener() {
     // Apply search filter whenever search query changes
     debounce(searchQuery, (_) {
+      // Propagate to global filter so API gets 'q'
+      _filterService.updateSearchQuery(searchQuery.value);
       _applySearchFilter();
     }, time: const Duration(milliseconds: 300));
   }
@@ -102,6 +153,7 @@ class LikesController extends GetxController {
     required int page,
     bool isInitial = false,
     bool isLoadMore = false,
+    bool backgroundRefresh = false,
   }) async {
     if (!_likedHasMore && !isInitial) {
       DebugLogger.api('❤️ No more liked properties to load');
@@ -109,6 +161,7 @@ class LikesController extends GetxController {
     }
 
     try {
+      _pageStateService.notifyPageRefreshing(PageType.likes, true);
       if (isInitial) {
         likedState.value = LikesState.loading;
         likedError.value = null;
@@ -158,6 +211,8 @@ class LikesController extends GetxController {
       DebugLogger.error('❌ Failed to load liked properties: $e');
       likedState.value = LikesState.error;
       likedError.value = e.toString();
+    } finally {
+      _pageStateService.notifyPageRefreshing(PageType.likes, false);
     }
   }
 
@@ -166,6 +221,7 @@ class LikesController extends GetxController {
     required int page,
     bool isInitial = false,
     bool isLoadMore = false,
+    bool backgroundRefresh = false,
   }) async {
     if (!_passedHasMore && !isInitial) {
       DebugLogger.api('👎 No more passed properties to load');
@@ -173,6 +229,7 @@ class LikesController extends GetxController {
     }
 
     try {
+      _pageStateService.notifyPageRefreshing(PageType.likes, true);
       if (isInitial) {
         passedState.value = LikesState.loading;
         passedError.value = null;
@@ -223,12 +280,15 @@ class LikesController extends GetxController {
       DebugLogger.error('❌ Failed to load passed properties: $e');
       passedState.value = LikesState.error;
       passedError.value = e.toString();
+    } finally {
+      _pageStateService.notifyPageRefreshing(PageType.likes, false);
     }
   }
 
   // Search functionality
   void updateSearchQuery(String query) {
     searchQuery.value = query;
+    _filterService.updateSearchQuery(query);
     DebugLogger.api('🔍 Search query updated: "$query"');
   }
 
@@ -238,16 +298,8 @@ class LikesController extends GetxController {
 
   // Helper method to build filters with search query
   UnifiedFilterModel _buildFiltersWithSearch() {
-    final baseFilters = _filterService.currentFilter.value;
-    
-    // If we have a search query, we need to add it to city field
-    if (searchQuery.value.isNotEmpty) {
-      return baseFilters.copyWith(
-        city: searchQuery.value,
-      );
-    }
-    
-    return baseFilters;
+    // Use centralized filters that already hold searchQuery
+    return _filterService.currentFilter;
   }
 
   void _applySearchFilter() {

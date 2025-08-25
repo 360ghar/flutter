@@ -20,8 +20,8 @@ class WebViewHelper {
         DebugLogger.success('WebView platform initialized for mobile');
       }
       _isInitialized = true;
-    } catch (e, stackTrace) {
-      DebugLogger.warning('WebView platform initialization failed', e, stackTrace);
+    } catch (e) {
+      DebugLogger.warning('WebView platform initialization failed', e);
     }
   }
   
@@ -51,8 +51,8 @@ class WebViewHelper {
         ..loadRequest(Uri.parse(url));
         
       return controller;
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error creating WebView controller', e, stackTrace);
+    } catch (e) {
+      DebugLogger.error('Error creating WebView controller', e);
       rethrow;
     }
   }
@@ -83,8 +83,8 @@ class WebViewHelper {
         height: height,
         child: WebViewWidget(controller: controller),
       );
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error creating safe WebView', e, stackTrace);
+    } catch (e) {
+      DebugLogger.error('Error creating safe WebView', e);
       return errorWidget ?? _buildErrorWidget(width, height, url);
     }
   }
@@ -132,7 +132,7 @@ class WebViewHelper {
                 try {
                   // This would need url_launcher for proper implementation
                   DebugLogger.debug('Opening URL in new tab: $url');
-                } catch (e, stackTrace) {
+                } catch (e) {
                   DebugLogger.warning('Could not open URL', e);
                 }
               },
@@ -148,7 +148,7 @@ class WebViewHelper {
     try {
       ensureInitialized();
       return true;
-    } catch (e, stackTrace) {
+    } catch (e) {
       return false;
     }
   }

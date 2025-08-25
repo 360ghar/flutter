@@ -1,0 +1,382 @@
+---
+alwaysApply: true
+description: Core architectural patterns for 360Ghar Flutter app
+---
+
+# 360Ghar Architecture Patterns
+
+## Overview
+360Ghar is a real estate property discovery app built with Flutter and GetX, following clean architecture principles with feature-based organization.
+
+## Core Architecture Principles
+
+### 1. Feature-Based Architecture
+```
+lib/features/
+├── feature_name/
+│   ├── controllers/     # Business logic & state management
+│   ├── views/          # UI screens and components
+│   ├── bindings/       # Dependency injection
+│   ├── widgets/        # Feature-specific widgets
+│   └── models/         # Feature-specific data models (if needed)
+```
+
+### 2. Clean Data Layer
+```
+lib/core/data/
+├── models/          # Data models and entities
+├── providers/       # External data sources (API, local storage)
+└── repositories/    # Business logic abstraction
+```
+
+### 3. Shared Core Components
+```
+lib/core/
+├── controllers/     # Global controllers (auth, theme, etc.)
+├── bindings/        # App-level dependency injection
+├── middlewares/     # Route guards and authentication
+├── utils/          # Utility functions and helpers
+├── widgets/        # Shared/common widgets
+└── routes/         # App routing configuration
+```
+
+## Controller Patterns
+
+### Base Controller Structure
+```dart
+class BaseController extends GetxController {
+  final isLoading = false.obs;
+  final error = Rxn<String>();
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Initialize data, setup listeners
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    // Widget is ready, start animations or fetch initial data
+  }
+
+  @override
+  void onClose() {
+    // Cleanup resources, cancel subscriptions
+    super.onClose();
+  }
+
+  void setLoading(bool loading) {
+    isLoading.value = loading;
+  }
+
+  void setError(String? errorMessage) {
+    error.value = errorMessage;
+  }
+}
+```
+
+### Feature Controller Example
+```dart
+class PropertyController extends BaseController {
+  final properties = <PropertyModel>[].obs;
+  final selectedProperty = Rxn<PropertyModel>();
+
+  late final PropertyRepository _repository;
+  late final ConnectivityService _connectivity;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _repository = Get.find<PropertyRepository>();
+    _connectivity = Get.find<ConnectivityService>();
+    fetchProperties();
+  }
+
+  Future<void> fetchProperties() async {
+    if (!await _connectivity.isConnected) {
+      setError('No internet connection');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      final result = await _repository.getProperties();
+      properties.assignAll(result);
+    } catch (e) {
+      setError(_handleError(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  String _handleError(dynamic error) {
+    if (error is NetworkException) {
+      return 'Network error. Please check your connection.';
+    } else if (error is ServerException) {
+      return 'Server error. Please try again later.';
+    }
+    return 'An unexpected error occurred.';
+  }
+}
+```
+
+## View Patterns
+
+### GetView Implementation
+```dart
+class PropertyListView extends GetView<PropertyController> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('properties'.tr),
+      ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const LoadingWidget();
+        }
+
+        if (controller.error.value != null) {
+          return ErrorWidget(
+            message: controller.error.value!,
+            onRetry: controller.fetchProperties,
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: controller.fetchProperties,
+          child: ListView.builder(
+            itemCount: controller.properties.length,
+            itemBuilder: (context, index) {
+              final property = controller.properties[index];
+              return PropertyCard(
+                property: property,
+                onTap: () => controller.selectProperty(property),
+              );
+            },
+          ),
+        );
+      }),
+    );
+  }
+}
+```
+
+## Data Layer Patterns
+
+### Repository Pattern Implementation
+```dart
+abstract class PropertyRepository {
+  Future<List<PropertyModel>> getProperties({
+    int page = 1,
+    int limit = 20,
+    PropertyFilter? filter,
+  });
+  Future<PropertyModel> getPropertyById(String id);
+  Future<List<PropertyModel>> searchProperties(String query);
+  Future<void> favoriteProperty(String propertyId);
+  Future<void> unfavoriteProperty(String propertyId);
+}
+
+class PropertyRepositoryImpl implements PropertyRepository {
+  final PropertyApiProvider _apiProvider;
+  final LocalStorageProvider _localStorage;
+  final NetworkInfo _networkInfo;
+
+  PropertyRepositoryImpl(
+    this._apiProvider,
+    this._localStorage,
+    this._networkInfo,
+  );
+
+  @override
+  Future<List<PropertyModel>> getProperties({
+    int page = 1,
+    int limit = 20,
+    PropertyFilter? filter,
+  }) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final properties = await _apiProvider.getProperties(
+          page: page,
+          limit: limit,
+          filter: filter,
+        );
+        // Cache the results
+        await _cacheProperties(properties);
+        return properties;
+      } catch (e) {
+        // Fallback to cache
+        return await _getCachedProperties();
+      }
+    } else {
+      // Offline mode
+      return await _getCachedProperties();
+    }
+  }
+}
+```
+
+## Error Handling Patterns
+
+### Custom Exceptions
+```dart
+class AppException implements Exception {
+  final String message;
+  final String? code;
+
+  const AppException(this.message, [this.code]);
+
+  @override
+  String toString() => message;
+}
+
+class NetworkException extends AppException {
+  const NetworkException([String message = 'Network error occurred'])
+      : super(message, 'NETWORK_ERROR');
+}
+
+class ServerException extends AppException {
+  final int? statusCode;
+
+  const ServerException([String message = 'Server error occurred', this.statusCode])
+      : super(message, 'SERVER_ERROR');
+}
+
+class ValidationException extends AppException {
+  final Map<String, String> errors;
+
+  const ValidationException(this.errors, [String message = 'Validation failed'])
+      : super(message, 'VALIDATION_ERROR');
+}
+```
+
+### Error Boundary Widget
+```dart
+class ErrorBoundary extends StatefulWidget {
+  final Widget child;
+  final Widget Function(String error)? errorBuilder;
+  final VoidCallback? onRetry;
+
+  const ErrorBoundary({
+    super.key,
+    required this.child,
+    this.errorBuilder,
+    this.onRetry,
+  });
+
+  @override
+  State<ErrorBoundary> createState() => _ErrorBoundaryState();
+}
+
+class _ErrorBoundaryState extends State<ErrorBoundary> {
+  String? _error;
+
+  @override
+  void didCatchError(Object error, StackTrace stackTrace) {
+    setState(() {
+      _error = error.toString();
+    });
+    debugPrint('Error caught by boundary: $error\n$stackTrace');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      return widget.errorBuilder?.call(_error!) ??
+          ErrorWidget(
+            message: _error!,
+            onRetry: widget.onRetry ?? () => setState(() => _error = null),
+          );
+    }
+
+    return widget.child;
+  }
+}
+```
+
+## Navigation Patterns
+
+### Route Management
+```dart
+class AppRoutes {
+  // Auth routes
+  static const splash = '/splash';
+  static const login = '/login';
+  static const register = '/register';
+  static const forgotPassword = '/forgot-password';
+
+  // Main app routes
+  static const dashboard = '/dashboard';
+  static const discover = '/discover';
+  static const profile = '/profile';
+  static const bookings = '/bookings';
+
+  // Feature routes with parameters
+  static String propertyDetails(String id) => '/property/$id';
+  static String bookingDetails(String id) => '/booking/$id';
+  static const search = '/search';
+  static String locationSearch({String? initialQuery}) => '/location-search?query=$initialQuery';
+
+  static final routes = [
+    GetPage(
+      name: splash,
+      page: () => const SplashView(),
+      binding: SplashBinding(),
+    ),
+    GetPage(
+      name: login,
+      page: () => const LoginView(),
+      binding: LoginBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: dashboard,
+      page: () => const DashboardView(),
+      binding: DashboardBinding(),
+      middlewares: [AuthGuard()],
+    ),
+    GetPage(
+      name: propertyDetails(':id'),
+      page: () => PropertyDetailsView(),
+      binding: PropertyDetailsBinding(),
+      middlewares: [AuthGuard()],
+    ),
+  ];
+}
+```
+
+## Best Practices
+
+### 1. State Management
+- Use `.obs` for reactive variables
+- Prefer `Get.find<T>()` over constructor injection
+- Use `lazyPut` for better performance
+- Implement proper lifecycle methods
+
+### 2. Error Handling
+- Use custom exceptions for different error types
+- Implement error boundaries for UI resilience
+- Provide user-friendly error messages
+- Implement retry mechanisms
+
+### 3. Data Management
+- Use repository pattern for data abstraction
+- Implement caching for offline support
+- Handle network connectivity gracefully
+- Validate data before using
+
+### 4. UI Patterns
+- Use `GetView<T>` for single controller views
+- Implement loading states for all async operations
+- Use `Obx` for reactive UI updates
+- Follow material design guidelines
+
+### 5. Performance
+- Use lazy loading for large lists
+- Implement proper image caching
+- Use const constructors for static widgets
+- Avoid unnecessary rebuilds

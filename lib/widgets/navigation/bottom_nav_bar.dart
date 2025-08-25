@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/utils/app_colors.dart';
+import '../../core/controllers/page_state_service.dart';
+import '../../core/data/models/page_state_model.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -52,6 +54,27 @@ class CustomBottomNavigationBar extends StatelessWidget {
   void _onItemTapped(int index) {
     // Prevent unnecessary navigation if already on the same page
     if (index == currentIndex) return;
+    
+    // Get page state service for activation notification
+    final pageStateService = Get.find<PageStateService>();
+    
+    // Notify page activation before navigation
+    PageType? pageType;
+    switch (index) {
+      case 1:
+        pageType = PageType.explore;
+        break;
+      case 2:
+        pageType = PageType.discover;
+        break;
+      case 3:
+        pageType = PageType.likes;
+        break;
+    }
+    
+    if (pageType != null) {
+      pageStateService.notifyPageActivated(pageType);
+    }
     
     // Use custom onTap if provided, otherwise use default navigation
     if (onTap != null) {

@@ -242,7 +242,7 @@ class AboutView extends StatelessWidget with ThemeMixin {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.primaryYellow.withOpacity(0.1),
+              color: AppColors.primaryYellow.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

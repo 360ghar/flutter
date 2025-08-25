@@ -21,9 +21,7 @@ class LocationController extends GetxController {
   // Location search
   final RxList<Map<String, dynamic>> searchResults = <Map<String, dynamic>>[].obs;
   
-  final RxString selectedCity = ''.obs;
   final RxString currentAddress = ''.obs;
-  final RxString currentCity = ''.obs;
   
   // Google Places suggestions
   final RxList<PlaceSuggestion> placeSuggestions = <PlaceSuggestion>[].obs;
@@ -42,6 +40,42 @@ class LocationController extends GetxController {
     if (isLocationPermissionGranted.value && isLocationEnabled.value) {
       await getCurrentLocation();
     }
+  }
+
+  // IP-based location fallback
+  Future<LocationData?> getIpLocation() async {
+    try {
+      // Prefer ipapi.co which returns lat/lon/city reliably
+      final uri = Uri.parse('https://ipapi.co/json/');
+      final response = await http.get(uri).timeout(const Duration(seconds: 8));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final double? lat = (data['latitude'] is num)
+            ? (data['latitude'] as num).toDouble()
+            : double.tryParse((data['latitude'] ?? '').toString());
+        final double? lon = (data['longitude'] is num)
+            ? (data['longitude'] as num).toDouble()
+            : double.tryParse((data['longitude'] ?? '').toString());
+        final String? city = (data['city'] as String?)?.trim();
+        final String? region = (data['region'] as String?)?.trim();
+
+        if (lat != null && lon != null) {
+          DebugLogger.success('✅ IP-based location: $city, $region ($lat,$lon)');
+          return LocationData(
+            name: city != null && region != null ? '$city, $region' : (city ?? 'IP-based Location'),
+            latitude: lat,
+            longitude: lon,
+          );
+        }
+      } else {
+        DebugLogger.warning('IP location HTTP ${response.statusCode}: ${response.body}');
+      }
+    } on TimeoutException catch (e) {
+      DebugLogger.error('IP location request timed out', e);
+    } catch (e, st) {
+      DebugLogger.error('Failed to get IP-based location', e, st);
+    }
+    return null;
   }
 
   Future<void> _checkLocationService() async {
@@ -156,15 +190,6 @@ class LocationController extends GetxController {
       if (placemarks.isNotEmpty) {
         final placemark = placemarks.first;
         currentAddress.value = _formatAddress(placemark);
-        
-        // Set selected city from current location
-        if (placemark.locality?.isNotEmpty == true) {
-          selectedCity.value = placemark.locality!;
-          currentCity.value = placemark.locality!;
-        } else if (placemark.administrativeArea?.isNotEmpty == true) {
-          selectedCity.value = placemark.administrativeArea!;
-          currentCity.value = placemark.administrativeArea!;
-        }
       }
     } catch (e, stackTrace) {
       DebugLogger.error('Error getting address from coordinates', e, stackTrace);
@@ -225,10 +250,13 @@ class LocationController extends GetxController {
         return [];
       }
 
+      // Gurgaon/Gurugram coordinates: 28.4595, 77.0266
       final url = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
         'input': query,
-        'types': '(locality)',
+        'location': '28.4595,77.0266',
+        'radius': '25000', // 25km radius to cover entire Gurgaon area
         'components': 'country:$countryCode',
+        'strictbounds': 'true', // Restrict results to the specified area only
         'key': apiKey,
       });
 
@@ -292,20 +320,19 @@ class LocationController extends GetxController {
 
 
   void selectLocation(Map<String, dynamic> location) {
-    selectedCity.value = location['name'] ?? location['city'] ?? '';
-    
+    final locationName = location['name'] ?? location['city'] ?? '';
     
     Get.snackbar(
       'location_selected'.tr,
-      'location_selected_message'.tr + selectedCity.value,
+      'location_selected_message'.tr + locationName,
       snackPosition: SnackPosition.TOP,
       duration: const Duration(seconds: 2),
     );
   }
 
   void selectCity(String cityName) {
-    selectedCity.value = cityName;
-    
+    // This method now only logs the selection
+    DebugLogger.info('City selected: $cityName');
   }
 
   Future<void> openLocationSettings() async {
@@ -352,7 +379,6 @@ class LocationController extends GetxController {
     'latitude': currentLatitude,
     'longitude': currentLongitude,
     'address': currentAddress.value,
-    'selectedCity': selectedCity.value,
   };
 
   void clearSearchResults() {
@@ -398,10 +424,13 @@ class LocationController extends GetxController {
 
       final countryCode = dotenv.env['DEFAULT_COUNTRY'] ?? 'in';
 
+      // Gurgaon/Gurugram coordinates: 28.4595, 77.0266
       final url = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
         'input': query,
-        'types': '(locality)',
+        'location': '28.4595,77.0266',
+        'radius': '25000', // 25km radius to cover entire Gurgaon area
         'components': 'country:$countryCode',
+        'strictbounds': 'true', // Restrict results to the specified area only
         'key': apiKey,
       });
 
@@ -509,6 +538,7 @@ class LocationController extends GetxController {
             final location = result['geometry']['location'];
             final addressComponents = result['address_components'] as List;
 
+            // Extract city and locality for the location name display
             String? city;
             String? locality;
 
@@ -521,13 +551,21 @@ class LocationController extends GetxController {
                 city = component['long_name'];
               }
             }
+            
+            // Use city and locality to create a display name
+            String displayName = result['name'] ?? '';
+            if (locality != null && city != null) {
+              displayName = '$locality, $city';
+            } else if (city != null) {
+              displayName = city;
+            } else if (locality != null) {
+              displayName = locality;
+            }
 
             return LocationData(
-              name: result['name'] ?? '',
+              name: displayName,
               latitude: location['lat'].toDouble(),
               longitude: location['lng'].toDouble(),
-              city: city,
-              locality: locality,
             );
           }
           DebugLogger.warning('Google Places Details API returned null result for placeId: $placeId');

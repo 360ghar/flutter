@@ -211,8 +211,8 @@ class ProfileCompletionView extends StatelessWidget {
         
         // Annual Income
         DropdownButtonFormField<String>(
-          value: controller.selectedIncome.value.isEmpty 
-              ? null 
+          initialValue: controller.selectedIncome.value.isEmpty
+              ? null
               : controller.selectedIncome.value,
           decoration: const InputDecoration(
             labelText: 'Annual Income',
@@ -342,8 +342,8 @@ class ProfileCompletionView extends StatelessWidget {
           children: [
             Expanded(
               child: DropdownButtonFormField<int>(
-                value: controller.selectedBedroomsMin.value == 0 
-                    ? null 
+                initialValue: controller.selectedBedroomsMin.value == 0
+                    ? null
                     : controller.selectedBedroomsMin.value,
                 decoration: const InputDecoration(
                   labelText: 'Min',
@@ -366,8 +366,8 @@ class ProfileCompletionView extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: DropdownButtonFormField<int>(
-                value: controller.selectedBedroomsMax.value == 0 
-                    ? null 
+                initialValue: controller.selectedBedroomsMax.value == 0
+                    ? null
                     : controller.selectedBedroomsMax.value,
                 decoration: const InputDecoration(
                   labelText: 'Max',

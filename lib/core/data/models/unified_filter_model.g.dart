@@ -11,9 +11,6 @@ UnifiedFilterModel _$UnifiedFilterModelFromJson(Map<String, dynamic> json) =>
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       radiusKm: (json['radius_km'] as num?)?.toDouble(),
-      city: json['city'] as String?,
-      locality: json['locality'] as String?,
-      pincode: json['pincode'] as String?,
       purpose: json['purpose'] as String?,
       propertyType: (json['property_type'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -59,9 +56,6 @@ Map<String, dynamic> _$UnifiedFilterModelToJson(UnifiedFilterModel instance) =>
       'latitude': instance.latitude,
       'longitude': instance.longitude,
       'radius_km': instance.radiusKm,
-      'city': instance.city,
-      'locality': instance.locality,
-      'pincode': instance.pincode,
       'purpose': instance.purpose,
       'property_type': instance.propertyType,
       'price_min': instance.priceMin,

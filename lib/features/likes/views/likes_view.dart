@@ -1,174 +1,137 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/likes_controller.dart';
+import '../../../core/controllers/page_state_service.dart';
+import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
 import '../../../../widgets/common/loading_states.dart';
 import '../../../../widgets/common/error_states.dart';
 import '../../../../widgets/property/compact_property_card.dart';
 import '../../../core/data/models/property_model.dart';
+import '../../../../widgets/common/unified_top_bar.dart';
+import '../../../widgets/common/property_filter_widget.dart';
 
 class LikesView extends GetView<LikesController> {
   const LikesView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackground,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(160), // Increased height to accommodate all content
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Main app bar
-                AppBar(
-                  backgroundColor: AppColors.appBarBackground,
-                  elevation: 0,
-                  toolbarHeight: kToolbarHeight,
-                  automaticallyImplyLeading: false,
-                  title: Text(
-                    'My Likes',
-                    style: TextStyle(
-                      color: AppColors.appBarText,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  actions: [
-                    // View toggle (grid/list)
-                    IconButton(
-                      icon: Icon(
-                        Icons.view_module,
-                        color: AppColors.iconColor,
-                      ),
-                      onPressed: () {
-                        // Toggle view mode if needed
-                      },
-                    ),
-                  ],
-                ),
-                
-                // Search bar
-                Container(
-                  color: AppColors.appBarBackground,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Obx(() => TextField(
-                    onChanged: controller.updateSearchQuery,
-                    style: TextStyle(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      hintText: 'Search in your likes...',
-                      hintStyle: TextStyle(color: AppColors.textSecondary),
-                      prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
-                      suffixIcon: controller.hasSearchQuery
-                          ? IconButton(
-                              icon: Icon(Icons.clear, color: AppColors.iconColor),
-                              onPressed: controller.clearSearch,
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: AppColors.inputBackground,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
-                  )),
-                ),
-                
-                // Tab bar
-                Container(
-                  color: AppColors.appBarBackground,
-                  child: TabBar(
-                    labelColor: AppColors.primaryYellow,
-                    unselectedLabelColor: AppColors.textSecondary,
-                    indicatorColor: AppColors.primaryYellow,
-                    indicatorWeight: 3,
-                    labelStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onTap: (index) {
-                      final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
-                      controller.switchToSegment(segment);
-                    },
-                    tabs: [
-                      Tab(
-                        child: Obx(() => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.favorite, size: 18),
-                            const SizedBox(width: 8),
-                            Text('Liked'),
-                            if (controller.currentSegment.value == LikesSegment.liked && 
-                                controller.hasCurrentProperties) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryYellow,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${controller.currentProperties.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        )),
-                      ),
-                      Tab(
-                        child: Obx(() => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.not_interested, size: 18),
-                            const SizedBox(width: 8),
-                            Text('Passed'),
-                            if (controller.currentSegment.value == LikesSegment.passed && 
-                                controller.hasCurrentProperties) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${controller.currentProperties.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        )),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+    return Obx(() {
+      final pageStateService = Get.find<PageStateService>();
+      
+      // Make Scaffold reactive to search visibility changes for proper space allocation
+      final searchVisible = pageStateService.isSearchVisible(PageType.likes);
+      
+      return DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          backgroundColor: AppColors.scaffoldBackground,
+          appBar: LikesTopBar(
+            key: ValueKey('likes_topbar_$searchVisible'), // Force recreation when visibility changes
+            onSearchChanged: controller.updateSearchQuery,
+            onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'likes'),
           ),
-        ),
-        body: TabBarView(
+        body: Column(
           children: [
-            _buildLikesTab(),
-            _buildPassedTab(),
+            // Subtle refresh indicator
+            if (pageStateService.likesState.value.isRefreshing)
+              LinearProgressIndicator(
+                minHeight: 2,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+              ),
+            // Tab bar directly under the unified top bar
+            Container(
+              color: AppColors.appBarBackground,
+              child: TabBar(
+                labelColor: AppColors.primaryYellow,
+                unselectedLabelColor: AppColors.textSecondary,
+                indicatorColor: AppColors.primaryYellow,
+                indicatorWeight: 3,
+                labelStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                onTap: (index) {
+                  final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
+                  controller.switchToSegment(segment);
+                },
+                tabs: [
+                  Tab(
+                    child: Obx(() => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.favorite, size: 18),
+                        const SizedBox(width: 8),
+                        const Text('Liked'),
+                        if (controller.currentSegment.value == LikesSegment.liked &&
+                            controller.hasCurrentProperties) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryYellow,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${controller.currentProperties.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    )),
+                  ),
+                  Tab(
+                    child: Obx(() => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.not_interested, size: 18),
+                        const SizedBox(width: 8),
+                        const Text('Passed'),
+                        if (controller.currentSegment.value == LikesSegment.passed &&
+                            controller.hasCurrentProperties) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${controller.currentProperties.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    )),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildLikesTab(),
+                  _buildPassedTab(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
+  });
   }
 
   Widget _buildLikesTab() {

@@ -62,11 +62,6 @@ class SwipesRepository extends GetxService {
         areaMin: filters.areaMin,
         areaMax: filters.areaMax,
 
-        // Location Filters
-        city: filters.city,
-        locality: filters.locality,
-        pincode: filters.pincode,
-
         // Additional Filters
         amenities: filters.amenities,
         parkingSpacesMin: filters.parkingSpacesMin,

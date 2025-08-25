@@ -8,17 +8,28 @@ import '../../../core/utils/debug_logger.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 import 'dart:math' as math;
 
-class PropertySwipeCard extends StatelessWidget {
+class PropertySwipeCard extends StatefulWidget {
   final PropertyModel property;
   final VoidCallback? onTap;
   final bool showSwipeInstructions;
+  final VoidCallback? onInteractionStart; // e.g., 360 tour grab
+  final VoidCallback? onInteractionEnd;
 
   const PropertySwipeCard({
     super.key,
     required this.property,
     this.onTap,
     this.showSwipeInstructions = false,
+    this.onInteractionStart,
+    this.onInteractionEnd,
   });
+
+  @override
+  State<PropertySwipeCard> createState() => _PropertySwipeCardState();
+}
+
+class _PropertySwipeCardState extends State<PropertySwipeCard> {
+  bool _interactiveChildActive = false; // disables vertical scroll when true
 
   @override
   Widget build(BuildContext context) {
@@ -38,18 +49,29 @@ class PropertySwipeCard extends StatelessWidget {
         child: Container(
           color: Colors.white,
           child: SingleChildScrollView(
+            physics: _interactiveChildActive
+                ? const NeverScrollableScrollPhysics()
+                : const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Hero Image with overlay info (Full screen height for initial view)
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.75, // Take most of screen for initial view
-                  child: Stack(
-                    children: [
+                // Hero Image with overlay info (Use available height properly)
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Use available parent height instead of full screen height
+                    // This ensures we don't overlap with app bar or other UI elements
+                    final availableHeight = constraints.maxHeight > 0 
+                        ? constraints.maxHeight 
+                        : MediaQuery.of(context).size.height - 200; // Fallback with safe margins
+                    
+                    return SizedBox(
+                      height: math.min(availableHeight * 0.8, 600), // Cap at reasonable max height
+                      child: Stack(
+                        children: [
                       // Main property image
                       Positioned.fill(
                         child: RobustNetworkImage(
-                          imageUrl: property.mainImage,
+                          imageUrl: widget.property.mainImage,
                           fit: BoxFit.cover,
                           placeholder: Container(
                             color: Colors.grey[300],
@@ -118,7 +140,7 @@ class PropertySwipeCard extends StatelessWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    property.formattedPrice,
+                                    widget.property.formattedPrice,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 28,
@@ -133,7 +155,7 @@ class PropertySwipeCard extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      property.purposeString,
+                                      widget.property.purposeString,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 12,
@@ -147,7 +169,7 @@ class PropertySwipeCard extends StatelessWidget {
                               
                               // Title
                               Text(
-                                property.title,
+                                widget.property.title,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
@@ -167,7 +189,7 @@ class PropertySwipeCard extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      property.addressDisplay,
+                                      widget.property.addressDisplay,
                                       style: const TextStyle(
                                         color: Colors.white70,
                                         fontSize: 14,
@@ -192,8 +214,8 @@ class PropertySwipeCard extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      property.bedroomBathroomText.isNotEmpty 
-                                          ? property.bedroomBathroomText 
+                                      widget.property.bedroomBathroomText.isNotEmpty 
+                                          ? widget.property.bedroomBathroomText 
                                           : 'Property',
                                       style: const TextStyle(
                                         color: Colors.white,
@@ -204,7 +226,7 @@ class PropertySwipeCard extends StatelessWidget {
                                   ),
                                   
                                   // Area if available
-                                  if (property.areaText.isNotEmpty)
+                                  if (widget.property.areaText.isNotEmpty)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
@@ -212,7 +234,7 @@ class PropertySwipeCard extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
-                                        property.areaText,
+                                        widget.property.areaText,
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 12,
@@ -222,7 +244,7 @@ class PropertySwipeCard extends StatelessWidget {
                                     ),
                                   
                                   // Floor info if available
-                                  if (property.floorText.isNotEmpty)
+                                  if (widget.property.floorText.isNotEmpty)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
@@ -230,7 +252,7 @@ class PropertySwipeCard extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
-                                        property.floorText,
+                                        widget.property.floorText,
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 12,
@@ -278,8 +300,10 @@ class PropertySwipeCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 
                 // Additional Details Section (Scrollable content)
@@ -304,7 +328,7 @@ class PropertySwipeCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                property.propertyTypeString,
+                                widget.property.propertyTypeString,
                                 style: TextStyle(
                                   color: AppTheme.accentBlue,
                                   fontSize: 12,
@@ -346,9 +370,9 @@ class PropertySwipeCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          property.description?.isNotEmpty == true 
-                              ? property.description!
-                              : 'Beautiful ${property.propertyTypeString} in ${property.city ?? "prime location"}. ${property.areaSqft != null ? "Spacious ${property.areaSqft!.toInt()} sq ft area with modern amenities." : "Perfect for your needs."}',
+                          widget.property.description?.isNotEmpty == true 
+                              ? widget.property.description!
+                              : 'Beautiful ${widget.property.propertyTypeString} in ${widget.property.city ?? "prime location"}. ${widget.property.areaSqft != null ? "Spacious ${widget.property.areaSqft!.toInt()} sq ft area with modern amenities." : "Perfect for your needs."}',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.grey,
@@ -358,7 +382,7 @@ class PropertySwipeCard extends StatelessWidget {
                         const SizedBox(height: 20),
                         
                         // Amenities section
-                        if (property.hasAmenities) ...[
+                        if (widget.property.hasAmenities) ...[
                           const Text(
                             'Amenities',
                             style: TextStyle(
@@ -371,7 +395,7 @@ class PropertySwipeCard extends StatelessWidget {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: property.amenitiesList.take(6).map((amenity) => Container(
+                            children: widget.property.amenitiesList.take(6).map((amenity) => Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 color: AppTheme.accentBlue.withValues(alpha: 0.1),
@@ -388,11 +412,11 @@ class PropertySwipeCard extends StatelessWidget {
                               ),
                             )).toList(),
                           ),
-                          if (property.amenitiesList.length > 6)
+                          if (widget.property.amenitiesList.length > 6)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
-                                '+${property.amenitiesList.length - 6} more amenities',
+                                '+${widget.property.amenitiesList.length - 6} more amenities',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppTheme.accentBlue,
@@ -406,7 +430,7 @@ class PropertySwipeCard extends StatelessWidget {
                         // Note: Additional images not available in PropertyCardModel
                         
                         // 360° Tour Embedded Section
-                        if (property.virtualTourUrl != null && property.virtualTourUrl!.isNotEmpty) ...[
+                        if (widget.property.virtualTourUrl != null && widget.property.virtualTourUrl!.isNotEmpty) ...[
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -427,7 +451,7 @@ class PropertySwipeCard extends StatelessWidget {
                               const Spacer(),
                               InkWell(
                                 onTap: () {
-                                  Get.toNamed('/tour', arguments: property.virtualTourUrl);
+                                  Get.toNamed('/tour', arguments: widget.property.virtualTourUrl);
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -460,12 +484,20 @@ class PropertySwipeCard extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          // 360° Tour with Gesture Blocking to prevent card swipe interference
-                          GestureDetector(
-                            // Absorb pan gestures to prevent parent swipe detection
-                            onPanStart: (_) {}, 
-                            onPanUpdate: (_) {},
-                            onPanEnd: (_) {},
+                          // 360° Tour with interaction signaling to block parent gestures/scroll
+                          Listener(
+                            onPointerDown: (_) {
+                              setState(() => _interactiveChildActive = true);
+                              widget.onInteractionStart?.call();
+                            },
+                            onPointerUp: (_) {
+                              setState(() => _interactiveChildActive = false);
+                              widget.onInteractionEnd?.call();
+                            },
+                            onPointerCancel: (_) {
+                              setState(() => _interactiveChildActive = false);
+                              widget.onInteractionEnd?.call();
+                            },
                             child: Container(
                               height: 500,
                               decoration: BoxDecoration(
@@ -482,7 +514,7 @@ class PropertySwipeCard extends StatelessWidget {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: _EmbeddedSwipe360Tour(tourUrl: property.virtualTourUrl!),
+                                child: _EmbeddedSwipe360Tour(tourUrl: widget.property.virtualTourUrl!),
                               ),
                             ),
                           ),
@@ -508,69 +540,37 @@ class PropertySwipeCard extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              _buildDetailRow('Property Type', property.propertyTypeString),
-                              _buildDetailRow('Purpose', property.purposeString),
-                              _buildDetailRow('Status', property.statusString),
-                              if (property.bedrooms != null)
-                                _buildDetailRow('Bedrooms', '${property.bedrooms}'),
-                              if (property.bathrooms != null)
-                                _buildDetailRow('Bathrooms', '${property.bathrooms}'),
-                              if (property.areaSqft != null)
-                                _buildDetailRow('Area', property.areaText),
-                              if (property.floorText.isNotEmpty)
-                                _buildDetailRow('Floor', property.floorText),
-                              if (property.ageText.isNotEmpty)
-                                _buildDetailRow('Age', property.ageText),
-                              if (property.parkingSpaces != null)
-                                _buildDetailRow('Parking', '${property.parkingSpaces} spaces'),
-                              if (property.balconies != null)
-                                _buildDetailRow('Balconies', '${property.balconies}'),
-                              if (property.distanceKm != null)
-                                _buildDetailRow('Distance', property.distanceText),
-                              _buildDetailRow('Location', property.addressDisplay),
-                              if (property.hasOwner)
-                                _buildDetailRow('Owner', property.ownerDisplayName),
-                              if (property.builderName?.isNotEmpty == true)
-                                _buildDetailRow('Builder', property.builderName!),
+                              _buildDetailRow('Property Type', widget.property.propertyTypeString),
+                              _buildDetailRow('Purpose', widget.property.purposeString),
+                              _buildDetailRow('Status', widget.property.statusString),
+                              if (widget.property.bedrooms != null)
+                                _buildDetailRow('Bedrooms', '${widget.property.bedrooms}'),
+                              if (widget.property.bathrooms != null)
+                                _buildDetailRow('Bathrooms', '${widget.property.bathrooms}'),
+                              if (widget.property.areaSqft != null)
+                                _buildDetailRow('Area', widget.property.areaText),
+                              if (widget.property.floorText.isNotEmpty)
+                                _buildDetailRow('Floor', widget.property.floorText),
+                              if (widget.property.ageText.isNotEmpty)
+                                _buildDetailRow('Age', widget.property.ageText),
+                              if (widget.property.parkingSpaces != null)
+                                _buildDetailRow('Parking', '${widget.property.parkingSpaces} spaces'),
+                              if (widget.property.balconies != null)
+                                _buildDetailRow('Balconies', '${widget.property.balconies}'),
+                              if (widget.property.distanceKm != null)
+                                _buildDetailRow('Distance', widget.property.distanceText),
+                              _buildDetailRow('Location', widget.property.addressDisplay),
+                              if (widget.property.hasOwner)
+                                _buildDetailRow('Owner', widget.property.ownerDisplayName),
+                              if (widget.property.builderName?.isNotEmpty == true)
+                                _buildDetailRow('Builder', widget.property.builderName!),
                             ],
                           ),
                         ),
                         const SizedBox(height: 20),
                         
                         // Swipe Instructions (conditional)
-                        if (showSwipeInstructions) ...[
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryYellow.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppTheme.primaryYellow.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.swipe,
-                                  color: AppTheme.primaryYellow,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Text(
-                                    'Swipe right to like • Swipe left to pass',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
+                        ..._buildSwipeInstructions(widget.showSwipeInstructions),
                       ],
                     ),
                   ),
@@ -579,36 +579,47 @@ class PropertySwipeCard extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
+        ),
+      );
   }
 
-  Widget _buildSpecItem(IconData icon, String value, String label) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: AppTheme.accentBlue,
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+
+
+  List<Widget> _buildSwipeInstructions(bool show) {
+    if (!show) return const [];
+    return [
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryYellow.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.primaryYellow.withValues(alpha: 0.3),
           ),
         ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
+        child: Row(
+          children: const [
+            Icon(
+              Icons.swipe,
+              color: AppTheme.primaryYellow,
+              size: 24,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Swipe right to like • Swipe left to pass',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    );
+      ),
+      const SizedBox(height: 20),
+    ];
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -637,9 +648,7 @@ class PropertySwipeCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
+
 }
 
 class PropertySwipeStack extends StatefulWidget {
@@ -676,6 +685,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
   double _rotation = 0;
   bool _showSparkles = false;
   bool _isSwipingRight = false;
+  bool _blockGestures = false; // block horizontal drag when interacting with 360
 
   @override
   void initState() {
@@ -814,7 +824,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
 
   @override
   Widget build(BuildContext context) {
-    DebugLogger.verbose('PropertySwipeStack build called with ${_properties.length} properties');
+    // Avoid excessively verbose logs on every build to keep UI smooth
     
     if (_properties.isEmpty) {
       DebugLogger.warning('PropertySwipeStack: No properties to display');
@@ -852,20 +862,27 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
     DebugLogger.debug('PropertySwipeStack: Rendering ${_properties.length} properties');
 
     return GestureDetector(
-      onPanStart: (details) {
+      onHorizontalDragStart: (details) {
+        if (_blockGestures) return;
         setState(() {
           _isDragging = true;
-          _dragStart = details.localPosition;
+          _dragStart = Offset.zero; // horizontal-only drag; start offset unused
         });
       },
-      onPanUpdate: (details) {
+      onHorizontalDragUpdate: (details) {
+        if (_blockGestures) return;
         setState(() {
-          _dragPosition = details.localPosition - _dragStart;
+          final dx = details.primaryDelta ?? 0;
+          _dragPosition = Offset(_dragPosition.dx + dx, 0);
           _rotation = _calculateRotation(_dragPosition, screenSize);
         });
       },
-      onPanEnd: (details) => _handlePanEnd(details, screenSize),
+      onHorizontalDragEnd: (details) {
+        if (_blockGestures) return;
+        _handlePanEnd(details, screenSize);
+      },
       child: Stack(
+        clipBehavior: Clip.hardEdge, // Prevent cards from rendering outside bounds
         children: [
           // Background cards with subtle scaling
           if (_properties.length > 1)
@@ -876,6 +893,8 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
                   opacity: 0.8,
                   child: PropertySwipeCard(
                     property: _properties[1],
+                    onInteractionStart: () => setState(() => _blockGestures = true),
+                    onInteractionEnd: () => setState(() => _blockGestures = false),
                   ),
                 ),
               ),
@@ -888,6 +907,8 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
                   opacity: 0.6,
                   child: PropertySwipeCard(
                     property: _properties[2],
+                    onInteractionStart: () => setState(() => _blockGestures = true),
+                    onInteractionEnd: () => setState(() => _blockGestures = false),
                   ),
                 ),
               ),
@@ -899,10 +920,10 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
               animation: _swipeAnimation,
               builder: (context, child) {
                 final swipeOffset = _isDragging 
-                    ? _dragPosition 
+                    ? Offset(_dragPosition.dx, 0)
                     : Offset(
                         _dragPosition.dx * (1 + _swipeAnimation.value * 2),
-                        _dragPosition.dy * (1 + _swipeAnimation.value),
+                        0,
                       );
                 
                 final swipeRotation = _isDragging 
@@ -923,6 +944,8 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
                       child: PropertySwipeCard(
                         property: _properties[0],
                         showSwipeInstructions: widget.showSwipeInstructions,
+                        onInteractionStart: () => setState(() => _blockGestures = true),
+                        onInteractionEnd: () => setState(() => _blockGestures = false),
                       ),
                     ),
                   ),

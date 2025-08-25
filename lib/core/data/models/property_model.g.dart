@@ -83,6 +83,7 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) =>
           ?.map((e) => PropertyImageModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       distanceKm: (json['distance_km'] as num?)?.toDouble(),
+      liked: json['liked'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
@@ -138,6 +139,7 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
       'updated_at': instance.updatedAt?.toIso8601String(),
       'images': instance.images?.map((e) => e.toJson()).toList(),
       'distance_km': instance.distanceKm,
+      'liked': instance.liked,
     };
 
 const _$PropertyTypeEnumMap = {

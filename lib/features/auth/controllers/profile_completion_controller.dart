@@ -215,9 +215,7 @@ class ProfileCompletionController extends GetxController {
       }
       
       // Get current position
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      final position = await Geolocator.getCurrentPosition();
       
       currentLocation.value = position;
       

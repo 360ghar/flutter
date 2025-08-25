@@ -194,7 +194,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Theme.of(Get.context!).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(Get.context!).colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -232,7 +232,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 Text(
                   'select_language_desc'.tr,
                   style: TextStyle(
-                    color: Theme.of(Get.context!).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(Get.context!).colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),

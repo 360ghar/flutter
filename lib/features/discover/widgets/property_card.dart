@@ -50,7 +50,7 @@ class PropertyCard extends StatelessWidget {
                   right: 8,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
@@ -156,9 +156,9 @@ class PropertyCard extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryYellow.withOpacity(0.1),
+                                  color: AppColors.primaryYellow.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
+                                  border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -341,7 +341,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
               Icon(
                 Icons.public_off,
                 size: 48,
-                color: AppColors.textSecondary.withOpacity(0.7),
+                color: AppColors.textSecondary.withValues(alpha: 0.7),
               ),
               const SizedBox(height: 16),
               Text(
@@ -357,7 +357,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
                 'Virtual tour could not be loaded',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary.withOpacity(0.7),
+                  color: AppColors.textSecondary.withValues(alpha: 0.7),
                 ),
               ),
             ],

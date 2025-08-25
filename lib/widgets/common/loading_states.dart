@@ -167,7 +167,7 @@ class LoadingStates {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -242,7 +242,7 @@ class LoadingStates {
 
   static Widget mapLoadingOverlay() {
     return Container(
-      color: Colors.white.withOpacity(0.8),
+      color: Colors.white.withValues(alpha: 0.8),
       child: const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -273,7 +273,7 @@ class LoadingStates {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -351,7 +351,7 @@ class LoadingStates {
   // Full screen loading overlay
   static Widget fullScreenLoading({String? message}) {
     return Container(
-      color: Colors.white.withOpacity(0.9),
+      color: Colors.white.withValues(alpha: 0.9),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -91,7 +91,7 @@ class SignupController extends GetxController {
       } else {
         throw Exception('Failed to create account');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       errorMessage.value = _getErrorMessage(e);
       ErrorHandler.handleAuthError(e, onRetry: signUp);
     } finally {
@@ -123,7 +123,7 @@ class SignupController extends GetxController {
       } else {
         throw Exception('Invalid OTP');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       errorMessage.value = _getErrorMessage(e);
       Get.snackbar(
         'Error',
@@ -151,8 +151,8 @@ class SignupController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-    } catch (e, stackTrace) {
-      DebugLogger.error('Phone OTP error', e, stackTrace);
+    } catch (e) {
+      DebugLogger.error('Phone OTP error', e);
       // For now, we'll skip phone verification if it fails
       await _completeSignup();
     }
@@ -185,7 +185,7 @@ class SignupController extends GetxController {
       } else {
         throw Exception('Invalid phone OTP');
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       errorMessage.value = _getErrorMessage(e);
       Get.snackbar(
         'Error',
@@ -218,8 +218,8 @@ class SignupController extends GetxController {
       } else {
         Get.offAllNamed(AppRoutes.profileCompletion);
       }
-    } catch (e, stackTrace) {
-      DebugLogger.error('Profile sync error', e, stackTrace);
+    } catch (e) {
+      DebugLogger.error('Profile sync error', e);
       // Still go to profile completion even if sync fails
       Get.offAllNamed(AppRoutes.profileCompletion);
     }
@@ -249,7 +249,7 @@ class SignupController extends GetxController {
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       Get.snackbar(
         'Error',
         'Failed to resend email: ${_getErrorMessage(e)}',

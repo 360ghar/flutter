@@ -1,9 +1,12 @@
 import 'package:get/get.dart';
 import '../data/providers/api_service.dart';
+import '../data/repositories/properties_repository.dart';
+import '../data/repositories/swipes_repository.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/location_controller.dart';
 import '../controllers/localization_controller.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/page_state_service.dart';
 import '../controllers/filter_service.dart';
 import '../utils/debug_logger.dart';
 
@@ -54,6 +57,16 @@ class InitialBinding extends Bindings {
       
       Get.put<ThemeController>(ThemeController(), permanent: true);
       DebugLogger.success('✅ ThemeController registered');
+      
+      // Register repositories before services that depend on them
+      Get.put<PropertiesRepository>(PropertiesRepository(), permanent: true);
+      DebugLogger.success('✅ PropertiesRepository registered');
+      
+      Get.put<SwipesRepository>(SwipesRepository(), permanent: true);
+      DebugLogger.success('✅ SwipesRepository registered');
+      
+      Get.put<PageStateService>(PageStateService(), permanent: true);
+      DebugLogger.success('✅ PageStateService registered');
       
       Get.put<FilterService>(FilterService(), permanent: true);
       DebugLogger.success('✅ FilterService registered');

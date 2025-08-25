@@ -140,7 +140,7 @@ class FiltersView extends GetView<FilterService> {
   }
 
   Widget _buildPurposeChip(String label, String value) {
-    final isSelected = controller.currentFilter.value.purpose == value;
+    final isSelected = controller.currentFilter.purpose == value;
     
     return GestureDetector(
       onTap: () => controller.updatePurpose(value),
@@ -167,7 +167,7 @@ class FiltersView extends GetView<FilterService> {
 
   Widget _buildPriceRangeSection() {
     return Obx(() {
-      final filter = controller.currentFilter.value;
+      final filter = controller.currentFilter;
       final minPrice = filter.priceMin ?? controller.getPriceMin();
       final maxPrice = filter.priceMax ?? controller.getPriceMax();
       
@@ -203,8 +203,7 @@ class FiltersView extends GetView<FilterService> {
             min: controller.getPriceMin(),
             max: controller.getPriceMax(),
             divisions: 20,
-            activeColor: AppColors.primaryYellow,
-            inactiveColor: AppColors.border,
+                          activeColor: AppColors.primaryYellow,
             onChanged: (values) {
               controller.updatePriceRange(values.start, values.end);
             },
@@ -223,7 +222,7 @@ class FiltersView extends GetView<FilterService> {
 
   Widget _buildBedroomSection() {
     return Obx(() {
-      final filter = controller.currentFilter.value;
+      final filter = controller.currentFilter;
       final min = filter.bedroomsMin ?? 1;
       final max = filter.bedroomsMax ?? 5;
       
@@ -236,7 +235,6 @@ class FiltersView extends GetView<FilterService> {
               min: 1,
               max: 10,
               divisions: 9,
-              activeColor: AppColors.primaryYellow,
               onChanged: (value) {
                 controller.updateBedrooms(value.toInt(), max);
               },
@@ -249,7 +247,6 @@ class FiltersView extends GetView<FilterService> {
               min: 1,
               max: 10,
               divisions: 9,
-              activeColor: AppColors.primaryYellow,
               onChanged: (value) {
                 controller.updateBedrooms(min, value.toInt());
               },
@@ -264,7 +261,7 @@ class FiltersView extends GetView<FilterService> {
     final propertyTypes = ['House', 'Apartment', 'Builder Floor', 'Room'];
     
     return Obx(() {
-      final selectedTypes = controller.currentFilter.value.propertyType ?? [];
+      final selectedTypes = controller.currentFilter.propertyType ?? [];
       
       return Wrap(
         spacing: 8,

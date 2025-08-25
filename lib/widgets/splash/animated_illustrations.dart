@@ -32,7 +32,7 @@ class Tour360Illustration extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppTheme.primaryYellow.withOpacity(0.3),
+                      color: AppTheme.primaryYellow.withValues(alpha: 0.3),
                       width: 3,
                     ),
                   ),
@@ -49,7 +49,7 @@ class Tour360Illustration extends StatelessWidget {
                             height: 12,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppTheme.accentBlue.withOpacity(0.7),
+                              color: AppTheme.accentBlue.withValues(alpha: 0.7),
                             ),
                           ),
                         );
@@ -67,7 +67,7 @@ class Tour360Illustration extends StatelessWidget {
                   color: AppTheme.primaryYellow,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryYellow.withOpacity(0.3),
+                      color: AppTheme.primaryYellow.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -136,7 +136,7 @@ class VirtualToursIllustration extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -165,7 +165,7 @@ class VirtualToursIllustration extends StatelessWidget {
                               height: 120,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: AppTheme.accentBlue.withOpacity(0.3),
+                                  color: AppTheme.accentBlue.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -295,7 +295,7 @@ class VerifiedListingIllustration extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -368,7 +368,7 @@ class VerifiedListingIllustration extends StatelessWidget {
                       color: AppTheme.successGreen,
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.successGreen.withOpacity(0.3),
+                          color: AppTheme.successGreen.withValues(alpha: 0.3),
                           blurRadius: 15,
                           spreadRadius: 2,
                         ),
@@ -417,7 +417,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.successGreen.withOpacity(0.1),
+                  color: AppTheme.successGreen.withValues(alpha: 0.1),
                 ),
                 child: Stack(
                   alignment: Alignment.center,
@@ -431,7 +431,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                         color: AppTheme.successGreen,
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.successGreen.withOpacity(0.3),
+                            color: AppTheme.successGreen.withValues(alpha: 0.3),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -487,7 +487,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.accentBlue.withOpacity(0.8),
+                      color: AppTheme.accentBlue.withValues(alpha: 0.8),
                     ),
                     child: Icon(
                       icons[index],
@@ -565,7 +565,7 @@ class _FloatingIconState extends State<_FloatingIcon>
               color: widget.color,
               boxShadow: [
                 BoxShadow(
-                  color: widget.color.withOpacity(0.3),
+                  color: widget.color.withValues(alpha: 0.3),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),

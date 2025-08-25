@@ -225,7 +225,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                       onChanged: (_) => _toggleAutoDelete(),
                       activeColor: AppColors.switchActive,
                       activeTrackColor: AppColors.switchTrackActive,
-                      inactiveThumbColor: AppColors.switchInactive,
+                      
                       inactiveTrackColor: AppColors.switchTrackInactive,
                     ),
                     contentPadding: EdgeInsets.zero,
@@ -252,7 +252,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                       onChanged: (_) => _toggleSearchSuggestions(),
                       activeColor: AppColors.switchActive,
                       activeTrackColor: AppColors.switchTrackActive,
-                      inactiveThumbColor: AppColors.switchInactive,
+                      
                       inactiveTrackColor: AppColors.switchTrackInactive,
                     ),
                     contentPadding: EdgeInsets.zero,
@@ -274,7 +274,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primaryYellow.withOpacity(0.1),
+        color: AppColors.primaryYellow.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -319,7 +319,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: AppColors.primaryYellow.withOpacity(0.1),
+          color: AppColors.primaryYellow.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
@@ -504,10 +504,10 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.primaryYellow.withOpacity(0.1),
+          color: AppColors.primaryYellow.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppColors.primaryYellow.withOpacity(0.3),
+            color: AppColors.primaryYellow.withValues(alpha: 0.3),
           ),
         ),
         child: Text(

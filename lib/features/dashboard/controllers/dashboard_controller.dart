@@ -1,11 +1,14 @@
 import 'package:get/get.dart';
-import '../../../core/data/providers/api_service.dart';
+
 import '../../../core/controllers/auth_controller.dart';
+import '../../../core/controllers/page_state_service.dart';
+import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/debug_logger.dart';
 
 class DashboardController extends GetxController {
-  late final ApiService _apiService;
+
   late final AuthController _authController;
+  late final PageStateService _pageStateService;
 
   final RxMap<String, dynamic> dashboardData = <String, dynamic>{}.obs;
   final RxList<Map<String, dynamic>> searchHistory = <Map<String, dynamic>>[].obs;
@@ -21,8 +24,9 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _apiService = Get.find<ApiService>();
+
     _authController = Get.find<AuthController>();
+    _pageStateService = Get.find<PageStateService>();
     
     // Listen to authentication state changes
     ever(_authController.isLoggedIn, (bool isLoggedIn) {
@@ -38,6 +42,33 @@ class DashboardController extends GetxController {
     // If already logged in, load dashboard data
     if (_authController.isLoggedIn.value) {
       loadDashboardData();
+    }
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    
+    // Activate the initial page (Discover by default)
+    final initialIndex = currentIndex.value;
+    DebugLogger.info('🚀 Dashboard ready, activating initial tab: $initialIndex');
+    
+    // Activate the default page without changing the index
+    PageType? pageType;
+    switch (initialIndex) {
+      case 1:
+        pageType = PageType.explore;
+        break;
+      case 2:
+        pageType = PageType.discover;
+        break;
+      case 3:
+        pageType = PageType.likes;
+        break;
+    }
+    
+    if (pageType != null) {
+      _pageStateService.notifyPageActivated(pageType);
     }
   }
 
@@ -261,26 +292,47 @@ class DashboardController extends GetxController {
   // Navigation methods
   void changeTab(int index) {
     currentIndex.value = index;
+    
+    // Notify page state service about the page change
+    PageType? pageType;
+    switch (index) {
+      case 1:
+        pageType = PageType.explore;
+        break;
+      case 2:
+        pageType = PageType.discover;
+        break;
+      case 3:
+        pageType = PageType.likes;
+        break;
+    }
+    
+    if (pageType != null) {
+      _pageStateService.notifyPageActivated(pageType);
+    }
   }
 
   // Sync tab with current route
   void syncTabWithRoute(String route) {
     switch (route) {
-      case '/dashboard':
-      case '/':
-        currentIndex.value = 0;
+      case '/profile':
+        currentIndex.value = 0; // ProfileView
+        break;
+      case '/explore':
+        currentIndex.value = 1; // ExploreView
         break;
       case '/discover':
-        currentIndex.value = 1;
-        break;
-      case '/search':
-        currentIndex.value = 2;
+        currentIndex.value = 2; // DiscoverView
         break;
       case '/likes':
-        currentIndex.value = 3;
+        currentIndex.value = 3; // LikesView
         break;
-      case '/profile':
-        currentIndex.value = 4;
+      case '/visits':
+        currentIndex.value = 4; // VisitsView
+        break;
+      case '/dashboard':
+      case '/':
+        // Keep current tab for dashboard route to avoid unwanted switches
         break;
       default:
         // For other routes, don't change the tab

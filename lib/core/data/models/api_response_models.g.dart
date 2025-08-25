@@ -42,7 +42,7 @@ SearchParams _$SearchParamsFromJson(Map<String, dynamic> json) => SearchParams(
   query: json['query'] as String?,
   latitude: (json['latitude'] as num?)?.toDouble(),
   longitude: (json['longitude'] as num?)?.toDouble(),
-  radiusKm: (json['radius_km'] as num?)?.toInt() ?? 5,
+  radiusKm: (json['radius_km'] as num?)?.toInt() ?? 10,
   page: (json['page'] as num?)?.toInt() ?? 1,
   limit: (json['limit'] as num?)?.toInt() ?? 20,
 );

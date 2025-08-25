@@ -84,8 +84,6 @@ class LocationSearchController extends GetxController {
       name: '$cityName, $stateName',
       latitude: 0.0, // These would be fetched from geocoding API
       longitude: 0.0,
-      city: cityName,
-      locality: null,
     );
     
     // For now, just update the location without coordinates
@@ -117,8 +115,6 @@ class LocationSearchController extends GetxController {
               : 'Current Location',
           latitude: locationController.currentLatitude!,
           longitude: locationController.currentLongitude!,
-          city: locationController.currentCity.value,
-          locality: null,
         );
         
         filterService.updateLocation(locationData);

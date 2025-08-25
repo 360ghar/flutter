@@ -20,9 +20,9 @@ class SplashView extends GetView<SplashController> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppTheme.primaryYellow.withOpacity(0.1),
+                    AppTheme.primaryYellow.withValues(alpha: 0.1),
                     AppTheme.backgroundWhite,
-                    AppTheme.accentBlue.withOpacity(0.05),
+                    AppTheme.accentBlue.withValues(alpha: 0.05),
                   ],
                 ),
               ),
@@ -76,7 +76,7 @@ class SplashView extends GetView<SplashController> {
                         decoration: BoxDecoration(
                           color: controller.currentStep.value == index
                               ? AppTheme.primaryYellow
-                              : AppTheme.textLight.withOpacity(0.3),
+                              : AppTheme.textLight.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );
@@ -413,7 +413,7 @@ class SplashView extends GetView<SplashController> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: AppTheme.primaryYellow.withOpacity(0.3),
+                color: AppTheme.primaryYellow.withValues(alpha: 0.3),
                 width: 3,
               ),
             ),
@@ -427,7 +427,7 @@ class SplashView extends GetView<SplashController> {
               color: AppTheme.primaryYellow,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryYellow.withOpacity(0.3),
+                  color: AppTheme.primaryYellow.withValues(alpha: 0.3),
                   blurRadius: 20,
                   spreadRadius: 5,
                 ),
@@ -477,7 +477,7 @@ class SplashView extends GetView<SplashController> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -506,7 +506,7 @@ class SplashView extends GetView<SplashController> {
                         height: 120,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppTheme.accentBlue.withOpacity(0.3),
+                            color: AppTheme.accentBlue.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -575,7 +575,7 @@ class SplashView extends GetView<SplashController> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -649,7 +649,7 @@ class SplashView extends GetView<SplashController> {
               color: AppTheme.successGreen,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.successGreen.withOpacity(0.3),
+                  color: AppTheme.successGreen.withValues(alpha: 0.3),
                   blurRadius: 15,
                   spreadRadius: 2,
                 ),
@@ -677,7 +677,7 @@ class SplashView extends GetView<SplashController> {
           height: 200,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppTheme.successGreen.withOpacity(0.1),
+            color: AppTheme.successGreen.withValues(alpha: 0.1),
           ),
           child: Stack(
             alignment: Alignment.center,
@@ -691,7 +691,7 @@ class SplashView extends GetView<SplashController> {
                   color: AppTheme.successGreen,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.successGreen.withOpacity(0.3),
+                      color: AppTheme.successGreen.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -756,7 +756,7 @@ class SplashView extends GetView<SplashController> {
         color: color,
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 10,
             spreadRadius: 2,
           ),

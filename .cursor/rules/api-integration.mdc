@@ -1,0 +1,515 @@
+---
+globs: lib/core/data/providers/*.dart,lib/core/data/repositories/*.dart
+description: API integration and data provider patterns
+---
+
+# API Integration Patterns
+
+## Overview
+360Ghar uses a structured approach to API integration with Dio, following clean architecture principles with proper error handling, caching, and offline support.
+
+## Base API Provider
+
+### Dio Configuration
+```dart
+class BaseApiProvider {
+  late final Dio _dio;
+  final String baseUrl;
+
+  BaseApiProvider(this.baseUrl) {
+    _dio = Dio(BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 30),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': '360Ghar-Mobile-App',
+      },
+    ));
+
+    _setupInterceptors();
+  }
+
+  void _setupInterceptors() {
+    _dio.interceptors.addAll([
+      // Auth interceptor
+      InterceptorsWrapper(
+        onRequest: _onRequest,
+        onResponse: _onResponse,
+        onError: _onError,
+      ),
+      // Logging interceptor (debug only)
+      if (kDebugMode) LogInterceptor(requestBody: true, responseBody: true),
+    ]);
+  }
+
+  Future<void> _onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    // Add auth token if available
+    final token = await _getAuthToken();
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+
+    // Add language header
+    final language = Get.locale?.languageCode ?? 'en';
+    options.headers['Accept-Language'] = language;
+
+    handler.next(options);
+  }
+
+  void _onResponse(Response response, ResponseInterceptorHandler handler) {
+    // Log successful responses
+    debugPrint('API Response: ${response.statusCode} ${response.requestOptions.path}');
+    handler.next(response);
+  }
+
+  void _onError(DioException error, ErrorInterceptorHandler handler) async {
+    if (error.response?.statusCode == 401) {
+      // Handle token refresh
+      final refreshed = await _refreshToken();
+      if (refreshed) {
+        // Retry the original request
+        final retryResponse = await _retryRequest(error.requestOptions);
+        return handler.resolve(retryResponse);
+      } else {
+        // Logout user
+        await _logoutUser();
+        return handler.next(error);
+      }
+    }
+
+    handler.next(error);
+  }
+
+  Future<String?> _getAuthToken() async {
+    final authService = Get.find<AuthService>();
+    return authService.getToken();
+  }
+
+  Future<bool> _refreshToken() async {
+    final authService = Get.find<AuthService>();
+    return authService.refreshToken();
+  }
+
+  Future<void> _logoutUser() async {
+    final authService = Get.find<AuthService>();
+    await authService.logout();
+    Get.offAllNamed(AppRoutes.login);
+  }
+
+  Future<Response> _retryRequest(RequestOptions requestOptions) async {
+    final token = await _getAuthToken();
+    requestOptions.headers['Authorization'] = 'Bearer $token';
+    return _dio.request(
+      requestOptions.path,
+      data: requestOptions.data,
+      queryParameters: requestOptions.queryParameters,
+      options: Options(
+        method: requestOptions.method,
+        headers: requestOptions.headers,
+      ),
+    );
+  }
+}
+```
+
+## Property API Provider
+
+### Property Endpoints
+```dart
+class PropertyApiProvider extends BaseApiProvider {
+  PropertyApiProvider() : super(ApiConstants.baseUrl);
+
+  Future<List<PropertyModel>> getProperties({
+    int page = 1,
+    int limit = 20,
+    PropertyFilter? filter,
+    String? searchQuery,
+    SortOption? sortBy,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+
+      if (filter != null) {
+        queryParams.addAll(filter.toQueryParams());
+      }
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        queryParams['search'] = searchQuery;
+      }
+
+      if (sortBy != null) {
+        queryParams['sort_by'] = sortBy.field;
+        queryParams['sort_order'] = sortBy.ascending ? 'asc' : 'desc';
+      }
+
+      final response = await _dio.get('/properties', queryParameters: queryParams);
+
+      return (response.data['data'] as List)
+          .map((json) => PropertyModel.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<PropertyModel> getPropertyById(String id) async {
+    try {
+      final response = await _dio.get('/properties/$id');
+      return PropertyModel.fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<PropertyModel>> getSimilarProperties(String propertyId) async {
+    try {
+      final response = await _dio.get('/properties/$propertyId/similar');
+      return (response.data['data'] as List)
+          .map((json) => PropertyModel.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<void> favoriteProperty(String propertyId) async {
+    try {
+      await _dio.post('/properties/$propertyId/favorite');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<void> unfavoriteProperty(String propertyId) async {
+    try {
+      await _dio.delete('/properties/$propertyId/favorite');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Exception _handleDioError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return NetworkException('Connection timeout. Please check your internet connection.');
+
+      case DioExceptionType.badResponse:
+        final statusCode = e.response?.statusCode;
+        final data = e.response?.data;
+
+        switch (statusCode) {
+          case 400:
+            return ValidationException(
+              _extractValidationErrors(data),
+              'Invalid request data',
+            );
+          case 401:
+            return UnauthorizedException('Authentication required');
+          case 403:
+            return ForbiddenException('Access denied');
+          case 404:
+            return NotFoundException('Resource not found');
+          case 422:
+            return ValidationException(
+              _extractValidationErrors(data),
+              'Validation failed',
+            );
+          case 500:
+          case 502:
+          case 503:
+            return ServerException('Server error. Please try again later.');
+          default:
+            return ServerException('An error occurred. Please try again.');
+        }
+
+      case DioExceptionType.cancel:
+        return RequestCancelledException('Request was cancelled');
+
+      default:
+        return GenericApiException('An unexpected error occurred');
+    }
+  }
+
+  Map<String, String> _extractValidationErrors(dynamic data) {
+    if (data is Map<String, dynamic> && data['errors'] is Map<String, dynamic>) {
+      return Map<String, String>.from(data['errors']);
+    }
+    return {};
+  }
+}
+```
+
+## Search API Provider
+
+### Advanced Search Implementation
+```dart
+class SearchApiProvider extends BaseApiProvider {
+  SearchApiProvider() : super(ApiConstants.baseUrl);
+
+  Future<SearchResults> searchProperties(SearchQuery query) async {
+    try {
+      final response = await _dio.post('/search/properties', data: query.toJson());
+
+      return SearchResults.fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<String>> getSearchSuggestions(String query) async {
+    try {
+      final response = await _dio.get('/search/suggestions', queryParameters: {
+        'q': query,
+        'limit': 10,
+      });
+
+      return List<String>.from(response.data['data']);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<LocationModel>> searchLocations(String query) async {
+    try {
+      final response = await _dio.get('/search/locations', queryParameters: {
+        'q': query,
+        'limit': 20,
+      });
+
+      return (response.data['data'] as List)
+          .map((json) => LocationModel.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+}
+```
+
+## User API Provider
+
+### User Management Endpoints
+```dart
+class UserApiProvider extends BaseApiProvider {
+  UserApiProvider() : super(ApiConstants.baseUrl);
+
+  Future<UserModel> getCurrentUser() async {
+    try {
+      final response = await _dio.get('/user/profile');
+      return UserModel.fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<UserModel> updateProfile(UpdateProfileRequest request) async {
+    try {
+      final response = await _dio.put('/user/profile', data: request.toJson());
+      return UserModel.fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<void> updateAvatar(String imagePath) async {
+    try {
+      final file = await MultipartFile.fromFile(imagePath);
+      final formData = FormData.fromMap({'avatar': file});
+
+      await _dio.post('/user/avatar', data: formData);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<PropertyModel>> getFavoriteProperties({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _dio.get('/user/favorites', queryParameters: {
+        'page': page,
+        'limit': limit,
+      });
+
+      return (response.data['data'] as List)
+          .map((json) => PropertyModel.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<BookingModel>> getUserBookings({
+    int page = 1,
+    int limit = 20,
+    BookingStatus? status,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+
+      if (status != null) {
+        queryParams['status'] = status.value;
+      }
+
+      final response = await _dio.get('/user/bookings', queryParameters: queryParams);
+
+      return (response.data['data'] as List)
+          .map((json) => BookingModel.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+}
+```
+
+## Booking API Provider
+
+### Booking Management
+```dart
+class BookingApiProvider extends BaseApiProvider {
+  BookingApiProvider() : super(ApiConstants.baseUrl);
+
+  Future<BookingModel> createBooking(CreateBookingRequest request) async {
+    try {
+      final response = await _dio.post('/bookings', data: request.toJson());
+      return BookingModel.fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<BookingModel> getBookingById(String bookingId) async {
+    try {
+      final response = await _dio.get('/bookings/$bookingId');
+      return BookingModel.fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<void> cancelBooking(String bookingId, String reason) async {
+    try {
+      await _dio.put('/bookings/$bookingId/cancel', data: {'reason': reason});
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<TimeSlot>> getAvailableTimeSlots(String propertyId, DateTime date) async {
+    try {
+      final response = await _dio.get('/properties/$propertyId/availability', queryParameters: {
+        'date': DateFormat('yyyy-MM-dd').format(date),
+      });
+
+      return (response.data['data'] as List)
+          .map((json) => TimeSlot.fromJson(json))
+          .toList();
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+}
+```
+
+## API Service Coordination
+
+### Unified API Service
+```dart
+class ApiService {
+  final PropertyApiProvider _propertyApi;
+  final SearchApiProvider _searchApi;
+  final UserApiProvider _userApi;
+  final BookingApiProvider _bookingApi;
+
+  ApiService(
+    this._propertyApi,
+    this._searchApi,
+    this._userApi,
+    this._bookingApi,
+  );
+
+  // Property methods
+  Future<List<PropertyModel>> getProperties({
+    int page = 1,
+    int limit = 20,
+    PropertyFilter? filter,
+    String? searchQuery,
+    SortOption? sortBy,
+  }) => _propertyApi.getProperties(
+    page: page,
+    limit: limit,
+    filter: filter,
+    searchQuery: searchQuery,
+    sortBy: sortBy,
+  );
+
+  // Search methods
+  Future<SearchResults> searchProperties(SearchQuery query) =>
+      _searchApi.searchProperties(query);
+
+  Future<List<String>> getSearchSuggestions(String query) =>
+      _searchApi.getSearchSuggestions(query);
+
+  // User methods
+  Future<UserModel> getCurrentUser() => _userApi.getCurrentUser();
+  Future<UserModel> updateProfile(UpdateProfileRequest request) =>
+      _userApi.updateProfile(request);
+
+  // Booking methods
+  Future<BookingModel> createBooking(CreateBookingRequest request) =>
+      _bookingApi.createBooking(request);
+
+  Future<List<TimeSlot>> getAvailableTimeSlots(String propertyId, DateTime date) =>
+      _bookingApi.getAvailableTimeSlots(propertyId, date);
+}
+```
+
+## Best Practices
+
+### 1. Error Handling
+- Use custom exceptions for different error types
+- Implement proper HTTP status code handling
+- Provide meaningful error messages
+- Handle network errors gracefully
+
+### 2. Authentication
+- Implement token refresh automatically
+- Handle 401 errors with logout flow
+- Add auth headers to all authenticated requests
+- Store tokens securely
+
+### 3. Request/Response Logging
+- Log requests in debug mode
+- Don't log sensitive data in production
+- Use structured logging for better debugging
+
+### 4. Caching Strategy
+- Cache frequently accessed data
+- Implement cache invalidation
+- Handle cache expiration
+- Provide offline fallback
+
+### 5. Performance Optimization
+- Use compression for large responses
+- Implement request cancellation
+- Use connection pooling
+- Handle timeouts appropriately
+
+### 6. Security
+- Validate SSL certificates
+- Use HTTPS for all requests
+- Sanitize user inputs
+- Don't log sensitive information

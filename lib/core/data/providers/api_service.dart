@@ -322,9 +322,7 @@ class ApiService extends getx.GetConnect {
         final fullEndpoint = '/api/v1$endpoint';
         
         // Single-line API request log for debugging
-        DebugLogger.api('🚀 API $method $fullEndpoint' +
-          (queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : '') +
-          (body != null && body.isNotEmpty ? ' | Body: $body' : ''));
+        DebugLogger.api('🚀 API $method $fullEndpoint${queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : ''}${body != null && body.isNotEmpty ? ' | Body: $body' : ''}');
 
         DebugLogger.logAPIRequest(
           method: method,
@@ -457,29 +455,29 @@ class ApiService extends getx.GetConnect {
       }
 
       // Ensure numeric fields are parsed as double when provided as int/strings
-      double? _toDouble(dynamic v) {
+      double? toDouble(dynamic v) {
         if (v == null) return null;
         if (v is num) return v.toDouble();
         if (v is String) return double.tryParse(v);
         return null;
       }
       if (safeJson.containsKey('base_price')) {
-        safeJson['base_price'] = _toDouble(safeJson['base_price']) ?? 0.0;
+        safeJson['base_price'] = toDouble(safeJson['base_price']) ?? 0.0;
       }
       if (safeJson.containsKey('price_per_sqft')) {
-        safeJson['price_per_sqft'] = _toDouble(safeJson['price_per_sqft']);
+        safeJson['price_per_sqft'] = toDouble(safeJson['price_per_sqft']);
       }
       if (safeJson.containsKey('monthly_rent')) {
-        safeJson['monthly_rent'] = _toDouble(safeJson['monthly_rent']);
+        safeJson['monthly_rent'] = toDouble(safeJson['monthly_rent']);
       }
       if (safeJson.containsKey('daily_rate')) {
-        safeJson['daily_rate'] = _toDouble(safeJson['daily_rate']);
+        safeJson['daily_rate'] = toDouble(safeJson['daily_rate']);
       }
       if (safeJson.containsKey('security_deposit')) {
-        safeJson['security_deposit'] = _toDouble(safeJson['security_deposit']);
+        safeJson['security_deposit'] = toDouble(safeJson['security_deposit']);
       }
       if (safeJson.containsKey('maintenance_charges')) {
-        safeJson['maintenance_charges'] = _toDouble(safeJson['maintenance_charges']);
+        safeJson['maintenance_charges'] = toDouble(safeJson['maintenance_charges']);
       }
 
       // Validate critical fields before parsing
@@ -925,11 +923,6 @@ class ApiService extends getx.GetConnect {
     double? areaMin,
     double? areaMax,
 
-    // Location Filters
-    String? city,
-    String? locality,
-    String? pincode,
-
     // Additional Filters
     List<String>? amenities,
     int? parkingSpacesMin,
@@ -974,11 +967,6 @@ class ApiService extends getx.GetConnect {
     if (bathroomsMax != null) queryParams['bathrooms_max'] = bathroomsMax.toString();
     if (areaMin != null) queryParams['area_min'] = areaMin.toString();
     if (areaMax != null) queryParams['area_max'] = areaMax.toString();
-
-    // Location Filters
-    if (city != null) queryParams['city'] = city;
-    if (locality != null) queryParams['locality'] = locality;
-    if (pincode != null) queryParams['pincode'] = pincode;
 
     // Additional Filters
     if (amenities != null && amenities.isNotEmpty) {

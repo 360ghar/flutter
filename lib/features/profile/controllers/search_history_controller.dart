@@ -29,7 +29,7 @@ class SearchHistoryController extends GetxController {
         _saveSearchHistory();
       }
       filteredHistory.value = List.from(searchHistory);
-    } catch (e, stackTrace) {
+    } catch (e) {
       searchHistory.value = _getSampleSearchHistory();
       filteredHistory.value = List.from(searchHistory);
     } finally {
@@ -126,7 +126,7 @@ class SearchHistoryController extends GetxController {
 
       filteredHistory.value = List.from(searchHistory);
       _saveSearchHistory();
-    } catch (e, stackTrace) {
+    } catch (e) {
       Get.snackbar('Error', 'Failed to save search history');
     }
   }
@@ -142,7 +142,7 @@ class SearchHistoryController extends GetxController {
         'Search removed from history',
         snackPosition: SnackPosition.BOTTOM,
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       Get.snackbar('Error', 'Failed to remove search');
     }
   }
@@ -188,8 +188,8 @@ class SearchHistoryController extends GetxController {
   void _saveSearchHistory() {
     try {
       _storage.write('searchHistory', searchHistory.toList());
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error saving search history', e, stackTrace);
+    } catch (e) {
+      DebugLogger.error('Error saving search history', e);
     }
   }
 
@@ -213,7 +213,7 @@ class SearchHistoryController extends GetxController {
       } else {
         return DateFormat('MMM dd, yyyy').format(date);
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       return '';
     }
   }

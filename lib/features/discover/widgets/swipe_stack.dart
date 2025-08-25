@@ -21,7 +21,7 @@ class SwipeStack extends StatefulWidget {
 class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMixin {
   late List<PropertyModel> _properties;
   late AnimationController _animationController;
-  late Animation<double> _animation;
+
   Offset _dragStart = Offset.zero;
   Offset _dragPosition = Offset.zero;
   bool _isDragging = false;
@@ -34,17 +34,7 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _animation = Tween<double>(begin: 0, end: 1).animate(_animationController)
-      ..addListener(() {
-        setState(() {});
-      })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _properties.removeAt(0);
-          _animationController.reset();
-          setState(() {});
-        }
-      });
+
   }
 
   @override

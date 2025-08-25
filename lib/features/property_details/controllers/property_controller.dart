@@ -65,12 +65,13 @@ class PropertyController extends GetxController {
       }
     });
     
-    // Listen to filter changes for automatic refresh of favorites
-    debounce(
-      _filterService.currentFilter,
-      (_) => _onFiltersChanged(),
-      time: const Duration(milliseconds: 500),
-    );
+    // TODO: Listen to filter changes for automatic refresh of favorites
+    // This needs to be updated to work with the new page-specific state system
+    // debounce(
+    //   _filterService.currentFilter,
+    //   (_) => _onFiltersChanged(),
+    //   time: const Duration(milliseconds: 500),
+    // );
     
     // If already logged in, initialize immediately
     if (_authController.isLoggedIn.value) {
@@ -200,7 +201,7 @@ class PropertyController extends GetxController {
       DebugLogger.info('🔍 Fetching recommended properties with limit: $limit');
       
       // Recommendations endpoint removed - use regular search instead
-      final filters = _filterService.currentFilter.value.copyWith(
+      final filters = _filterService.currentFilter.copyWith(
         latitude: _locationController.currentLatitude,
         longitude: _locationController.currentLongitude,
         radiusKm: 10.0,
@@ -406,7 +407,7 @@ class PropertyController extends GetxController {
       if (_authController.isAuthenticated) {
         // Get liked properties using SwipesRepository
         final likedProperties = await _swipesRepository.getLikedProperties(
-          filters: _filterService.currentFilter.value,
+          filters: _filterService.currentFilter,
           page: 1,
           limit: 50,
         );
@@ -432,7 +433,7 @@ class PropertyController extends GetxController {
       if (_authController.isAuthenticated) {
         // Get passed properties using SwipesRepository
         final passedPropertiesList = await _swipesRepository.getPassedProperties(
-          filters: _filterService.currentFilter.value,
+          filters: _filterService.currentFilter,
           page: 1,
           limit: 50,
         );

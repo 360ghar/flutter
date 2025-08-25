@@ -130,15 +130,15 @@ class RelationshipManagerSkeleton extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryYellow.withOpacity(0.1),
-            AppColors.primaryYellow.withOpacity(0.05),
+            AppColors.primaryYellow.withValues(alpha: 0.1),
+            AppColors.primaryYellow.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.primaryYellow.withOpacity(0.2),
+          color: AppColors.primaryYellow.withValues(alpha: 0.2),
           width: 1,
         ),
       ),

@@ -4,24 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../core/data/models/property_model.dart';
+import '../../../core/data/models/page_state_model.dart';
 import '../../../core/data/repositories/properties_repository.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/location_controller.dart';
+import '../../../core/controllers/page_state_service.dart';
+import '../../../widgets/common/property_filter_widget.dart';
 
-enum ExploreState {
-  initial,
-  loading,
-  loaded,
-  empty,
-  error,
-  loadingMore,
-}
+enum ExploreState { initial, loading, loaded, empty, error, loadingMore }
 
 class ExploreController extends GetxController {
-  final PropertiesRepository _propertiesRepository = Get.find<PropertiesRepository>();
+  final PropertiesRepository _propertiesRepository =
+      Get.find<PropertiesRepository>();
   final FilterService _filterService = Get.find<FilterService>();
   final LocationController _locationController = Get.find<LocationController>();
+  final PageStateService _pageStateService = Get.find<PageStateService>();
 
   // Map controller
   final MapController mapController = MapController();
@@ -32,7 +30,10 @@ class ExploreController extends GetxController {
   final RxnString error = RxnString();
 
   // Map state
-  final Rx<LatLng> currentCenter = const LatLng(28.6139, 77.2090).obs; // Default: Delhi
+  final Rx<LatLng> currentCenter = const LatLng(
+    28.6139,
+    77.2090,
+  ).obs; // Default: Delhi
   final RxDouble currentZoom = 12.0.obs;
   final RxDouble currentRadius = 5.0.obs;
 
@@ -48,36 +49,45 @@ class ExploreController extends GetxController {
   // Selected property for bottom sheet
   final Rx<PropertyModel?> selectedProperty = Rx<PropertyModel?>(null);
 
+  // Page activation listener
+  Worker? _pageActivationWorker;
+
   @override
   void onInit() {
     super.onInit();
     DebugLogger.info('🚀 ExploreController onInit() started.');
-    
+
+    // Don't set current page here - let navigation handle it
+
     // Add state listener for debugging
     ever(state, (ExploreState currentState) {
       DebugLogger.info('📊 ExploreState changed to: $currentState');
     });
-    
-    // Set state to loading immediately to prevent blank page
-    state.value = ExploreState.loading;
-    
+
     _setupFilterListener();
     _setupLocationListener();
-    
-    // Use addPostFrameCallback to ensure all bindings are ready
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeMapAndLoadProperties();
-    });
+    // LAZY LOADING: Remove initial data loading from onInit
   }
 
   @override
   void onReady() {
     super.onReady();
-    DebugLogger.success('✅ ExploreController is ready! Current state: ${state.value}');
-    
-    // Perform additional validation
-    if (state.value == ExploreState.initial) {
-      DebugLogger.warning('⚠️ Controller is ready but still in initial state. This may indicate an initialization issue.');
+    DebugLogger.success(
+      '✅ ExploreController is ready! Current state: ${state.value}',
+    );
+
+    // Set up listener for page activation
+    _pageActivationWorker = ever(_pageStateService.currentPageType, (pageType) {
+      if (pageType == PageType.explore) {
+        activatePage();
+      }
+    });
+
+    // Initial activation if already on this page (with delay to ensure full initialization)
+    if (_pageStateService.currentPageType.value == PageType.explore) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        activatePage();
+      });
     }
   }
 
@@ -85,12 +95,32 @@ class ExploreController extends GetxController {
   void onClose() {
     _searchDebouncer?.cancel();
     _mapMoveDebouncer?.cancel();
+    _pageActivationWorker?.dispose();
     super.onClose();
   }
 
+  void activatePage() {
+    final state = _pageStateService.exploreState.value;
+    if (state.properties.isEmpty && this.state.value == ExploreState.initial) {
+      // Initialize map and load initial data
+      _initializeMapAndLoadProperties();
+    } else if (state.isDataStale) {
+      _refreshInBackground();
+    }
+  }
+
+  Future<void> _refreshInBackground() async {
+    try {
+      await _loadPropertiesForCurrentView(backgroundRefresh: true);
+    } catch (e) {
+      DebugLogger.error('❌ Background refresh failed: $e');
+      // Handle silently or with subtle notification
+    }
+  }
+
   void _setupFilterListener() {
-    // Listen to filter changes and reload properties
-    debounce(_filterService.currentFilter, (_) {
+    // Listen to page state changes and reload properties
+    debounce(_pageStateService.exploreState, (_) {
       _loadPropertiesForCurrentView();
     }, time: const Duration(milliseconds: 500));
   }
@@ -101,7 +131,9 @@ class ExploreController extends GetxController {
       if (position != null) {
         final newCenter = LatLng(position.latitude, position.longitude);
         final distance = const Distance();
-        if (distance.as(LengthUnit.Meter, currentCenter.value, newCenter) > 1000) { // Only update if >1km difference
+        if (distance.as(LengthUnit.Meter, currentCenter.value, newCenter) >
+            1000) {
+          // Only update if >1km difference
           _updateMapCenter(newCenter, 14.0);
         }
       }
@@ -117,9 +149,11 @@ class ExploreController extends GetxController {
 
       // Prioritize location from FilterService if available
       if (_filterService.hasLocation) {
-        final filters = _filterService.currentFilter.value;
+        final filters = _filterService.currentFilter;
         initialCenter = LatLng(filters.latitude!, filters.longitude!);
-        DebugLogger.info('🗺️ Using location from FilterService: $initialCenter');
+        DebugLogger.info(
+          '🗺️ Using location from FilterService: $initialCenter',
+        );
       } else {
         // Try to get current device location, but don't block if it fails
         DebugLogger.info('🗺️ Attempting to get current device location...');
@@ -130,7 +164,17 @@ class ExploreController extends GetxController {
           initialZoom = 14.0; // Zoom in closer for current location
           DebugLogger.info('🗺️ Using current device location: $initialCenter');
         } else {
-          DebugLogger.warning('⚠️ Could not get device location. Using default.');
+          DebugLogger.warning(
+            '⚠️ Could not get device location. Trying IP-based location...',
+          );
+          final ipLoc = await _locationController.getIpLocation();
+          if (ipLoc != null) {
+            initialCenter = LatLng(ipLoc.latitude, ipLoc.longitude);
+            initialZoom = 12.0;
+            DebugLogger.info('🗺️ Using IP-based location: $initialCenter');
+          } else {
+            DebugLogger.warning('⚠️ IP-based location failed. Using default.');
+          }
         }
       }
 
@@ -144,11 +188,11 @@ class ExploreController extends GetxController {
 
       // Now, load properties
       await _loadPropertiesForCurrentView();
-
     } catch (e) {
       DebugLogger.error('❌ CRITICAL: Failed during initialization: $e');
       state.value = ExploreState.error;
-      error.value = "Failed to initialize the map. Please check location services and try again.";
+      error.value =
+          "Failed to initialize the map. Please check location services and try again.";
     }
   }
 
@@ -158,9 +202,11 @@ class ExploreController extends GetxController {
       await _locationController.getCurrentLocation();
       final position = _locationController.currentPosition.value;
       if (position != null) {
-        DebugLogger.success('✅ Current location obtained: lat=${position.latitude}, lng=${position.longitude}');
+        DebugLogger.success(
+          '✅ Current location obtained: lat=${position.latitude}, lng=${position.longitude}',
+        );
         _updateMapCenter(LatLng(position.latitude, position.longitude), 14.0);
-        
+
         // Update filters with current location
         _filterService.updateLocationWithCoordinates(
           latitude: position.latitude,
@@ -168,7 +214,9 @@ class ExploreController extends GetxController {
           radiusKm: currentRadius.value,
         );
       } else {
-        DebugLogger.warning('⚠️ LocationController returned null position, using default location');
+        DebugLogger.warning(
+          '⚠️ LocationController returned null position, using default location',
+        );
         // Use default location (Delhi) if location is not available
         _updateMapCenter(const LatLng(28.6139, 77.2090), 12.0);
         _filterService.updateLocationWithCoordinates(
@@ -195,7 +243,7 @@ class ExploreController extends GetxController {
       currentCenter.value = center;
       currentZoom.value = zoom;
       DebugLogger.info('🗺️ Updated map center to $center with zoom $zoom');
-      
+
       mapController.move(center, zoom);
     } catch (e) {
       DebugLogger.warning('⚠️ Could not move map: $e');
@@ -208,10 +256,10 @@ class ExploreController extends GetxController {
   // Map movement handler with debounce
   void onMapMove(MapCamera position, bool hasGesture) {
     if (!hasGesture) return; // Ignore programmatic moves
-    
+
     currentCenter.value = position.center;
     currentZoom.value = position.zoom;
-    
+
     // Calculate radius from zoom level and visible bounds
     final newRadius = _calculateRadiusFromZoom(position.zoom);
     if ((newRadius - currentRadius.value).abs() > 0.5) {
@@ -226,8 +274,10 @@ class ExploreController extends GetxController {
   }
 
   void _onMapMoveCompleted() {
-    DebugLogger.api('🗺️ Map moved to ${currentCenter.value}, radius: ${currentRadius.value}km');
-    
+    DebugLogger.api(
+      '🗺️ Map moved to ${currentCenter.value}, radius: ${currentRadius.value}km',
+    );
+
     // Update filters with new location
     _filterService.updateLocationWithCoordinates(
       latitude: currentCenter.value.latitude,
@@ -247,25 +297,35 @@ class ExploreController extends GetxController {
   }
 
   // Load all properties for current map view
-  Future<void> _loadPropertiesForCurrentView() async {
+  Future<void> _loadPropertiesForCurrentView({
+    bool backgroundRefresh = false,
+  }) async {
     try {
-      // Don't check if already loading - the state is managed by caller
-      DebugLogger.info('⏳ Starting property loading...');
-      
-      // Only set loading if not already in a loading state
-      if (state.value != ExploreState.loading) {
+      DebugLogger.info(
+        backgroundRefresh
+            ? '🔄 Background refreshing properties...'
+            : '⏳ Starting property loading...',
+      );
+      _pageStateService.notifyPageRefreshing(PageType.explore, true);
+
+      // Only set loading if not background refresh
+      if (!backgroundRefresh && state.value != ExploreState.loading) {
         state.value = ExploreState.loading;
       }
-      
-      error.value = null;
-      properties.clear();
-      selectedProperty.value = null;
 
-      DebugLogger.api('🗺️ Loading all properties for map view with filters: ${_filterService.currentFilter.value.toJson()}');
+      error.value = null;
+      if (!backgroundRefresh) {
+        properties.clear();
+        selectedProperty.value = null;
+      }
+
+      DebugLogger.api(
+        '🗺️ Loading all properties for map view with filters: ${_filterService.currentFilter.toJson()}',
+      );
 
       // Load all pages sequentially for map display
       final allProperties = await _propertiesRepository.loadAllPropertiesForMap(
-        filters: _filterService.currentFilter.value,
+        filters: _filterService.currentFilter,
         limit: 100,
         onProgress: (current, total) {
           loadingProgress.value = current;
@@ -273,17 +333,37 @@ class ExploreController extends GetxController {
         },
       );
 
-      properties.assignAll(allProperties);
-      DebugLogger.success('✅ Loaded ${properties.length} properties for map.');
+      if (backgroundRefresh) {
+        // For background refresh, merge new data with existing data
+        final newProperties = allProperties
+            .where(
+              (newProp) => !properties.any(
+                (existingProp) => existingProp.id == newProp.id,
+              ),
+            )
+            .toList();
+        properties.insertAll(0, newProperties);
+        DebugLogger.success(
+          '✅ Background refresh: added ${newProperties.length} new properties (total: ${properties.length})',
+        );
+      } else {
+        properties.assignAll(allProperties);
+        DebugLogger.success(
+          '✅ Loaded ${properties.length} properties for map.',
+        );
+      }
 
       if (properties.isEmpty) {
         DebugLogger.info('📭 No properties found, setting empty state');
         state.value = ExploreState.empty;
       } else {
-        DebugLogger.success('✅ Setting loaded state with ${properties.length} properties');
-        state.value = ExploreState.loaded;
+        if (!backgroundRefresh) {
+          DebugLogger.success(
+            '✅ Setting loaded state with ${properties.length} properties',
+          );
+          state.value = ExploreState.loaded;
+        }
       }
-
     } catch (e) {
       DebugLogger.error('❌ Failed to load properties: $e');
       state.value = ExploreState.error;
@@ -292,15 +372,16 @@ class ExploreController extends GetxController {
       loadingProgress.value = 0;
       totalPages.value = 1;
       DebugLogger.info('🔄 Cleanup completed for property loading');
+      _pageStateService.notifyPageRefreshing(PageType.explore, false);
     }
   }
 
   // Search functionality
   void updateSearchQuery(String query) {
     searchQuery.value = query;
-    
+
     _searchDebouncer?.cancel();
-    
+
     if (query.isEmpty) {
       _filterService.updateSearchQuery('');
       return;
@@ -321,7 +402,7 @@ class ExploreController extends GetxController {
   void selectProperty(PropertyModel property) {
     selectedProperty.value = property;
     DebugLogger.api('🏠 Selected property: ${property.title}');
-    
+
     // Center map on selected property if it has location
     if (property.hasLocation) {
       _updateMapCenter(
@@ -342,7 +423,11 @@ class ExploreController extends GetxController {
 
   // Filter shortcuts
   void showFilters() {
-    Get.toNamed('/filters');
+    try {
+      showPropertyFilterBottomSheet(Get.context!, pageType: 'explore');
+    } catch (_) {
+      // Fallback: no context available; ignore
+    }
   }
 
   void quickFilterByType(PropertyType type) {
@@ -371,7 +456,9 @@ class ExploreController extends GetxController {
   void fitBoundsToProperties() {
     if (properties.isEmpty) return;
 
-    final propertiesWithLocation = properties.where((p) => p.hasLocation).toList();
+    final propertiesWithLocation = properties
+        .where((p) => p.hasLocation)
+        .toList();
     if (propertiesWithLocation.isEmpty) return;
 
     try {
@@ -388,8 +475,9 @@ class ExploreController extends GetxController {
         LatLng(maxLat, maxLng),
       );
 
-      mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
-      
+      mapController.fitCamera(
+        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
+      );
     } catch (e) {
       DebugLogger.warning('⚠️ Could not fit bounds: $e');
     }
@@ -409,13 +497,15 @@ class ExploreController extends GetxController {
   void clearError() {
     error.value = null;
     if (state.value == ExploreState.error) {
-      state.value = properties.isEmpty ? ExploreState.empty : ExploreState.loaded;
+      state.value = properties.isEmpty
+          ? ExploreState.empty
+          : ExploreState.loaded;
     }
   }
 
   // Statistics and info
   String get locationDisplayText => _filterService.locationDisplayText;
-  
+
   String get propertiesCountText {
     if (properties.isEmpty) return 'No properties found';
     if (properties.length == 1) return '1 property';

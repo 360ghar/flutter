@@ -74,7 +74,7 @@ class PropertyDetailsView extends StatelessWidget {
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -86,7 +86,7 @@ class PropertyDetailsView extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: Obx(() => IconButton(
@@ -110,7 +110,7 @@ class PropertyDetailsView extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -337,9 +337,9 @@ class PropertyDetailsView extends StatelessWidget {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryYellow.withOpacity(0.1),
+                            color: AppColors.primaryYellow.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
+                            border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
                           ),
                                                      child: Text(
                              amenity.title,
@@ -383,9 +383,9 @@ class PropertyDetailsView extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryYellow.withOpacity(0.1),
+                                color: AppColors.primaryYellow.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
+                                border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,

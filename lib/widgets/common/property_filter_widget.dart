@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/utils/app_colors.dart';
-import '../../features/property_details/controllers/property_controller.dart';
 import '../../core/controllers/filter_service.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
@@ -49,7 +48,6 @@ class _FilterBottomSheet extends StatefulWidget {
 }
 
 class _FilterBottomSheetState extends State<_FilterBottomSheet> {
-  late final PropertyController propertyController;
   late final FilterService filterService;
   
   late String _selectedPurpose;
@@ -102,14 +100,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   void initState() {
     super.initState();
     // Ensure controllers are available
-    // PropertyController should be registered via proper route bindings
-    propertyController = Get.find<PropertyController>();
     filterService = Get.find<FilterService>();
     _initializeFilters();
   }
 
   void _initializeFilters() {
-    final currentFilter = filterService.currentFilter.value;
+    final currentFilter = filterService.currentFilter;
     _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'all');
     // Clamp values to ensure they're within the slider range
     final maxRange = filterService.getPriceMax();
@@ -315,7 +311,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               : 150000000.0,
           divisions: 100,
           activeColor: AppColors.primaryYellow,
-          inactiveColor: AppColors.primaryYellow.withOpacity(0.2),
+          inactiveColor: AppColors.primaryYellow.withValues(alpha: 0.2),
           labels: RangeLabels(
             '₹${_formatPrice(_minPrice)}',
             '₹${_formatPrice(_maxPrice)}',
@@ -381,7 +377,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
-                    value: _minBedrooms,
+                    initialValue: _minBedrooms,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -422,7 +418,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
-                    value: _maxBedrooms,
+                    initialValue: _maxBedrooms,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -535,7 +531,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryYellow.withOpacity(0.1) : AppColors.inputBackground,
+                  color: isSelected ? AppColors.primaryYellow.withValues(alpha: 0.1) : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected ? AppColors.primaryYellow : AppColors.border,
@@ -679,4 +675,21 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       return price.toStringAsFixed(0);
     }
   }
-} 
+}
+
+// Public helper to show the same filter bottom sheet from anywhere
+void showPropertyFilterBottomSheet(
+  BuildContext context, {
+  String pageType = 'explore',
+  VoidCallback? onFiltersApplied,
+}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => _FilterBottomSheet(
+      pageType: pageType,
+      onFiltersApplied: onFiltersApplied,
+    ),
+  );
+}

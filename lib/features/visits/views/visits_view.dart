@@ -5,7 +5,6 @@ import '../../../core/data/models/visit_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../../widgets/common/robust_network_image.dart';
 import '../widgets/visits_skeleton_loaders.dart';
-import '../../../core/widgets/common/shared_app_bar.dart';
 
 class VisitsView extends GetView<VisitsController> {
   const VisitsView({super.key});
@@ -23,116 +22,112 @@ class VisitsView extends GetView<VisitsController> {
       length: 2,
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight + 50), // AppBar + TabBar height
-          child: Column(
-            children: [
-              const SharedAppBar(title: 'My Visits'),
-              Container(
-                color: AppColors.appBarBackground,
-                child: TabBar(
-                  indicatorColor: AppColors.primaryYellow,
-                  indicatorWeight: 3,
-                  labelColor: AppColors.primaryYellow,
-                  unselectedLabelColor: AppColors.tabUnselected,
-                  labelStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal,
-                  ),
-                  tabs: [
-              Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('scheduled_visits'.tr),
-                    const SizedBox(width: 8),
-                    Obx(() => controller.upcomingVisits.isNotEmpty
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryYellow,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${controller.upcomingVisits.length}',
-                              style: TextStyle(
-                                color: AppColors.buttonText,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        : const SizedBox.shrink()),
-                  ],
-                ),
-              ),
-              Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('past_visits'.tr),
-                    const SizedBox(width: 8),
-                    Obx(() => controller.pastVisits.isNotEmpty
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.inputBackground,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${controller.pastVisits.length}',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          )
-                        : const SizedBox.shrink()),
-                  ],
-                ),
-              ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        body: Obx(() {
-          if (controller.isLoading.value) {
-            return _buildLoadingState();
-          }
+        body: SafeArea(
+          child: Obx(() {
+            if (controller.isLoading.value) {
+              return _buildLoadingState();
+            }
 
-          return Column(
-            children: [
-              // Relationship Manager Section - Always visible
-              Container(
-                color: AppColors.scaffoldBackground,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: _buildRelationshipManagerCard(),
+            return Column(
+              children: [
+                // TabBar at the top
+                Container(
+                  color: AppColors.scaffoldBackground,
+                  child: TabBar(
+                    indicatorColor: AppColors.primaryYellow,
+                    indicatorWeight: 3,
+                    labelColor: AppColors.primaryYellow,
+                    unselectedLabelColor: AppColors.tabUnselected,
+                    labelStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.normal,
+                    ),
+                    tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('scheduled_visits'.tr),
+                            const SizedBox(width: 8),
+                            Obx(() => controller.upcomingVisits.isNotEmpty
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryYellow,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '${controller.upcomingVisits.length}',
+                                      style: TextStyle(
+                                        color: AppColors.buttonText,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox.shrink()),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text('past_visits'.tr),
+                            const SizedBox(width: 8),
+                            Obx(() => controller.pastVisits.isNotEmpty
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.inputBackground,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      '${controller.pastVisits.length}',
+                                      style: TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox.shrink()),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              
-              // Tab Views
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    // Upcoming Visits Tab
-                    _buildUpcomingVisitsTab(),
-                    
-                    // Past Visits Tab
-                    _buildPastVisitsTab(),
-                  ],
+                
+                // Relationship Manager Section - Always visible
+                Container(
+                  color: AppColors.scaffoldBackground,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: _buildRelationshipManagerCard(),
+                  ),
                 ),
-              ),
-            ],
-          );
-        }),
+                
+                // Tab Views
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      // Upcoming Visits Tab
+                      _buildUpcomingVisitsTab(),
+                      
+                      // Past Visits Tab
+                      _buildPastVisitsTab(),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
 
       ),
     );
@@ -141,6 +136,12 @@ class VisitsView extends GetView<VisitsController> {
   Widget _buildLoadingState() {
     return Column(
       children: [
+        // TabBar skeleton
+        Container(
+          height: 48,
+          color: AppColors.scaffoldBackground,
+        ),
+        
         // Agent skeleton loader
         Container(
           color: AppColors.scaffoldBackground,
@@ -254,15 +255,15 @@ class VisitsView extends GetView<VisitsController> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppColors.primaryYellow.withOpacity(0.1),
-              AppColors.primaryYellow.withOpacity(0.05),
+              AppColors.primaryYellow.withValues(alpha: 0.1),
+              AppColors.primaryYellow.withValues(alpha: 0.05),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.primaryYellow.withOpacity(0.2),
+            color: AppColors.primaryYellow.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -565,9 +566,9 @@ class VisitsView extends GetView<VisitsController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,

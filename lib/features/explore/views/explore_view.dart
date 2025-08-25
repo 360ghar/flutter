@@ -3,15 +3,19 @@ import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import '../controllers/explore_controller.dart';
 import '../../../core/controllers/filter_service.dart';
+import '../../../core/controllers/page_state_service.dart';
+import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../../widgets/common/loading_states.dart';
 import '../../../../widgets/common/error_states.dart';
 import '../../../../widgets/common/robust_network_image.dart';
+import '../../../../widgets/common/unified_top_bar.dart';
+import '../../../widgets/common/property_filter_widget.dart';
 
 class ExploreView extends GetView<ExploreController> {
-  ExploreView({super.key});
+  const ExploreView({super.key});
   
   FilterService get filterService => Get.find<FilterService>();
 
@@ -19,88 +23,60 @@ class ExploreView extends GetView<ExploreController> {
   Widget build(BuildContext context) {
     DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBackground,
-        elevation: 0,
-        title: Text(
-          'Explore Properties',
-          style: TextStyle(
-            color: AppColors.appBarText,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+    return Obx(() {
+      final pageStateService = Get.find<PageStateService>();
+      
+      // Make Scaffold reactive to search visibility changes for proper space allocation
+      final searchVisible = pageStateService.isSearchVisible(PageType.explore);
+      
+      return Scaffold(
+        backgroundColor: AppColors.scaffoldBackground,
+        appBar: ExploreTopBar(
+          key: ValueKey('explore_topbar_$searchVisible'), // Force recreation when visibility changes
+          onSearchChanged: (query) => controller.updateSearchQuery(query),
+          onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
         ),
-        actions: [
-          // Search toggle
-          Obx(() => IconButton(
-            icon: Icon(
-              controller.searchQuery.value.isEmpty ? Icons.search : Icons.search_off,
-              color: AppColors.iconColor,
-            ),
-            onPressed: () => _toggleSearch(context),
-          )),
+        body: Obx(() {
+          final isRefreshing = pageStateService.exploreState.value.isRefreshing;
           
-          // Filters
-          Obx(() => IconButton(
-            icon: Stack(
-              children: [
-                Icon(
-                  Icons.tune,
-                  color: AppColors.iconColor,
+          return Column(
+            children: [
+              // Subtle refresh indicator
+              if (isRefreshing)
+                LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
                 ),
-                if (filterService.activeFiltersCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryYellow,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '${filterService.activeFiltersCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: () => Get.toNamed('/filters'),
-          )),
-        ],
-      ),
-      body: Obx(() {
-        switch (controller.state.value) {
-          case ExploreState.loading:
-            return _buildLoadingState();
-            
-          case ExploreState.error:
-            return _buildErrorState();
-            
-          case ExploreState.empty:
-            return _buildEmptyState();
-            
-          case ExploreState.loaded:
-          case ExploreState.loadingMore:
-            return _buildMapInterface(context);
-            
-          default:
-            return _buildLoadingState();
-        }
-      }),
-    );
+              // Main content
+              Expanded(
+                child: Builder(
+                  builder: (context) {
+                    switch (controller.state.value) {
+                      case ExploreState.loading:
+                        return _buildLoadingState();
+                        
+                      case ExploreState.error:
+                        return _buildErrorState();
+                        
+                      case ExploreState.empty:
+                        return _buildEmptyState(context);
+                        
+                      case ExploreState.loaded:
+                      case ExploreState.loadingMore:
+                        return _buildMapInterface(context);
+                        
+                      default:
+                        return _buildLoadingState();
+                    }
+                  },
+                ),
+              ),
+            ],
+          );
+        }),
+      );
+    });
   }
 
   Widget _buildLoadingState() {
@@ -153,12 +129,12 @@ class ExploreView extends GetView<ExploreController> {
     });
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return ErrorStates.emptyState(
       title: 'No Properties Found',
       message: 'No properties found in this area.\nTry adjusting your search location or filters.',
       icon: Icons.location_off,
-      onAction: () => Get.toNamed('/filters'),
+      onAction: () => showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'explore'),
       actionText: 'Adjust Filters',
     );
   }
@@ -193,8 +169,8 @@ class ExploreView extends GetView<ExploreController> {
                     CircleMarker(
                       point: controller.currentCenter.value,
                       radius: controller.currentRadius.value * 1000, // Convert to meters
-                      color: AppColors.primaryYellow.withOpacity(0.1),
-                      borderColor: AppColors.primaryYellow.withOpacity(0.5),
+                      color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                      borderColor: AppColors.primaryYellow.withValues(alpha: 0.5),
                       borderStrokeWidth: 2,
                     ),
                   ],
@@ -218,7 +194,7 @@ class ExploreView extends GetView<ExploreController> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -242,24 +218,16 @@ class ExploreView extends GetView<ExploreController> {
           )),
         ),
         
-        // Search bar (if active)
-        Obx(() {
-          if (controller.searchQuery.value.isNotEmpty || _isSearching.value) {
-            return _buildSearchBar(context);
-          }
-          return const SizedBox();
-        }),
-        
         // Map controls
         Positioned(
-          top: MediaQuery.of(context).padding.top + (controller.searchQuery.value.isNotEmpty || _isSearching.value ? 70 : 10),
+          top: MediaQuery.of(context).padding.top + 10,
           right: 16,
           child: _buildMapControls(),
         ),
         
         // Info panel
         Positioned(
-          top: MediaQuery.of(context).padding.top + (controller.searchQuery.value.isNotEmpty || _isSearching.value ? 70 : 10),
+          top: MediaQuery.of(context).padding.top + 10,
           left: 16,
           child: _buildInfoPanel(),
         ),
@@ -273,7 +241,7 @@ class ExploreView extends GetView<ExploreController> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.surface.withOpacity(0.9),
+                color: AppColors.surface.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Row(
@@ -311,44 +279,6 @@ class ExploreView extends GetView<ExploreController> {
     );
   }
 
-  // Track search state
-  final RxBool _isSearching = false.obs;
-
-  Widget _buildSearchBar(BuildContext context) {
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 10,
-      left: 16,
-      right: 16,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: AppColors.getCardShadow(),
-        ),
-        child: TextField(
-          onChanged: controller.updateSearchQuery,
-          onSubmitted: (value) {
-            if (value.isEmpty) _isSearching.value = false;
-          },
-          style: TextStyle(color: AppColors.textPrimary),
-          decoration: InputDecoration(
-            hintText: 'Search locations...',
-            hintStyle: TextStyle(color: AppColors.textSecondary),
-            prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
-            suffixIcon: IconButton(
-              icon: Icon(Icons.clear, color: AppColors.iconColor),
-              onPressed: () {
-                controller.clearSearch();
-                _isSearching.value = false;
-              },
-            ),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildMapControls() {
     return Column(
@@ -416,7 +346,7 @@ class ExploreView extends GetView<ExploreController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.9),
+        color: AppColors.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(25),
         boxShadow: AppColors.getCardShadow(),
       ),
@@ -551,7 +481,7 @@ class ExploreView extends GetView<ExploreController> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.accentBlue.withOpacity(0.1),
+                                    color: AppColors.accentBlue.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -593,12 +523,4 @@ class ExploreView extends GetView<ExploreController> {
     );
   }
 
-  void _toggleSearch(BuildContext context) {
-    if (controller.searchQuery.value.isNotEmpty) {
-      controller.clearSearch();
-      _isSearching.value = false;
-    } else {
-      _isSearching.value = true;
-    }
-  }
 }
