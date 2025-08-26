@@ -157,10 +157,7 @@ class PageStateModel {
 
   PageStateModel resetFilters() {
     return copyWith(
-      filters: UnifiedFilterModel.initial().copyWith(
-        latitude: filters.latitude,
-        longitude: filters.longitude,
-      ),
+      filters: UnifiedFilterModel.initial(),
       searchQuery: pageType == PageType.discover ? null : '',
     ).resetData();
   }

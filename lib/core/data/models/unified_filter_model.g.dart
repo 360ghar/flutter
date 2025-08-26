@@ -8,8 +8,6 @@ part of 'unified_filter_model.dart';
 
 UnifiedFilterModel _$UnifiedFilterModelFromJson(Map<String, dynamic> json) =>
     UnifiedFilterModel(
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
       radiusKm: (json['radius_km'] as num?)?.toDouble(),
       purpose: json['purpose'] as String?,
       propertyType: (json['property_type'] as List<dynamic>?)
@@ -53,8 +51,6 @@ UnifiedFilterModel _$UnifiedFilterModelFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$UnifiedFilterModelToJson(UnifiedFilterModel instance) =>
     <String, dynamic>{
-      'latitude': instance.latitude,
-      'longitude': instance.longitude,
       'radius_km': instance.radiusKm,
       'purpose': instance.purpose,
       'property_type': instance.propertyType,

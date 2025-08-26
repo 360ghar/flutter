@@ -52,7 +52,11 @@ class LocationSearchController extends GetxController {
     isLoading.value = true;
     
     try {
-      final locationData = await locationController.getPlaceDetails(suggestion.placeId);
+      // Pass the selected name from autocomplete to preserve it
+      final locationData = await locationController.getPlaceDetails(
+        suggestion.placeId,
+        preferredName: suggestion.mainText,
+      );
       
       if (locationData != null) {
         // Update filter controller with selected location
@@ -109,10 +113,14 @@ class LocationSearchController extends GetxController {
       }
       
       if (locationController.hasLocation) {
+        // Always get fresh address from coordinates to ensure we have a real location name
+        final locationName = await locationController.getAddressFromCoordinates(
+          locationController.currentLatitude!,
+          locationController.currentLongitude!,
+        );
+        
         final locationData = LocationData(
-          name: locationController.currentAddress.value.isNotEmpty
-              ? locationController.currentAddress.value
-              : 'Current Location',
+          name: locationName,
           latitude: locationController.currentLatitude!,
           longitude: locationController.currentLongitude!,
         );
@@ -122,7 +130,7 @@ class LocationSearchController extends GetxController {
         Get.back();
         Get.snackbar(
           'Location Set',
-          'Using your current location',
+          'Using $locationName',
           snackPosition: SnackPosition.TOP,
           duration: const Duration(seconds: 2),
         );

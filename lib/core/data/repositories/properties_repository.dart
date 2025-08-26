@@ -13,6 +13,9 @@ class PropertiesRepository extends GetxService {
     required UnifiedFilterModel filters,
     required int page,
     required int limit,
+    required double latitude,
+    required double longitude,
+    double? radiusKm,
     bool useCache = true,
   }) async {
     try {
@@ -20,6 +23,9 @@ class PropertiesRepository extends GetxService {
 
       final response = await _apiService.searchProperties(
         filters: filters,
+        latitude: latitude,
+        longitude: longitude,
+        radiusKm: (filters.radiusKm ?? radiusKm ?? 10.0),
         page: page,
         limit: limit,
       );
@@ -84,12 +90,18 @@ class PropertiesRepository extends GetxService {
     required UnifiedFilterModel filters,
     required int page,
     required int limit,
+    required double latitude,
+    required double longitude,
+    double? radiusKm,
     bool useCache = false, // Search results shouldn't be cached as much
   }) async {
     return getProperties(
       filters: filters,
       page: page,
       limit: limit,
+      latitude: latitude,
+      longitude: longitude,
+      radiusKm: radiusKm,
       useCache: useCache,
     );
   }
@@ -97,24 +109,36 @@ class PropertiesRepository extends GetxService {
   // Load all pages for map view
   Future<List<PropertyModel>> loadAllPropertiesForMap({
     required UnifiedFilterModel filters,
+    required double latitude,
+    required double longitude,
+    double? radiusKm,
     int limit = 100,
     Function(int current, int total)? onProgress,
   }) async {
     try {
       DebugLogger.api('🗺️ Loading all properties for map view');
+      DebugLogger.info('🔍 Filters passed to loadAllPropertiesForMap: ${filters.toJson()}');
+      DebugLogger.info('📊 Active filter count: ${filters.activeFilterCount}');
       
       final List<PropertyModel> allProperties = [];
       int currentPage = 1;
       int totalPages = 1;
 
       do {
+        DebugLogger.info('📈 Loading page $currentPage with limit $limit');
+        
         final response = await getProperties(
           filters: filters,
           page: currentPage,
           limit: limit,
+          latitude: latitude,
+          longitude: longitude,
+          radiusKm: radiusKm,
           useCache: true,
         );
 
+        DebugLogger.info('📦 Page $currentPage response: ${response.properties.length} properties, total pages: ${response.totalPages}');
+        
         allProperties.addAll(response.properties);
         totalPages = response.totalPages;
         
@@ -122,13 +146,25 @@ class PropertiesRepository extends GetxService {
         
         DebugLogger.api('📄 Loaded page $currentPage/$totalPages; totalProperties=${allProperties.length}');
         
+        // Log some property details for first few properties
+        if (currentPage == 1 && response.properties.isNotEmpty) {
+          final firstProperty = response.properties.first;
+          DebugLogger.info('🏠 First property example: ${firstProperty.title} at (${firstProperty.latitude}, ${firstProperty.longitude})');
+        }
+        
         currentPage++;
       } while (currentPage <= totalPages);
 
       DebugLogger.success('✅ Loaded all ${allProperties.length} properties for map');
+      
+      // Final validation
+      final propertiesWithLocation = allProperties.where((p) => p.hasLocation).length;
+      DebugLogger.info('🗺️ Final result: ${allProperties.length} total properties, $propertiesWithLocation with location data');
+      
       return allProperties;
-    } catch (e) {
+    } catch (e, stackTrace) {
       DebugLogger.error('❌ Failed to load all properties for map: $e');
+      DebugLogger.error('Stack trace: $stackTrace');
       rethrow;
     }
   }

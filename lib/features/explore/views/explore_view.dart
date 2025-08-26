@@ -50,27 +50,34 @@ class ExploreView extends GetView<ExploreController> {
                 ),
               // Main content
               Expanded(
-                child: Builder(
-                  builder: (context) {
-                    switch (controller.state.value) {
-                      case ExploreState.loading:
-                        return _buildLoadingState();
-                        
-                      case ExploreState.error:
-                        return _buildErrorState();
-                        
-                      case ExploreState.empty:
-                        return _buildEmptyState(context);
-                        
-                      case ExploreState.loaded:
-                      case ExploreState.loadingMore:
-                        return _buildMapInterface(context);
-                        
-                      default:
-                        return _buildLoadingState();
-                    }
-                  },
-                ),
+                child: Obx(() {
+                  final currentState = controller.state.value;
+                  final propertiesCount = controller.properties.length;
+                  DebugLogger.info('🌨️ View Builder (Obx) - State: $currentState, Properties: $propertiesCount');
+                  
+                  switch (currentState) {
+                    case ExploreState.loading:
+                      DebugLogger.info('💻 Rendering loading state');
+                      return _buildLoadingState();
+                      
+                    case ExploreState.error:
+                      DebugLogger.info('⚠️ Rendering error state');
+                      return _buildErrorState();
+                      
+                    case ExploreState.empty:
+                      DebugLogger.info('💭 Rendering empty state');
+                      return _buildEmptyState(context);
+                      
+                    case ExploreState.loaded:
+                    case ExploreState.loadingMore:
+                      DebugLogger.info('🗺️ Rendering map interface with $propertiesCount properties');
+                      return _buildMapInterface(context);
+                      
+                    default:
+                      DebugLogger.info('🔄 Rendering default loading state');
+                      return _buildLoadingState();
+                  }
+                }),
               ),
             ],
           );
@@ -140,82 +147,100 @@ class ExploreView extends GetView<ExploreController> {
   }
 
   Widget _buildMapInterface(BuildContext context) {
+    DebugLogger.info('🌎 Building map interface');
     return Stack(
       children: [
         // Main map
         Positioned.fill(
-          child: Obx(() => FlutterMap(
-            mapController: controller.mapController,
-            options: MapOptions(
-              initialCenter: controller.currentCenter.value,
-              initialZoom: controller.currentZoom.value,
-              onPositionChanged: controller.onMapMove,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
-            ),
-            children: [
-              // Map tiles
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.ghar360.app',
-                maxZoom: 19,
-              ),
-              
-              // Search radius circle
-              if (filterService.hasLocation)
-                CircleLayer(
-                  circles: [
-                    CircleMarker(
-                      point: controller.currentCenter.value,
-                      radius: controller.currentRadius.value * 1000, // Convert to meters
-                      color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                      borderColor: AppColors.primaryYellow.withValues(alpha: 0.5),
-                      borderStrokeWidth: 2,
-                    ),
-                  ],
+          child: Obx(() {
+            final markers = controller.propertyMarkers;
+            DebugLogger.info('🗺️ Map rebuild - ${markers.length} markers, center: ${controller.currentCenter.value}');
+            
+            return FlutterMap(
+              mapController: controller.mapController,
+              options: MapOptions(
+                initialCenter: controller.currentCenter.value,
+                initialZoom: controller.currentZoom.value,
+                onPositionChanged: controller.onMapMove,
+                onMapReady: () {
+                  DebugLogger.success('🗺️ Map is ready!');
+                  // Map is now ready for programmatic moves
+                },
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all,
                 ),
-              
-              // Property markers
-              MarkerLayer(
-                markers: controller.propertyMarkers.map((marker) => Marker(
-                  point: marker.position,
-                  width: 40,
-                  height: 40,
-                  child: GestureDetector(
-                    onTap: () => controller.selectProperty(marker.property),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: marker.isSelected ? AppColors.primaryYellow : AppColors.accentBlue,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          marker.property.formattedPrice.replaceAll('₹', '₹').substring(0, 4),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                )).toList(),
               ),
-            ],
-          )),
+              children: [
+                // Map tiles
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.ghar360.app',
+                  maxZoom: 19,
+                ),
+                
+                // Search radius circle
+                if (filterService.hasLocation)
+                  CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: controller.currentCenter.value,
+                        radius: controller.currentRadius.value * 1000, // Convert to meters
+                        color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                        borderColor: AppColors.primaryYellow.withValues(alpha: 0.5),
+                        borderStrokeWidth: 2,
+                      ),
+                    ],
+                  ),
+                
+                // Property markers
+                if (markers.isNotEmpty)
+                  MarkerLayer(
+                    markers: markers.map((marker) => Marker(
+                      point: marker.position,
+                      width: 40,
+                      height: 40,
+                      child: GestureDetector(
+                        onTap: () {
+                          DebugLogger.info('📍 Property marker tapped: ${marker.property.title}');
+                          controller.selectProperty(marker.property);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: marker.isSelected ? AppColors.primaryYellow : AppColors.accentBlue,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              marker.property.formattedPrice.isNotEmpty 
+                                ? (marker.property.formattedPrice.length > 4 
+                                   ? marker.property.formattedPrice.substring(0, 4)
+                                   : marker.property.formattedPrice)
+                                : '₹--',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )).toList(),
+                  ),
+              ],
+            );
+          }),
         ),
         
         // Map controls
@@ -270,7 +295,10 @@ class ExploreView extends GetView<ExploreController> {
         
         // Selected property bottom sheet
         Obx(() {
-          if (controller.hasSelection) {
+          final hasSelection = controller.hasSelection;
+          DebugLogger.info('📋 Bottom sheet update - has selection: $hasSelection');
+          
+          if (hasSelection) {
             return _buildPropertyBottomSheet();
           }
           return const SizedBox();
@@ -350,39 +378,47 @@ class ExploreView extends GetView<ExploreController> {
         borderRadius: BorderRadius.circular(25),
         boxShadow: AppColors.getCardShadow(),
       ),
-      child: Obx(() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            controller.propertiesCountText,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            controller.currentAreaText,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          if (controller.locationDisplayText != 'All Locations') ...[
-            const SizedBox(height: 4),
+      child: Obx(() {
+        final propertiesCountText = controller.propertiesCountText;
+        final currentAreaText = controller.currentAreaText;
+        final locationDisplayText = controller.locationDisplayText;
+        
+        DebugLogger.info('📊 Info panel update - properties: $propertiesCountText, area: $currentAreaText');
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
             Text(
-              controller.locationDisplayText,
+              propertiesCountText,
               style: TextStyle(
-                fontSize: 12,
-                color: AppColors.primaryYellow,
-                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
             ),
+            const SizedBox(height: 4),
+            Text(
+              currentAreaText,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            if (locationDisplayText != 'All Locations' && locationDisplayText != 'Select Location') ...[
+              const SizedBox(height: 4),
+              Text(
+                locationDisplayText,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.primaryYellow,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ],
-        ],
-      )),
+        );
+      }),
     );
   }
 
@@ -400,7 +436,12 @@ class ExploreView extends GetView<ExploreController> {
         ),
         child: Obx(() {
           final property = controller.selectedProperty.value;
-          if (property == null) return const SizedBox();
+          if (property == null) {
+            DebugLogger.info('🏠 Bottom sheet - no property selected');
+            return const SizedBox();
+          }
+          
+          DebugLogger.info('🏠 Bottom sheet rebuilding for property: ${property.title}');
           
           return Column(
             children: [

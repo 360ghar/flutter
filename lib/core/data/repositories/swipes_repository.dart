@@ -32,6 +32,8 @@ class SwipesRepository extends GetxService {
   // Get swipe history properties with comprehensive filtering
   Future<UnifiedPropertyResponse> getSwipeHistoryProperties({
     required UnifiedFilterModel filters,
+    double? latitude,
+    double? longitude,
     int page = 1,
     int limit = 50,
     bool? isLiked,
@@ -45,8 +47,8 @@ class SwipesRepository extends GetxService {
       DebugLogger.api('🔍 Fetching swipes with new API format');
       final responseJson = await _apiService.getSwipes(
         // Location & Search
-        lat: filters.latitude,
-        lng: filters.longitude,
+        lat: latitude,
+        lng: longitude,
         radius: filters.radiusKm?.toInt(),
         q: filters.searchQuery,
 
@@ -121,6 +123,8 @@ class SwipesRepository extends GetxService {
   // Get liked properties via server-side history endpoint
   Future<List<PropertyModel>> getLikedProperties({
     required UnifiedFilterModel filters,
+    double? latitude,
+    double? longitude,
     int page = 1,
     int limit = 50,
   }) async {
@@ -128,6 +132,8 @@ class SwipesRepository extends GetxService {
       DebugLogger.api('❤️ Fetching liked properties (server-side): page=$page, limit=$limit');
       final response = await getSwipeHistoryProperties(
         filters: filters,
+        latitude: latitude,
+        longitude: longitude,
         page: page,
         limit: limit,
         isLiked: true,
@@ -142,6 +148,8 @@ class SwipesRepository extends GetxService {
   // Get passed properties via server-side history endpoint
   Future<List<PropertyModel>> getPassedProperties({
     required UnifiedFilterModel filters,
+    double? latitude,
+    double? longitude,
     int page = 1,
     int limit = 50,
   }) async {
@@ -149,6 +157,8 @@ class SwipesRepository extends GetxService {
       DebugLogger.api('👎 Fetching passed properties (server-side): page=$page, limit=$limit');
       final response = await getSwipeHistoryProperties(
         filters: filters,
+        latitude: latitude,
+        longitude: longitude,
         page: page,
         limit: limit,
         isLiked: false,
@@ -163,6 +173,8 @@ class SwipesRepository extends GetxService {
   // Get liked properties (new format - no swipe IDs needed)
   Future<List<PropertyModel>> getLikedPropertiesWithSwipeIds({
     required UnifiedFilterModel filters,
+    double? latitude,
+    double? longitude,
     int page = 1,
     int limit = 50,
   }) async {
@@ -171,6 +183,8 @@ class SwipesRepository extends GetxService {
 
       final response = await getSwipeHistoryProperties(
         filters: filters,
+        latitude: latitude,
+        longitude: longitude,
         page: page,
         limit: limit,
         isLiked: true,

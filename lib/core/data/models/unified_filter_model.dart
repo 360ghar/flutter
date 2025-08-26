@@ -6,8 +6,7 @@ part 'unified_filter_model.g.dart';
 @JsonSerializable()
 class UnifiedFilterModel {
   // Location-based filters
-  final double? latitude;
-  final double? longitude;
+  // REMOVED: latitude and longitude are now handled by PageStateModel.selectedLocation
   @JsonKey(name: 'radius_km')
   final double? radiusKm;
 
@@ -66,8 +65,6 @@ class UnifiedFilterModel {
   final List<int>? propertyIds;
 
   UnifiedFilterModel({
-    this.latitude,
-    this.longitude,
     this.radiusKm,
     this.purpose,
     this.propertyType,
@@ -118,8 +115,6 @@ class UnifiedFilterModel {
   }
 
   UnifiedFilterModel copyWith({
-    double? latitude,
-    double? longitude,
     double? radiusKm,
     String? purpose,
     List<String>? propertyType,
@@ -147,8 +142,6 @@ class UnifiedFilterModel {
     List<int>? propertyIds,
   }) {
     return UnifiedFilterModel(
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
       radiusKm: radiusKm ?? this.radiusKm,
       purpose: purpose ?? this.purpose,
       propertyType: propertyType ?? this.propertyType,

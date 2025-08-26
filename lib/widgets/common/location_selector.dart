@@ -383,8 +383,11 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
     try {
       Navigator.of(context).pop();
       
-      // Get place details
-      final locationData = await locationController.getPlaceDetails(suggestion.placeId);
+      // Get place details with preferred name from autocomplete selection
+      final locationData = await locationController.getPlaceDetails(
+        suggestion.placeId,
+        preferredName: suggestion.mainText,
+      );
       if (locationData != null) {
         pageStateService.updateLocationForPage(widget.pageType, locationData, source: 'manual');
         

@@ -186,19 +186,111 @@ class LocationController extends GetxController {
 
   Future<void> _getAddressFromCoordinates(double latitude, double longitude) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks.first;
-        currentAddress.value = _formatAddress(placemark);
-      }
+      final address = await getAddressFromCoordinates(latitude, longitude);
+      currentAddress.value = address;
     } catch (e, stackTrace) {
       DebugLogger.error('Error getting address from coordinates', e, stackTrace);
     }
   }
+  
+  // Public method for reverse geocoding that other services can use
+  Future<String> getAddressFromCoordinates(double latitude, double longitude) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+        return _formatAddress(placemark);
+      }
+      return 'Location (${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)})'; // Better fallback
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error getting address from coordinates', e, stackTrace);
+      return 'Location Coordinates'; // A better fallback than hardcoded text
+    }
+  }
+
+  /// Fetches the best possible initial location for the user.
+  /// Priority: High-accuracy GPS -> IP-based location.
+  /// Throws an exception if no location can be determined.
+  Future<LocationData> getInitialLocation() async {
+    DebugLogger.info('📍 Getting initial user location...');
+
+    // 1. Check permissions and services first
+    await _checkLocationService();
+    await _requestLocationPermission();
+
+    // 2. Try for high-accuracy GPS location
+    if (isLocationPermissionGranted.value && isLocationEnabled.value) {
+      try {
+        isLoading.value = true;
+        final position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).timeout(const Duration(seconds: 15));
+
+        currentPosition.value = position;
+
+        // Reverse geocode to get the location name
+        final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+        if (placemarks.isNotEmpty) {
+          final placemark = placemarks.first;
+          final locationName = _formatAddress(placemark);
+          currentAddress.value = locationName;
+          DebugLogger.success('✅ GPS Location found: $locationName');
+          return LocationData(
+            name: locationName,
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+        }
+      } on TimeoutException {
+        DebugLogger.warning('⚠️ High-accuracy location timed out. Falling back...');
+      } catch (e, st) {
+        DebugLogger.warning('⚠️ Failed to get high-accuracy location: $e', e, st);
+      } finally {
+        isLoading.value = false;
+      }
+    } else {
+      DebugLogger.warning('⚠️ GPS permissions not granted or service disabled. Falling back...');
+    }
+
+    // 3. Fallback to IP-based location
+    DebugLogger.info('🌍 Attempting IP-based location fallback...');
+    final ipLocation = await getIpLocation();
+    if (ipLocation != null) {
+      DebugLogger.success('✅ IP-based location fallback successful: ${ipLocation.name}');
+      return ipLocation;
+    }
+
+    // 4. If all fails, throw an exception as per requirements
+    DebugLogger.error('❌ Critical: Could not determine any user location.');
+    throw Exception('Unable to determine user location. Please check network and location settings.');
+  }
 
   String _formatAddress(Placemark placemark) {
-    List<String> addressParts = [];
+    // Improved formatting logic for better location names
+    final city = placemark.locality;
+    final state = placemark.administrativeArea;
+    final area = placemark.subLocality;
+    final street = placemark.street;
     
+    // Priority order: Area+City+State, City+State, Street+City, or any available info
+    if (area != null && area.isNotEmpty && city != null && city.isNotEmpty) {
+      return '$area, $city';
+    }
+    if (city != null && city.isNotEmpty && state != null && state.isNotEmpty) {
+      return '$city, $state';
+    }
+    if (city != null && city.isNotEmpty) {
+      return city;
+    }
+    if (street != null && street.isNotEmpty) {
+      return street;
+    }
+    
+    // Fallback to any available information
+    List<String> addressParts = [];
     if (placemark.name?.isNotEmpty == true) {
       addressParts.add(placemark.name!);
     }
@@ -208,11 +300,8 @@ class LocationController extends GetxController {
     if (placemark.administrativeArea?.isNotEmpty == true) {
       addressParts.add(placemark.administrativeArea!);
     }
-    if (placemark.country?.isNotEmpty == true) {
-      addressParts.add(placemark.country!);
-    }
     
-    return addressParts.join(', ');
+    return addressParts.isNotEmpty ? addressParts.join(', ') : 'Location';
   }
 
   Future<void> searchLocations(String query) async {
@@ -503,7 +592,7 @@ class LocationController extends GetxController {
     }
   }
 
-  Future<LocationData?> getPlaceDetails(String placeId) async {
+  Future<LocationData?> getPlaceDetails(String placeId, {String? preferredName}) async {
     try {
       isLoading.value = true;
 
@@ -538,28 +627,36 @@ class LocationController extends GetxController {
             final location = result['geometry']['location'];
             final addressComponents = result['address_components'] as List;
 
-            // Extract city and locality for the location name display
-            String? city;
-            String? locality;
+            // Use preferred name if provided (from autocomplete selection)
+            String displayName;
+            if (preferredName != null && preferredName.isNotEmpty) {
+              displayName = preferredName;
+              DebugLogger.info('🏷️ Using preferred name from selection: $displayName');
+            } else {
+              // Fallback to formatted address for GPS/other sources
+              String? city;
+              String? locality;
 
-            for (final component in addressComponents) {
-              final types = component['types'] as List;
-              if (types.contains('locality')) {
-                locality = component['long_name'];
+              for (final component in addressComponents) {
+                final types = component['types'] as List;
+                if (types.contains('locality')) {
+                  locality = component['long_name'];
+                }
+                if (types.contains('administrative_area_level_2')) {
+                  city = component['long_name'];
+                }
               }
-              if (types.contains('administrative_area_level_2')) {
-                city = component['long_name'];
+              
+              // Use city and locality to create a display name
+              displayName = result['name'] ?? '';
+              if (locality != null && city != null) {
+                displayName = '$locality, $city';
+              } else if (city != null) {
+                displayName = city;
+              } else if (locality != null) {
+                displayName = locality;
               }
-            }
-            
-            // Use city and locality to create a display name
-            String displayName = result['name'] ?? '';
-            if (locality != null && city != null) {
-              displayName = '$locality, $city';
-            } else if (city != null) {
-              displayName = city;
-            } else if (locality != null) {
-              displayName = locality;
+              DebugLogger.info('🗺️ Using formatted address: $displayName');
             }
 
             return LocationData(

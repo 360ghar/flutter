@@ -680,12 +680,18 @@ class ApiService extends getx.GetConnect {
   // Unified property search method that supports all filters
   Future<UnifiedPropertyResponse> searchProperties({
     required UnifiedFilterModel filters,
+    required double latitude,
+    required double longitude,
+    double radiusKm = 10,
     int page = 1,
     int limit = 20,
   }) async {
     final queryParams = <String, String>{
       'page': page.toString(),
       'limit': limit.toString(),
+      'lat': latitude.toString(),
+      'lng': longitude.toString(),
+      'radius': radiusKm.toInt().toString(),
     };
     
     // Convert filters to query parameters

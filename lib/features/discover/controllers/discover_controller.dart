@@ -207,10 +207,18 @@ class DiscoverController extends GetxController {
     try {
       DebugLogger.api('📚 Loading more properties: page $_currentPage');
 
+      final pageState = _pageStateService.discoverState.value;
+      if (!pageState.hasLocation) {
+        throw Exception('User location is required for property recommendations. Please enable location services.');
+      }
+
       final response = await _propertiesRepository.getProperties(
         filters: _filterService.currentFilter,
         page: _currentPage,
         limit: _limit,
+        latitude: pageState.selectedLocation!.latitude,
+        longitude: pageState.selectedLocation!.longitude,
+        radiusKm: _filterService.currentFilter.radiusKm ?? 10.0,
         useCache: true,
       );
 

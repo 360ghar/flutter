@@ -154,13 +154,21 @@ class FilterService extends GetxController {
     double? radiusKm,
     String? locationName,
   }) {
+    DebugLogger.info('📍 FilterService.updateLocationWithCoordinates called');
+    DebugLogger.info('📍 Parameters: lat=$latitude, lng=$longitude, radius=${radiusKm}km, name=$locationName');
+    
+    // If no location name provided, get it from reverse geocoding
+    final finalName = locationName ?? 'Location (${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)})';
+    
     final location = LocationData(
-      name: locationName ?? 'Selected Location',
+      name: finalName,
       latitude: latitude,
       longitude: longitude,
     );
+    
+    DebugLogger.info('📍 Created LocationData: ${location.toJson()}');
     _pageStateService.updateLocation(location);
-    DebugLogger.info('Location updated: lat=$latitude, lng=$longitude');
+    DebugLogger.success('✅ FilterService location updated: lat=$latitude, lng=$longitude');
   }
 
   void updateRadius(double radiusKm) {
@@ -357,8 +365,13 @@ class FilterService extends GetxController {
     if (filter.amenities != null && filter.amenities!.isNotEmpty) {
       params['amenities'] = filter.amenities!.join(',');
     }
-    if (filter.latitude != null) params['lat'] = filter.latitude;
-    if (filter.longitude != null) params['lng'] = filter.longitude;
+    
+    // *** THE FIX: Get location from the single source of truth ***
+    if (currentState.selectedLocation != null) {
+      params['lat'] = currentState.selectedLocation!.latitude;
+      params['lng'] = currentState.selectedLocation!.longitude;
+    }
+    
     if (filter.radiusKm != null) params['radius'] = filter.radiusKm;
     if (filter.sortBy != null) params['sort_by'] = filter.sortBy;
     if (filter.parkingSpacesMin != null) params['parking_min'] = filter.parkingSpacesMin;

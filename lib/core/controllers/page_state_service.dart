@@ -39,6 +39,7 @@ class PageStateService extends GetxController {
   void onInit() {
     super.onInit();
     _loadSavedStates();
+    _bootstrapInitialStates(); // <-- Add this call
     _setupListeners();
   }
 
@@ -74,6 +75,45 @@ class PageStateService extends GetxController {
     }
   }
 
+  /// Sets the initial location for all page states if they don't have one.
+  Future<void> _bootstrapInitialStates() async {
+    DebugLogger.info('🚀 Bootstrapping initial page states...');
+
+    // Check if any page is missing a location. If all have one, we are done.
+    if (exploreState.value.hasLocation &&
+        discoverState.value.hasLocation &&
+        likesState.value.hasLocation) {
+      DebugLogger.success('✅ All page states already have a location. Bootstrap complete.');
+      return;
+    }
+
+    try {
+      final initialLocation = await _locationController.getInitialLocation();
+
+      // Update each page state if it doesn't have a location
+      if (!exploreState.value.hasLocation) {
+        updateLocationForPage(PageType.explore, initialLocation, source: 'initial');
+      }
+      if (!discoverState.value.hasLocation) {
+        updateLocationForPage(PageType.discover, initialLocation, source: 'initial');
+      }
+      if (!likesState.value.hasLocation) {
+        updateLocationForPage(PageType.likes, initialLocation, source: 'initial');
+      }
+      DebugLogger.success('✅ Successfully bootstrapped initial location for all pages.');
+
+    } catch (e, st) {
+      DebugLogger.error('❌ Failed to bootstrap initial location', e, st);
+      // You can show a global error snackbar here if needed
+      Get.snackbar(
+        'Location Error',
+        'Could not determine your initial location. Please check your settings and try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 5),
+      );
+    }
+  }
+
   void _setupListeners() {
     // Save states whenever they change
     ever(exploreState, (state) {
@@ -89,10 +129,15 @@ class PageStateService extends GetxController {
     });
 
     // Listen to location updates; update only current page to keep independence
-    _locationController.currentPosition.listen((position) {
+    _locationController.currentPosition.listen((position) async {
       if (position != null) {
+        // Get real address from coordinates
+        final locationName = await _locationController.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
         final loc = LocationData(
-          name: 'Current Location',
+          name: locationName,
           latitude: position.latitude,
           longitude: position.longitude,
         );
@@ -103,17 +148,23 @@ class PageStateService extends GetxController {
 
   // Update location only for a specific page
   void updateLocationForPage(PageType pageType, LocationData location, {String source = 'manual'}) {
+    DebugLogger.info('📍 Updating location for ${pageType.name}: ${location.name} (${location.latitude}, ${location.longitude}) from $source');
+
     final current = _getStateForPage(pageType);
+    // Only update the selectedLocation. The filters object no longer holds lat/lng.
     final updated = current.copyWith(
       selectedLocation: location,
       locationSource: source,
-      filters: current.filters.copyWith(
-        latitude: location.latitude,
-        longitude: location.longitude,
-      ),
     );
     _updatePageState(pageType, updated);
-    _debounceRefresh(pageType);
+
+    // Only trigger a data refresh if the source is not 'initial'
+    if (source != 'initial') {
+      DebugLogger.info('🔄 Debouncing refresh for ${pageType.name} after location update');
+      _debounceRefresh(pageType);
+    } else {
+      DebugLogger.info('⏭️ Skipping refresh for initial location setup.');
+    }
   }
 
   // Get current page state
@@ -129,15 +180,26 @@ class PageStateService extends GetxController {
   }
 
   void setCurrentPage(PageType pageType) {
+    final oldPageType = currentPageType.value;
     currentPageType.value = pageType;
-    DebugLogger.info('📱 Switched to ${pageType.name} page');
+    DebugLogger.info('📱 Switched from ${oldPageType.name} to ${pageType.name} page');
+    
+    if (pageType == PageType.explore) {
+      DebugLogger.info('🗺️ Explore page activated - current properties: ${exploreState.value.properties.length}');
+    }
   }
 
   void notifyPageActivated(PageType pageType) {
+    DebugLogger.info('📢 Page activated: ${pageType.name}');
     setCurrentPage(pageType);
     final state = _getStateForPage(pageType);
+    DebugLogger.info('📋 ${pageType.name} state - properties: ${state.properties.length}, loading: ${state.isLoading}, stale: ${state.isDataStale}');
+    
     if (!state.isLoading && state.isDataStale) {
+      DebugLogger.info('🔄 Data is stale for ${pageType.name}, loading page data in background');
       loadPageData(pageType, backgroundRefresh: true);
+    } else {
+      DebugLogger.info('⏸️ No background refresh needed for ${pageType.name} - loading: ${state.isLoading}, stale: ${state.isDataStale}');
     }
   }
 
@@ -165,8 +227,13 @@ class PageStateService extends GetxController {
       await _locationController.getCurrentLocation();
       final position = _locationController.currentPosition.value;
       if (position != null) {
+        // Get real address from coordinates
+        final locationName = await _locationController.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
         final location = LocationData(
-          name: 'Current Location',
+          name: locationName,
           latitude: position.latitude,
           longitude: position.longitude,
         );
@@ -188,8 +255,13 @@ class PageStateService extends GetxController {
       await _locationController.getCurrentLocation();
       final position = _locationController.currentPosition.value;
       if (position != null) {
+        // Get real address from coordinates
+        final locationName = await _locationController.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
         final loc = LocationData(
-          name: 'Current Location',
+          name: locationName,
           latitude: position.latitude,
           longitude: position.longitude,
         );
@@ -268,10 +340,24 @@ class PageStateService extends GetxController {
         _updatePageState(pageType, state.copyWith(isRefreshing: true, error: null));
       }
 
+      // Ensure we have a location; if not, try to bootstrap quickly
+      final loc = state.selectedLocation;
+      if (loc == null) {
+        DebugLogger.warning('⚠️ No location set for ${pageType.name} while loading data. Attempting bootstrap.');
+        final initialLocation = await _locationController.getInitialLocation();
+        updateLocationForPage(pageType, initialLocation, source: 'initial');
+      }
+
+      final effectiveState = _getStateForPage(pageType);
+      final selectedLoc = effectiveState.selectedLocation!;
+
       final response = await _propertiesRepository.getProperties(
-        filters: state.filters.copyWith(searchQuery: state.searchQuery),
+        filters: effectiveState.filters.copyWith(searchQuery: effectiveState.searchQuery),
         page: 1,
         limit: pageType == PageType.discover ? 20 : 50,
+        latitude: selectedLoc.latitude,
+        longitude: selectedLoc.longitude,
+        radiusKm: effectiveState.filters.radiusKm ?? 10.0,
       );
 
       _updatePageState(pageType, state.copyWith(
@@ -303,10 +389,20 @@ class PageStateService extends GetxController {
 
       _updatePageState(pageType, state.copyWith(isLoadingMore: true));
 
+      final loc = state.selectedLocation;
+      if (loc == null) {
+        DebugLogger.warning('⚠️ No location set for ${pageType.name} while loading more. Skipping.');
+        _updatePageState(pageType, state.copyWith(isLoadingMore: false));
+        return;
+      }
+
       final response = await _propertiesRepository.getProperties(
         filters: state.filters.copyWith(searchQuery: state.searchQuery),
         page: state.currentPage + 1,
         limit: pageType == PageType.discover ? 20 : 50,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        radiusKm: state.filters.radiusKm ?? 10.0,
       );
 
       final newProperties = [...state.properties, ...response.properties];

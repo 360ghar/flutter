@@ -1,0 +1,1 @@
+gitingest /Users/sakshammittal/Documents/360ghar/app/lib --exclude-pattern '*.g.dart'

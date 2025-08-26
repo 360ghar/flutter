@@ -157,13 +157,22 @@ class PropertyController extends GetxController {
       
       DebugLogger.info('🔍 Fetching nearby properties: page=${loadMore ? currentNearbyPage.value : 1}, radiusKm=$radiusKm, loadMore=$loadMore');
       
-      final response = await _apiService.searchProperties(
-        filters: UnifiedFilterModel(
+      // Update location in filter service before searching
+      if (_locationController.hasLocation) {
+        _filterService.updateLocationWithCoordinates(
           latitude: _locationController.currentLatitude!,
           longitude: _locationController.currentLongitude!,
           radiusKm: radiusKm,
+        );
+      }
+      
+      final response = await _apiService.searchProperties(
+        filters: UnifiedFilterModel(
+          radiusKm: radiusKm,
           sortBy: null,
         ),
+        latitude: _locationController.currentLatitude!,
+        longitude: _locationController.currentLongitude!,
         page: loadMore ? currentNearbyPage.value : 1,
         limit: limit,
       );
@@ -201,14 +210,23 @@ class PropertyController extends GetxController {
       DebugLogger.info('🔍 Fetching recommended properties with limit: $limit');
       
       // Recommendations endpoint removed - use regular search instead
+      // Update location in filter service
+      if (_locationController.hasLocation) {
+        _filterService.updateLocationWithCoordinates(
+          latitude: _locationController.currentLatitude!,
+          longitude: _locationController.currentLongitude!,
+          radiusKm: 10.0,
+        );
+      }
+      
       final filters = _filterService.currentFilter.copyWith(
-        latitude: _locationController.currentLatitude,
-        longitude: _locationController.currentLongitude,
         radiusKm: 10.0,
       );
       
       final response = await _apiService.searchProperties(
         filters: filters,
+        latitude: _locationController.currentLatitude!,
+        longitude: _locationController.currentLongitude!,
         limit: limit,
         page: 1,
       );
@@ -233,11 +251,16 @@ class PropertyController extends GetxController {
         // Get user location for API call
         final userLocation = await _getCurrentLocationSync();
         final filterModel = UnifiedFilterModel.fromJson(searchFilters);
+        // Update location in filter service
+        _filterService.updateLocationWithCoordinates(
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+        );
+        
         final response = await _apiService.searchProperties(
-          filters: filterModel.copyWith(
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
-          ),
+          filters: filterModel,
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
         );
         properties.assignAll(response.properties);
         
@@ -351,13 +374,20 @@ class PropertyController extends GetxController {
       if (_authController.isAuthenticated) {
         // Use API service for authenticated users with user location
         final userLocation = await _getCurrentLocationSync();
+        // Update location in filter service
+        _filterService.updateLocationWithCoordinates(
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          radiusKm: 10.0,
+        );
+        
         final response = await _apiService.searchProperties(
           filters: UnifiedFilterModel(
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
             radiusKm: 10,
             sortBy: null,
           ),
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
         );
         properties.assignAll(response.properties);
         DebugLogger.success('✅ Properties loaded from API: ${response.properties.length} items');
@@ -408,6 +438,8 @@ class PropertyController extends GetxController {
         // Get liked properties using SwipesRepository
         final likedProperties = await _swipesRepository.getLikedProperties(
           filters: _filterService.currentFilter,
+          latitude: _locationController.currentLatitude,
+          longitude: _locationController.currentLongitude,
           page: 1,
           limit: 50,
         );
@@ -434,6 +466,8 @@ class PropertyController extends GetxController {
         // Get passed properties using SwipesRepository
         final passedPropertiesList = await _swipesRepository.getPassedProperties(
           filters: _filterService.currentFilter,
+          latitude: _locationController.currentLatitude,
+          longitude: _locationController.currentLongitude,
           page: 1,
           limit: 50,
         );
@@ -518,6 +552,4 @@ class PropertyController extends GetxController {
     // Filtering can be added here if needed for passed properties
     return passedProperties;
   }
-
-  // Legacy filter methods removed - use FilterService directly
 } 

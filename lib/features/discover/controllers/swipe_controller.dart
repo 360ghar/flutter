@@ -66,8 +66,8 @@ class SwipeController extends GetxController {
         throw Exception('User location is required for property recommendations. Please enable location services.');
       }
       
-      // Update filter with current location
-      final currentFilters = _filterService.currentFilter.copyWith(
+      // Update location in filter service to ensure it's used in API calls
+      _filterService.updateLocationWithCoordinates(
         latitude: latitude,
         longitude: longitude,
         radiusKm: 10.0, // 10km radius for swipe stack
@@ -77,7 +77,9 @@ class SwipeController extends GetxController {
       DebugLogger.info('📍 Location: $latitude, $longitude');
       
       final response = await _apiService.searchProperties(
-        filters: currentFilters,
+        filters: _filterService.currentFilter,
+        latitude: latitude,
+        longitude: longitude,
         page: 1,
         limit: isInitialLoad ? 20 : 10,
       );

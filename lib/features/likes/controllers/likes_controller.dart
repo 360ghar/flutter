@@ -174,8 +174,14 @@ class LikesController extends GetxController {
 
       DebugLogger.api('❤️ Loading liked properties: page $page');
 
+      final ps = _pageStateService.likesState.value;
+      if (!ps.hasLocation) {
+        throw Exception('User location is required for property recommendations. Please enable location services.');
+      }
       final properties = await _swipesRepository.getLikedPropertiesWithSwipeIds(
         filters: _buildFiltersWithSearch(),
+        latitude: ps.selectedLocation!.latitude,
+        longitude: ps.selectedLocation!.longitude,
         page: page,
         limit: _limit,
       );
@@ -242,8 +248,14 @@ class LikesController extends GetxController {
 
       DebugLogger.api('👎 Loading passed properties: page $page');
 
+      final ps = _pageStateService.likesState.value;
+      if (!ps.hasLocation) {
+        throw Exception('User location is required for property recommendations. Please enable location services.');
+      }
       final properties = await _swipesRepository.getPassedProperties(
         filters: _buildFiltersWithSearch(),
+        latitude: ps.selectedLocation!.latitude,
+        longitude: ps.selectedLocation!.longitude,
         page: page,
         limit: _limit,
       );
