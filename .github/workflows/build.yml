@@ -23,8 +23,23 @@ jobs:
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.0'
+        flutter-version: '3.35.2'
         channel: 'stable'
+
+    - name: Verify Flutter and Dart versions
+      run: |
+        echo "Flutter version: $(flutter --version)"
+        echo "Dart version: $(dart --version)"
+        dart_version=$(dart --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        echo "Dart version extracted: $dart_version"
+
+        # Check if Dart version is >= 3.8.0
+        if [ "$(printf '%s\n' "$dart_version" "3.8.0" | sort -V | head -n1)" = "3.8.0" ]; then
+          echo "✅ Dart version $dart_version is compatible (≥3.8.0)"
+        else
+          echo "❌ Dart version $dart_version is incompatible (<3.8.0)"
+          exit 1
+        fi
 
     - name: Cache Flutter dependencies
       uses: actions/cache@v3
@@ -90,6 +105,6 @@ jobs:
                   `📋 **Build Details:**\n` +
                   `- Branch: \`${context.payload.pull_request.head.ref}\`\n` +
                   `- Commit: \`${context.sha.substring(0, 7)}\`\n` +
-                  `- Flutter Version: \`3.24.0\`\n\n` +
+                  `- Flutter Version: \`3.35.2\`\n\n` +
                   `💡 *The APK will be available for download from the Artifacts section above.*`
           });
