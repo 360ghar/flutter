@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import '../data/models/page_state_model.dart';
 import '../data/models/unified_filter_model.dart';
 import '../data/repositories/properties_repository.dart';
+import '../data/repositories/swipes_repository.dart';
 import '../utils/debug_logger.dart';
 import 'location_controller.dart';
 import 'auth_controller.dart';
@@ -14,6 +15,7 @@ class PageStateService extends GetxController {
   // Storage instance
   final _storage = GetStorage();
   final _propertiesRepository = Get.find<PropertiesRepository>();
+  final _swipesRepository = Get.find<SwipesRepository>();
   final _locationController = Get.find<LocationController>();
   final _authController = Get.find<AuthController>();
 
@@ -337,6 +339,8 @@ class PageStateService extends GetxController {
       if (!backgroundRefresh) {
         _updatePageState(pageType, state.copyWith(isLoading: true, error: null));
       } else {
+        // For background refreshes, reflect both in-page state and top bar indicator
+        notifyPageRefreshing(pageType, true);
         _updatePageState(pageType, state.copyWith(isRefreshing: true, error: null));
       }
 
@@ -351,26 +355,51 @@ class PageStateService extends GetxController {
       final effectiveState = _getStateForPage(pageType);
       final selectedLoc = effectiveState.selectedLocation!;
 
-      final response = await _propertiesRepository.getProperties(
-        filters: effectiveState.filters.copyWith(searchQuery: effectiveState.searchQuery),
-        page: 1,
-        limit: pageType == PageType.discover ? 20 : 50,
-        latitude: selectedLoc.latitude,
-        longitude: selectedLoc.longitude,
-        radiusKm: effectiveState.filters.radiusKm ?? 10.0,
-      );
+      // Branch behavior per page
+      if (pageType == PageType.likes) {
+        final isLikedSegment =
+            (effectiveState.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
+        final response = await _swipesRepository.getSwipeHistoryProperties(
+          filters: effectiveState.filters.copyWith(searchQuery: effectiveState.searchQuery),
+          latitude: selectedLoc.latitude,
+          longitude: selectedLoc.longitude,
+          page: 1,
+          limit: 50,
+          isLiked: isLikedSegment,
+        );
 
-      _updatePageState(pageType, state.copyWith(
-        properties: response.properties,
-        currentPage: 1,
-        totalPages: response.totalPages,
-        hasMore: response.hasMore,
-        isLoading: false,
-        isRefreshing: false,
-        lastFetched: DateTime.now(),
-      ));
+        _updatePageState(pageType, state.copyWith(
+          properties: response.properties,
+          currentPage: 1,
+          totalPages: response.totalPages,
+          hasMore: response.hasMore,
+          isLoading: false,
+          isRefreshing: false,
+          lastFetched: DateTime.now(),
+        ));
+      } else {
+        final response = await _propertiesRepository.getProperties(
+          filters: effectiveState.filters.copyWith(searchQuery: effectiveState.searchQuery),
+          page: 1,
+          limit: pageType == PageType.discover ? 20 : 50,
+          latitude: selectedLoc.latitude,
+          longitude: selectedLoc.longitude,
+          radiusKm: effectiveState.filters.radiusKm ?? 10.0,
+        );
 
-      DebugLogger.success('✅ Loaded ${response.properties.length} properties for ${pageType.name}');
+        _updatePageState(pageType, state.copyWith(
+          properties: response.properties,
+          currentPage: 1,
+          totalPages: response.totalPages,
+          hasMore: response.hasMore,
+          isLoading: false,
+          isRefreshing: false,
+          lastFetched: DateTime.now(),
+        ));
+      }
+
+      final updatedCount = _getStateForPage(pageType).properties.length;
+      DebugLogger.success('✅ Loaded $updatedCount properties for ${pageType.name}');
     } catch (e) {
       DebugLogger.error('❌ Failed to load ${pageType.name} data: $e');
       final state = _getStateForPage(pageType);
@@ -379,6 +408,11 @@ class PageStateService extends GetxController {
         isRefreshing: false,
         error: e.toString(),
       ));
+    } finally {
+      if (backgroundRefresh) {
+        // Ensure the top bar indicator is turned off
+        notifyPageRefreshing(pageType, false);
+      }
     }
   }
 
@@ -396,26 +430,48 @@ class PageStateService extends GetxController {
         return;
       }
 
-      final response = await _propertiesRepository.getProperties(
-        filters: state.filters.copyWith(searchQuery: state.searchQuery),
-        page: state.currentPage + 1,
-        limit: pageType == PageType.discover ? 20 : 50,
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        radiusKm: state.filters.radiusKm ?? 10.0,
-      );
+      if (pageType == PageType.likes) {
+        final isLikedSegment =
+            (state.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
+        final response = await _swipesRepository.getSwipeHistoryProperties(
+          filters: state.filters.copyWith(searchQuery: state.searchQuery),
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          page: state.currentPage + 1,
+          limit: 50,
+          isLiked: isLikedSegment,
+        );
 
-      final newProperties = [...state.properties, ...response.properties];
-      
-      _updatePageState(pageType, state.copyWith(
-        properties: newProperties,
-        currentPage: state.currentPage + 1,
-        totalPages: response.totalPages,
-        hasMore: response.hasMore,
-        isLoadingMore: false,
-      ));
+        final newProperties = [...state.properties, ...response.properties];
+        _updatePageState(pageType, state.copyWith(
+          properties: newProperties,
+          currentPage: state.currentPage + 1,
+          totalPages: response.totalPages,
+          hasMore: response.hasMore,
+          isLoadingMore: false,
+        ));
+      } else {
+        final response = await _propertiesRepository.getProperties(
+          filters: state.filters.copyWith(searchQuery: state.searchQuery),
+          page: state.currentPage + 1,
+          limit: pageType == PageType.discover ? 20 : 50,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          radiusKm: state.filters.radiusKm ?? 10.0,
+        );
 
-      DebugLogger.success('✅ Loaded ${response.properties.length} more properties for ${pageType.name}');
+        final newProperties = [...state.properties, ...response.properties];
+        _updatePageState(pageType, state.copyWith(
+          properties: newProperties,
+          currentPage: state.currentPage + 1,
+          totalPages: response.totalPages,
+          hasMore: response.hasMore,
+          isLoadingMore: false,
+        ));
+      }
+
+      final totalCount = _getStateForPage(pageType).properties.length;
+      DebugLogger.success('✅ Loaded more properties for ${pageType.name} (total: $totalCount)');
     } catch (e) {
       DebugLogger.error('❌ Failed to load more ${pageType.name} data: $e');
       final state = _getStateForPage(pageType);
@@ -505,10 +561,22 @@ class PageStateService extends GetxController {
 
   // Additional utility methods for specific pages
   void updateLikesSegment(String segment) {
-    likesState.value = likesState.value.updateAdditionalData('currentSegment', segment);
+    // Store current segment in additional data and reset the list for fresh load
+    likesState.value = likesState.value
+        .updateAdditionalData('currentSegment', segment)
+        .resetData();
+    // Immediately load new segment data
+    loadPageData(PageType.likes, forceRefresh: true);
   }
 
   String get currentLikesSegment => likesState.value.getAdditionalData<String>('currentSegment') ?? 'liked';
+
+  // Mutations for likes page (optimistic UI updates)
+  void removePropertyFromLikes(int propertyId) {
+    final state = likesState.value;
+    final updatedList = state.properties.where((p) => p.id != propertyId).toList();
+    _updatePageState(PageType.likes, state.copyWith(properties: updatedList));
+  }
 
   // Sync preferences to backend
   Future<void> syncPreferencesToBackend() async {
