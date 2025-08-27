@@ -86,13 +86,7 @@ class PropertyController extends GetxController {
     DebugLogger.info('🏠 PropertyController initialized; discover properties handled by DiscoverController');
   }
   
-  void _onFiltersChanged() {
-    // React to filter changes - refresh favorites if they're loaded
-    DebugLogger.info('🔄 Filters changed, refreshing favorites');
-    if (favouriteProperties.isNotEmpty) {
-      fetchFavouriteProperties(); // This will now apply current filters
-    }
-  }
+
   
   void _clearAllData() {
     properties.clear();

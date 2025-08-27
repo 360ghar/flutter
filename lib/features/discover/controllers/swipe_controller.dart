@@ -19,7 +19,7 @@ class SwipeController extends GetxController {
   final RxMap<String, dynamic> swipeStats = <String, dynamic>{}.obs;
   
   // Track interaction timing
-  DateTime? _cardViewStartTime;
+
   int _totalSwipes = 0;
 
   @override
@@ -155,13 +155,10 @@ class SwipeController extends GetxController {
   }
 
   void _startCardViewTimer() {
-    _cardViewStartTime = DateTime.now();
+    // Timer functionality removed - was used for tracking interaction time
   }
 
-  int _getInteractionTime() {
-    if (_cardViewStartTime == null) return 0;
-    return DateTime.now().difference(_cardViewStartTime!).inSeconds;
-  }
+
 
   Future<void> swipeLeft(PropertyModel property) async {
     DebugLogger.info('👈 Swiping left on property: ${property.id} (${property.title})');

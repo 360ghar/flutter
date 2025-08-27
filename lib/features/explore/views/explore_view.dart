@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../controllers/explore_controller.dart';
 import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/page_state_service.dart';
@@ -8,37 +10,42 @@ import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
 import '../../../core/utils/debug_logger.dart';
-import '../../../../widgets/common/loading_states.dart';
-import '../../../../widgets/common/error_states.dart';
-import '../../../../widgets/common/robust_network_image.dart';
-import '../../../../widgets/common/unified_top_bar.dart';
+import '../../../widgets/common/loading_states.dart';
+import '../../../widgets/common/error_states.dart';
+import '../../../widgets/common/unified_top_bar.dart';
 import '../../../widgets/common/property_filter_widget.dart';
+import '../widgets/property_horizontal_list.dart';
 
 class ExploreView extends GetView<ExploreController> {
   const ExploreView({super.key});
-  
+
   FilterService get filterService => Get.find<FilterService>();
 
   @override
   Widget build(BuildContext context) {
-    DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
+    DebugLogger.info(
+      '🎨 ExploreView build() called. Current state: ${controller.state.value}',
+    );
 
     return Obx(() {
       final pageStateService = Get.find<PageStateService>();
-      
+
       // Make Scaffold reactive to search visibility changes for proper space allocation
       final searchVisible = pageStateService.isSearchVisible(PageType.explore);
-      
+
       return Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
         appBar: ExploreTopBar(
-          key: ValueKey('explore_topbar_$searchVisible'), // Force recreation when visibility changes
+          key: ValueKey(
+            'explore_topbar_$searchVisible',
+          ), // Force recreation when visibility changes
           onSearchChanged: (query) => controller.updateSearchQuery(query),
-          onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
+          onFilterTap: () =>
+              showPropertyFilterBottomSheet(context, pageType: 'explore'),
         ),
         body: Obx(() {
           final isRefreshing = pageStateService.exploreState.value.isRefreshing;
-          
+
           return Column(
             children: [
               // Subtle refresh indicator
@@ -46,33 +53,39 @@ class ExploreView extends GetView<ExploreController> {
                 LinearProgressIndicator(
                   minHeight: 2,
                   backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryYellow,
+                  ),
                 ),
               // Main content
               Expanded(
                 child: Obx(() {
                   final currentState = controller.state.value;
                   final propertiesCount = controller.properties.length;
-                  DebugLogger.info('🌨️ View Builder (Obx) - State: $currentState, Properties: $propertiesCount');
-                  
+                  DebugLogger.info(
+                    '🌨️ View Builder (Obx) - State: $currentState, Properties: $propertiesCount',
+                  );
+
                   switch (currentState) {
                     case ExploreState.loading:
                       DebugLogger.info('💻 Rendering loading state');
                       return _buildLoadingState();
-                      
+
                     case ExploreState.error:
                       DebugLogger.info('⚠️ Rendering error state');
                       return _buildErrorState();
-                      
+
                     case ExploreState.empty:
                       DebugLogger.info('💭 Rendering empty state');
                       return _buildEmptyState(context);
-                      
+
                     case ExploreState.loaded:
                     case ExploreState.loadingMore:
-                      DebugLogger.info('🗺️ Rendering map interface with $propertiesCount properties');
+                      DebugLogger.info(
+                        '🗺️ Rendering map interface with $propertiesCount properties',
+                      );
                       return _buildMapInterface(context);
-                      
+
                     default:
                       DebugLogger.info('🔄 Rendering default loading state');
                       return _buildLoadingState();
@@ -93,14 +106,10 @@ class ExploreView extends GetView<ExploreController> {
         Container(
           color: AppColors.surface,
           child: Center(
-            child: Icon(
-              Icons.map,
-              size: 100,
-              color: AppColors.divider,
-            ),
+            child: Icon(Icons.map, size: 100, color: AppColors.divider),
           ),
         ),
-        
+
         // Loading overlay with progress
         Obx(() {
           if (controller.loadingProgress.value > 0) {
@@ -120,7 +129,7 @@ class ExploreView extends GetView<ExploreController> {
     return Obx(() {
       final errorMessage = controller.error.value;
       if (errorMessage == null) return const SizedBox();
-      
+
       try {
         final exception = ErrorMapper.mapApiError(Exception(errorMessage));
         return ErrorStates.genericError(
@@ -139,9 +148,13 @@ class ExploreView extends GetView<ExploreController> {
   Widget _buildEmptyState(BuildContext context) {
     return ErrorStates.emptyState(
       title: 'No Properties Found',
-      message: 'No properties found in this area.\nTry adjusting your search location or filters.',
+      message:
+          'No properties found in this area.\nTry adjusting your search location or filters.',
       icon: Icons.location_off,
-      onAction: () => showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'explore'),
+      onAction: () => showPropertyFilterBottomSheet(
+        Get.context ?? context,
+        pageType: 'explore',
+      ),
       actionText: 'Adjust Filters',
     );
   }
@@ -152,115 +165,149 @@ class ExploreView extends GetView<ExploreController> {
       children: [
         // Main map
         Positioned.fill(
-          child: Obx(() {
-            final markers = controller.propertyMarkers;
-            DebugLogger.info('🗺️ Map rebuild - ${markers.length} markers, center: ${controller.currentCenter.value}');
-            
-            return FlutterMap(
-              mapController: controller.mapController,
-              options: MapOptions(
-                initialCenter: controller.currentCenter.value,
-                initialZoom: controller.currentZoom.value,
-                onPositionChanged: controller.onMapMove,
-                onMapReady: () {
-                  DebugLogger.success('🗺️ Map is ready!');
-                  // Map is now ready for programmatic moves
-                },
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all,
-                ),
-              ),
-              children: [
-                // Map tiles
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.ghar360.app',
-                  maxZoom: 19,
-                ),
-                
-                // Search radius circle
-                if (filterService.hasLocation)
-                  CircleLayer(
-                    circles: [
-                      CircleMarker(
-                        point: controller.currentCenter.value,
-                        radius: controller.currentRadius.value * 1000, // Convert to meters
-                        color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                        borderColor: AppColors.primaryYellow.withValues(alpha: 0.5),
-                        borderStrokeWidth: 2,
-                      ),
-                    ],
+          child: Builder(
+            builder: (_) {
+              try {
+                return FlutterMap(
+                  key: ValueKey(
+                    'map_${controller.currentCenter.value.latitude}_${controller.currentCenter.value.longitude}_${controller.currentZoom.value}',
                   ),
-                
-                // Property markers
-                if (markers.isNotEmpty)
-                  MarkerLayer(
-                    markers: markers.map((marker) => Marker(
-                      point: marker.position,
-                      width: 40,
-                      height: 40,
-                      child: GestureDetector(
-                        onTap: () {
-                          DebugLogger.info('📍 Property marker tapped: ${marker.property.title}');
-                          controller.selectProperty(marker.property);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: marker.isSelected ? AppColors.primaryYellow : AppColors.accentBlue,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              marker.property.formattedPrice.isNotEmpty 
-                                ? (marker.property.formattedPrice.length > 4 
-                                   ? marker.property.formattedPrice.substring(0, 4)
-                                   : marker.property.formattedPrice)
-                                : '₹--',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    )).toList(),
+                  mapController: controller.mapController,
+                  options: MapOptions(
+                    initialCenter: controller.currentCenter.value,
+                    initialZoom: controller.currentZoom.value,
+                    minZoom: 3.0,
+                    maxZoom: 18.0,
+                    onPositionChanged: (position, hasGesture) {
+                      if (hasGesture && controller.isMapReady.value) {
+                        final zoomChanged =
+                            (position.zoom - controller.currentZoom.value).abs() > 0.1;
+                        final distance = _calculateDistance(
+                          controller.currentCenter.value,
+                          position.center,
+                        );
+                        final centerChanged = distance > 100;
+                        if (zoomChanged || centerChanged) {
+                          controller.onMapMove(position, hasGesture);
+                        }
+                      }
+                    },
+                    onMapReady: () {
+                      DebugLogger.success('🗺️ Map is ready!');
+                      controller.onMapReady();
+                    },
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.all,
+                    ),
                   ),
-              ],
-            );
-          }),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      subdomains: const ['a', 'b', 'c'],
+                      userAgentPackageName: 'com.ghar360.app',
+                      maxZoom: 18,
+                    ),
+                    RichAttributionWidget(
+                      attributions: const [
+                        TextSourceAttribution('© OpenStreetMap contributors'),
+                      ],
+                    ),
+                    // Search radius circle (reactive)
+                    Obx(() {
+                      if (!filterService.hasLocation) return const SizedBox.shrink();
+                      return CircleLayer(
+                        circles: [
+                          CircleMarker(
+                            point: controller.currentCenter.value,
+                            radius: controller.currentRadius.value * 1000,
+                            color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                            borderColor: AppColors.primaryYellow.withValues(alpha: 0.5),
+                            borderStrokeWidth: 2,
+                          ),
+                        ],
+                      );
+                    }),
+                    // Property markers (reactive)
+                    Obx(() {
+                      final markers = controller.propertyMarkers;
+                      if (markers.isEmpty) return const SizedBox.shrink();
+                      return MarkerLayer(
+                        markers: markers
+                            .map(
+                              (marker) => Marker(
+                                point: marker.position,
+                                width: 40,
+                                height: 40,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    DebugLogger.info('📍 Property marker tapped: ${marker.property.title}');
+                                    controller.selectProperty(marker.property);
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: marker.isSelected
+                                          ? AppColors.primaryYellow
+                                          : AppColors.accentBlue,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: Colors.white, width: 2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.2),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        marker.property.formattedPrice.isNotEmpty
+                                            ? (marker.property.formattedPrice.length > 4
+                                                ? marker.property.formattedPrice.substring(0, 4)
+                                                : marker.property.formattedPrice)
+                                            : '₹--',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      );
+                    }),
+                  ],
+                );
+              } catch (e) {
+                DebugLogger.error('❌ Map rendering failed: $e');
+                return ErrorStates.networkError(
+                  onRetry: controller.retryLoading,
+                  customMessage: 'Map failed to render. Please try again.',
+                );
+              }
+            },
+          ),
         ),
-        
         // Map controls
         Positioned(
           top: MediaQuery.of(context).padding.top + 10,
           right: 16,
           child: _buildMapControls(),
         ),
-        
         // Info panel
         Positioned(
           top: MediaQuery.of(context).padding.top + 10,
           left: 16,
           child: _buildInfoPanel(),
         ),
-        
         // Loading indicator for more properties
         if (controller.state.value == ExploreState.loadingMore)
           Positioned(
-            bottom: 100,
+            bottom: 230,
             left: 16,
             right: 16,
             child: Container(
@@ -277,7 +324,9 @@ class ExploreView extends GetView<ExploreController> {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryYellow,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -292,21 +341,19 @@ class ExploreView extends GetView<ExploreController> {
               ),
             ),
           ),
-        
-        // Selected property bottom sheet
-        Obx(() {
-          final hasSelection = controller.hasSelection;
-          DebugLogger.info('📋 Bottom sheet update - has selection: $hasSelection');
-          
-          if (hasSelection) {
-            return _buildPropertyBottomSheet();
-          }
-          return const SizedBox();
-        }),
+        // Horizontal property list at bottom
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: SafeArea(
+            top: false,
+            child: PropertyHorizontalList(controller: controller),
+          ),
+        ),
       ],
     );
   }
-
 
   Widget _buildMapControls() {
     return Column(
@@ -324,11 +371,7 @@ class ExploreView extends GetView<ExploreController> {
                 icon: Icon(Icons.add, color: AppColors.iconColor),
                 onPressed: controller.zoomIn,
               ),
-              Container(
-                width: 1,
-                height: 1,
-                color: AppColors.divider,
-              ),
+              Container(width: 1, height: 1, color: AppColors.divider),
               IconButton(
                 icon: Icon(Icons.remove, color: AppColors.iconColor),
                 onPressed: controller.zoomOut,
@@ -336,9 +379,9 @@ class ExploreView extends GetView<ExploreController> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Current location button
         Container(
           decoration: BoxDecoration(
@@ -351,9 +394,9 @@ class ExploreView extends GetView<ExploreController> {
             onPressed: controller.recenterToCurrentLocation,
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Fit bounds button
         Container(
           decoration: BoxDecoration(
@@ -382,9 +425,11 @@ class ExploreView extends GetView<ExploreController> {
         final propertiesCountText = controller.propertiesCountText;
         final currentAreaText = controller.currentAreaText;
         final locationDisplayText = controller.locationDisplayText;
-        
-        DebugLogger.info('📊 Info panel update - properties: $propertiesCountText, area: $currentAreaText');
-        
+
+        DebugLogger.info(
+          '📊 Info panel update - properties: $propertiesCountText, area: $currentAreaText',
+        );
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -400,12 +445,10 @@ class ExploreView extends GetView<ExploreController> {
             const SizedBox(height: 4),
             Text(
               currentAreaText,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
-            if (locationDisplayText != 'All Locations' && locationDisplayText != 'Select Location') ...[
+            if (locationDisplayText != 'All Locations' &&
+                locationDisplayText != 'Select Location') ...[
               const SizedBox(height: 4),
               Text(
                 locationDisplayText,
@@ -422,146 +465,22 @@ class ExploreView extends GetView<ExploreController> {
     );
   }
 
-  Widget _buildPropertyBottomSheet() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 200,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          boxShadow: AppColors.getCardShadow(),
-        ),
-        child: Obx(() {
-          final property = controller.selectedProperty.value;
-          if (property == null) {
-            DebugLogger.info('🏠 Bottom sheet - no property selected');
-            return const SizedBox();
-          }
-          
-          DebugLogger.info('🏠 Bottom sheet rebuilding for property: ${property.title}');
-          
-          return Column(
-            children: [
-              // Handle bar
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              
-              // Property details
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // Property image
-                      RobustNetworkImage(
-                        imageUrl: property.mainImage,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        borderRadius: BorderRadius.circular(12),
-                        errorWidget: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: AppColors.inputBackground,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(Icons.home, color: AppColors.iconColor),
-                        ),
-                      ),
-                      
-                      const SizedBox(width: 16),
-                      
-                      // Property info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              property.title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              property.addressDisplay,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Text(
-                                  property.formattedPrice,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryYellow,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.accentBlue.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    property.purposeString,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.accentBlue,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Action buttons
-                      Column(
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.close, color: AppColors.textSecondary),
-                            onPressed: controller.clearSelection,
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.info, color: AppColors.primaryYellow),
-                            onPressed: () => controller.viewPropertyDetails(property),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
+  // Bottom sheet removed in favor of persistent horizontal list
 
+  double _calculateDistance(LatLng point1, LatLng point2) {
+    const double earthRadius = 6371000; // Earth's radius in meters
+    final double lat1Rad = point1.latitude * (math.pi / 180);
+    final double lat2Rad = point2.latitude * (math.pi / 180);
+    final double deltaLat =
+        (point2.latitude - point1.latitude) * (math.pi / 180);
+    final double deltaLng =
+        (point2.longitude - point1.longitude) * (math.pi / 180);
+    final double a =
+        (math.sin(deltaLat / 2) * math.sin(deltaLat / 2)) +
+        math.cos(lat1Rad) *
+            math.cos(lat2Rad) *
+            (math.sin(deltaLng / 2) * math.sin(deltaLng / 2));
+    final double c = 2 * math.asin(math.sqrt(a));
+    return earthRadius * c;
+  }
 }

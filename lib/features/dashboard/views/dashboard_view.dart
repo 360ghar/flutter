@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
 
-import '../../../../widgets/navigation/bottom_nav_bar.dart';
+import '../../../widgets/navigation/bottom_nav_bar.dart';
 import '../../profile/views/profile_view.dart';
 import '../../explore/views/explore_view.dart';
 import '../../discover/views/discover_view.dart';

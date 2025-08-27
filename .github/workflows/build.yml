@@ -14,6 +14,43 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Create environment file
+      run: |
+        # Determine which environment file to use
+        if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.base_ref }}" == "main" ]]; then
+          ENV_FILE=".env.production"
+          echo "Using production environment for main branch/PR"
+        else
+          ENV_FILE=".env.staging"
+          echo "Using staging environment for feature branches"
+        fi
+
+        # Create the environment file from GitHub secrets
+        cat > $ENV_FILE << EOF
+        # Environment variables for CI/CD build
+        # Generated from GitHub repository secrets
+
+        # API Configuration
+        API_BASE_URL=${{ secrets.API_BASE_URL }}
+        SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+        SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+        GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
+
+        # App Configuration
+        DEFAULT_COUNTRY=${{ secrets.DEFAULT_COUNTRY || 'in' }}
+        DEBUG_MODE=${{ secrets.DEBUG_MODE || 'false' }}
+        LOG_API_CALLS=${{ secrets.LOG_API_CALLS || 'false' }}
+
+        # Build Configuration
+        BUILD_ENV=ci
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        COMMIT_SHA=${{ github.sha }}
+        BRANCH_NAME=${{ github.head_ref || github.ref_name }}
+        EOF
+
+        echo "Environment file created successfully"
+        # Don't print the file contents to avoid exposing secrets in logs
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:

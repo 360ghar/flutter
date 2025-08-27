@@ -6,29 +6,37 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/page_state_model.dart';
 import '../../../core/data/repositories/properties_repository.dart';
+import '../../../core/data/repositories/swipes_repository.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/location_controller.dart';
 import '../../../core/controllers/page_state_service.dart';
 import '../../../widgets/common/property_filter_widget.dart';
+import '../../../core/data/models/unified_filter_model.dart';
 
 enum ExploreState { initial, loading, loaded, empty, error, loadingMore }
 
 class ExploreController extends GetxController {
   final PropertiesRepository _propertiesRepository =
       Get.find<PropertiesRepository>();
+  final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
   final FilterService _filterService = Get.find<FilterService>();
   final LocationController _locationController = Get.find<LocationController>();
   final PageStateService _pageStateService = Get.find<PageStateService>();
 
   // Map controller
   final MapController mapController = MapController();
+  // Map readiness flag to prevent premature controller calls
+  final RxBool isMapReady = false.obs;
 
   // Reactive state
   final Rx<ExploreState> state = ExploreState.initial.obs;
   final RxList<PropertyModel> properties = <PropertyModel>[].obs;
   final RxnString error = RxnString();
-  
+
+  // Local liked overrides to reflect immediate UI without mutating model
+  final RxMap<int, bool> likedOverrides = <int, bool>{}.obs;
+
   // Error recovery
   int _retryCount = 0;
   static const int _maxRetries = 3;
@@ -73,10 +81,14 @@ class ExploreController extends GetxController {
 
     // Add properties listener for debugging
     ever(properties, (List<PropertyModel> props) {
-      DebugLogger.info('🏠 Properties list updated: ${props.length} properties');
+      DebugLogger.info(
+        '🏠 Properties list updated: ${props.length} properties',
+      );
       if (props.isNotEmpty) {
         final withLocation = props.where((p) => p.hasLocation).length;
-        DebugLogger.info('🗺️ Properties with location: $withLocation/${props.length}');
+        DebugLogger.info(
+          '🗺️ Properties with location: $withLocation/${props.length}',
+        );
       }
     });
 
@@ -121,6 +133,7 @@ class ExploreController extends GetxController {
     _mapMoveDebouncer?.cancel();
     _retryTimer?.cancel();
     _pageActivationWorker?.dispose();
+    mapController.dispose();
     super.onClose();
   }
 
@@ -131,22 +144,50 @@ class ExploreController extends GetxController {
     DebugLogger.info('📋 Controller state: ${state.value}');
     DebugLogger.info('📋 Controller properties: ${properties.length}');
     DebugLogger.info('📋 Is data stale: ${pageState.isDataStale}');
-    
+
     // More robust condition check - initialize if no properties or if initial state
-    if ((pageState.properties.isEmpty && properties.isEmpty) || state.value == ExploreState.initial) {
-      DebugLogger.info('🎯 Initializing map and loading properties (first load)');
+    if ((pageState.properties.isEmpty && properties.isEmpty) ||
+        state.value == ExploreState.initial) {
+      DebugLogger.info(
+        '🎯 Initializing map and loading properties (first load)',
+      );
       _initializeMapAndLoadProperties();
     } else if (pageState.isDataStale) {
       DebugLogger.info('🔄 Data is stale, refreshing in background');
       _refreshInBackground();
     } else {
-      DebugLogger.info('✅ Page already has data, syncing controller with page state');
+      DebugLogger.info(
+        '✅ Page already has data, syncing controller with page state',
+      );
       // Sync controller properties with page state if they differ
       if (properties.length != pageState.properties.length) {
         properties.assignAll(pageState.properties);
-        state.value = pageState.properties.isEmpty ? ExploreState.empty : ExploreState.loaded;
+        state.value = pageState.properties.isEmpty
+            ? ExploreState.empty
+            : ExploreState.loaded;
       }
     }
+  }
+
+  // Called by the view when FlutterMap reports ready
+  void onMapReady() {
+    if (isMapReady.value) return;
+    isMapReady.value = true;
+    DebugLogger.success(
+      '✅ ExploreController.onMapReady() - Map marked as ready',
+    );
+
+    // After the first frame, align the camera with current reactive values
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        mapController.move(currentCenter.value, currentZoom.value);
+        DebugLogger.info(
+          '🎯 Synced camera on map ready to ${currentCenter.value} @ ${currentZoom.value}',
+        );
+      } catch (e) {
+        DebugLogger.warning('⚠️ Could not sync camera on map ready: $e');
+      }
+    });
   }
 
   Future<void> _refreshInBackground() async {
@@ -166,13 +207,19 @@ class ExploreController extends GetxController {
     // Listen to page state changes and reload properties
     debounce(_pageStateService.exploreState, (pageState) {
       DebugLogger.info('🔍 Page state changed via filter listener');
-      DebugLogger.info('📊 New page state - properties: ${pageState.properties.length}, loading: ${pageState.isLoading}, filters: ${pageState.activeFiltersCount}');
-      
-      final isCurrentPage = _pageStateService.currentPageType.value == PageType.explore;
-      final isLoading = pageState.isLoading || state.value == ExploreState.loading;
-      
-      DebugLogger.info('📋 Filter listener check - current page: $isCurrentPage, is loading: $isLoading');
-      
+      DebugLogger.info(
+        '📊 New page state - properties: ${pageState.properties.length}, loading: ${pageState.isLoading}, filters: ${pageState.activeFiltersCount}',
+      );
+
+      final isCurrentPage =
+          _pageStateService.currentPageType.value == PageType.explore;
+      final isLoading =
+          pageState.isLoading || state.value == ExploreState.loading;
+
+      DebugLogger.info(
+        '📋 Filter listener check - current page: $isCurrentPage, is loading: $isLoading',
+      );
+
       // Only reload if:
       // 1. Not currently loading
       // 2. Page is active
@@ -181,7 +228,9 @@ class ExploreController extends GetxController {
         DebugLogger.info('🚀 Triggering property reload via filter listener');
         _loadPropertiesForCurrentView();
       } else {
-        DebugLogger.info('⏸️ Skipping filter listener reload - loading: $isLoading, current page: $isCurrentPage, state: ${state.value}');
+        DebugLogger.info(
+          '⏸️ Skipping filter listener reload - loading: $isLoading, current page: $isCurrentPage, state: ${state.value}',
+        );
       }
     }, time: const Duration(milliseconds: 500));
   }
@@ -224,16 +273,20 @@ class ExploreController extends GetxController {
             final pos = _locationController.currentPosition.value!;
             initialCenter = LatLng(pos.latitude, pos.longitude);
             initialZoom = 14.0; // Zoom in closer for current location
-            DebugLogger.info('🗺️ Using current device location: $initialCenter (lat: ${pos.latitude}, lng: ${pos.longitude})');
+            DebugLogger.info(
+              '🗺️ Using current device location: $initialCenter (lat: ${pos.latitude}, lng: ${pos.longitude})',
+            );
           } else {
             DebugLogger.warning(
               '⚠️ LocationController.hasLocation is false after getCurrentLocation call',
             );
           }
         } catch (locationError) {
-          DebugLogger.warning('⚠️ Device location failed: $locationError. Trying IP-based location...');
+          DebugLogger.warning(
+            '⚠️ Device location failed: $locationError. Trying IP-based location...',
+          );
         }
-        
+
         // Try IP-based location if device location failed
         if (!_locationController.hasLocation) {
           try {
@@ -241,27 +294,48 @@ class ExploreController extends GetxController {
             if (ipLoc != null) {
               initialCenter = LatLng(ipLoc.latitude, ipLoc.longitude);
               initialZoom = 12.0;
-              DebugLogger.info('🗺️ Using IP-based location: $initialCenter (lat: ${ipLoc.latitude}, lng: ${ipLoc.longitude})');
+              DebugLogger.info(
+                '🗺️ Using IP-based location: $initialCenter (lat: ${ipLoc.latitude}, lng: ${ipLoc.longitude})',
+              );
             } else {
-              DebugLogger.warning('⚠️ IP-based location returned null. Using default.');
+              DebugLogger.warning(
+                '⚠️ IP-based location returned null. Using default.',
+              );
             }
           } catch (ipError) {
-            DebugLogger.warning('⚠️ IP-based location failed: $ipError. Using default.');
+            DebugLogger.warning(
+              '⚠️ IP-based location failed: $ipError. Using default.',
+            );
           }
         }
       }
 
-      DebugLogger.info('🎯 Final initialization parameters: center=$initialCenter, zoom=$initialZoom');
-      
+      DebugLogger.info(
+        '🎯 Final initialization parameters: center=$initialCenter, zoom=$initialZoom',
+      );
+
       // Update map and filters with the determined location
       _updateMapCenter(initialCenter, initialZoom);
-      
+
       final radiusKm = _calculateRadiusFromZoom(initialZoom);
-      DebugLogger.info('📍 Updating filters with location - radius: ${radiusKm}km');
+      DebugLogger.info(
+        '📍 Updating filters with location - radius: ${radiusKm}km',
+      );
       _filterService.updateLocationWithCoordinates(
         latitude: initialCenter.latitude,
         longitude: initialCenter.longitude,
         radiusKm: radiusKm,
+      );
+
+      // Ensure Explore page state's location is set for repository queries
+      _pageStateService.updateLocationForPage(
+        PageType.explore,
+        LocationData(
+          name: 'Current Area',
+          latitude: initialCenter.latitude,
+          longitude: initialCenter.longitude,
+        ),
+        source: 'initial',
       );
 
       DebugLogger.info('🚀 Starting property loading...');
@@ -293,6 +367,17 @@ class ExploreController extends GetxController {
           longitude: position.longitude,
           radiusKm: currentRadius.value,
         );
+
+        // Sync Explore page state location for subsequent loads
+        _pageStateService.updateLocationForPage(
+          PageType.explore,
+          LocationData(
+            name: 'Current Location',
+            latitude: position.latitude,
+            longitude: position.longitude,
+          ),
+          source: 'gps',
+        );
       } else {
         DebugLogger.warning(
           '⚠️ LocationController returned null position, using default location',
@@ -303,6 +388,16 @@ class ExploreController extends GetxController {
           latitude: 28.6139,
           longitude: 77.2090,
           radiusKm: currentRadius.value,
+        );
+
+        _pageStateService.updateLocationForPage(
+          PageType.explore,
+          LocationData(
+            name: 'Delhi',
+            latitude: 28.6139,
+            longitude: 77.2090,
+          ),
+          source: 'fallback',
         );
       }
     } catch (e) {
@@ -315,18 +410,41 @@ class ExploreController extends GetxController {
         longitude: 77.2090,
         radiusKm: currentRadius.value,
       );
+
+      _pageStateService.updateLocationForPage(
+        PageType.explore,
+        LocationData(
+          name: 'Delhi',
+          latitude: 28.6139,
+          longitude: 77.2090,
+        ),
+        source: 'fallback',
+      );
     }
   }
 
   void _updateMapCenter(LatLng center, double zoom) {
     try {
+      // Always update reactive state first
       currentCenter.value = center;
       currentZoom.value = zoom;
-      DebugLogger.info('🗺️ Updated reactive map center to $center with zoom $zoom');
+      DebugLogger.info(
+        '🗺️ Updated reactive map center to $center with zoom $zoom',
+      );
 
-      // Try to move the map controller
-      mapController.move(center, zoom);
-      DebugLogger.info('✅ Map controller moved successfully');
+      // Only move the controller once the map is ready/rendered
+      if (isMapReady.value) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            mapController.move(center, zoom);
+            DebugLogger.info('✅ Map controller moved successfully');
+          } catch (e) {
+            DebugLogger.warning('⚠️ Could not move map (post-frame): $e');
+          }
+        });
+      } else {
+        DebugLogger.info('⏳ Map not ready yet; deferred camera move');
+      }
     } catch (e) {
       DebugLogger.warning('⚠️ Could not move map: $e');
       // Still update the reactive values even if map move fails
@@ -338,11 +456,28 @@ class ExploreController extends GetxController {
   // Map movement handler with debounce
   void onMapMove(MapCamera position, bool hasGesture) {
     if (!hasGesture) {
-      DebugLogger.info('🗺️ Map moved programmatically to ${position.center}, ignoring');
+      DebugLogger.info(
+        '🗺️ Map moved programmatically to ${position.center}, ignoring',
+      );
       return; // Ignore programmatic moves
     }
+    if (!isMapReady.value) {
+      DebugLogger.info('⏳ Map move ignored; map not ready');
+      return;
+    }
+    // Compute deltas before mutating reactive values
+    final prevCenter = currentCenter.value;
+    final prevZoom = currentZoom.value;
+    final distanceMeters = const Distance().as(
+      LengthUnit.Meter,
+      prevCenter,
+      position.center,
+    );
+    final zoomDelta = (position.zoom - prevZoom).abs();
 
-    DebugLogger.info('🗺️ Map moved by user gesture to ${position.center}, zoom: ${position.zoom}');
+    DebugLogger.info(
+      '🗺️ Map moved by user gesture to ${position.center}, zoom: ${position.zoom} (Δz=${zoomDelta.toStringAsFixed(2)}, Δd=${distanceMeters.toStringAsFixed(0)}m)',
+    );
     currentCenter.value = position.center;
     currentZoom.value = position.zoom;
 
@@ -354,11 +489,16 @@ class ExploreController extends GetxController {
     }
 
     // Debounce the map move to avoid too many API calls
-    _mapMoveDebouncer?.cancel();
-    _mapMoveDebouncer = Timer(const Duration(milliseconds: 600), () {
-      DebugLogger.info('🔄 Map move debounce completed, updating location');
-      _onMapMoveCompleted();
-    });
+    // Only proceed if movement is significant to reduce churn
+    if (zoomDelta > 0.1 || distanceMeters > 100) {
+      _mapMoveDebouncer?.cancel();
+      _mapMoveDebouncer = Timer(const Duration(milliseconds: 600), () {
+        DebugLogger.info('🔄 Map move debounce completed, updating location');
+        _onMapMoveCompleted();
+      });
+    } else {
+      DebugLogger.info('🧯 Ignoring minor map movement');
+    }
   }
 
   void _onMapMoveCompleted() {
@@ -374,6 +514,17 @@ class ExploreController extends GetxController {
         radiusKm: currentRadius.value,
       );
       DebugLogger.success('✅ Filter location updated successfully');
+
+      // Keep PageStateService in sync so map queries use correct location
+      _pageStateService.updateLocationForPage(
+        PageType.explore,
+        LocationData(
+          name: 'Selected Area',
+          latitude: currentCenter.value.latitude,
+          longitude: currentCenter.value.longitude,
+        ),
+        source: 'manual',
+      );
     } catch (e) {
       DebugLogger.error('❌ Failed to update filter location: $e');
     }
@@ -401,7 +552,7 @@ class ExploreController extends GetxController {
       );
       DebugLogger.info('📊 Current controller state: ${state.value}');
       DebugLogger.info('🏠 Current properties count: ${properties.length}');
-      
+
       _pageStateService.notifyPageRefreshing(PageType.explore, true);
 
       // Only set loading if not background refresh
@@ -424,12 +575,23 @@ class ExploreController extends GetxController {
       DebugLogger.info('📍 Filter has location: ${_filterService.hasLocation}');
       if (_pageStateService.exploreState.value.hasLocation) {
         final location = _pageStateService.exploreState.value.selectedLocation!;
-        DebugLogger.info('📍 Filter location: lat=${location.latitude}, lng=${location.longitude}, radius=${currentFilters.radiusKm}');
+        DebugLogger.info(
+          '📍 Filter location: lat=${location.latitude}, lng=${location.longitude}, radius=${currentFilters.radiusKm}',
+        );
       }
 
       // Load all pages sequentially for map display
+      final pageState = _pageStateService.exploreState.value;
+      if (!pageState.hasLocation) {
+        throw Exception('Location is required for property fetching');
+      }
+      final loc = pageState.selectedLocation!;
+
       final allProperties = await _propertiesRepository.loadAllPropertiesForMap(
         filters: currentFilters,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        radiusKm: currentFilters.radiusKm ?? 10.0,
         limit: 100,
         onProgress: (current, total) {
           loadingProgress.value = current;
@@ -438,7 +600,9 @@ class ExploreController extends GetxController {
         },
       );
 
-      DebugLogger.success('🎉 Repository returned ${allProperties.length} properties');
+      DebugLogger.success(
+        '🎉 Repository returned ${allProperties.length} properties',
+      );
 
       if (backgroundRefresh) {
         // For background refresh, merge new data with existing data
@@ -470,28 +634,32 @@ class ExploreController extends GetxController {
           );
           state.value = ExploreState.loaded;
         }
-        
+
         // Log marker information
         final withLocation = properties.where((p) => p.hasLocation).length;
-        DebugLogger.info('🗺️ Properties with location for markers: $withLocation/${properties.length}');
+        DebugLogger.info(
+          '🗺️ Properties with location for markers: $withLocation/${properties.length}',
+        );
       }
-      
+
       // Reset retry count on successful load
       _retryCount = 0;
     } catch (e, stackTrace) {
       DebugLogger.error('❌ Failed to load properties: $e');
       DebugLogger.error('Stack trace: $stackTrace');
-      
+
       // Increment retry count
       _retryCount++;
-      
+
       if (_retryCount <= _maxRetries && !backgroundRefresh) {
-        DebugLogger.info('🔄 Attempting retry $_retryCount/$_maxRetries after error');
-        
+        DebugLogger.info(
+          '🔄 Attempting retry $_retryCount/$_maxRetries after error',
+        );
+
         // Exponential backoff: wait 2^retryCount seconds
         final retryDelay = Duration(seconds: (2 * _retryCount).clamp(2, 8));
         DebugLogger.info('⏰ Retrying in ${retryDelay.inSeconds} seconds');
-        
+
         _retryTimer?.cancel();
         _retryTimer = Timer(retryDelay, () {
           DebugLogger.info('🔄 Executing retry attempt $_retryCount');
@@ -532,6 +700,41 @@ class ExploreController extends GetxController {
   void clearSearch() {
     searchQuery.value = '';
     _filterService.updateSearchQuery('');
+  }
+
+  // Likes handling
+  bool isPropertyLiked(PropertyModel property) {
+    try {
+      if (likedOverrides.containsKey(property.id)) {
+        return likedOverrides[property.id] ?? property.liked;
+      }
+      return property.liked;
+    } catch (_) {
+      return property.liked;
+    }
+  }
+
+  Future<void> toggleLike(PropertyModel property) async {
+    final current = isPropertyLiked(property);
+    final next = !current;
+
+    // Optimistic update
+    likedOverrides[property.id] = next;
+
+    try {
+      await _swipesRepository.recordSwipe(propertyId: property.id, isLiked: next);
+      DebugLogger.success('✅ Updated like: ${property.title} -> $next');
+    } catch (e) {
+      DebugLogger.error('❌ Failed to toggle like: $e');
+      // Revert on failure
+      likedOverrides[property.id] = current;
+      Get.snackbar(
+        'Action failed',
+        'Could not update like. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
+    }
   }
 
   // Property selection
@@ -597,6 +800,11 @@ class ExploreController extends GetxController {
         .toList();
     if (propertiesWithLocation.isEmpty) return;
 
+    if (!isMapReady.value) {
+      DebugLogger.info('⏳ Map not ready; skipping fitBounds for now');
+      return;
+    }
+
     try {
       final lats = propertiesWithLocation.map((p) => p.latitude!).toList();
       final lngs = propertiesWithLocation.map((p) => p.longitude!).toList();
@@ -611,9 +819,15 @@ class ExploreController extends GetxController {
         LatLng(maxLat, maxLng),
       );
 
-      mapController.fitCamera(
-        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          mapController.fitCamera(
+            CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
+          );
+        } catch (e) {
+          DebugLogger.warning('⚠️ fitBounds failed post-frame: $e');
+        }
+      });
     } catch (e) {
       DebugLogger.warning('⚠️ Could not fit bounds: $e');
     }
@@ -662,20 +876,22 @@ class ExploreController extends GetxController {
     }
     return '${currentRadius.value.toStringAsFixed(1)}km radius';
   }
-  
+
   // Helper method to build user-friendly error messages
   String _buildUserFriendlyError(dynamic error) {
     final errorString = error.toString().toLowerCase();
-    
+
     if (errorString.contains('network') || errorString.contains('connection')) {
       return 'Network connection issue. Please check your internet connection and try again.';
     } else if (errorString.contains('timeout')) {
       return 'Request timed out. Please try again.';
-    } else if (errorString.contains('location') || errorString.contains('gps')) {
+    } else if (errorString.contains('location') ||
+        errorString.contains('gps')) {
       return 'Location services issue. Please enable location services and try again.';
     } else if (errorString.contains('server') || errorString.contains('500')) {
       return 'Server is temporarily unavailable. Please try again later.';
-    } else if (errorString.contains('permission') || errorString.contains('403')) {
+    } else if (errorString.contains('permission') ||
+        errorString.contains('403')) {
       return 'Permission denied. Please check your account status.';
     } else {
       return 'Something went wrong. Please try again.';
@@ -685,8 +901,14 @@ class ExploreController extends GetxController {
   // Get properties for clustering (if implemented)
   List<PropertyModel> get propertiesWithLocation {
     try {
-      final result = properties.where((p) => p.hasLocation && p.latitude != null && p.longitude != null).toList();
-      DebugLogger.info('🗺️ propertiesWithLocation: ${result.length}/${properties.length}');
+      final result = properties
+          .where(
+            (p) => p.hasLocation && p.latitude != null && p.longitude != null,
+          )
+          .toList();
+      DebugLogger.info(
+        '🗺️ propertiesWithLocation: ${result.length}/${properties.length}',
+      );
       return result;
     } catch (e) {
       DebugLogger.error('❌ Error in propertiesWithLocation: $e');
@@ -698,61 +920,73 @@ class ExploreController extends GetxController {
   List<PropertyMarker> get propertyMarkers {
     try {
       final propsWithLocation = propertiesWithLocation;
-      DebugLogger.info('🗺️ Generating markers for ${propsWithLocation.length} properties');
-      
+      DebugLogger.info(
+        '🗺️ Generating markers for ${propsWithLocation.length} properties',
+      );
+
       if (propsWithLocation.isEmpty) {
         DebugLogger.info('⚠️ No properties with location found');
         return [];
       }
-      
+
       // Performance optimization: limit markers based on zoom level
       final zoom = currentZoom.value;
       int maxMarkers;
-      
+
       if (zoom >= 15) {
         maxMarkers = 200; // Very close zoom - show more markers
       } else if (zoom >= 13) {
         maxMarkers = 100; // Medium zoom - moderate markers
       } else if (zoom >= 11) {
-        maxMarkers = 50;  // Far zoom - fewer markers
+        maxMarkers = 50; // Far zoom - fewer markers
       } else {
-        maxMarkers = 25;  // Very far zoom - minimal markers
+        maxMarkers = 25; // Very far zoom - minimal markers
       }
-      
+
       // Take a subset of properties if too many
       final propertiesSubset = propsWithLocation.length > maxMarkers
           ? propsWithLocation.take(maxMarkers).toList()
           : propsWithLocation;
-      
+
       if (propsWithLocation.length > maxMarkers) {
-        DebugLogger.info('🎯 Performance optimization: showing ${propertiesSubset.length}/${propsWithLocation.length} markers at zoom ${zoom.toStringAsFixed(1)}');
+        DebugLogger.info(
+          '🎯 Performance optimization: showing ${propertiesSubset.length}/${propsWithLocation.length} markers at zoom ${zoom.toStringAsFixed(1)}',
+        );
       }
-      
+
       final markers = <PropertyMarker>[];
-      
+
       for (final property in propertiesSubset) {
         try {
           // Additional null safety checks
           final lat = property.latitude;
           final lng = property.longitude;
-          
+
           if (lat == null || lng == null) {
-            DebugLogger.warning('⚠️ Property ${property.id} has null coordinates: lat=$lat, lng=$lng');
+            DebugLogger.warning(
+              '⚠️ Property ${property.id} has null coordinates: lat=$lat, lng=$lng',
+            );
             continue;
           }
-          
-          markers.add(PropertyMarker(
-            property: property,
-            position: LatLng(lat, lng),
-            isSelected: selectedProperty.value?.id == property.id,
-          ));
+
+          markers.add(
+            PropertyMarker(
+              property: property,
+              position: LatLng(lat, lng),
+              isSelected: selectedProperty.value?.id == property.id,
+            ),
+          );
         } catch (e) {
-          DebugLogger.error('❌ Error creating marker for property ${property.id}: $e');
+          DebugLogger.error(
+            '❌ Error creating marker for property ${property.id}: $e',
+          );
           continue;
         }
       }
-      
-      DebugLogger.info('🗺️ Generated ${markers.length} property markers from ${propertiesSubset.length} properties with location');
+
+      DebugLogger.info(
+        '🗺️ Generated ${markers.length} property markers from ${propertiesSubset.length} properties with location',
+      );
       return markers;
     } catch (e) {
       DebugLogger.error('❌ Error generating property markers: $e');

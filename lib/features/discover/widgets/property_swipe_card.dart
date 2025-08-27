@@ -5,7 +5,7 @@ import '../../../core/utils/webview_helper.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/utils/theme.dart';
 import '../../../core/utils/debug_logger.dart';
-import '../../../../widgets/common/robust_network_image.dart';
+import '../../../widgets/common/robust_network_image.dart';
 import 'dart:math' as math;
 
 class PropertySwipeCard extends StatefulWidget {
@@ -679,7 +679,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
   late Animation<double> _swipeAnimation;
   late Animation<double> _sparklesAnimation;
   
-  Offset _dragStart = Offset.zero;
+
   Offset _dragPosition = Offset.zero;
   bool _isDragging = false;
   double _rotation = 0;
@@ -866,7 +866,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
         if (_blockGestures) return;
         setState(() {
           _isDragging = true;
-          _dragStart = Offset.zero; // horizontal-only drag; start offset unused
+
         });
       },
       onHorizontalDragUpdate: (details) {

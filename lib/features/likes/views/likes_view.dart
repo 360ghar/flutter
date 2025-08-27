@@ -5,11 +5,11 @@ import '../../../core/controllers/page_state_service.dart';
 import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
-import '../../../../widgets/common/loading_states.dart';
-import '../../../../widgets/common/error_states.dart';
-import '../../../../widgets/property/compact_property_card.dart';
+import '../../../widgets/common/loading_states.dart';
+import '../../../widgets/common/error_states.dart';
+import '../../../widgets/property/compact_property_card.dart';
 import '../../../core/data/models/property_model.dart';
-import '../../../../widgets/common/unified_top_bar.dart';
+import '../../../widgets/common/unified_top_bar.dart';
 import '../../../widgets/common/property_filter_widget.dart';
 
 class LikesView extends GetView<LikesController> {
