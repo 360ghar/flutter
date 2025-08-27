@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/app_colors.dart';
@@ -19,6 +20,9 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
   final ScrollController _scrollController = ScrollController();
   Worker? _selectionWorker;
   int? _lastSelectedId;
+  Timer? _scrollDebounce;
+  static const double _itemWidth = 260.0;
+  static const double _spacing = 12.0;
 
   @override
   void initState() {
@@ -30,11 +34,14 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
       _lastSelectedId = p.id;
       _scrollToProperty(p.id);
     });
+
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _selectionWorker?.dispose();
+    _scrollDebounce?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -45,9 +52,7 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
       if (index == -1) return;
 
       // Calculate target offset roughly based on item width and spacing
-      const itemWidth = 260.0;
-      const spacing = 12.0;
-      final target = index * (itemWidth + spacing);
+      final target = index * (_itemWidth + _spacing);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _scrollController.animateTo(
@@ -59,6 +64,24 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
     } catch (e) {
       DebugLogger.warning('Could not scroll to property: $e');
     }
+  }
+
+  void _onScroll() {
+    // Debounce to avoid spamming highlight updates
+    _scrollDebounce?.cancel();
+    _scrollDebounce = Timer(const Duration(milliseconds: 80), () {
+      try {
+        final offset = _scrollController.offset;
+        final rawIndex = offset / (_itemWidth + _spacing);
+        final index = rawIndex.round().clamp(0, widget.controller.properties.length - 1);
+        if (widget.controller.properties.isEmpty) return;
+        final property = widget.controller.properties[index];
+        if (property.id != _lastSelectedId) {
+          _lastSelectedId = property.id;
+          widget.controller.highlightPropertyFromCard(property);
+        }
+      } catch (_) {}
+    });
   }
 
   @override
@@ -110,4 +133,3 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
     });
   }
 }
-

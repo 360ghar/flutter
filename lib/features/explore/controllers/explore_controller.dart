@@ -145,27 +145,24 @@ class ExploreController extends GetxController {
     DebugLogger.info('📋 Controller properties: ${properties.length}');
     DebugLogger.info('📋 Is data stale: ${pageState.isDataStale}');
 
-    // More robust condition check - initialize if no properties or if initial state
-    if ((pageState.properties.isEmpty && properties.isEmpty) ||
-        state.value == ExploreState.initial) {
-      DebugLogger.info(
-        '🎯 Initializing map and loading properties (first load)',
-      );
+    // If initial or empty, initialize map center and trigger page data load
+    if ((!pageState.hasLocation && state.value == ExploreState.initial) ||
+        (pageState.properties.isEmpty && properties.isEmpty)) {
+      DebugLogger.info('🎯 Initializing map and triggering page data load');
       _initializeMapAndLoadProperties();
-    } else if (pageState.isDataStale) {
-      DebugLogger.info('🔄 Data is stale, refreshing in background');
-      _refreshInBackground();
+      return;
+    }
+
+    // Data present or being loaded: sync properties and state
+    DebugLogger.info('✅ Syncing controller with PageStateService');
+    properties.assignAll(pageState.properties);
+    if (pageState.isLoading) {
+      state.value = ExploreState.loading;
+    } else if (pageState.error != null) {
+      state.value = ExploreState.error;
+      error.value = pageState.error;
     } else {
-      DebugLogger.info(
-        '✅ Page already has data, syncing controller with page state',
-      );
-      // Sync controller properties with page state if they differ
-      if (properties.length != pageState.properties.length) {
-        properties.assignAll(pageState.properties);
-        state.value = pageState.properties.isEmpty
-            ? ExploreState.empty
-            : ExploreState.loaded;
-      }
+      state.value = properties.isEmpty ? ExploreState.empty : ExploreState.loaded;
     }
   }
 
@@ -192,47 +189,42 @@ class ExploreController extends GetxController {
 
   Future<void> _refreshInBackground() async {
     try {
-      DebugLogger.info('🔄 Starting background refresh');
-      await _loadPropertiesForCurrentView(backgroundRefresh: true);
+      DebugLogger.info('🔄 Starting background refresh via PageStateService');
+      await _pageStateService.loadPageData(PageType.explore, backgroundRefresh: true);
       DebugLogger.success('✅ Background refresh completed successfully');
     } catch (e, stackTrace) {
       DebugLogger.error('❌ Background refresh failed: $e');
       DebugLogger.error('Background refresh stack trace: $stackTrace');
-      // Handle silently or with subtle notification
     }
   }
 
   void _setupFilterListener() {
     DebugLogger.info('🔧 Setting up filter listener');
-    // Listen to page state changes and reload properties
+    // React to page state changes by syncing local list/state
     debounce(_pageStateService.exploreState, (pageState) {
-      DebugLogger.info('🔍 Page state changed via filter listener');
-      DebugLogger.info(
-        '📊 New page state - properties: ${pageState.properties.length}, loading: ${pageState.isLoading}, filters: ${pageState.activeFiltersCount}',
-      );
+      DebugLogger.info('🔍 Explore page state updated; syncing properties and UI');
+      final isCurrentPage = _pageStateService.currentPageType.value == PageType.explore;
+      if (!isCurrentPage) return;
 
-      final isCurrentPage =
-          _pageStateService.currentPageType.value == PageType.explore;
-      final isLoading =
-          pageState.isLoading || state.value == ExploreState.loading;
+      // Sync properties
+      properties.assignAll(pageState.properties);
 
-      DebugLogger.info(
-        '📋 Filter listener check - current page: $isCurrentPage, is loading: $isLoading',
-      );
-
-      // Only reload if:
-      // 1. Not currently loading
-      // 2. Page is active
-      // 3. Controller is not in initial state (to avoid conflicts with activatePage)
-      if (!isLoading && isCurrentPage && state.value != ExploreState.initial) {
-        DebugLogger.info('🚀 Triggering property reload via filter listener');
-        _loadPropertiesForCurrentView();
-      } else {
-        DebugLogger.info(
-          '⏸️ Skipping filter listener reload - loading: $isLoading, current page: $isCurrentPage, state: ${state.value}',
-        );
+      // Preserve selection if still present, otherwise clear
+      final sel = selectedProperty.value;
+      if (sel != null && !properties.any((p) => p.id == sel.id)) {
+        selectedProperty.value = null;
       }
-    }, time: const Duration(milliseconds: 500));
+
+      // Sync state
+      if (pageState.isLoading) {
+        state.value = ExploreState.loading;
+      } else if (pageState.error != null) {
+        state.value = ExploreState.error;
+        error.value = pageState.error;
+      } else {
+        state.value = properties.isEmpty ? ExploreState.empty : ExploreState.loaded;
+      }
+    }, time: const Duration(milliseconds: 200));
   }
 
   void _setupLocationListener() {
@@ -338,9 +330,12 @@ class ExploreController extends GetxController {
         source: 'initial',
       );
 
-      DebugLogger.info('🚀 Starting property loading...');
-      // Now, load properties
-      await _loadPropertiesForCurrentView();
+      DebugLogger.info('🚀 Triggering page data load through PageStateService');
+      state.value = ExploreState.loading;
+      await _pageStateService.loadPageData(PageType.explore, forceRefresh: true);
+      // Sync properties from page state
+      properties.assignAll(_pageStateService.exploreState.value.properties);
+      state.value = properties.isEmpty ? ExploreState.empty : ExploreState.loaded;
     } catch (e, stackTrace) {
       DebugLogger.error('❌ CRITICAL: Failed during initialization: $e');
       DebugLogger.error('Stack trace: $stackTrace');
@@ -739,16 +734,15 @@ class ExploreController extends GetxController {
 
   // Property selection
   void selectProperty(PropertyModel property) {
+    // Selection now only highlights marker/card; does not move camera
     selectedProperty.value = property;
-    DebugLogger.api('🏠 Selected property: ${property.title}');
+    DebugLogger.api('🏠 Selected property (highlight only): ${property.title}');
+  }
 
-    // Center map on selected property if it has location
-    if (property.hasLocation) {
-      _updateMapCenter(
-        LatLng(property.latitude!, property.longitude!),
-        16.0, // Zoom in closer for selected property
-      );
-    }
+  // Explicit highlight from card scroll (no camera changes)
+  void highlightPropertyFromCard(PropertyModel property) {
+    if (selectedProperty.value?.id == property.id) return;
+    selectedProperty.value = property;
   }
 
   void clearSelection() {
@@ -836,7 +830,7 @@ class ExploreController extends GetxController {
   // Refresh
   Future<void> refreshProperties() async {
     DebugLogger.info('🔄 Manual refresh requested');
-    await _loadPropertiesForCurrentView();
+    await _pageStateService.loadPageData(PageType.explore, forceRefresh: true);
   }
 
   // Error handling
@@ -846,7 +840,7 @@ class ExploreController extends GetxController {
     _retryCount = 0; // Reset retry count for manual retry
     error.value = null;
     state.value = ExploreState.initial; // Reset state to allow retry
-    _loadPropertiesForCurrentView();
+    _pageStateService.loadPageData(PageType.explore, forceRefresh: true);
   }
 
   void clearError() {

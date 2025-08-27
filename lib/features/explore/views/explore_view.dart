@@ -68,7 +68,13 @@ class ExploreView extends GetView<ExploreController> {
 
                   switch (currentState) {
                     case ExploreState.loading:
-                      DebugLogger.info('💻 Rendering loading state');
+                      // If location is available, keep the map visible and let markers update
+                      final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                      if (hasLocation) {
+                        DebugLogger.info('💻 Loading properties, rendering map with pending markers');
+                        return _buildMapInterface(context);
+                      }
+                      DebugLogger.info('💻 Rendering loading state (no location yet)');
                       return _buildLoadingState();
 
                     case ExploreState.error:
@@ -87,7 +93,12 @@ class ExploreView extends GetView<ExploreController> {
                       return _buildMapInterface(context);
 
                     default:
-                      DebugLogger.info('🔄 Rendering default loading state');
+                      final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                      if (hasLocation) {
+                        DebugLogger.info('🔄 Initializing; rendering map while loading');
+                        return _buildMapInterface(context);
+                      }
+                      DebugLogger.info('🔄 Rendering default loading state (no location yet)');
                       return _buildLoadingState();
                   }
                 }),
