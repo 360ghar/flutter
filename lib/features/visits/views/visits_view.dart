@@ -5,6 +5,7 @@ import '../../../core/data/models/visit_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../widgets/common/robust_network_image.dart';
 import '../widgets/visits_skeleton_loaders.dart';
+import '../widgets/visit_card.dart';
 
 class VisitsView extends GetView<VisitsController> {
   const VisitsView({super.key});
@@ -196,7 +197,14 @@ class VisitsView extends GetView<VisitsController> {
             
             return Column(
               children: controller.upcomingVisits
-                  .map((visit) => _buildVisitCard(visit, true))
+                  .map((visit) => VisitCard(
+                        visit: visit,
+                        isUpcoming: true,
+                        dateText: controller.formatVisitDate(visit.scheduledDate),
+                        timeText: controller.formatVisitTime(visit.scheduledDate),
+                        onReschedule: () => _showRescheduleDialog(visit),
+                        onCancel: () => _showCancelDialog(visit),
+                      ))
                   .toList(),
             );
           }),
@@ -223,7 +231,14 @@ class VisitsView extends GetView<VisitsController> {
             
             return Column(
               children: controller.pastVisits
-                  .map((visit) => _buildVisitCard(visit, false))
+                  .map((visit) => VisitCard(
+                        visit: visit,
+                        isUpcoming: false,
+                        dateText: controller.formatVisitDate(visit.scheduledDate),
+                        timeText: controller.formatVisitTime(visit.scheduledDate),
+                        onReschedule: () => _showRescheduleDialog(visit),
+                        onCancel: () => _showCancelDialog(visit),
+                      ))
                   .toList(),
             );
           }),
@@ -412,129 +427,6 @@ class VisitsView extends GetView<VisitsController> {
     });
   }
 
-  Widget _buildVisitCard(VisitModel visit, bool isUpcoming) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.getCardShadow(),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              RobustNetworkImage(
-                imageUrl: '', // Property image not available in new model structure
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-                borderRadius: BorderRadius.circular(8),
-                errorWidget: Container(
-                  width: 60,
-                  height: 60,
-                  color: AppColors.inputBackground,
-                  child: Icon(Icons.image, color: AppColors.iconColor),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      visit.propertyTitle,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
-                        const SizedBox(width: 4),
-                        Text(
-                          controller.formatVisitDate(visit.scheduledDate),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
-                        const SizedBox(width: 4),
-                        Text(
-                          controller.formatVisitTime(visit.scheduledDate),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              _buildStatusChip(visit.status),
-            ],
-          ),
-
-          if (isUpcoming && visit.status == VisitStatus.scheduled) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _showRescheduleDialog(visit),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primaryYellow),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      'Reschedule',
-                      style: TextStyle(
-                        color: AppColors.primaryYellow,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _showCancelDialog(visit),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.errorRed),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: AppColors.errorRed,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 
   Widget _buildStatusChip(VisitStatus status) {
     Color color;

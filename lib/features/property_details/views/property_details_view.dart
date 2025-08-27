@@ -6,6 +6,7 @@ import '../../visits/controllers/visits_controller.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../widgets/common/robust_network_image.dart';
+import '../../../widgets/property/property_details_features.dart';
 
 class PropertyDetailsView extends StatelessWidget {
   const PropertyDetailsView({super.key});
@@ -242,48 +243,7 @@ class PropertyDetailsView extends StatelessWidget {
                     const SizedBox(height: 20),
                     
                     // Property Features
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: AppColors.getCardShadow(),
-                      ),
-                      child: Column(
-                        children: [
-                          // Primary features row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              if (safeProperty.bedrooms != null)
-                                _buildFeature(Icons.bed, '${safeProperty.bedrooms}', 'Bedrooms'),
-                              if (safeProperty.bathrooms != null)
-                                _buildFeature(Icons.bathtub_outlined, '${safeProperty.bathrooms}', 'Bathrooms'),
-                              if (safeProperty.areaSqft != null)
-                                _buildFeature(Icons.square_foot, '${safeProperty.areaSqft?.toInt()}', 'Sq Ft'),
-                            ],
-                          ),
-                          
-                          // Secondary features row
-                          if (safeProperty.balconies != null || safeProperty.parkingSpaces != null || safeProperty.floorNumber != null) ...[
-                            const SizedBox(height: 16),
-                            const Divider(),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                if (safeProperty.balconies != null)
-                                  _buildFeature(Icons.balcony, '${safeProperty.balconies}', 'Balconies'),
-                                if (safeProperty.parkingSpaces != null)
-                                  _buildFeature(Icons.local_parking, '${safeProperty.parkingSpaces}', 'Parking'),
-                                if (safeProperty.floorNumber != null)
-                                  _buildFeature(Icons.layers, '${safeProperty.floorNumber}/${safeProperty.totalFloors ?? "?"}', 'Floor'),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
+                    PropertyDetailsFeatures(property: safeProperty),
                     const SizedBox(height: 24),
                     
                                          // Description

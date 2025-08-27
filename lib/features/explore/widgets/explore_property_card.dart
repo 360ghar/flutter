@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../core/data/models/property_model.dart';
-import '../../core/utils/app_colors.dart';
-import '../common/robust_network_image.dart';
 
-class CompactPropertyCard extends StatelessWidget {
+import '../../../core/data/models/property_model.dart';
+import '../../../core/utils/app_colors.dart';
+import '../../../widgets/common/robust_network_image.dart';
+
+class ExplorePropertyCard extends StatelessWidget {
   final PropertyModel property;
   final bool isFavourite;
   final VoidCallback onFavouriteToggle;
 
-  const CompactPropertyCard({
+  const ExplorePropertyCard({
     super.key,
     required this.property,
     required this.isFavourite,
@@ -32,15 +33,13 @@ class CompactPropertyCard extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(16),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Prevent unbounded height
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Property Image with fixed height container
             SizedBox(
               height: 120,
               child: Stack(
                 children: [
-                  // Main image
                   Positioned.fill(
                     child: RobustNetworkImage(
                       imageUrl: property.mainImage,
@@ -84,7 +83,6 @@ class CompactPropertyCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Property type badge
                   Positioned(
                     top: 8,
                     left: 8,
@@ -111,7 +109,6 @@ class CompactPropertyCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Favorite button
                   Positioned(
                     top: 8,
                     right: 8,
@@ -127,27 +124,19 @@ class CompactPropertyCard extends StatelessWidget {
                           size: 20,
                         ),
                         onPressed: onFavouriteToggle,
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
-                        padding: EdgeInsets.zero,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            
-            // Property Details Section
-            Flexible(
+            Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Property title and price
                     Row(
                       children: [
                         Expanded(
@@ -173,10 +162,7 @@ class CompactPropertyCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    
                     const SizedBox(height: 4),
-                    
-                    // Location
                     Text(
                       property.addressDisplay,
                       style: TextStyle(
@@ -186,13 +172,9 @@ class CompactPropertyCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    
                     const SizedBox(height: 8),
-                    
-                    // Property features row
                     Row(
                       children: [
-                        // Bedrooms/Bathrooms
                         if (property.bedroomBathroomText.isNotEmpty) ...[
                           Icon(
                             Icons.bed_outlined,
@@ -209,8 +191,6 @@ class CompactPropertyCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                        
-                        // Area
                         if (property.areaText.isNotEmpty) ...[
                           const SizedBox(width: 12),
                           Icon(
@@ -230,47 +210,64 @@ class CompactPropertyCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    
-                    // Additional features row (floor, age, etc.)
                     if (property.floorText.isNotEmpty || property.ageText.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          // Floor information
-                          if (property.floorText.isNotEmpty) ...[
-                            Icon(
-                              Icons.layers_outlined,
-                              size: 14,
-                              color: AppColors.propertyFeatureText,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              property.floorText,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.propertyFeatureText,
+                      const SizedBox(height: 2),
+                      Flexible(
+                        child: Row(
+                          children: [
+                            if (property.floorText.isNotEmpty) ...[
+                              Flexible(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.layers_outlined,
+                                      size: 12,
+                                      color: AppColors.propertyFeatureText,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Flexible(
+                                      child: Text(
+                                        property.floorText,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: AppColors.propertyFeatureText,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                          
-                          // Age information
-                          if (property.ageText.isNotEmpty) ...[
-                            const SizedBox(width: 12),
-                            Icon(
-                              Icons.access_time_outlined,
-                              size: 14,
-                              color: AppColors.propertyFeatureText,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              property.ageText,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.propertyFeatureText,
+                            ],
+                            if (property.ageText.isNotEmpty) ...[
+                              if (property.floorText.isNotEmpty) const SizedBox(width: 8),
+                              Flexible(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.access_time_outlined,
+                                      size: 12,
+                                      color: AppColors.propertyFeatureText,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Flexible(
+                                      child: Text(
+                                        property.ageText,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: AppColors.propertyFeatureText,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ],
                   ],
@@ -283,3 +280,4 @@ class CompactPropertyCard extends StatelessWidget {
     );
   }
 }
+

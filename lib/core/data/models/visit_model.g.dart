@@ -6,26 +6,6 @@ part of 'visit_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-VisitPropertyInfo _$VisitPropertyInfoFromJson(Map<String, dynamic> json) =>
-    VisitPropertyInfo(
-      id: (json['id'] as num).toInt(),
-      title: json['title'] as String,
-      propertyType: json['property_type'] as String,
-      city: json['city'] as String,
-      locality: json['locality'] as String,
-      basePrice: (json['base_price'] as num).toDouble(),
-    );
-
-Map<String, dynamic> _$VisitPropertyInfoToJson(VisitPropertyInfo instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'title': instance.title,
-      'property_type': instance.propertyType,
-      'city': instance.city,
-      'locality': instance.locality,
-      'base_price': instance.basePrice,
-    };
-
 VisitAgentInfo _$VisitAgentInfoFromJson(Map<String, dynamic> json) =>
     VisitAgentInfo(
       id: (json['id'] as num).toInt(),
@@ -68,9 +48,9 @@ VisitModel _$VisitModelFromJson(Map<String, dynamic> json) => VisitModel(
   updatedAt: json['updated_at'] == null
       ? null
       : DateTime.parse(json['updated_at'] as String),
-  properties: json['properties'] == null
+  property: json['property'] == null
       ? null
-      : VisitPropertyInfo.fromJson(json['properties'] as Map<String, dynamic>),
+      : PropertyModel.fromJson(json['property'] as Map<String, dynamic>),
   agents: json['agents'] == null
       ? null
       : VisitAgentInfo.fromJson(json['agents'] as Map<String, dynamic>),
@@ -95,7 +75,7 @@ Map<String, dynamic> _$VisitModelToJson(VisitModel instance) =>
       'rescheduled_from': instance.rescheduledFrom?.toIso8601String(),
       'created_at': instance.createdAt.toIso8601String(),
       'updated_at': instance.updatedAt?.toIso8601String(),
-      'properties': instance.properties,
+      'property': instance.property?.toJson(),
       'agents': instance.agents,
     };
 

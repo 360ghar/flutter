@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/data/models/property_model.dart';
-import '../../../widgets/property/compact_property_card.dart';
+import 'explore_property_card.dart';
 import '../controllers/explore_controller.dart';
 
 class PropertyHorizontalList extends StatefulWidget {
@@ -119,7 +119,7 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
                   width: 2,
                 ),
               ),
-              child: CompactPropertyCard(
+              child: ExplorePropertyCard(
                 property: property,
                 isFavourite: isFavourite,
                 onFavouriteToggle: () => widget.controller.toggleLike(property),

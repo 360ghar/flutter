@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'property_model.dart';
 
 part 'visit_model.g.dart';
 
@@ -15,31 +16,6 @@ enum VisitStatus {
   rescheduled,
 }
 
-
-@JsonSerializable()
-class VisitPropertyInfo {
-  final int id;
-  final String title;
-  @JsonKey(name: 'property_type')
-  final String propertyType;
-  final String city;
-  final String locality;
-  @JsonKey(name: 'base_price')
-  final double basePrice;
-
-  VisitPropertyInfo({
-    required this.id,
-    required this.title,
-    required this.propertyType,
-    required this.city,
-    required this.locality,
-    required this.basePrice,
-  });
-
-  factory VisitPropertyInfo.fromJson(Map<String, dynamic> json) => _$VisitPropertyInfoFromJson(json);
-
-  Map<String, dynamic> toJson() => _$VisitPropertyInfoToJson(this);
-}
 
 @JsonSerializable()
 class VisitAgentInfo {
@@ -95,7 +71,8 @@ class VisitModel {
   final DateTime createdAt;
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
-  final VisitPropertyInfo? properties;
+  // Backend returns nested full property under `property`
+  final PropertyModel? property;
   final VisitAgentInfo? agents;
 
   VisitModel({
@@ -116,7 +93,7 @@ class VisitModel {
     this.rescheduledFrom,
     required this.createdAt,
     this.updatedAt,
-    this.properties,
+    this.property,
     this.agents,
   });
 
@@ -125,7 +102,7 @@ class VisitModel {
   Map<String, dynamic> toJson() => _$VisitModelToJson(this);
 
   // Convenience getters  
-  String get propertyTitle => properties?.title ?? 'Property #$propertyId';
+  String get propertyTitle => property?.title ?? 'Property #$propertyId';
   String get agentName => agents?.name ?? 'Unknown Agent';
   String get agentPhone => agents?.phone ?? '';
   String get notes => visitNotes ?? '';
@@ -171,7 +148,7 @@ class VisitModel {
     DateTime? rescheduledFrom,
     DateTime? createdAt,
     DateTime? updatedAt,
-    VisitPropertyInfo? properties,
+    PropertyModel? property,
     VisitAgentInfo? agents,
   }) {
     return VisitModel(
@@ -192,7 +169,7 @@ class VisitModel {
       rescheduledFrom: rescheduledFrom ?? this.rescheduledFrom,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      properties: properties ?? this.properties,
+      property: property ?? this.property,
       agents: agents ?? this.agents,
     );
   }
