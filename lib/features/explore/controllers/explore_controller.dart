@@ -11,6 +11,7 @@ import '../../../core/data/repositories/properties_repository.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/location_controller.dart';
+import '../../../core/routes/app_routes.dart';
 
 // Simple CameraPosition class for flutter_map compatibility
 class CameraPosition {
@@ -769,7 +770,7 @@ class ExploreController extends GetxController {
 
   // Filter shortcuts
   void showFilters() {
-    Get.toNamed('/filters');
+    Get.toNamed(AppRoutes.filters);
   }
 
   void quickFilterByType(String type) {

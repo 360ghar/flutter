@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(flutter run:*)",
-      "mcp__dart__analyze_files"
+      "mcp__dart__analyze_files",
+      "Bash(flutter create:*)",
+      "Bash(flutter:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -265,6 +265,8 @@ class DashboardController extends GetxController {
 
   // Sync tab with current route
   void syncTabWithRoute(String route) {
+    // Only sync if we're navigating to one of the main tab routes
+    // Don't change tab for sub-routes like filters, location-search, etc.
     switch (route) {
       case '/dashboard':
       case '/profile':
@@ -275,6 +277,7 @@ class DashboardController extends GetxController {
         break;
       case '/discover':
       case '/':
+      case '/home':
         currentIndex.value = 2; // Discover (Swipe) tab
         break;
       case '/likes':
@@ -284,7 +287,8 @@ class DashboardController extends GetxController {
         currentIndex.value = 4; // Visits tab
         break;
       default:
-        // For other routes, don't change the tab
+        // For other routes (filters, location-search, etc.), maintain current tab
+        // This prevents unwanted tab switches when navigating to non-tab pages
         break;
     }
   }

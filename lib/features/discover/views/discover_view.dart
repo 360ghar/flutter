@@ -6,7 +6,8 @@ import '../../../core/utils/error_mapper.dart';
 import '../../../../widgets/common/loading_states.dart';
 import '../../../../widgets/common/error_states.dart';
 import '../widgets/property_swipe_card.dart';
-import '../../../core/widgets/common/shared_app_bar.dart';
+import '../../../core/widgets/common/unified_app_bar.dart';
+import '../../../core/routes/app_routes.dart';
 
 class DiscoverView extends GetView<DiscoverController> {
   const DiscoverView({super.key});
@@ -18,8 +19,11 @@ class DiscoverView extends GetView<DiscoverController> {
 
     return Obx(() => Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      // Replace the existing AppBar with the SharedAppBar
-      appBar: const SharedAppBar(), // This will now show the location selector
+      appBar: UnifiedAppBar(
+        onSearchTap: () => _showSearchDialog(),
+        onRefreshTap: controller.refresh,
+        onFilterTap: () => Get.toNamed(AppRoutes.filters),
+      ),
       body: Obx(() {
         // Show different states based on controller state
         switch (controller.state.value) {
@@ -131,6 +135,71 @@ class DiscoverView extends GetView<DiscoverController> {
         
         
       ],
+    );
+  }
+
+  void _showSearchDialog() {
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    'Search Properties',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.black54),
+                    onPressed: () => Get.back(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                autofocus: true,
+                style: const TextStyle(color: Colors.black87),
+                decoration: InputDecoration(
+                  hintText: 'Search by location, property type...',
+                  hintStyle: TextStyle(color: Colors.grey.shade600),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                onSubmitted: (value) {
+                  if (value.isNotEmpty) {
+                    Get.back();
+                    Get.snackbar(
+                      'Search',
+                      'Searching for: $value',
+                      snackPosition: SnackPosition.BOTTOM,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
