@@ -88,9 +88,34 @@ jobs:
           ~/.pub-cache
           .flutter/plugins
           .flutter/config
-        key: flutter-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml') }}
+          ~/.dart-tool
+          .dart_tool
+        key: flutter-dart-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
         restore-keys: |
-          flutter-${{ runner.os }}-
+          flutter-dart-${{ runner.os }}-
+
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          android/.gradle
+        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          gradle-${{ runner.os }}-
+
+    - name: Cache Android SDK
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ env.ANDROID_SDK_ROOT }}/platforms
+          ${{ env.ANDROID_SDK_ROOT }}/platform-tools
+          ${{ env.ANDROID_SDK_ROOT }}/build-tools
+          ${{ env.ANDROID_SDK_ROOT }}/ndk
+        key: android-sdk-${{ runner.os }}-${{ hashFiles('android/app/build.gradle') }}
+        restore-keys: |
+          android-sdk-${{ runner.os }}-
 
     - name: Get Flutter dependencies
       run: flutter pub get
