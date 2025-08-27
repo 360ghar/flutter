@@ -37,8 +37,6 @@ import '../../features/explore/bindings/explore_binding.dart';
 import '../../features/explore/views/explore_view.dart';
 import '../../features/tour/bindings/tour_binding.dart';
 import '../../features/tour/views/tour_view.dart';
-import '../../features/filters/views/filters_view.dart';
-import '../../features/filters/bindings/filters_binding.dart';
 import '../../features/location_search/views/location_search_view.dart';
 import '../../features/location_search/bindings/location_search_binding.dart';
 import '../middlewares/auth_middleware.dart';
@@ -124,12 +122,6 @@ class AppPages {
       name: AppRoutes.tour,
       page: () => const TourView(),
       binding: TourBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: AppRoutes.filters,
-      page: () => const FiltersView(),
-      binding: FiltersBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(

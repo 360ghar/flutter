@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import '../../visits/controllers/visits_controller.dart';
-import '../../booking/controllers/booking_controller.dart';
 import '../controllers/property_controller.dart';
 import '../../../core/data/repositories/properties_repository.dart';
 
@@ -16,6 +15,5 @@ class PropertyDetailsBinding extends Bindings {
     Get.lazyPut<PropertyController>(() => PropertyController(), fenix: true);
     
     Get.lazyPut<VisitsController>(() => VisitsController());
-    Get.lazyPut<BookingController>(() => BookingController());
   }
 } 

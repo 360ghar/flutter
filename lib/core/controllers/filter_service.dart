@@ -277,10 +277,6 @@ class FilterService extends GetxController {
     double newMin, newMax;
     
     switch (purpose) {
-      case 'short_stay':
-        newMin = 500.0; // ₹500 per night
-        newMax = 50000.0; // ₹50K per night
-        break;
       case 'rent':
         newMin = 5000.0; // ₹5K per month
         newMax = 500000.0; // ₹5L per month
@@ -305,8 +301,6 @@ class FilterService extends GetxController {
   double getPriceMin() {
     final currentState = _getCurrentPageState();
     switch (currentState.filters.purpose) {
-      case 'short_stay':
-        return 500.0;
       case 'rent':
         return 5000.0;
       case 'buy':
@@ -318,8 +312,6 @@ class FilterService extends GetxController {
   double getPriceMax() {
     final currentState = _getCurrentPageState();
     switch (currentState.filters.purpose) {
-      case 'short_stay':
-        return 50000.0;
       case 'rent':
         return 500000.0;
       case 'buy':
@@ -331,8 +323,6 @@ class FilterService extends GetxController {
   String getPriceLabel() {
     final currentState = _getCurrentPageState();
     switch (currentState.filters.purpose) {
-      case 'short_stay':
-        return 'Price per night';
       case 'rent':
         return 'Price per month';
       case 'buy':

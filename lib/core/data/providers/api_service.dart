@@ -4,7 +4,6 @@ import 'package:get/get.dart' as getx;
 import '../models/property_model.dart';
 import '../models/user_model.dart';
 import '../models/visit_model.dart';
-import '../models/booking_model.dart';
 import '../models/unified_property_response.dart';
 import '../models/unified_filter_model.dart';
 import '../models/agent_model.dart';
@@ -383,6 +382,17 @@ class ApiService extends getx.GetConnect {
           await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
           continue;
         } else {
+          // Enhanced error logging for 422 errors
+          if (response.statusCode == 422) {
+            DebugLogger.error('🚫 422 Unprocessable Entity for $operation');
+            DebugLogger.error('🚫 Endpoint: $fullEndpoint');
+            DebugLogger.error('🚫 Method: $method');
+            DebugLogger.error('🚫 Query Params: $queryParams');
+            DebugLogger.error('🚫 Request Body: $body');
+            DebugLogger.error('🚫 Response Body: ${response.bodyString}');
+            DebugLogger.error('🚫 Response Headers: ${response.headers}');
+          }
+          
           // Use ErrorHandler for comprehensive error handling
           final errorMessage = 'HTTP ${response.statusCode}: ${response.statusText ?? 'Unknown error'}';
           DebugLogger.error('❌ API Error for $operation: $errorMessage');
@@ -686,28 +696,59 @@ class ApiService extends getx.GetConnect {
     int page = 1,
     int limit = 20,
   }) async {
+    // Validate parameters to prevent 422 errors
+    if (latitude < -90 || latitude > 90) {
+      DebugLogger.error('🚫 Invalid latitude: $latitude (must be between -90 and 90)');
+      throw ArgumentError('Invalid latitude: $latitude');
+    }
+    if (longitude < -180 || longitude > 180) {
+      DebugLogger.error('🚫 Invalid longitude: $longitude (must be between -180 and 180)');
+      throw ArgumentError('Invalid longitude: $longitude');
+    }
+    if (radiusKm <= 0 || radiusKm > 1000) {
+      DebugLogger.error('🚫 Invalid radius: $radiusKm (must be between 0 and 1000 km)');
+      throw ArgumentError('Invalid radius: $radiusKm');
+    }
+    if (page <= 0) {
+      DebugLogger.error('🚫 Invalid page: $page (must be >= 1)');
+      throw ArgumentError('Invalid page: $page');
+    }
+    if (limit <= 0 || limit > 100) {
+      DebugLogger.error('🚫 Invalid limit: $limit (must be between 1 and 100)');
+      throw ArgumentError('Invalid limit: $limit');
+    }
+
     final queryParams = <String, String>{
       'page': page.toString(),
       'limit': limit.toString(),
-      'lat': latitude.toString(),
-      'lng': longitude.toString(),
+      'lat': latitude.toStringAsFixed(6), // Limit precision to avoid float precision issues
+      'lng': longitude.toStringAsFixed(6),
       'radius': radiusKm.toInt().toString(),
     };
     
-    // Convert filters to query parameters
+    DebugLogger.api('🔍 Search parameters - lat: $latitude, lng: $longitude, radius: $radiusKm km');
+    
+    // Convert filters to query parameters with validation
     final filterMap = filters.toJson();
     filterMap.forEach((key, value) {
       if (value != null) {
         if (value is List) {
           // Handle list parameters (like amenities, property_type)
           if (value.isNotEmpty) {
-            queryParams[key] = value.join(',');
+            // Validate list items are not empty strings
+            final cleanList = value.where((item) => item != null && item.toString().trim().isNotEmpty).toList();
+            if (cleanList.isNotEmpty) {
+              queryParams[key] = cleanList.join(',');
+            }
           }
-        } else {
-          queryParams[key] = value.toString();
+        } else if (value.toString().trim().isNotEmpty) {
+          // Only add non-empty string values
+          queryParams[key] = value.toString().trim();
         }
       }
     });
+
+    DebugLogger.api('🔍 Final query params: $queryParams');
 
     return await _makeRequest(
       '/properties/',
@@ -1083,153 +1124,6 @@ class ApiService extends getx.GetConnect {
   }
 
 
-  // Booking System APIs
-  Future<BookingModel> createBooking({
-    required int propertyId,
-    required String checkInDate,
-    required String checkOutDate,
-    required int guestsCount,
-    String? specialRequests,
-    Map<String, dynamic>? guestDetails,
-  }) async {
-    return await _makeRequest(
-      '/bookings/',
-      (json) {
-        final bookingData = json['data'] ?? json;
-        return BookingModel.fromJson(bookingData);
-      },
-      method: 'POST',
-      body: {
-        'property_id': propertyId,
-        'check_in_date': checkInDate,
-        'check_out_date': checkOutDate,
-        'guests_count': guestsCount,
-        if (specialRequests != null) 'special_requests': specialRequests,
-        if (guestDetails != null) 'guest_details': guestDetails,
-      },
-      operationName: 'Create Booking',
-    );
-  }
-
-  Future<List<BookingModel>> getMyBookings() async {
-    return await _makeRequest(
-      '/bookings/',
-      (json) {
-        final bookingsData = json['data'] ?? json;
-        
-        if (bookingsData is List) {
-          return bookingsData.map((item) => BookingModel.fromJson(item)).toList();
-        } else {
-          throw Exception('Expected list of bookings but got: ${bookingsData.runtimeType}');
-        }
-      },
-      operationName: 'Get My Bookings',
-    );
-  }
-
-  Future<BookingModel> getBookingDetails(int bookingId) async {
-    return await _makeRequest(
-      '/bookings/$bookingId',
-      (json) {
-        final bookingData = json['data'] ?? json;
-        return BookingModel.fromJson(bookingData);
-      },
-      operationName: 'Get Booking Details',
-    );
-  }
-
-  Future<BookingModel> updateBooking(int bookingId, Map<String, dynamic> updateData) async {
-    return await _makeRequest(
-      '/bookings/$bookingId',
-      (json) {
-        final bookingData = json['data'] ?? json;
-        return BookingModel.fromJson(bookingData);
-      },
-      method: 'PUT',
-      body: updateData,
-      operationName: 'Update Booking',
-    );
-  }
-
-  Future<void> cancelBooking(int bookingId, {String? reason}) async {
-    await _makeRequest(
-      '/bookings/$bookingId/cancel',
-      (json) => json,
-      method: 'POST',
-      body: {
-        if (reason != null) 'cancellation_reason': reason,
-      },
-      operationName: 'Cancel Booking',
-    );
-  }
-
-  Future<Map<String, dynamic>> initiatePayment(int bookingId, {
-    String paymentMethod = 'card',
-    Map<String, dynamic>? paymentDetails,
-  }) async {
-    return await _makeRequest(
-      '/bookings/$bookingId/payment',
-      (json) => json,
-      method: 'POST',
-      body: {
-        'payment_method': paymentMethod,
-        if (paymentDetails != null) 'payment_details': paymentDetails,
-      },
-      operationName: 'Initiate Payment',
-    );
-  }
-
-  Future<Map<String, dynamic>> getPaymentStatus(int bookingId) async {
-    return await _makeRequest(
-      '/bookings/$bookingId/payment-status',
-      (json) => json,
-      operationName: 'Get Payment Status',
-    );
-  }
-
-  Future<void> confirmPayment(int bookingId, String paymentReference) async {
-    await _makeRequest(
-      '/bookings/$bookingId/confirm-payment',
-      (json) => json,
-      method: 'POST',
-      body: {
-        'payment_reference': paymentReference,
-      },
-      operationName: 'Confirm Payment',
-    );
-  }
-
-  Future<List<BookingModel>> getUpcomingBookings() async {
-    return await _makeRequest(
-      '/bookings/upcoming',
-      (json) {
-        final bookingsData = json['data'] ?? json;
-        
-        if (bookingsData is List) {
-          return bookingsData.map((item) => BookingModel.fromJson(item)).toList();
-        } else {
-          throw Exception('Expected list of bookings but got: ${bookingsData.runtimeType}');
-        }
-      },
-      operationName: 'Get Upcoming Bookings',
-    );
-  }
-
-  Future<List<BookingModel>> getPastBookings() async {
-    return await _makeRequest(
-      '/bookings/past',
-      (json) {
-        final bookingsData = json['data'] ?? json;
-        
-        if (bookingsData is List) {
-          return bookingsData.map((item) => BookingModel.fromJson(item)).toList();
-        } else {
-          throw Exception('Expected list of bookings but got: ${bookingsData.runtimeType}');
-        }
-      },
-      operationName: 'Get Past Bookings',
-    );
-  }
 
   // Amenities Management
   Future<List<AmenityModel>> getAllAmenities() async {

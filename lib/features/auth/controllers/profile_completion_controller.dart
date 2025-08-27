@@ -41,7 +41,7 @@ class ProfileCompletionController extends GetxController {
     'Prefer not to say'
   ];
   
-  final propertyPurposes = ['rent', 'buy', 'short_stay'];
+  final propertyPurposes = ['rent', 'buy'];
   
   final propertyTypes = [
     'apartment',

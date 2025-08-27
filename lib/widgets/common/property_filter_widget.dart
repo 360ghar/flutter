@@ -58,7 +58,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   late String _propertyType;
   late List<String> _selectedAmenities;
 
-  final List<String> purposes = ['Buy', 'Rent', 'Stay'];
+  final List<String> purposes = ['Buy', 'Rent'];
   
   final List<String> propertyTypes = [
     'All',
@@ -71,15 +71,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     'Loft',
   ];
 
-  final List<String> stayPropertyTypes = [
-    'All',
-    'Hotel',
-    'Resort',
-    'Apartment',
-    'Villa',
-    'Cottage',
-    'Studio',
-  ];
+  // Short-stay specific types removed
 
   final List<String> amenitiesList = [
     'Gym',
@@ -123,8 +115,6 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         return 'Buy';
       case 'rent':
         return 'Rent';
-      case 'short_stay':
-        return 'Stay';
       default:
         return 'Buy';
     }
@@ -136,8 +126,6 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         return 'buy';
       case 'Rent':
         return 'rent';
-      case 'Stay':
-        return 'short_stay';
       default:
         return 'buy';
     }
@@ -164,10 +152,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   const SizedBox(height: 30),
                   _buildPriceFilter(),
                   const SizedBox(height: 30),
-                  if (_selectedPurpose != 'Stay') ...[
-                    _buildBedroomsFilter(),
-                    const SizedBox(height: 30),
-                  ],
+                  _buildBedroomsFilter(),
+                  const SizedBox(height: 30),
                   _buildPropertyTypeFilter(),
                   const SizedBox(height: 30),
                   _buildAmenitiesFilter(),
@@ -266,9 +252,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   Widget _buildPriceFilter() {
-    final priceLabel = _selectedPurpose == 'Stay' 
-        ? 'Price per night' 
-        : _selectedPurpose == 'Rent' 
+    final priceLabel = _selectedPurpose == 'Rent' 
             ? 'Price per month' 
             : 'Property price';
     
@@ -287,28 +271,16 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         RangeSlider(
           values: RangeValues(
             _minPrice.clamp(
-              _selectedPurpose == 'Stay' ? 500.0 
-                  : _selectedPurpose == 'Rent' ? 5000.0 
-                  : 500000.0,
-              _selectedPurpose == 'Stay' ? 50000.0 
-                  : _selectedPurpose == 'Rent' ? 5000000.0 
-                  : 150000000.0,
+              _selectedPurpose == 'Rent' ? 5000.0 : 500000.0,
+              _selectedPurpose == 'Rent' ? 5000000.0 : 150000000.0,
             ),
             _maxPrice.clamp(
-              _selectedPurpose == 'Stay' ? 500.0 
-                  : _selectedPurpose == 'Rent' ? 5000.0 
-                  : 500000.0,
-              _selectedPurpose == 'Stay' ? 50000.0 
-                  : _selectedPurpose == 'Rent' ? 5000000.0 
-                  : 150000000.0,
+              _selectedPurpose == 'Rent' ? 5000.0 : 500000.0,
+              _selectedPurpose == 'Rent' ? 5000000.0 : 150000000.0,
             ),
           ),
-          min: _selectedPurpose == 'Stay' ? 500.0 
-              : _selectedPurpose == 'Rent' ? 5000.0 
-              : 500000.0,
-          max: _selectedPurpose == 'Stay' ? 50000.0 
-              : _selectedPurpose == 'Rent' ? 5000000.0 
-              : 150000000.0,
+          min: _selectedPurpose == 'Rent' ? 5000.0 : 500000.0,
+          max: _selectedPurpose == 'Rent' ? 5000000.0 : 150000000.0,
           divisions: 100,
           activeColor: AppColors.primaryYellow,
           inactiveColor: AppColors.primaryYellow.withValues(alpha: 0.2),
@@ -449,8 +421,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   Widget _buildPropertyTypeFilter() {
-    // Use different property types for Stay mode
-    final typesToShow = _selectedPurpose == 'Stay' ? stayPropertyTypes : propertyTypes;
+    // Single property type set for buy/rent
+    final typesToShow = propertyTypes;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -109,8 +109,56 @@ class UnifiedFilterModel {
 
   Map<String, dynamic> toJson() {
     final json = _$UnifiedFilterModelToJson(this);
-    // Remove null values for cleaner API requests
-    json.removeWhere((key, value) => value == null);
+    
+    // Handle DateTime serialization properly for API
+    if (availableFrom != null) {
+      json['available_from'] = availableFrom!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+    }
+    if (checkInDate != null) {
+      json['check_in_date'] = checkInDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+    }
+    if (checkOutDate != null) {
+      json['check_out_date'] = checkOutDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+    }
+    
+    // Ensure numeric values are within valid ranges
+    if (radiusKm != null && (radiusKm! <= 0 || radiusKm! > 1000)) {
+      json.remove('radius_km'); // Remove invalid radius
+    }
+    if (priceMin != null && priceMin! < 0) {
+      json.remove('price_min'); // Remove invalid price
+    }
+    if (priceMax != null && priceMax! < 0) {
+      json.remove('price_max'); // Remove invalid price
+    }
+    if (bedroomsMin != null && bedroomsMin! < 0) {
+      json.remove('bedrooms_min'); // Remove invalid bedrooms
+    }
+    if (bedroomsMax != null && bedroomsMax! < 0) {
+      json.remove('bedrooms_max'); // Remove invalid bedrooms
+    }
+    if (bathroomsMin != null && bathroomsMin! < 0) {
+      json.remove('bathrooms_min'); // Remove invalid bathrooms
+    }
+    if (bathroomsMax != null && bathroomsMax! < 0) {
+      json.remove('bathrooms_max'); // Remove invalid bathrooms
+    }
+    if (areaMin != null && areaMin! < 0) {
+      json.remove('area_min'); // Remove invalid area
+    }
+    if (areaMax != null && areaMax! < 0) {
+      json.remove('area_max'); // Remove invalid area
+    }
+    if (guests != null && guests! <= 0) {
+      json.remove('guests'); // Remove invalid guest count
+    }
+    
+    // Remove null values and empty lists for cleaner API requests
+    json.removeWhere((key, value) => 
+        value == null || 
+        (value is List && value.isEmpty) ||
+        (value is String && value.trim().isEmpty));
+    
     return json;
   }
 

@@ -5,7 +5,6 @@ import '../../explore/bindings/explore_binding.dart';
 import '../../discover/bindings/discover_binding.dart';
 import '../../likes/bindings/likes_binding.dart';
 import '../../visits/bindings/visits_binding.dart';
-import '../../filters/bindings/filters_binding.dart';
 
 class DashboardBinding extends Bindings {
   @override
@@ -18,6 +17,6 @@ class DashboardBinding extends Bindings {
     DiscoverBinding().dependencies();
     LikesBinding().dependencies();
     VisitsBinding().dependencies();
-    FiltersBinding().dependencies();
+    // Filters binding removed; FilterService is globally available
   }
 }
