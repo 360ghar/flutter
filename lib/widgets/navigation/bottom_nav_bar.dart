@@ -69,29 +69,30 @@ class CustomBottomNavigationBar extends StatelessWidget {
     // Prevent unnecessary navigation if already on the same page
     if (index == currentIndex) return;
     
-    // Use custom onTap if provided, otherwise use default navigation
+    // Always use the provided onTap callback if available
     if (onTap != null) {
       onTap!(index);
-    } else {
-      // Navigate to dashboard with proper tab index
-      Get.offNamed('/dashboard');
-      // Let dashboard controller handle the tab change
-      if (Get.isRegistered<dynamic>(tag: 'DashboardController')) {
-        try {
-          final controller = Get.find<dynamic>(tag: 'DashboardController');
-          controller.changeTab(index);
-        } catch (e) {
-          // Fallback: try finding without tag
-          try {
-            final controller = Get.find<dynamic>();
-            if (controller.runtimeType.toString().contains('DashboardController')) {
-              controller.changeTab(index);
-            }
-          } catch (_) {
-            // Silent fail - controller will sync on route change
-          }
-        }
-      }
+      return;
+    }
+    
+    // Fallback navigation only if no onTap callback is provided
+    // This should typically not be needed in the current app structure
+    switch (index) {
+      case 0:
+        Get.offNamed('/profile');
+        break;
+      case 1:
+        Get.offNamed('/explore');
+        break;
+      case 2:
+        Get.offNamed('/discover');
+        break;
+      case 3:
+        Get.offNamed('/likes');
+        break;
+      case 4:
+        Get.offNamed('/visits');
+        break;
     }
   }
 }

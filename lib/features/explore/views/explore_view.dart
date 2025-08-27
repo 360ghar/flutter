@@ -59,31 +59,31 @@ class ExploreView extends GetView<ExploreController> {
   }
 
   Widget _buildMap() {
-    return Obx(() {
-      final mapCenter = controller.mapCenter.value ?? controller.currentCenter.value;
-      final zoom = controller.currentZoom.value;
+    // Get initial values once to reduce reactive dependencies
+    final mapCenter = controller.mapCenter.value ?? controller.currentCenter.value;
+    final zoom = controller.currentZoom.value;
 
-      return FlutterMap(
-        mapController: MapController(),
-        options: MapOptions(
-          initialCenter: mapCenter,
-          initialZoom: zoom,
+    return FlutterMap(
+      mapController: controller.mapController,
+      options: MapOptions(
+        initialCenter: mapCenter,
+        initialZoom: zoom,
           minZoom: 3.0,
           maxZoom: 18.0,
           onPositionChanged: (position, hasGesture) {
             if (hasGesture && controller.isMapReady.value) {
-              // Update zoom if changed significantly
-              if ((position.zoom - controller.currentZoom.value).abs() > 0.1) {
+              // Update zoom if changed significantly (reduce sensitivity)
+              if ((position.zoom - controller.currentZoom.value).abs() > 0.5) {
                 controller.onMapZoomChanged(position.zoom);
               }
 
-              // Update center if moved significantly (more than 100 meters)
+              // Update center if moved significantly (increase threshold to 500 meters)
               final distance = _calculateDistance(
                 controller.currentCenter.value,
                 position.center,
               );
 
-              if (distance > 100) {
+              if (distance > 500) {
                 controller.onMapMoved(position.center);
               }
             }
@@ -195,8 +195,7 @@ class ExploreView extends GetView<ExploreController> {
             );
           }),
         ],
-      );
-    });
+    );
   }
 
   // Helper method to calculate distance between two points
@@ -391,6 +390,7 @@ class ExploreView extends GetView<ExploreController> {
                       property: property,
                       isSelected: isSelected,
                       onTap: () => controller.onPropertySelectedFromList(property, index),
+                      onViewDetails: () => controller.viewPropertyDetails(property),
                       onLikeTap: () => controller.toggleLikeProperty(property),
                     );
                   },

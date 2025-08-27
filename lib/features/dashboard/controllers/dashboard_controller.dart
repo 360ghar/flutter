@@ -265,30 +265,41 @@ class DashboardController extends GetxController {
 
   // Sync tab with current route
   void syncTabWithRoute(String route) {
+    DebugLogger.debug('DashboardController: Syncing tab with route: $route');
+    
     // Only sync if we're navigating to one of the main tab routes
     // Don't change tab for sub-routes like filters, location-search, etc.
     switch (route) {
       case '/dashboard':
+        // Keep current tab when returning to dashboard
+        DebugLogger.debug('Navigated to dashboard, keeping current tab: ${currentIndex.value}');
+        break;
       case '/profile':
         currentIndex.value = 0; // Profile tab
+        DebugLogger.debug('Switched to Profile tab');
         break;
       case '/explore':
         currentIndex.value = 1; // Explore (Map) tab
+        DebugLogger.debug('Switched to Explore tab');
         break;
       case '/discover':
       case '/':
       case '/home':
         currentIndex.value = 2; // Discover (Swipe) tab
+        DebugLogger.debug('Switched to Discover tab');
         break;
       case '/likes':
         currentIndex.value = 3; // Likes tab
+        DebugLogger.debug('Switched to Likes tab');
         break;
       case '/visits':
         currentIndex.value = 4; // Visits tab
+        DebugLogger.debug('Switched to Visits tab');
         break;
       default:
         // For other routes (filters, location-search, etc.), maintain current tab
         // This prevents unwanted tab switches when navigating to non-tab pages
+        DebugLogger.debug('Route $route ignored - maintaining current tab: ${currentIndex.value}');
         break;
     }
   }

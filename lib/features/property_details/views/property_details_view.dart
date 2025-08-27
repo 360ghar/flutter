@@ -12,12 +12,14 @@ class PropertyDetailsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Handle both PropertyModel object and String ID
+    // Handle multiple argument formats: PropertyModel, Map with 'property' key, or String ID
     final dynamic arguments = Get.arguments;
     PropertyModel? property;
     
     if (arguments is PropertyModel) {
       property = arguments;
+    } else if (arguments is Map<String, dynamic> && arguments.containsKey('property')) {
+      property = arguments['property'] as PropertyModel?;
     } else if (arguments is String) {
       // For string IDs, we'll need to handle this in a FutureBuilder or similar
       // For now, return error state

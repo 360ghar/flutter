@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/property_marker_model.dart';
@@ -56,6 +58,7 @@ class ExploreController extends GetxController {
   final RxString errorMessage = ''.obs;
 
   // Map state
+  late final MapController mapController = MapController();
   final Rx<LatLng> currentCenter = const LatLng(28.6139, 77.2090).obs; // Default: Delhi
   final RxDouble currentZoom = 12.0.obs; // Better initial zoom for property visibility
   final RxDouble currentRadius = 25.0.obs; // Better initial radius for focused search
@@ -379,6 +382,10 @@ class ExploreController extends GetxController {
   void onMapMoved(LatLng newCenter) {
     DebugLogger.info('🗺️ Map moved to: ${newCenter.latitude}, ${newCenter.longitude}');
 
+    // Only update if there's a significant change to prevent excessive rebuilds
+    final distance = _calculateDistance(currentCenter.value, newCenter);
+    if (distance < 100) return; // Skip minor movements
+
     // Update current center
     currentCenter.value = newCenter;
     mapCenter.value = newCenter;
@@ -390,13 +397,31 @@ class ExploreController extends GetxController {
     _mapMoveDebouncer?.cancel();
 
     // Debounce the property loading to avoid too many API calls
-    _mapMoveDebouncer = Timer(const Duration(milliseconds: 800), () {
+    _mapMoveDebouncer = Timer(const Duration(milliseconds: 1500), () {
       _onMapMoveCompleted();
     });
   }
 
+  double _calculateDistance(LatLng point1, LatLng point2) {
+    const double earthRadius = 6371000; // Earth's radius in meters
+    final double lat1Rad = point1.latitude * (3.141592653589793 / 180);
+    final double lat2Rad = point2.latitude * (3.141592653589793 / 180);
+    final double deltaLat = (point2.latitude - point1.latitude) * (3.141592653589793 / 180);
+    final double deltaLng = (point2.longitude - point1.longitude) * (3.141592653589793 / 180);
+
+    final double a = (math.sin(deltaLat / 2) * math.sin(deltaLat / 2)) +
+        math.cos(lat1Rad) * math.cos(lat2Rad) *
+        (math.sin(deltaLng / 2) * math.sin(deltaLng / 2));
+    final double c = 2 * math.asin(math.sqrt(a));
+
+    return earthRadius * c;
+  }
+
   void onMapZoomChanged(double newZoom) {
     DebugLogger.info('🔍 Map zoom changed to: $newZoom');
+
+    // Only update if there's a significant change to prevent excessive rebuilds
+    if ((newZoom - currentZoom.value).abs() < 0.3) return;
 
     currentZoom.value = newZoom;
     currentRadius.value = _calculateRadiusFromZoom(newZoom);
@@ -409,7 +434,7 @@ class ExploreController extends GetxController {
 
     // Trigger property reload on zoom change
     _mapMoveDebouncer?.cancel();
-    _mapMoveDebouncer = Timer(const Duration(milliseconds: 500), () {
+    _mapMoveDebouncer = Timer(const Duration(milliseconds: 1200), () {
       _onMapMoveCompleted();
     });
   }
@@ -743,7 +768,7 @@ class ExploreController extends GetxController {
 
   // Navigation to property details
   void viewPropertyDetails(PropertyModel property) {
-    Get.toNamed('/property-details', arguments: {'property': property});
+    Get.toNamed('/property-details', arguments: property);
   }
 
   // Like/Dislike property (swipe action)

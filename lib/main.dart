@@ -119,10 +119,16 @@ class MyApp extends StatelessWidget {
               routingCallback: (routing) {
                 DebugLogger.debug('Routing to: ${routing?.current}');
 
-                // Update dashboard tab when DashboardController is registered
+                // Only sync dashboard tabs when navigating to main dashboard route
+                // Don't sync for sub-routes like filters, location-search, etc.
                 if (Get.isRegistered<DashboardController>()) {
                   final currentRoute = routing?.current ?? '';
-                  Get.find<DashboardController>().syncTabWithRoute(currentRoute);
+                  
+                  // Only sync if we're navigating TO the dashboard route
+                  // Ignore sub-routes that should preserve current tab state
+                  if (currentRoute == '/dashboard') {
+                    Get.find<DashboardController>().syncTabWithRoute(currentRoute);
+                  }
                 }
               },
             );

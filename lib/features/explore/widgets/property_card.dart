@@ -9,6 +9,7 @@ class PropertyCard extends StatelessWidget {
   final bool isSelected;
   final VoidCallback? onTap;
   final VoidCallback? onLikeTap;
+  final VoidCallback? onViewDetails;
 
   const PropertyCard({
     super.key,
@@ -16,6 +17,7 @@ class PropertyCard extends StatelessWidget {
     this.isSelected = false,
     this.onTap,
     this.onLikeTap,
+    this.onViewDetails,
   });
 
   @override
@@ -227,7 +229,7 @@ class PropertyCard extends StatelessWidget {
 
               // View Details Button
               TextButton(
-                onPressed: onTap ?? () => _viewPropertyDetails(),
+                onPressed: onViewDetails ?? () => _viewPropertyDetails(),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   minimumSize: Size.zero,
@@ -274,7 +276,7 @@ class PropertyCard extends StatelessWidget {
 
   void _viewPropertyDetails() {
     DebugLogger.api('Viewing property details: ${property.title}');
-    Get.toNamed('/property-details', arguments: {'property': property});
+    Get.toNamed('/property-details', arguments: property);
   }
 
   void _toggleLike() {
