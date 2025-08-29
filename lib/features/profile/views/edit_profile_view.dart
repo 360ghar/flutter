@@ -129,23 +129,6 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                       const SizedBox(height: 16),
                       
                       _buildTextField(
-                        controller: controller.phoneController,
-                        label: 'Phone Number',
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Phone number is required';
-                          }
-                          if (value.length < 10) {
-                            return 'Please enter a valid phone number';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      _buildTextField(
                         controller: controller.locationController,
                         label: 'Location',
                         icon: Icons.location_on_outlined,

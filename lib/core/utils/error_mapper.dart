@@ -7,7 +7,8 @@ import 'debug_logger.dart';
 class ErrorMapper {
   // Map API errors to user-friendly messages
   static AppException mapApiError(dynamic error) {
-    DebugLogger.error('🗺️ Mapping error: type=${error.runtimeType}, error=$error');
+    // Avoid alarming error logs for expected mapping; use warning
+    DebugLogger.warning('🗺️ Mapping error: type=${error.runtimeType}, error=$error');
 
     if (error is DioException) {
       return _mapDioException(error);
@@ -15,6 +16,15 @@ class ErrorMapper {
     
     if (error is ApiException) {
       return _mapApiException(error);
+    }
+
+    // Supabase auth failure propagated from ApiService
+    if (error is ApiAuthException) {
+      return AuthenticationException(
+        'Your session has expired. Please log in again.',
+        code: 'UNAUTHORIZED',
+        details: error.toString(),
+      );
     }
 
     // Handle wrapped ApiException (Exception: ApiException: ...)
@@ -28,6 +38,15 @@ class ErrorMapper {
       }
       return NetworkException(
         'API error occurred. Please try again.',
+        details: error.toString(),
+      );
+    }
+
+    // Handle wrapped ApiAuthException (Exception: ApiAuthException: ...)
+    if (error is Exception && error.toString().contains('ApiAuthException:')) {
+      return AuthenticationException(
+        'Your session has expired. Please log in again.',
+        code: 'UNAUTHORIZED',
         details: error.toString(),
       );
     }

@@ -75,7 +75,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                     child: ElevatedButton(
                       onPressed: () {
                         if (_currentPage == _pages.length - 1) {
-                          Get.toNamed('/register');
+                          Get.toNamed('/login');
                         } else {
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 300),
@@ -113,7 +113,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                           side: const BorderSide(color: AppTheme.primaryColor),
                         ),
                         child: const Text(
-                          'Sign In',
+                          'Continue',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

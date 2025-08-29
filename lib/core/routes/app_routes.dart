@@ -4,6 +4,7 @@ abstract class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const otpVerification = '/otp-verification';
+  static const forgotPassword = '/forgot-password';
   static const profileCompletion = '/profile-completion';
   static const dashboard = '/dashboard';
   static const home = '/discover'; // standardize legacy home to discover

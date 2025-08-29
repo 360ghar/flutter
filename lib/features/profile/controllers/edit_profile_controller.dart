@@ -10,7 +10,6 @@ class EditProfileController extends GetxController {
   // Form controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
   
   // Observable fields
@@ -28,7 +27,6 @@ class EditProfileController extends GetxController {
   void onClose() {
     nameController.dispose();
     emailController.dispose();
-    phoneController.dispose();
     locationController.dispose();
     super.onClose();
   }
@@ -38,24 +36,16 @@ class EditProfileController extends GetxController {
     if (user != null) {
       nameController.text = user.name;
       emailController.text = user.email;
-      phoneController.text = user.phone ?? '';
       profileImageUrl.value = user.profileImage ?? '';
-      
+
+      // Load date of birth from top-level field if present
+      dateOfBirth.value = user.dateOfBirthAsDate;
+
       // Load additional fields from preferences if available
       final prefs = user.preferences;
       if (prefs?.containsKey('location') == true) {
         final location = prefs!['location'];
         locationController.text = location is String ? location : '';
-      }
-      if (prefs?.containsKey('dateOfBirth') == true) {
-        final dobString = prefs!['dateOfBirth'];
-        if (dobString is String) {
-          try {
-            dateOfBirth.value = DateTime.parse(dobString);
-          } catch (e) {
-            // Invalid date format, ignore
-          }
-        }
       }
     }
   }
@@ -122,21 +112,23 @@ class EditProfileController extends GetxController {
         return;
       }
 
-      // Prepare updated preferences
+      // Prepare updated preferences (keep app-specific data like location)
       final updatedPreferences = Map<String, dynamic>.from(currentUser.preferences ?? {});
       updatedPreferences['location'] = locationController.text.trim();
-      if (dateOfBirth.value != null) {
-        updatedPreferences['dateOfBirth'] = dateOfBirth.value!.toIso8601String();
-      } else {
-        updatedPreferences.remove('dateOfBirth');
-      }
 
-      // Prepare profile data for update
-      final profileData = {
+      // Prepare profile data for update (align with backend fields)
+      final profileData = <String, dynamic>{
         'full_name': nameController.text.trim(),
-        'phone': phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
         'profile_image_url': profileImageUrl.value.isEmpty ? null : profileImageUrl.value,
       };
+
+      // Save date of birth to top-level user field
+      if (dateOfBirth.value != null) {
+        final dob = dateOfBirth.value!;
+        profileData['date_of_birth'] = '${dob.year.toString().padLeft(4, '0')}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}';
+      } else {
+        profileData['date_of_birth'] = null;
+      }
 
       // Update user profile
       await _authController.updateUserProfile(profileData);

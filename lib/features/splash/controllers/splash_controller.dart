@@ -308,13 +308,20 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
   bool _isProfileComplete(dynamic user) {
     if (user == null) return false;
 
-    // Basic checks for profile completion
     try {
-      final hasBasicInfo =
-          user.name?.isNotEmpty == true && user.email?.isNotEmpty == true;
+      // Prefer model-level completeness if available
+      if (user is dynamic && user is! Map) {
+        // UserModel exposes isProfileComplete
+        final dynamic u = user;
+        if (u is Object && (u as dynamic).isProfileComplete != null) {
+          return (u as dynamic).isProfileComplete as bool;
+        }
+      }
 
-      // You can add more specific checks here based on your requirements
-      return hasBasicInfo;
+      // Fallback: require name and email presence
+      final hasName = (user.name?.isNotEmpty == true);
+      final hasEmail = (user.email?.isNotEmpty == true);
+      return hasName && hasEmail;
     } catch (e, stackTrace) {
       DebugLogger.error('Error checking profile completion', e, stackTrace);
       return false;

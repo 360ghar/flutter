@@ -196,7 +196,7 @@ class ProfileView extends GetView<AuthController> {
           
           // Email
           Text(
-            user.email.isNotEmpty ? user.email : 'user@example.com',
+            user.email.isNotEmpty ? user.email : '',
             style: TextStyle(
               fontSize: 16,
               color: AppColors.textSecondary,

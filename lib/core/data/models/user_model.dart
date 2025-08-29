@@ -151,17 +151,24 @@ class UserModel {
   // Profile completion percentage
   int get profileCompletionPercentage {
     int completedFields = 0;
-    int totalFields = 5; // email, fullName, phone, dateOfBirth, profileImageUrl
-    
+    const int totalFields = 5; // email, fullName, dateOfBirth, phone, profileImageUrl
+
     if (email.isNotEmpty) completedFields++;
     if (fullName != null && fullName!.isNotEmpty) completedFields++;
+    if (dateOfBirth != null && dateOfBirth!.isNotEmpty) completedFields++;
     if (phone != null && phone!.isNotEmpty) completedFields++;
-    if (dateOfBirth != null) completedFields++;
     if (profileImageUrl != null && profileImageUrl!.isNotEmpty) completedFields++;
-    
+
     return ((completedFields / totalFields) * 100).round();
   }
   
   // Check if profile is complete
-  bool get isProfileComplete => profileCompletionPercentage >= 80;
-} 
+  bool get isProfileComplete {
+    // Align with Profile Completion flow: require these core fields
+    final hasEmail = email.isNotEmpty;
+    final hasName = fullName != null && fullName!.isNotEmpty;
+    final hasDob = dateOfBirth != null && dateOfBirth!.isNotEmpty;
+
+    return hasEmail && hasName && hasDob;
+  }
+}

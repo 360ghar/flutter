@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/routes/app_routes.dart';
@@ -12,62 +11,20 @@ class ProfileCompletionController extends GetxController {
   
   // Form controllers
   final dateOfBirthController = TextEditingController();
-  final phoneController = TextEditingController();
-  final occupationController = TextEditingController();
-  final budgetMinController = TextEditingController();
-  final budgetMaxController = TextEditingController();
-  final preferredCitiesController = TextEditingController();
+  final fullNameController = TextEditingController();
+  final emailController = TextEditingController();
+  // Only required fields for this flow
   
   // Observable states
   final currentStep = 0.obs;
   final isLoading = false.obs;
-  final selectedIncome = ''.obs;
+  final selectedGender = ''.obs; // male, female, other
   final selectedPropertyPurpose = 'rent'.obs;
-  final selectedPropertyTypes = <String>[].obs;
-  final selectedBedroomsMin = 0.obs;
-  final selectedBedroomsMax = 0.obs;
-  final maxDistance = 10.0.obs;
-  final selectedAmenities = <String>[].obs;
-  final currentLocation = Rxn<Position>();
   
   // Data lists
-  final incomeRanges = [
-    'Under ₹5 Lakhs',
-    '₹5-10 Lakhs',
-    '₹10-20 Lakhs',
-    '₹20-50 Lakhs',
-    '₹50 Lakhs - 1 Crore',
-    'Above ₹1 Crore',
-    'Prefer not to say'
-  ];
+  final genders = ['male', 'female', 'other'];
   
   final propertyPurposes = ['rent', 'buy'];
-  
-  final propertyTypes = [
-    'apartment',
-    'house',
-    'villa',
-    'studio',
-    'penthouse',
-    'duplex'
-  ];
-  
-  final amenities = [
-    'parking',
-    'gym',
-    'swimming_pool',
-    'security',
-    'power_backup',
-    'elevator',
-    'garden',
-    'playground',
-    'club_house',
-    'wifi',
-    'air_conditioning',
-    'balcony',
-    'furnished',
-    'pet_friendly'
-  ];
 
   late final AuthController authController;
   bool _isDisposed = false;
@@ -84,31 +41,11 @@ class ProfileCompletionController extends GetxController {
     try {
       final user = authController.currentUser.value;
       if (user != null && !_isDisposed) {
-        phoneController.text = user.phone ?? '';
-        
+        fullNameController.text = user.fullName ?? '';
+        emailController.text = user.email;
         final preferences = user.preferences;
         if (preferences != null) {
           selectedPropertyPurpose.value = preferences['purpose'] ?? 'rent';
-          
-          if (preferences['property_type'] != null) {
-            selectedPropertyTypes.clear();
-            selectedPropertyTypes.addAll(
-              List<String>.from(preferences['property_type'])
-            );
-          }
-          
-          budgetMinController.text = preferences['budget_min']?.toString() ?? '';
-          budgetMaxController.text = preferences['budget_max']?.toString() ?? '';
-          selectedBedroomsMin.value = preferences['bedrooms_min'] ?? 0;
-          selectedBedroomsMax.value = preferences['bedrooms_max'] ?? 0;
-          maxDistance.value = (preferences['max_distance_km'] ?? 10).toDouble();
-          
-          if (preferences['amenities'] != null) {
-            selectedAmenities.clear();
-            selectedAmenities.addAll(
-              List<String>.from(preferences['amenities'])
-            );
-          }
         }
       }
     } catch (e, stackTrace) {
@@ -118,8 +55,9 @@ class ProfileCompletionController extends GetxController {
 
   void nextStep() {
     if (_validateCurrentStep()) {
-      if (currentStep.value < 2) {
+      if (currentStep.value < 1) {
         currentStep.value++;
+        update();
       }
     }
   }
@@ -127,6 +65,7 @@ class ProfileCompletionController extends GetxController {
   void previousStep() {
     if (currentStep.value > 0) {
       currentStep.value--;
+      update();
     }
   }
 
@@ -135,37 +74,22 @@ class ProfileCompletionController extends GetxController {
       case 0:
         return _validatePersonalInfo();
       case 1:
-        return _validatePropertyPreferences();
-      case 2:
-        return _validateLocationPreferences();
+        return _validatePreference();
       default:
         return true;
     }
   }
 
   bool _validatePersonalInfo() {
-    // Basic validation - these fields are optional for profile completion
+    // Validate only required fields
+    if (fullNameController.text.trim().length < 2) return false;
+    if (!GetUtils.isEmail(emailController.text.trim())) return false;
+    if (selectedGender.value.isEmpty) return false;
+    if (dateOfBirthController.text.isEmpty) return false;
     return true;
   }
 
-  bool _validatePropertyPreferences() {
-    if (selectedPropertyTypes.isEmpty) {
-      Get.snackbar(
-        'Required',
-        'Please select at least one property type',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppTheme.warningAmber,
-        colorText: AppTheme.backgroundWhite,
-      );
-      return false;
-    }
-    return true;
-  }
-
-  bool _validateLocationPreferences() {
-    // Location preferences are optional
-    return true;
-  }
+  bool _validatePreference() => propertyPurposes.contains(selectedPropertyPurpose.value);
 
   Future<void> selectDateOfBirth() async {
     if (_isDisposed) return;
@@ -182,79 +106,29 @@ class ProfileCompletionController extends GetxController {
     }
   }
 
-  Future<void> getCurrentLocation() async {
-    try {
-      isLoading.value = true;
-      
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        Get.snackbar(
-          'Permission Denied',
-          'Location permission is permanently denied. Please enable it in settings.',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: AppTheme.errorRed,
-          colorText: AppTheme.backgroundWhite,
-        );
-        return;
-      }
-      
-      if (permission == LocationPermission.denied) {
-        Get.snackbar(
-          'Permission Required',
-          'Location permission is required to use this feature.',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: AppTheme.warningAmber,
-          colorText: AppTheme.backgroundWhite,
-        );
-        return;
-      }
-      
-      // Get current position
-      final position = await Geolocator.getCurrentPosition();
-      
-      currentLocation.value = position;
-      
-      // Update location in backend
-      await authController.updateUserLocation(
-        position.latitude,
-        position.longitude,
-      );
-      
-      Get.snackbar(
-        'Success',
-        'Current location updated successfully',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppTheme.successGreen,
-        colorText: AppTheme.backgroundWhite,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to get current location: $e',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppTheme.errorRed,
-        colorText: AppTheme.backgroundWhite,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
   Future<void> completeProfile() async {
+    if (isLoading.value) return;
     if (!_validateCurrentStep()) return;
     
     try {
       isLoading.value = true;
+      update();
       
       // Prepare profile data
       final profileData = <String, dynamic>{};
       final preferences = <String, dynamic>{};
       
+      // Basic info
+      if (fullNameController.text.isNotEmpty) {
+        profileData['full_name'] = fullNameController.text.trim();
+      }
+      if (emailController.text.isNotEmpty) {
+        profileData['email'] = emailController.text.trim();
+      }
+      if (selectedGender.value.isNotEmpty) {
+        profileData['gender'] = selectedGender.value;
+      }
+
       // Personal info
       if (dateOfBirthController.text.isNotEmpty) {
         try {
@@ -276,36 +150,8 @@ class ProfileCompletionController extends GetxController {
         }
       }
       
-      if (phoneController.text.isNotEmpty) {
-        profileData['phone'] = phoneController.text.trim();
-      }
-      
-      // Property preferences
+      // Preference: only purpose
       preferences['purpose'] = selectedPropertyPurpose.value;
-      preferences['property_type'] = selectedPropertyTypes.toList();
-      
-      if (budgetMinController.text.isNotEmpty) {
-        preferences['budget_min'] = int.tryParse(budgetMinController.text) ?? 0;
-      }
-      
-      if (budgetMaxController.text.isNotEmpty) {
-        preferences['budget_max'] = int.tryParse(budgetMaxController.text) ?? 0;
-      }
-      
-      preferences['bedrooms_min'] = selectedBedroomsMin.value;
-      preferences['bedrooms_max'] = selectedBedroomsMax.value;
-      preferences['max_distance_km'] = maxDistance.value.round();
-      preferences['amenities'] = selectedAmenities.toList();
-      
-      // Location preferences
-      if (preferredCitiesController.text.isNotEmpty) {
-        final cities = preferredCitiesController.text
-            .split(',')
-            .map((city) => city.trim())
-            .where((city) => city.isNotEmpty)
-            .toList();
-        preferences['location_preference'] = cities;
-      }
       
       // Update profile
       if (profileData.isNotEmpty) {
@@ -316,6 +162,12 @@ class ProfileCompletionController extends GetxController {
       if (preferences.isNotEmpty) {
         await authController.updateUserPreferences(preferences);
       }
+
+      // Apply default purpose across all filter pages and persist locally
+      try {
+        final dynamic pageState = Get.find();
+        pageState.setPurposeForAllPages(selectedPropertyPurpose.value, onlyIfUnset: false);
+      } catch (_) {}
       
       Get.snackbar(
         'Success',
@@ -337,6 +189,7 @@ class ProfileCompletionController extends GetxController {
       );
     } finally {
       isLoading.value = false;
+      update();
     }
   }
 
@@ -350,11 +203,8 @@ class ProfileCompletionController extends GetxController {
     
     // Dispose text controllers
     dateOfBirthController.dispose();
-    phoneController.dispose();
-    occupationController.dispose();
-    budgetMinController.dispose();
-    budgetMaxController.dispose();
-    preferredCitiesController.dispose();
+    fullNameController.dispose();
+    emailController.dispose();
     
     super.onClose();
   }

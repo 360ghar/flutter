@@ -427,6 +427,21 @@ class PageStateService extends GetxController {
       }
 
       final effectiveState = _getStateForPage(pageType);
+      // If location is still unavailable, surface a friendly error instead of crashing
+      if (effectiveState.selectedLocation == null) {
+        final friendlyError =
+            'Location not available. Please enable location or choose a place.';
+        _updatePageState(
+          pageType,
+          state.copyWith(
+            isLoading: false,
+            isRefreshing: false,
+            error: friendlyError,
+          ),
+        );
+        DebugLogger.error('❌ Failed to load ${pageType.name}: $friendlyError');
+        return;
+      }
       final selectedLoc = effectiveState.selectedLocation!;
 
       // Branch behavior per page
@@ -578,6 +593,20 @@ class PageStateService extends GetxController {
     likesState.value = likesState.value.resetFilters();
     _refreshAllPagesData();
     DebugLogger.info('🔄 Reset all page filters');
+  }
+
+  // Set default purpose across all pages; optionally only if unset
+  void setPurposeForAllPages(String purpose, {bool onlyIfUnset = false}) {
+    void setFor(PageType page) {
+      final state = _getStateForPage(page);
+      if (onlyIfUnset && state.filters.purpose != null) return;
+      final updatedFilters = state.filters.copyWith(purpose: purpose);
+      _updatePageState(page, state.copyWith(filters: updatedFilters).resetData());
+    }
+    setFor(PageType.explore);
+    setFor(PageType.discover);
+    setFor(PageType.likes);
+    DebugLogger.info('🎯 Set default purpose="$purpose" for all pages (onlyIfUnset=$onlyIfUnset)');
   }
 
   // Helper methods

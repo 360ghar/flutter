@@ -11,15 +11,25 @@ class ErrorHandler {
     
     if (error is AuthException) {
       title = 'Authentication Error';
-      switch (error.message) {
+      final msg = error.message;
+      String code = '';
+      try {
+        // AuthApiException has a code field
+        // ignore: invalid_use_of_visible_for_testing_member
+        code = (error as dynamic).code ?? '';
+      } catch (_) {}
+      switch (msg) {
         case 'Invalid login credentials':
-          message = 'Invalid email or password. Please check your credentials.';
+          message = 'Invalid phone or password. Please check your credentials.';
           break;
         case 'Email not confirmed':
-          message = 'Please verify your email address before signing in.';
+        case 'Phone not confirmed':
+        case 'User not confirmed':
+          message = 'Please verify your phone number before signing in.';
+          backgroundColor = Colors.orange;
           break;
         case 'User already registered':
-          message = 'An account with this email already exists. Please sign in instead.';
+          message = 'An account with this phone already exists. Please sign in instead.';
           break;
         case 'Password should be at least 6 characters':
           message = 'Password must be at least 6 characters long.';
@@ -27,18 +37,33 @@ class ErrorHandler {
         case 'Invalid email':
           message = 'Please enter a valid email address.';
           break;
+        case 'Invalid phone':
+        case 'Invalid phone number':
+          message = 'Please enter a valid phone number.';
+          break;
         case 'Signup disabled':
           message = 'New user registration is currently disabled.';
           break;
         case 'Email rate limit exceeded':
+        case 'SMS rate limit exceeded':
           message = 'Too many attempts. Please wait before trying again.';
+          backgroundColor = Colors.orange;
+          break;
+        case 'Token has expired or is invalid':
+          message = 'OTP has expired or is invalid. Please request a new code.';
           backgroundColor = Colors.orange;
           break;
         case 'Session not found':
           message = 'Your session has expired. Please sign in again.';
           break;
         default:
-          message = error.message;
+          // Map by code if available
+          if (code == 'otp_expired') {
+            message = 'OTP has expired. Please request a new code.';
+            backgroundColor = Colors.orange;
+          } else {
+            message = msg;
+          }
       }
     } else if (error is Exception) {
       message = error.toString().replaceAll('Exception: ', '');

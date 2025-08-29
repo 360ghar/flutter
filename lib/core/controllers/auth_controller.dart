@@ -62,9 +62,17 @@ class AuthController extends GetxController {
             isLoggedIn.value = true;
             errorMessage.value = '';
             _loadUserProfile().then((_) {
-              // Only navigate if not already on dashboard screen
-              if (Get.currentRoute != AppRoutes.dashboard) {
-                Get.offAllNamed(AppRoutes.dashboard);
+              // Navigate based on profile completeness
+              final user = currentUser.value;
+              final isComplete = user?.isProfileComplete ?? false;
+              if (!isComplete) {
+                if (Get.currentRoute != AppRoutes.profileCompletion) {
+                  Get.offAllNamed(AppRoutes.profileCompletion);
+                }
+              } else {
+                if (Get.currentRoute != AppRoutes.dashboard) {
+                  Get.offAllNamed(AppRoutes.dashboard);
+                }
               }
             });
           }
@@ -131,23 +139,22 @@ class AuthController extends GetxController {
 
       if (response.user != null) {
         DebugLogger.success('Signup successful!');
-        DebugLogger.user('New User: ${response.user!.email}');
         
         Get.snackbar(
           'Success',
-          'Account created successfully! Please check your email to verify your account.',
+          'Account created successfully!',
           snackPosition: SnackPosition.TOP,
         );
         
         // If auto-confirm is enabled, user will be signed in automatically
-        // Otherwise, they need to verify their email first
+        // Otherwise, they need to verify their phone/email first (email disabled in current flow)
         if (response.session != null) {
           currentSupabaseUser.value = response.user;
           isLoggedIn.value = true;
           await _loadUserProfile();
-          Get.offAllNamed(AppRoutes.dashboard);
+          // Navigation is handled by onAuthStateChange based on profile completeness
         } else {
-          DebugLogger.info('Email verification required');
+          DebugLogger.info('Phone/email verification required');
           Get.toNamed(AppRoutes.login);
         }
         return true;
@@ -177,19 +184,17 @@ class AuthController extends GetxController {
       if (response.user != null && response.session != null) {
         // Log JWT Token
         DebugLogger.success('Login successful!');
-        DebugLogger.user('User: ${response.user!.email}');
         DebugLogger.logJWTToken(
           response.session!.accessToken,
           expiresAt: response.session!.expiresAt != null 
               ? DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000)
               : DateTime.now().add(const Duration(hours: 2)),
-          userEmail: response.user!.email,
         );
         
         currentSupabaseUser.value = response.user;
         isLoggedIn.value = true;
         await _loadUserProfile();
-        Get.offAllNamed(AppRoutes.discover);
+        // Navigation is handled by onAuthStateChange based on profile completeness
         return true;
       } else {
         errorMessage.value = 'Failed to sign in';
@@ -411,6 +416,11 @@ class AuthController extends GetxController {
     return user?.emailConfirmedAt != null;
   }
 
+  bool get isPhoneVerified {
+    final user = currentSupabaseUser.value;
+    return user?.phone?.isNotEmpty == true;
+  }
+
   // Removed custom error handling - using centralized ErrorHandler instead
 
   void clearError() {
@@ -499,12 +509,13 @@ class AuthController extends GetxController {
     if (currentUser.value == null) return 0.obs;
     
     int completedFields = 0;
-    int totalFields = 4; // name, email, phone, profileImage
+    int totalFields = 5; // name, email, dateOfBirth, phone, profileImage
     
     final user = currentUser.value!;
     
     if (user.name.isNotEmpty) completedFields++;
     if (user.email.isNotEmpty) completedFields++;
+    if (user.dateOfBirth != null && user.dateOfBirth!.isNotEmpty) completedFields++;
     if (user.phone != null && user.phone!.isNotEmpty) completedFields++;
     if (user.profileImage != null && user.profileImage!.isNotEmpty) completedFields++;
     
@@ -520,4 +531,6 @@ class AuthController extends GetxController {
 
   // Additional helpers (from UserController)
   Map<String, dynamic>? get preferences => currentUser.value?.preferences;
+
+  // Preference application to filters handled during onboarding/profile completion.
 }

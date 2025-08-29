@@ -4,9 +4,9 @@ import '../../features/splash/views/splash_view.dart';
 import '../../features/onboarding/bindings/onboarding_binding.dart';
 import '../../features/onboarding/views/onboarding_view.dart';
 import '../../features/auth/bindings/auth_binding.dart';
+import '../../features/auth/views/forgot_password_view.dart';
 import '../../features/auth/bindings/profile_completion_binding.dart';
 import '../../features/auth/views/login_view.dart';
-import '../../features/auth/views/signup_view.dart';
 import '../../features/auth/views/profile_completion_view.dart';
 import '../../features/dashboard/bindings/dashboard_binding.dart';
 import '../../features/dashboard/views/dashboard_view.dart';
@@ -62,9 +62,8 @@ class AppPages {
       middlewares: [GuestMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.register,
-      page: () => const SignupView(),
-      binding: AuthBinding(),
+      name: AppRoutes.forgotPassword,
+      page: () => const ForgotPasswordView(),
       middlewares: [GuestMiddleware()],
     ),
     GetPage(

@@ -234,7 +234,6 @@ class ApiService extends getx.GetConnect {
           if (session != null) {
             DebugLogger.logJWTToken(
               session.accessToken,
-              userEmail: session.user.email,
             );
           }
           break;
@@ -265,7 +264,6 @@ class ApiService extends getx.GetConnect {
             ? DateTime.fromMillisecondsSinceEpoch(session!.expiresAt! * 1000)
             : null,
         userId: session?.user.id,
-        userEmail: session?.user.email,
       );
     } else {
       DebugLogger.warning('No JWT Token available');
@@ -621,6 +619,15 @@ class ApiService extends getx.GetConnect {
     return response;
   }
 
+  // Phone + password sign-in (Supabase supports phone in signInWithPassword)
+  Future<AuthResponse> signInWithPhonePassword(String phone, String password) async {
+    final response = await _supabase.auth.signInWithPassword(
+      phone: phone,
+      password: password,
+    );
+    return response;
+  }
+
   Future<AuthResponse> signIn(String email, String password) async {
     final response = await _supabase.auth.signInWithPassword(
       email: email,
@@ -637,6 +644,38 @@ class ApiService extends getx.GetConnect {
 
   Future<void> resetPassword(String email) async {
     await _supabase.auth.resetPasswordForEmail(email);
+  }
+
+  // Send OTP to a phone number
+  // shouldCreateUser=false is safer for verification/resend/login flows
+  Future<void> sendPhoneOtp(String phone, {bool shouldCreateUser = false}) async {
+    await _supabase.auth.signInWithOtp(
+      phone: phone,
+      shouldCreateUser: shouldCreateUser,
+    );
+  }
+
+  // Verify an SMS OTP for a phone number
+  Future<AuthResponse> verifyPhoneOtp({
+    required String phone,
+    required String token,
+  }) async {
+    final response = await _supabase.auth.verifyOTP(
+      phone: phone,
+      token: token,
+      type: OtpType.sms,
+    );
+    return response;
+  }
+
+  // Sign up using phone and password, triggers SMS OTP verification
+  Future<AuthResponse> signUpWithPhonePassword(String phone, String password, {Map<String, dynamic>? data}) async {
+    final response = await _supabase.auth.signUp(
+      phone: phone,
+      password: password,
+      data: data,
+    );
+    return response;
   }
 
 

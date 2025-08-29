@@ -133,10 +133,6 @@ class PropertyController extends GetxController {
     int limit = 20,
     bool loadMore = false,
   }) async {
-    if (!_locationController.hasLocation) {
-      DebugLogger.warning('⚠️ No user position available for nearby properties');
-      return;
-    }
     
     
     try {
@@ -151,22 +147,23 @@ class PropertyController extends GetxController {
       
       DebugLogger.info('🔍 Fetching nearby properties: page=${loadMore ? currentNearbyPage.value : 1}, radiusKm=$radiusKm, loadMore=$loadMore');
       
+      // Ensure we have a user location (fallback to permission/IP where needed)
+      final userPos = await _getCurrentLocationSync();
+
       // Update location in filter service before searching
-      if (_locationController.hasLocation) {
-        _filterService.updateLocationWithCoordinates(
-          latitude: _locationController.currentLatitude!,
-          longitude: _locationController.currentLongitude!,
-          radiusKm: radiusKm,
-        );
-      }
+      _filterService.updateLocationWithCoordinates(
+        latitude: userPos.latitude,
+        longitude: userPos.longitude,
+        radiusKm: radiusKm,
+      );
       
       final response = await _apiService.searchProperties(
         filters: UnifiedFilterModel(
           radiusKm: radiusKm,
           sortBy: null,
         ),
-        latitude: _locationController.currentLatitude!,
-        longitude: _locationController.currentLongitude!,
+        latitude: userPos.latitude,
+        longitude: userPos.longitude,
         page: loadMore ? currentNearbyPage.value : 1,
         limit: limit,
       );
@@ -205,13 +202,12 @@ class PropertyController extends GetxController {
       
       // Recommendations endpoint removed - use regular search instead
       // Update location in filter service
-      if (_locationController.hasLocation) {
-        _filterService.updateLocationWithCoordinates(
-          latitude: _locationController.currentLatitude!,
-          longitude: _locationController.currentLongitude!,
-          radiusKm: 10.0,
-        );
-      }
+      final userPos = await _getCurrentLocationSync();
+      _filterService.updateLocationWithCoordinates(
+        latitude: userPos.latitude,
+        longitude: userPos.longitude,
+        radiusKm: 10.0,
+      );
       
       final filters = _filterService.currentFilter.copyWith(
         radiusKm: 10.0,
@@ -219,8 +215,8 @@ class PropertyController extends GetxController {
       
       final response = await _apiService.searchProperties(
         filters: filters,
-        latitude: _locationController.currentLatitude!,
-        longitude: _locationController.currentLongitude!,
+        latitude: userPos.latitude,
+        longitude: userPos.longitude,
         limit: limit,
         page: 1,
       );

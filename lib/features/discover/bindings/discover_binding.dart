@@ -7,7 +7,7 @@ class DiscoverBinding extends Bindings {
     // Repositories and core services are registered in InitialBinding
     // Shared controllers (LocationController and FilterService already registered in InitialBinding)
 
-    // Screen controller
-    Get.lazyPut<DiscoverController>(() => DiscoverController());
+    // Screen controller: eagerly initialize to avoid missing instance in GetView
+    Get.put<DiscoverController>(DiscoverController());
   }
 }

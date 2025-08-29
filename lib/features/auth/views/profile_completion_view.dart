@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_completion_controller.dart';
 import '../../../core/utils/theme.dart';
@@ -42,15 +41,15 @@ class ProfileCompletionView extends StatelessWidget {
                       ),
                       const SizedBox(height: 32),
                       
-                      // Progress Indicator
+                      // Progress Indicator (2 steps)
                       LinearProgressIndicator(
-                        value: controller.currentStep.value / 3,
+                        value: (controller.currentStep.value + 1) / 2,
                         backgroundColor: Colors.grey[300],
                         valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Step ${controller.currentStep.value + 1} of 3',
+                        'Step ${controller.currentStep.value + 1} of 2',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -93,9 +92,7 @@ class ProfileCompletionView extends StatelessWidget {
       case 0:
         return _buildPersonalInfoStep(controller);
       case 1:
-        return _buildPropertyPreferencesStep(controller);
-      case 2:
-        return _buildLocationPreferencesStep(controller);
+        return _buildPurposeStep(controller);
       default:
         return _buildPersonalInfoStep(controller);
     }
@@ -120,7 +117,7 @@ class ProfileCompletionView extends StatelessWidget {
           child: ElevatedButton(
             onPressed: controller.isLoading.value 
                 ? null 
-                : (controller.currentStep.value < 2 
+                : (controller.currentStep.value < 1 
                     ? controller.nextStep 
                     : controller.completeProfile),
             style: ElevatedButton.styleFrom(
@@ -140,7 +137,7 @@ class ProfileCompletionView extends StatelessWidget {
                     ),
                   )
                 : Text(
-                    controller.currentStep.value < 2 ? 'Next' : 'Complete',
+                    controller.currentStep.value < 1 ? 'Next' : 'Complete',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -165,7 +162,51 @@ class ProfileCompletionView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        
+        // Full Name
+        TextFormField(
+          controller: controller.fullNameController,
+          decoration: const InputDecoration(
+            labelText: 'Full Name',
+            prefixIcon: Icon(Icons.person_outline),
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Email (for profile, not for auth)
+        TextFormField(
+          controller: controller.emailController,
+          decoration: const InputDecoration(
+            labelText: 'Email Address',
+            prefixIcon: Icon(Icons.email_outlined),
+            border: OutlineInputBorder(),
+          ),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        const SizedBox(height: 16),
+        // Gender
+        DropdownButtonFormField<String>(
+          value: controller.selectedGender.value.isEmpty
+              ? null
+              : controller.selectedGender.value,
+          decoration: const InputDecoration(
+            labelText: 'Gender',
+            prefixIcon: Icon(Icons.wc_outlined),
+            border: OutlineInputBorder(),
+          ),
+          items: controller.genders
+              .map((g) => DropdownMenuItem<String>(
+                    value: g,
+                    child: Text(g.capitalize ?? g),
+                  ))
+              .toList(),
+          onChanged: (val) {
+            if (val != null) {
+              controller.selectedGender.value = val;
+              controller.update();
+            }
+          },
+        ),
+        const SizedBox(height: 16),
         // Date of Birth
         TextFormField(
           controller: controller.dateOfBirthController,
@@ -178,310 +219,102 @@ class ProfileCompletionView extends StatelessWidget {
           readOnly: true,
           onTap: () => controller.selectDateOfBirth(),
         ),
-        const SizedBox(height: 16),
-        
-        // Phone Number (if not already provided)
-        if (controller.phoneController.text.isEmpty) ...[
-          TextFormField(
-            controller: controller.phoneController,
-            decoration: const InputDecoration(
-              labelText: 'Phone Number',
-              prefixIcon: Icon(Icons.phone_outlined),
-              border: OutlineInputBorder(),
-              hintText: '+91 98765 43210',
-            ),
-            keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]')),
-            ],
-          ),
-          const SizedBox(height: 16),
-        ],
-        
-        // Occupation
-        TextFormField(
-          controller: controller.occupationController,
-          decoration: const InputDecoration(
-            labelText: 'Occupation',
-            prefixIcon: Icon(Icons.work_outline),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        
-        // Annual Income
-        DropdownButtonFormField<String>(
-          initialValue: controller.selectedIncome.value.isEmpty
-              ? null
-              : controller.selectedIncome.value,
-          decoration: const InputDecoration(
-            labelText: 'Annual Income',
-            prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-            border: OutlineInputBorder(),
-          ),
-          items: controller.incomeRanges.map((String income) {
-            return DropdownMenuItem<String>(
-              value: income,
-              child: Text(income),
-            );
-          }).toList(),
-          onChanged: (String? value) {
-            if (value != null) {
-              controller.selectedIncome.value = value;
-              controller.update();
-            }
+      ],
+    );
+  }
+  Widget _buildPurposeStep(ProfileCompletionController controller) {
+    final theme = Get.context!.theme;
+    final isDark = theme.brightness == Brightness.dark;
+    final surface = theme.colorScheme.surface;
+    final onSurface = theme.colorScheme.onSurface;
+    final selectedBg = AppTheme.primaryColor;
+    final selectedFg = AppTheme.textDark;
+
+    Widget buildOption({
+      required String purpose,
+      required IconData icon,
+      required String label,
+    }) {
+      final isSelected = controller.selectedPropertyPurpose.value == purpose;
+      return Expanded(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            controller.selectedPropertyPurpose.value = purpose;
+            controller.update();
           },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            height: 110,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? selectedBg
+                  : (isDark ? AppTheme.darkCard : AppTheme.backgroundWhite),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected
+                    ? AppTheme.primaryYellowDark
+                    : (isDark ? AppTheme.darkBorder : AppTheme.cardShadow),
+                width: isSelected ? 2 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? AppTheme.darkShadow
+                      : AppTheme.cardShadow,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 28,
+                  color: isSelected ? selectedFg : onSurface,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? selectedFg : onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ],
-    );
-  }
+      );
+    }
 
-  Widget _buildPropertyPreferencesStep(ProfileCompletionController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Property Preferences',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        
-        // Property Purpose
-        const Text('What are you looking for?'),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: controller.propertyPurposes.map((purpose) {
-            final isSelected = controller.selectedPropertyPurpose.value == purpose;
-            return ChoiceChip(
-              label: Text(purpose.capitalize ?? purpose),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  controller.selectedPropertyPurpose.value = purpose;
-                  controller.update();
-                }
-              },
-              selectedColor: AppTheme.primaryColor,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
-              ),
-            );
-          }).toList(),
+        Text(
+          'What are you looking for?',
+          style: theme.textTheme.titleLarge,
         ),
-        const SizedBox(height: 16),
-        
-        // Property Types
-        const Text('Property Types'),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: controller.propertyTypes.map((type) {
-            final isSelected = controller.selectedPropertyTypes.contains(type);
-            return FilterChip(
-              label: Text(type.capitalize ?? type),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  controller.selectedPropertyTypes.add(type);
-                } else {
-                  controller.selectedPropertyTypes.remove(type);
-                }
-                controller.update();
-              },
-              selectedColor: AppTheme.primaryColor,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 16),
-        
-        // Budget Range
-        const Text('Budget Range'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: TextFormField(
-                controller: controller.budgetMinController,
-                decoration: const InputDecoration(
-                  labelText: 'Min Budget',
-                  prefixText: '₹ ',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
+            buildOption(
+              purpose: 'rent',
+              icon: Icons.key_outlined,
+              label: 'Rent',
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextFormField(
-                controller: controller.budgetMaxController,
-                decoration: const InputDecoration(
-                  labelText: 'Max Budget',
-                  prefixText: '₹ ',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
+            buildOption(
+              purpose: 'buy',
+              icon: Icons.home_outlined,
+              label: 'Buy',
             ),
           ],
-        ),
-        const SizedBox(height: 16),
-        
-        // Bedrooms
-        const Text('Number of Bedrooms'),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: DropdownButtonFormField<int>(
-                initialValue: controller.selectedBedroomsMin.value == 0
-                    ? null
-                    : controller.selectedBedroomsMin.value,
-                decoration: const InputDecoration(
-                  labelText: 'Min',
-                  border: OutlineInputBorder(),
-                ),
-                items: List.generate(6, (index) => index).map((int value) {
-                  return DropdownMenuItem<int>(
-                    value: value,
-                    child: Text(value == 0 ? 'Any' : value.toString()),
-                  );
-                }).toList(),
-                onChanged: (int? value) {
-                  if (value != null) {
-                    controller.selectedBedroomsMin.value = value;
-                    controller.update();
-                  }
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: DropdownButtonFormField<int>(
-                initialValue: controller.selectedBedroomsMax.value == 0
-                    ? null
-                    : controller.selectedBedroomsMax.value,
-                decoration: const InputDecoration(
-                  labelText: 'Max',
-                  border: OutlineInputBorder(),
-                ),
-                items: List.generate(6, (index) => index).map((int value) {
-                  return DropdownMenuItem<int>(
-                    value: value,
-                    child: Text(value == 0 ? 'Any' : value.toString()),
-                  );
-                }).toList(),
-                onChanged: (int? value) {
-                  if (value != null) {
-                    controller.selectedBedroomsMax.value = value;
-                    controller.update();
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLocationPreferencesStep(ProfileCompletionController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Location Preferences',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        
-        // Current Location Button
-        ElevatedButton.icon(
-          onPressed: controller.getCurrentLocation,
-          icon: const Icon(Icons.my_location),
-          label: const Text('Use Current Location'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.accentOrange,
-            foregroundColor: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 16),
-        
-        // Preferred Cities
-        const Text('Preferred Cities'),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller.preferredCitiesController,
-          decoration: const InputDecoration(
-            labelText: 'Enter cities (comma-separated)',
-            prefixIcon: Icon(Icons.location_city),
-            border: OutlineInputBorder(),
-            hintText: 'e.g., Gurgaon, Delhi, Noida',
-          ),
-          maxLines: 2,
-        ),
-        const SizedBox(height: 16),
-        
-        // Max Distance
-        const Text('Maximum Distance'),
-        const SizedBox(height: 8),
-        Column(
-          children: [
-            Slider(
-              value: controller.maxDistance.value,
-              min: 1,
-              max: 50,
-              divisions: 49,
-              label: '${controller.maxDistance.value.round()} km',
-              onChanged: (value) {
-                controller.maxDistance.value = value;
-                controller.update();
-              },
-              activeColor: AppTheme.primaryColor,
-            ),
-            Text(
-              '${controller.maxDistance.value.round()} km from preferred locations',
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        
-        // Preferred Amenities
-        const Text('Preferred Amenities'),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: controller.amenities.map((amenity) {
-            final isSelected = controller.selectedAmenities.contains(amenity);
-            return FilterChip(
-              label: Text(amenity.replaceAll('_', ' ').capitalize ?? amenity),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  controller.selectedAmenities.add(amenity);
-                } else {
-                  controller.selectedAmenities.remove(amenity);
-                }
-                controller.update();
-              },
-              selectedColor: AppTheme.primaryColor,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
-              ),
-            );
-          }).toList(),
         ),
       ],
     );
