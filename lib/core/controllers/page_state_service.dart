@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import '../data/models/page_state_model.dart';
 import '../data/models/unified_filter_model.dart';
 import '../data/repositories/properties_repository.dart';
+import '../data/models/property_model.dart';
 import '../data/repositories/swipes_repository.dart';
 import '../utils/debug_logger.dart';
 import 'location_controller.dart';
@@ -77,6 +78,55 @@ class PageStateService extends GetxController {
     }
   }
 
+  // Detects placeholder or non-human-friendly location names that should be reverse geocoded
+  bool _isPlaceholderLocationName(String? name) {
+    if (name == null) return true;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return true;
+    final lower = trimmed.toLowerCase();
+    return lower.startsWith('location (') ||
+        lower == 'location coordinates' ||
+        lower == 'current location' ||
+        lower == 'current area' ||
+        lower == 'selected area';
+  }
+
+  // Ensure loaded states have a proper human-friendly location name
+  Future<void> _normalizeSavedLocations() async {
+    try {
+      Future<void> fixFor(PageType page) async {
+        final state = _getStateForPage(page);
+        final loc = state.selectedLocation;
+        if (loc != null && _isPlaceholderLocationName(loc.name)) {
+          final resolved = await _locationController.getAddressFromCoordinates(
+            loc.latitude,
+            loc.longitude,
+          );
+          final updated = state.copyWith(
+            selectedLocation: LocationData(
+              name: resolved,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+            ),
+            locationSource: state.locationSource ?? 'hydrate',
+          );
+          _updatePageState(page, updated);
+        }
+      }
+
+      await Future.wait([
+        fixFor(PageType.explore),
+        fixFor(PageType.discover),
+        fixFor(PageType.likes),
+      ]);
+
+      DebugLogger.success('🔤 Normalized saved location names where needed');
+    } catch (e, st) {
+      DebugLogger.warning('Failed to normalize saved locations: $e');
+      DebugLogger.warning(st.toString());
+    }
+  }
+
   /// Sets the initial location for all page states if they don't have one.
   Future<void> _bootstrapInitialStates() async {
     DebugLogger.info('🚀 Bootstrapping initial page states...');
@@ -86,6 +136,8 @@ class PageStateService extends GetxController {
         discoverState.value.hasLocation &&
         likesState.value.hasLocation) {
       DebugLogger.success('✅ All page states already have a location. Bootstrap complete.');
+      // Still normalize saved names if placeholders slipped in
+      await _normalizeSavedLocations();
       return;
     }
 
@@ -94,14 +146,16 @@ class PageStateService extends GetxController {
 
       // Update each page state if it doesn't have a location
       if (!exploreState.value.hasLocation) {
-        updateLocationForPage(PageType.explore, initialLocation, source: 'initial');
+        await updateLocationForPage(PageType.explore, initialLocation, source: 'initial');
       }
       if (!discoverState.value.hasLocation) {
-        updateLocationForPage(PageType.discover, initialLocation, source: 'initial');
+        await updateLocationForPage(PageType.discover, initialLocation, source: 'initial');
       }
       if (!likesState.value.hasLocation) {
-        updateLocationForPage(PageType.likes, initialLocation, source: 'initial');
+        await updateLocationForPage(PageType.likes, initialLocation, source: 'initial');
       }
+      // After bootstrapping, ensure names are user-friendly
+      await _normalizeSavedLocations();
       DebugLogger.success('✅ Successfully bootstrapped initial location for all pages.');
 
     } catch (e, st) {
@@ -143,29 +197,49 @@ class PageStateService extends GetxController {
           latitude: position.latitude,
           longitude: position.longitude,
         );
-        updateLocationForPage(currentPageType.value, loc, source: 'gps');
+        await updateLocationForPage(currentPageType.value, loc, source: 'gps');
       }
     });
   }
 
   // Update location only for a specific page
-  void updateLocationForPage(PageType pageType, LocationData location, {String source = 'manual'}) {
+  Future<void> updateLocationForPage(PageType pageType, LocationData location, {String source = 'manual'}) async {
     DebugLogger.info('📍 Updating location for ${pageType.name}: ${location.name} (${location.latitude}, ${location.longitude}) from $source');
+
+    // Resolve human-friendly name if placeholder
+    LocationData finalLocation = location;
+    if (_isPlaceholderLocationName(location.name)) {
+      try {
+        final resolvedName = await _locationController.getAddressFromCoordinates(
+          location.latitude,
+          location.longitude,
+        );
+        finalLocation = LocationData(
+          name: resolvedName,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        );
+        DebugLogger.info('🧭 Resolved location name to "$resolvedName"');
+      } catch (e, st) {
+        DebugLogger.warning('Reverse geocoding failed, keeping provided name. $e');
+        DebugLogger.warning(st.toString());
+      }
+    }
 
     final current = _getStateForPage(pageType);
     // Only update the selectedLocation. The filters object no longer holds lat/lng.
     final updated = current.copyWith(
-      selectedLocation: location,
+      selectedLocation: finalLocation,
       locationSource: source,
     );
     _updatePageState(pageType, updated);
 
-    // Only trigger a data refresh if the source is not 'initial'
-    if (source != 'initial') {
+    // Only trigger a data refresh if the source is not 'initial' or 'hydrate'
+    if (source != 'initial' && source != 'hydrate') {
       DebugLogger.info('🔄 Debouncing refresh for ${pageType.name} after location update');
       _debounceRefresh(pageType);
     } else {
-      DebugLogger.info('⏭️ Skipping refresh for initial location setup.');
+      DebugLogger.info('⏭️ Skipping refresh for initial/hydrate location update.');
     }
   }
 
@@ -213,7 +287,7 @@ class PageStateService extends GetxController {
         await _authController.updateUserLocation(location.latitude, location.longitude);
       }
       // Update only current page to keep independent state per page
-      updateLocationForPage(currentPageType.value, location, source: source);
+      await updateLocationForPage(currentPageType.value, location, source: source);
 
       DebugLogger.success('✅ Location updated: ${location.name}');
       
@@ -267,14 +341,14 @@ class PageStateService extends GetxController {
           latitude: position.latitude,
           longitude: position.longitude,
         );
-        updateLocationForPage(pageType, loc, source: 'gps');
+        await updateLocationForPage(pageType, loc, source: 'gps');
         return;
       }
 
       // Fallback to IP-based location
       final ipLoc = await _locationController.getIpLocation();
       if (ipLoc != null) {
-        updateLocationForPage(pageType, ipLoc, source: 'ip');
+        await updateLocationForPage(pageType, ipLoc, source: 'ip');
         return;
       }
     } catch (e) {
@@ -349,7 +423,7 @@ class PageStateService extends GetxController {
       if (loc == null) {
         DebugLogger.warning('⚠️ No location set for ${pageType.name} while loading data. Attempting bootstrap.');
         final initialLocation = await _locationController.getInitialLocation();
-        updateLocationForPage(pageType, initialLocation, source: 'initial');
+        await updateLocationForPage(pageType, initialLocation, source: 'initial');
       }
 
       final effectiveState = _getStateForPage(pageType);
@@ -385,6 +459,7 @@ class PageStateService extends GetxController {
           latitude: selectedLoc.latitude,
           longitude: selectedLoc.longitude,
           radiusKm: effectiveState.filters.radiusKm ?? 10.0,
+          excludeSwiped: pageType == PageType.discover,
         );
 
         _updatePageState(pageType, state.copyWith(
@@ -458,6 +533,7 @@ class PageStateService extends GetxController {
           latitude: loc.latitude,
           longitude: loc.longitude,
           radiusKm: state.filters.radiusKm ?? 10.0,
+          excludeSwiped: pageType == PageType.discover,
         );
 
         final newProperties = [...state.properties, ...response.properties];
@@ -576,6 +652,37 @@ class PageStateService extends GetxController {
     final state = likesState.value;
     final updatedList = state.properties.where((p) => p.id != propertyId).toList();
     _updatePageState(PageType.likes, state.copyWith(properties: updatedList));
+  }
+
+  // Optimistically add a property to the current Likes segment list (Liked tab)
+  void addPropertyToLikes(PropertyModel property) {
+    // Only mutate the list when current segment is 'liked'
+    if (currentLikesSegment != 'liked') return;
+    final state = likesState.value;
+    final exists = state.properties.any((p) => p.id == property.id);
+    if (!exists) {
+      final updatedList = [property, ...state.properties];
+      _updatePageState(PageType.likes, state.copyWith(properties: updatedList));
+    }
+  }
+
+  // Optimistically add a property to the current Likes segment list (Passed tab)
+  void addPropertyToPassed(PropertyModel property) {
+    // Only mutate the list when current segment is 'passed'
+    if (currentLikesSegment != 'passed') return;
+    final state = likesState.value;
+    final exists = state.properties.any((p) => p.id == property.id);
+    if (!exists) {
+      final updatedList = [property, ...state.properties];
+      _updatePageState(PageType.likes, state.copyWith(properties: updatedList));
+    }
+  }
+
+  // Optimistically remove a property from Discover list
+  void removePropertyFromDiscover(int propertyId) {
+    final state = discoverState.value;
+    final updatedList = state.properties.where((p) => p.id != propertyId).toList();
+    _updatePageState(PageType.discover, state.copyWith(properties: updatedList));
   }
 
   // Sync preferences to backend

@@ -1,10 +1,12 @@
 import 'package:get/get.dart';
+import 'package:flutter/widgets.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/visit_model.dart';
 import '../../../core/data/models/agent_model.dart';
 import '../../../core/data/providers/api_service.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/utils/debug_logger.dart'; // Added missing import
+import '../../dashboard/controllers/dashboard_controller.dart';
 
 class VisitsController extends GetxController {
   late final ApiService _apiService;
@@ -42,6 +44,36 @@ class VisitsController extends GetxController {
     // If already logged in, initialize immediately
     if (_authController.isLoggedIn.value) {
       _initializeController();
+    }
+
+    // Observe dashboard tab switches to refresh when Visits tab is active
+    if (Get.isRegistered<DashboardController>()) {
+      final dash = Get.find<DashboardController>();
+      DateTime? _lastRefresh;
+      const cooldown = Duration(seconds: 30);
+
+      ever<int>(dash.currentIndex, (idx) async {
+        if (idx == 4) {
+          final now = DateTime.now();
+          // Throttle to avoid spamming refresh
+          if (_lastRefresh == null || now.difference(_lastRefresh!) > cooldown) {
+            DebugLogger.info('🔄 Visits tab activated — refreshing visits');
+            await loadVisits(isRefresh: true);
+            _lastRefresh = now;
+          } else {
+            DebugLogger.info('⏳ Skipping visits refresh due to cooldown');
+          }
+        }
+      });
+
+      // If app starts on Visits tab, ensure data loads quickly
+      if (dash.currentIndex.value == 4) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!hasLoadedVisits.value && !isLoading.value) {
+            loadVisitsLazy();
+          }
+        });
+      }
     }
   }
 

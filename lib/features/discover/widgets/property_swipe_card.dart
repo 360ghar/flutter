@@ -123,6 +123,31 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           ),
                         ),
                       ),
+
+                      // 360° badge when virtual tour is available
+                      if (widget.property.hasVirtualTour)
+                        Positioned(
+                          top: 16,
+                          left: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.55),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.threesixty, color: Colors.white, size: 16),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Virtual tour',
+                                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       
                       // Property details overlay at bottom
                       Positioned(
@@ -139,12 +164,28 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    widget.property.formattedPrice,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
+                                  RichText(
+                                    text: TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: widget.property.formattedPrice,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        if (widget.property.purpose == PropertyPurpose.rent)
+                                          const TextSpan(
+                                            text: ' /mo',
+                                            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+                                          ),
+                                        if (widget.property.purpose == PropertyPurpose.shortStay)
+                                          const TextSpan(
+                                            text: ' /day',
+                                            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+                                          ),
+                                      ],
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -260,6 +301,61 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                         ),
                                       ),
                                     ),
+                                  // Price per sqft if available
+                                  if (widget.property.pricePerSqft != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '₹${widget.property.pricePerSqft!.toStringAsFixed(0)}/sqft',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  // Parking if available
+                                  if (widget.property.parkingSpaces != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${widget.property.parkingSpaces} Parking',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              // Lightweight metrics
+                              Row(
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.visibility, color: Colors.white70, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text('${widget.property.viewCount}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                    ],
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.favorite, color: Colors.white70, size: 14),
+                                      const SizedBox(width: 4),
+                                      Text('${widget.property.likeCount}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                    ],
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 16),
@@ -347,7 +443,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                'Available',
+                                widget.property.statusString,
                                 style: TextStyle(
                                   color: AppTheme.accentGreen,
                                   fontSize: 12,
@@ -380,6 +476,44 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           ),
                         ),
                         const SizedBox(height: 20),
+
+                        // Highlights (features/tags)
+                        if ((widget.property.features?.isNotEmpty ?? false) || (widget.property.tags?.isNotEmpty ?? false)) ...[
+                          const Text(
+                            'Highlights',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: (
+                              (widget.property.features != null && widget.property.features!.isNotEmpty)
+                                ? widget.property.features!
+                                : (widget.property.tags ?? [])
+                            ).take(4).map((t) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentOrange.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: AppTheme.accentOrange.withValues(alpha: 0.3)),
+                              ),
+                              child: Text(
+                                t,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.accentOrange,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            )).toList(),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                         
                         // Amenities section
                         if (widget.property.hasAmenities) ...[

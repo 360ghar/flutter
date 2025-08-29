@@ -174,9 +174,10 @@ class FilterService extends GetxController {
   void updateRadius(double radiusKm) {
     final currentPageType = _pageStateService.currentPageType.value;
     final currentState = _getCurrentPageState();
-    final updatedFilters = currentState.filters.copyWith(radiusKm: radiusKm);
+    final clamped = radiusKm.clamp(5.0, 50.0);
+    final updatedFilters = currentState.filters.copyWith(radiusKm: clamped);
     _pageStateService.updatePageFilters(currentPageType, updatedFilters);
-    DebugLogger.info('Search radius updated: ${radiusKm}km');
+    DebugLogger.info('Search radius updated: ${clamped}km');
   }
 
   void updateSortBy(SortBy sortBy) {

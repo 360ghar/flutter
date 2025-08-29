@@ -16,6 +16,7 @@ class PropertiesRepository extends GetxService {
     required double latitude,
     required double longitude,
     double? radiusKm,
+    bool excludeSwiped = false,
     bool useCache = true,
   }) async {
     try {
@@ -28,6 +29,7 @@ class PropertiesRepository extends GetxService {
         radiusKm: (filters.radiusKm ?? radiusKm ?? 10.0),
         page: page,
         limit: limit,
+        excludeSwiped: excludeSwiped,
       );
 
       DebugLogger.success('✅ Fetched ${response.properties.length} properties (page $page/${response.totalPages})');
@@ -93,6 +95,7 @@ class PropertiesRepository extends GetxService {
     required double latitude,
     required double longitude,
     double? radiusKm,
+    bool excludeSwiped = false,
     bool useCache = false, // Search results shouldn't be cached as much
   }) async {
     return getProperties(
@@ -102,6 +105,7 @@ class PropertiesRepository extends GetxService {
       latitude: latitude,
       longitude: longitude,
       radiusKm: radiusKm,
+      excludeSwiped: excludeSwiped,
       useCache: useCache,
     );
   }

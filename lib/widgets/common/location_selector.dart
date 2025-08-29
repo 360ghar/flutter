@@ -101,12 +101,28 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   final TextEditingController _searchController = TextEditingController();
   final LocationController locationController = Get.find<LocationController>();
   final PageStateService pageStateService = Get.find<PageStateService>();
+  double? _radiusKm;
+
+  // Local helper to fetch the correct page state for this modal
+  PageStateModel _getPageState(PageStateService service) {
+    switch (widget.pageType) {
+      case PageType.explore:
+        return service.exploreState.value;
+      case PageType.discover:
+        return service.discoverState.value;
+      case PageType.likes:
+        return service.likesState.value;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     // Clear previous suggestions
     locationController.clearPlaceSuggestions();
+    // Initialize radius from current page filters (default 10km)
+    final pageState = _getPageState(pageStateService);
+    _radiusKm = (pageState.filters.radiusKm ?? 10.0).clamp(5.0, 50.0);
   }
 
   @override
@@ -213,6 +229,9 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
 
           const SizedBox(height: 16),
 
+          // Radius selector
+          _buildRadiusSelector(),
+
           // Quick actions
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -271,6 +290,59 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                 },
               );
             }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRadiusSelector() {
+    final current = _getPageState(pageStateService);
+    final radiusValue = (_radiusKm ?? current.filters.radiusKm ?? 10.0).clamp(5.0, 50.0);
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.divider, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Search radius',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                '${radiusValue.toInt()} km',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          Slider(
+            value: radiusValue,
+            min: 5,
+            max: 50,
+            divisions: 9, // 5,10,15,...,50
+            label: '${radiusValue.toInt()} km',
+            activeColor: AppColors.primaryYellow,
+            onChanged: (val) {
+              setState(() => _radiusKm = val);
+              final state = _getPageState(pageStateService);
+              final updatedFilters = state.filters.copyWith(radiusKm: val);
+              pageStateService.updatePageFilters(widget.pageType, updatedFilters);
+            },
           ),
         ],
       ),
@@ -389,7 +461,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         preferredName: suggestion.mainText,
       );
       if (locationData != null) {
-        pageStateService.updateLocationForPage(widget.pageType, locationData, source: 'manual');
+        await pageStateService.updateLocationForPage(widget.pageType, locationData, source: 'manual');
         
         Get.snackbar(
           'Location Selected',

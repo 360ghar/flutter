@@ -219,6 +219,7 @@ class DiscoverController extends GetxController {
         latitude: pageState.selectedLocation!.latitude,
         longitude: pageState.selectedLocation!.longitude,
         radiusKm: _filterService.currentFilter.radiusKm ?? 10.0,
+        excludeSwiped: true,
         useCache: true,
       );
 
@@ -263,6 +264,14 @@ class DiscoverController extends GetxController {
 
       // Optimistic update - move to next card immediately
       _moveToNextCard();
+
+      // Optimistically reflect state across pages
+      _pageStateService.removePropertyFromDiscover(property.id);
+      if (isLiked) {
+        _pageStateService.addPropertyToLikes(property);
+      } else {
+        _pageStateService.addPropertyToPassed(property);
+      }
 
       // Record swipe in background
       _recordSwipeAsync(property.id, isLiked);

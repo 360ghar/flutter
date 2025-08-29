@@ -305,6 +305,8 @@ class DashboardController extends GetxController {
       case 3:
         pageType = PageType.likes;
         break;
+      case 4:
+        break;
     }
     
     if (pageType != null) {

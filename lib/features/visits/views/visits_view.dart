@@ -3,9 +3,9 @@ import 'package:get/get.dart';
 import '../controllers/visits_controller.dart';
 import '../../../core/data/models/visit_model.dart';
 import '../../../core/utils/app_colors.dart';
-import '../../../widgets/common/robust_network_image.dart';
 import '../widgets/visits_skeleton_loaders.dart';
 import '../widgets/visit_card.dart';
+import '../widgets/agent_card.dart';
 
 class VisitsView extends GetView<VisitsController> {
   const VisitsView({super.key});
@@ -180,69 +180,77 @@ class VisitsView extends GetView<VisitsController> {
   }
 
   Widget _buildUpcomingVisitsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Obx(() {
-            if (controller.upcomingVisits.isEmpty) {
-              return _buildEmptyState(
-                'no_visits'.tr,
-                'Book a property visit to see it here',
-                Icons.calendar_today_outlined,
-                AppColors.primaryYellow,
+    return RefreshIndicator(
+      onRefresh: controller.refreshVisits,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Obx(() {
+              if (controller.upcomingVisits.isEmpty) {
+                return _buildEmptyState(
+                  'no_visits'.tr,
+                  'Book a property visit to see it here',
+                  Icons.calendar_today_outlined,
+                  AppColors.primaryYellow,
+                );
+              }
+              
+              return Column(
+                children: controller.upcomingVisits
+                    .map((visit) => VisitCard(
+                          visit: visit,
+                          isUpcoming: true,
+                          dateText: controller.formatVisitDate(visit.scheduledDate),
+                          timeText: controller.formatVisitTime(visit.scheduledDate),
+                          onReschedule: () => _showRescheduleDialog(visit),
+                          onCancel: () => _showCancelDialog(visit),
+                        ))
+                    .toList(),
               );
-            }
-            
-            return Column(
-              children: controller.upcomingVisits
-                  .map((visit) => VisitCard(
-                        visit: visit,
-                        isUpcoming: true,
-                        dateText: controller.formatVisitDate(visit.scheduledDate),
-                        timeText: controller.formatVisitTime(visit.scheduledDate),
-                        onReschedule: () => _showRescheduleDialog(visit),
-                        onCancel: () => _showCancelDialog(visit),
-                      ))
-                  .toList(),
-            );
-          }),
-        ],
+            }),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildPastVisitsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Obx(() {
-            if (controller.pastVisits.isEmpty) {
-              return _buildEmptyState(
-                'no_visits'.tr,
-                'Your completed visits will appear here',
-                Icons.history,
-                AppColors.iconColor,
+    return RefreshIndicator(
+      onRefresh: controller.refreshVisits,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Obx(() {
+              if (controller.pastVisits.isEmpty) {
+                return _buildEmptyState(
+                  'no_visits'.tr,
+                  'Your completed visits will appear here',
+                  Icons.history,
+                  AppColors.iconColor,
+                );
+              }
+              
+              return Column(
+                children: controller.pastVisits
+                    .map((visit) => VisitCard(
+                          visit: visit,
+                          isUpcoming: false,
+                          dateText: controller.formatVisitDate(visit.scheduledDate),
+                          timeText: controller.formatVisitTime(visit.scheduledDate),
+                          onReschedule: () => _showRescheduleDialog(visit),
+                          onCancel: () => _showCancelDialog(visit),
+                        ))
+                    .toList(),
               );
-            }
-            
-            return Column(
-              children: controller.pastVisits
-                  .map((visit) => VisitCard(
-                        visit: visit,
-                        isUpcoming: false,
-                        dateText: controller.formatVisitDate(visit.scheduledDate),
-                        timeText: controller.formatVisitTime(visit.scheduledDate),
-                        onReschedule: () => _showRescheduleDialog(visit),
-                        onCancel: () => _showCancelDialog(visit),
-                      ))
-                  .toList(),
-            );
-          }),
-        ],
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -265,164 +273,14 @@ class VisitsView extends GetView<VisitsController> {
         return const RelationshipManagerSkeleton();
       }
       
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.primaryYellow.withValues(alpha: 0.1),
-              AppColors.primaryYellow.withValues(alpha: 0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.primaryYellow.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.support_agent,
-                  color: AppColors.primaryYellow,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Your Relationship Manager',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                RobustNetworkImageExtension.avatar(
-                  imageUrl: agent.avatarUrl ?? '',
-                  size: 60,
-                  placeholder: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: const BoxDecoration(shape: BoxShape.circle),
-                    child: Icon(Icons.person, size: 30, color: AppColors.iconColor),
-                  ),
-                  errorWidget: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: const BoxDecoration(shape: BoxShape.circle),
-                    child: Icon(Icons.person, size: 30, color: AppColors.iconColor),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        agent.name,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        agent.experienceLevelString,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.star,
-                            size: 16,
-                            color: AppColors.primaryYellow,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            agent.userSatisfactionRating.toStringAsFixed(1),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Icon(
-                            Icons.work_outline,
-                            size: 16,
-                            color: AppColors.iconColor,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            agent.experienceLevelString,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Call functionality
-                    },
-                    icon: const Icon(Icons.phone, size: 18),
-                    label: const Text('Call'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryYellow,
-                      side: BorderSide(color: AppColors.primaryYellow),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // WhatsApp functionality
-                    },
-                    icon: const Icon(Icons.message, size: 18),
-                    label: const Text('WhatsApp'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accentGreen,
-                      foregroundColor: AppColors.buttonText,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+      return AgentCard(
+        agent: agent,
+        onCall: () {
+          // Call functionality
+        },
+        onWhatsApp: () {
+          // WhatsApp functionality
+        },
       );
     });
   }
@@ -508,7 +366,8 @@ class VisitsView extends GetView<VisitsController> {
 
   void _showRescheduleDialog(VisitModel visit) {
     DateTime selectedDate = visit.scheduledDate;
-    TimeOfDay selectedTime = TimeOfDay.fromDateTime(visit.scheduledDate);
+    const defaultHour = 10; // Use default time (10:00 AM)
+    const defaultMinute = 0;
     
     Get.dialog(
       AlertDialog(
@@ -544,23 +403,7 @@ class VisitsView extends GetView<VisitsController> {
                   },
                 ),
                 
-                // Time Selection
-                ListTile(
-                  leading: Icon(Icons.access_time, color: AppColors.primaryYellow),
-                  title: const Text('Time'),
-                  subtitle: Text(selectedTime.format(context)),
-                  onTap: () async {
-                    final TimeOfDay? picked = await showTimePicker(
-                      context: context,
-                      initialTime: selectedTime,
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        selectedTime = picked;
-                      });
-                    }
-                  },
-                ),
+                // Time selection removed; default time will be applied
               ],
             );
           },
@@ -576,8 +419,8 @@ class VisitsView extends GetView<VisitsController> {
                 selectedDate.year,
                 selectedDate.month,
                 selectedDate.day,
-                selectedTime.hour,
-                selectedTime.minute,
+                defaultHour,
+                defaultMinute,
               );
               
               controller.rescheduleVisit(visit.id.toString(), newDateTime);
@@ -595,10 +438,30 @@ class VisitsView extends GetView<VisitsController> {
   }
 
   void _showCancelDialog(VisitModel visit) {
+    final TextEditingController reasonController = TextEditingController();
     Get.dialog(
       AlertDialog(
         title: const Text('Cancel Visit'),
-        content: Text('Are you sure you want to cancel your visit to ${visit.propertyTitle}?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Are you sure you want to cancel your visit to ${visit.propertyTitle}?'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              decoration: InputDecoration(
+                labelText: 'Reason (optional)',
+                hintText: 'e.g. Not available on this date',
+                filled: true,
+                fillColor: AppColors.inputBackground,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: AppColors.border),
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
@@ -606,7 +469,11 @@ class VisitsView extends GetView<VisitsController> {
           ),
           ElevatedButton(
             onPressed: () {
-              controller.cancelVisit(visit.id.toString());
+              final reason = reasonController.text.trim();
+              controller.cancelVisit(
+                visit.id.toString(),
+                reason: reason.isEmpty ? null : reason,
+              );
               Get.back();
             },
             style: ElevatedButton.styleFrom(

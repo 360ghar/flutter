@@ -695,6 +695,7 @@ class ApiService extends getx.GetConnect {
     double radiusKm = 10,
     int page = 1,
     int limit = 20,
+    bool excludeSwiped = false,
   }) async {
     // Validate parameters to prevent 422 errors
     if (latitude < -90 || latitude > 90) {
@@ -732,6 +733,15 @@ class ApiService extends getx.GetConnect {
     final filterMap = filters.toJson();
     filterMap.forEach((key, value) {
       if (value != null) {
+        if (key == 'search_query') {
+          // Map internal search_query to backend 'q'
+          final q = value.toString().trim();
+          if (q.isNotEmpty) {
+            queryParams['q'] = q;
+          }
+          return; // Skip adding search_query as-is
+        }
+
         if (value is List) {
           // Handle list parameters (like amenities, property_type)
           if (value.isNotEmpty) {
@@ -747,6 +757,11 @@ class ApiService extends getx.GetConnect {
         }
       }
     });
+
+    // Internal flag: exclude properties already swiped by the user
+    if (excludeSwiped) {
+      queryParams['exclude_swiped'] = 'true';
+    }
 
     DebugLogger.api('🔍 Final query params: $queryParams');
 

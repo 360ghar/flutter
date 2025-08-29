@@ -82,6 +82,7 @@ class SwipeController extends GetxController {
         longitude: longitude,
         page: 1,
         limit: isInitialLoad ? 20 : 10,
+        excludeSwiped: true,
       );
       
       if (isInitialLoad) {

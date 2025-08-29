@@ -216,6 +216,13 @@ class ExploreController extends GetxController {
       }
 
       // Sync state
+      // Keep radius in sync with filters from state
+      final radiusFromState = (pageState.filters.radiusKm ?? 10.0).clamp(5.0, 50.0);
+      if ((currentRadius.value - radiusFromState).abs() > 0.01) {
+        currentRadius.value = radiusFromState;
+        DebugLogger.info('📏 Synced map radius from state: ${currentRadius.value}km');
+      }
+
       if (pageState.isLoading) {
         state.value = ExploreState.loading;
       } else if (pageState.error != null) {
@@ -309,21 +316,17 @@ class ExploreController extends GetxController {
       // Update map and filters with the determined location
       _updateMapCenter(initialCenter, initialZoom);
 
-      final radiusKm = _calculateRadiusFromZoom(initialZoom);
-      DebugLogger.info(
-        '📍 Updating filters with location - radius: ${radiusKm}km',
-      );
+      // Ensure we set the location; radius will be taken from state filters
       _filterService.updateLocationWithCoordinates(
         latitude: initialCenter.latitude,
         longitude: initialCenter.longitude,
-        radiusKm: radiusKm,
       );
 
       // Ensure Explore page state's location is set for repository queries
-      _pageStateService.updateLocationForPage(
+      await _pageStateService.updateLocationForPage(
         PageType.explore,
         LocationData(
-          name: 'Current Area',
+          name: 'Current Area', // Will be reverse geocoded in PageStateService
           latitude: initialCenter.latitude,
           longitude: initialCenter.longitude,
         ),
@@ -364,10 +367,10 @@ class ExploreController extends GetxController {
         );
 
         // Sync Explore page state location for subsequent loads
-        _pageStateService.updateLocationForPage(
+        await _pageStateService.updateLocationForPage(
           PageType.explore,
           LocationData(
-            name: 'Current Location',
+            name: 'Current Location', // Will be reverse geocoded in PageStateService
             latitude: position.latitude,
             longitude: position.longitude,
           ),
@@ -385,7 +388,7 @@ class ExploreController extends GetxController {
           radiusKm: currentRadius.value,
         );
 
-        _pageStateService.updateLocationForPage(
+        await _pageStateService.updateLocationForPage(
           PageType.explore,
           LocationData(
             name: 'Delhi',
@@ -406,7 +409,7 @@ class ExploreController extends GetxController {
         radiusKm: currentRadius.value,
       );
 
-      _pageStateService.updateLocationForPage(
+      await _pageStateService.updateLocationForPage(
         PageType.explore,
         LocationData(
           name: 'Delhi',
@@ -476,13 +479,6 @@ class ExploreController extends GetxController {
     currentCenter.value = position.center;
     currentZoom.value = position.zoom;
 
-    // Calculate radius from zoom level and visible bounds
-    final newRadius = _calculateRadiusFromZoom(position.zoom);
-    if ((newRadius - currentRadius.value).abs() > 0.5) {
-      currentRadius.value = newRadius;
-      DebugLogger.info('📍 Updated search radius to ${newRadius}km');
-    }
-
     // Debounce the map move to avoid too many API calls
     // Only proceed if movement is significant to reduce churn
     if (zoomDelta > 0.1 || distanceMeters > 100) {
@@ -496,7 +492,7 @@ class ExploreController extends GetxController {
     }
   }
 
-  void _onMapMoveCompleted() {
+  Future<void> _onMapMoveCompleted() async {
     DebugLogger.api(
       '🗺️ Map move completed at ${currentCenter.value}, radius: ${currentRadius.value}km',
     );
@@ -511,10 +507,10 @@ class ExploreController extends GetxController {
       DebugLogger.success('✅ Filter location updated successfully');
 
       // Keep PageStateService in sync so map queries use correct location
-      _pageStateService.updateLocationForPage(
+      await _pageStateService.updateLocationForPage(
         PageType.explore,
         LocationData(
-          name: 'Selected Area',
+          name: 'Selected Area', // Will be reverse geocoded in PageStateService
           latitude: currentCenter.value.latitude,
           longitude: currentCenter.value.longitude,
         ),
