@@ -241,9 +241,9 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
       // Check if AuthController is available
       if (!Get.isRegistered<AuthController>()) {
         DebugLogger.warning(
-          'AuthController not registered, going to onboarding',
+          'AuthController not registered, going to login',
         );
-        Get.offAllNamed(AppRoutes.onboarding);
+        Get.offAllNamed(AppRoutes.login);
         return;
       }
 
@@ -294,13 +294,13 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
           }
         }
       } else {
-        // User not authenticated, show onboarding
-        Get.offAllNamed(AppRoutes.onboarding);
+        // User not authenticated, show login
+        Get.offAllNamed(AppRoutes.login);
       }
     } catch (e, stackTrace) {
       DebugLogger.error('Error during splash navigation', e, stackTrace);
-      // On any error, go to onboarding
-      Get.offAllNamed(AppRoutes.onboarding);
+      // On any error, go to login
+      Get.offAllNamed(AppRoutes.login);
     }
   }
 

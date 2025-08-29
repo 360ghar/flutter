@@ -1,10 +1,7 @@
 import 'package:get/get.dart';
 import '../../features/splash/bindings/splash_binding.dart';
 import '../../features/splash/views/splash_view.dart';
-import '../../features/onboarding/bindings/onboarding_binding.dart';
-import '../../features/onboarding/views/onboarding_view.dart';
 import '../../features/auth/bindings/auth_binding.dart';
-import '../../features/auth/views/forgot_password_view.dart';
 import '../../features/auth/bindings/profile_completion_binding.dart';
 import '../../features/auth/views/login_view.dart';
 import '../../features/auth/views/profile_completion_view.dart';
@@ -50,20 +47,9 @@ class AppPages {
       binding: SplashBinding(),
     ),
     GetPage(
-      name: AppRoutes.onboarding,
-      page: () => const OnboardingView(),
-      binding: OnboardingBinding(),
-      middlewares: [GuestMiddleware()],
-    ),
-    GetPage(
       name: AppRoutes.login,
       page: () => const LoginView(),
       binding: AuthBinding(),
-      middlewares: [GuestMiddleware()],
-    ),
-    GetPage(
-      name: AppRoutes.forgotPassword,
-      page: () => const ForgotPasswordView(),
       middlewares: [GuestMiddleware()],
     ),
     GetPage(

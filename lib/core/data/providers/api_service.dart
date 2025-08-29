@@ -283,8 +283,8 @@ class ApiService extends getx.GetConnect {
     // Navigate to login screen
     // Use GetX navigation to redirect to login
     try {
-      if (getx.Get.currentRoute != '/login' && getx.Get.currentRoute != '/onboarding') {
-        getx.Get.offAllNamed('/onboarding');
+      if (getx.Get.currentRoute != '/login') {
+        getx.Get.offAllNamed('/login');
         
         // Show user-friendly message
         getx.Get.snackbar(
@@ -602,22 +602,6 @@ class ApiService extends getx.GetConnect {
   
 
   // Authentication Methods
-  Future<AuthResponse> signUp(String email, String password, {
-    String? fullName,
-    String? phone,
-  }) async {
-    final response = await _supabase.auth.signUp(
-      email: email,
-      password: password,
-      data: {
-        if (fullName != null) 'full_name': fullName,
-        if (phone != null) 'phone': phone,
-      },
-    );
-
-
-    return response;
-  }
 
   // Phone + password sign-in (Supabase supports phone in signInWithPassword)
   Future<AuthResponse> signInWithPhonePassword(String phone, String password) async {
@@ -628,23 +612,11 @@ class ApiService extends getx.GetConnect {
     return response;
   }
 
-  Future<AuthResponse> signIn(String email, String password) async {
-    final response = await _supabase.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
-
-
-    return response;
-  }
 
   Future<void> signOut() async {
     await _supabase.auth.signOut();
   }
 
-  Future<void> resetPassword(String email) async {
-    await _supabase.auth.resetPasswordForEmail(email);
-  }
 
   // Send OTP to a phone number
   // shouldCreateUser=false is safer for verification/resend/login flows

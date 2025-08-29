@@ -84,7 +84,7 @@ class AuthController extends GetxController {
           _resetNotificationSettings();
           // Only navigate to login if not already on auth screens
           if (!_isOnAuthScreen()) {
-            Get.offAllNamed(AppRoutes.onboarding);
+            Get.offAllNamed(AppRoutes.login);
           }
           break;
         case AuthChangeEvent.tokenRefreshed:
@@ -104,8 +104,6 @@ class AuthController extends GetxController {
   bool _isOnAuthScreen() {
     final currentRoute = Get.currentRoute;
     return currentRoute == AppRoutes.login ||
-           currentRoute == AppRoutes.register ||
-           currentRoute == AppRoutes.onboarding ||
            currentRoute == AppRoutes.splash ||
            currentRoute == AppRoutes.profileCompletion;
   }
@@ -120,94 +118,7 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<bool> signUp({
-    required String email,
-    required String password,
-    String? fullName,
-    String? phone,
-  }) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
 
-      final response = await apiService.signUp(
-        email,
-        password,
-        fullName: fullName,
-        phone: phone,
-      );
-
-      if (response.user != null) {
-        DebugLogger.success('Signup successful!');
-        
-        Get.snackbar(
-          'Success',
-          'Account created successfully!',
-          snackPosition: SnackPosition.TOP,
-        );
-        
-        // If auto-confirm is enabled, user will be signed in automatically
-        // Otherwise, they need to verify their phone/email first (email disabled in current flow)
-        if (response.session != null) {
-          currentSupabaseUser.value = response.user;
-          isLoggedIn.value = true;
-          await _loadUserProfile();
-          // Navigation is handled by onAuthStateChange based on profile completeness
-        } else {
-          DebugLogger.info('Phone/email verification required');
-          Get.toNamed(AppRoutes.login);
-        }
-        return true;
-      } else {
-        errorMessage.value = 'Failed to create account';
-        return false;
-      }
-    } catch (e, stackTrace) {
-      DebugLogger.error('Signup error', e, stackTrace);
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      final response = await apiService.signIn(email, password);
-
-      if (response.user != null && response.session != null) {
-        // Log JWT Token
-        DebugLogger.success('Login successful!');
-        DebugLogger.logJWTToken(
-          response.session!.accessToken,
-          expiresAt: response.session!.expiresAt != null 
-              ? DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000)
-              : DateTime.now().add(const Duration(hours: 2)),
-        );
-        
-        currentSupabaseUser.value = response.user;
-        isLoggedIn.value = true;
-        await _loadUserProfile();
-        // Navigation is handled by onAuthStateChange based on profile completeness
-        return true;
-      } else {
-        errorMessage.value = 'Failed to sign in';
-        return false;
-      }
-    } catch (e, stackTrace) {
-      DebugLogger.error('Login error', e, stackTrace);
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
   Future<void> signOut() async {
     try {
@@ -222,26 +133,6 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<bool> resetPassword(String email) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      await apiService.resetPassword(email);
-      
-      Get.snackbar(
-        'Success',
-        'Password reset email sent! Please check your inbox.',
-        snackPosition: SnackPosition.TOP,
-      );
-      return true;
-    } catch (e) {
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
   Future<bool> updatePassword(String newPassword) async {
     try {
@@ -266,28 +157,6 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<bool> updateEmail(String newEmail) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      await _supabase.auth.updateUser(
-        UserAttributes(email: newEmail),
-      );
-
-      Get.snackbar(
-        'Success',
-        'Email update requested! Please check both old and new email addresses.',
-        snackPosition: SnackPosition.TOP,
-      );
-      return true;
-    } catch (e) {
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
   Future<void> refreshUserProfile() async {
     try {
@@ -427,25 +296,7 @@ class AuthController extends GetxController {
     errorMessage.value = '';
   }
 
-  // Social authentication methods (optional - can be implemented later)
-  Future<bool> signInWithGoogle() async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      final response = await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: 'com.360ghar.app://login-callback/',
-      );
-
-      return response;
-    } catch (e) {
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
+  
 
   // For development/testing - remove in production
   Future<void> deleteAccount() async {
@@ -532,5 +383,5 @@ class AuthController extends GetxController {
   // Additional helpers (from UserController)
   Map<String, dynamic>? get preferences => currentUser.value?.preferences;
 
-  // Preference application to filters handled during onboarding/profile completion.
+  // Preference application to filters handled during profile completion.
 }

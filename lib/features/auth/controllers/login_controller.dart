@@ -94,12 +94,7 @@ class LoginController extends GetxController {
         }
         try {
           final normalizedPhone = _normalizeIndianPhone(phoneController.text.trim());
-          // Ask user before creating a new account
-          final consent = await _confirmCreateAccount();
-          if (!consent) {
-            errorMessage.value = 'No account found for this number';
-            return;
-          }
+          
           final signupResp = await Supabase.instance.client.auth.signUp(
             phone: normalizedPhone,
             password: passwordController.text,
@@ -138,34 +133,6 @@ class LoginController extends GetxController {
       ErrorHandler.handleAuthError(e, onRetry: signIn);
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  Future<bool> _confirmCreateAccount() async {
-    try {
-      final result = await showDialog<bool>(
-        context: Get.context!,
-        barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Create Account?'),
-            content: const Text("We couldn’t find an account. Create a new one?"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Create'),
-              ),
-            ],
-          );
-        },
-      );
-      return result == true;
-    } catch (_) {
-      return false;
     }
   }
 
@@ -250,30 +217,6 @@ class LoginController extends GetxController {
     if (m != null) return "+91${m.group(1)}";
     // As a last resort, return original trimmed to let validator show error upstream
     return input.trim();
-  }
-
-  Future<void> signInWithGoogle() async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      DebugLogger.auth('Attempting Google sign-in...');
-
-      final success = await authController.signInWithGoogle();
-      
-      if (success) {
-        DebugLogger.success('Google sign-in successful');
-        ErrorHandler.showSuccess('signed_in_with_google'.tr);
-      } else {
-        DebugLogger.warning('Google sign-in failed');
-      }
-    } catch (e, stackTrace) {
-      DebugLogger.error('Google sign-in error', e, stackTrace);
-      errorMessage.value = e.toString();
-      ErrorHandler.handleAuthError(e, onRetry: signInWithGoogle);
-    } finally {
-      isLoading.value = false;
-    }
   }
 
   // Switch to integrated forgot password flow on the same screen

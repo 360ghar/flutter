@@ -20,8 +20,8 @@ class AuthMiddleware extends GetMiddleware {
           return null; // Allow access to public routes
         }
         
-        // Redirect to onboarding for protected routes
-        return const RouteSettings(name: AppRoutes.onboarding);
+        // Redirect to login for protected routes
+        return const RouteSettings(name: AppRoutes.login);
       }
       
       // User is authenticated, allow access
@@ -36,9 +36,7 @@ class AuthMiddleware extends GetMiddleware {
   bool _isPublicRoute(String route) {
     const publicRoutes = [
       AppRoutes.splash,
-      AppRoutes.onboarding,
       AppRoutes.login,
-      AppRoutes.register,
       AppRoutes.profileCompletion,
       // Add any other public routes here
     ];
@@ -74,10 +72,8 @@ class GuestMiddleware extends GetMiddleware {
   bool _isGuestOnlyRoute(String route) {
     const guestOnlyRoutes = [
       AppRoutes.login,
-      AppRoutes.register,
-      AppRoutes.onboarding,
     ];
-    
+
     return guestOnlyRoutes.contains(route);
   }
 }
