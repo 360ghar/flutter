@@ -53,7 +53,7 @@ class UnifiedFilterModel {
   final int? guests;
   @JsonKey(name: 'sort_by')
   final SortBy? sortBy;
-  
+
   // Search query for text-based search
   @JsonKey(name: 'search_query')
   final String? searchQuery;
@@ -109,18 +109,24 @@ class UnifiedFilterModel {
 
   Map<String, dynamic> toJson() {
     final json = _$UnifiedFilterModelToJson(this);
-    
+
     // Handle DateTime serialization properly for API
     if (availableFrom != null) {
-      json['available_from'] = availableFrom!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+      json['available_from'] = availableFrom!.toIso8601String().split(
+        'T',
+      )[0]; // YYYY-MM-DD format
     }
     if (checkInDate != null) {
-      json['check_in_date'] = checkInDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+      json['check_in_date'] = checkInDate!.toIso8601String().split(
+        'T',
+      )[0]; // YYYY-MM-DD format
     }
     if (checkOutDate != null) {
-      json['check_out_date'] = checkOutDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+      json['check_out_date'] = checkOutDate!.toIso8601String().split(
+        'T',
+      )[0]; // YYYY-MM-DD format
     }
-    
+
     // Ensure numeric values are within valid ranges
     if (radiusKm != null && (radiusKm! <= 0 || radiusKm! > 1000)) {
       json.remove('radius_km'); // Remove invalid radius
@@ -152,13 +158,15 @@ class UnifiedFilterModel {
     if (guests != null && guests! <= 0) {
       json.remove('guests'); // Remove invalid guest count
     }
-    
+
     // Remove null values and empty lists for cleaner API requests
-    json.removeWhere((key, value) => 
-        value == null || 
-        (value is List && value.isEmpty) ||
-        (value is String && value.trim().isEmpty));
-    
+    json.removeWhere(
+      (key, value) =>
+          value == null ||
+          (value is List && value.isEmpty) ||
+          (value is String && value.trim().isEmpty),
+    );
+
     return json;
   }
 
@@ -256,10 +264,6 @@ class LocationData {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'latitude': latitude,
-      'longitude': longitude,
-    };
+    return {'name': name, 'latitude': latitude, 'longitude': longitude};
   }
 }

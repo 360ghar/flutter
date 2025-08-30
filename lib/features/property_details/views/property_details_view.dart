@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../controllers/property_controller.dart';
+import '../../likes/controllers/likes_controller.dart';
 import '../../visits/controllers/visits_controller.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/visit_model.dart';
@@ -17,7 +17,7 @@ class PropertyDetailsView extends StatelessWidget {
     // Handle both PropertyModel object and String ID
     final dynamic arguments = Get.arguments;
     PropertyModel? property;
-    
+
     if (arguments is PropertyModel) {
       property = arguments;
     } else if (arguments is String) {
@@ -39,7 +39,7 @@ class PropertyDetailsView extends StatelessWidget {
           title: Text(
             'property_details'.tr,
             style: TextStyle(
-              color: AppColors.appBarText, 
+              color: AppColors.appBarText,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -47,26 +47,23 @@ class PropertyDetailsView extends StatelessWidget {
         body: Center(
           child: Text(
             'Property not found',
-            style: TextStyle(
-              fontSize: 18, 
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
           ),
         ),
       );
     }
 
-    // Ensure PropertyController is available
-    // PropertyController should be registered via PropertyDetailsBinding
-    final controller = Get.find<PropertyController>();
+    // Use LikesController for favorite management
+    final controller = Get.find<LikesController>();
     final visitsController = Get.find<VisitsController>();
-    
+
     // Add null check to ensure property is not null
     final PropertyModel safeProperty = property;
 
     // Ensure visits are loaded to reflect scheduled state in UI
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!visitsController.hasLoadedVisits.value && !visitsController.isLoading.value) {
+      if (!visitsController.hasLoadedVisits.value &&
+          !visitsController.isLoading.value) {
         visitsController.loadVisitsLazy();
       }
     });
@@ -98,23 +95,25 @@ class PropertyDetailsView extends StatelessWidget {
                   color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
-                child: Obx(() => IconButton(
-                  icon: Icon(
-                    controller.isFavourite(safeProperty.id)
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                    color: controller.isFavourite(safeProperty.id)
-                        ? AppColors.favoriteActive
-                        : Colors.white,
+                child: Obx(
+                  () => IconButton(
+                    icon: Icon(
+                      controller.isFavourite(safeProperty.id)
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: controller.isFavourite(safeProperty.id)
+                          ? AppColors.favoriteActive
+                          : Colors.white,
+                    ),
+                    onPressed: () {
+                      if (controller.isFavourite(safeProperty.id)) {
+                        controller.removeFromFavourites(safeProperty.id);
+                      } else {
+                        controller.addToFavourites(safeProperty.id);
+                      }
+                    },
                   ),
-                  onPressed: () {
-                    if (controller.isFavourite(safeProperty.id)) {
-                      controller.removeFromFavourites(safeProperty.id);
-                    } else {
-                      controller.addToFavourites(safeProperty.id);
-                    }
-                  },
-                )),
+                ),
               ),
               Container(
                 margin: const EdgeInsets.all(8),
@@ -141,13 +140,15 @@ class PropertyDetailsView extends StatelessWidget {
                 itemCount: safeProperty.images?.length ?? 0,
                 itemBuilder: (context, index) {
                   return RobustNetworkImage(
-                    imageUrl: safeProperty.images?[index].imageUrl ?? safeProperty.mainImage,
+                    imageUrl:
+                        safeProperty.images?[index].imageUrl ??
+                        safeProperty.mainImage,
                     fit: BoxFit.cover,
                     errorWidget: Container(
                       color: AppColors.inputBackground,
                       child: Icon(
-                        Icons.image, 
-                        size: 50, 
+                        Icons.image,
+                        size: 50,
                         color: AppColors.disabledColor,
                       ),
                     ),
@@ -156,7 +157,7 @@ class PropertyDetailsView extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Property Details Content
           SliverToBoxAdapter(
             child: Container(
@@ -192,7 +193,8 @@ class PropertyDetailsView extends StatelessWidget {
                                           color: AppColors.propertyCardPrice,
                                         ),
                                       ),
-                                      if (safeProperty.purpose == PropertyPurpose.rent)
+                                      if (safeProperty.purpose ==
+                                          PropertyPurpose.rent)
                                         TextSpan(
                                           text: ' /mo',
                                           style: TextStyle(
@@ -201,7 +203,8 @@ class PropertyDetailsView extends StatelessWidget {
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                      if (safeProperty.purpose == PropertyPurpose.shortStay)
+                                      if (safeProperty.purpose ==
+                                          PropertyPurpose.shortStay)
                                         TextSpan(
                                           text: ' /day',
                                           style: TextStyle(
@@ -229,11 +232,17 @@ class PropertyDetailsView extends StatelessWidget {
                                   runSpacing: 8,
                                   children: [
                                     if (safeProperty.pricePerSqft != null)
-                                      _chip('₹${safeProperty.pricePerSqft!.toStringAsFixed(0)}/sqft'),
+                                      _chip(
+                                        '₹${safeProperty.pricePerSqft!.toStringAsFixed(0)}/sqft',
+                                      ),
                                     if (safeProperty.securityDeposit != null)
-                                      _chip('Deposit ₹${safeProperty.securityDeposit!.toStringAsFixed(0)}'),
+                                      _chip(
+                                        'Deposit ₹${safeProperty.securityDeposit!.toStringAsFixed(0)}',
+                                      ),
                                     if (safeProperty.maintenanceCharges != null)
-                                      _chip('Maintenance ₹${safeProperty.maintenanceCharges!.toStringAsFixed(0)}'),
+                                      _chip(
+                                        'Maintenance ₹${safeProperty.maintenanceCharges!.toStringAsFixed(0)}',
+                                      ),
                                   ],
                                 ),
                               ],
@@ -243,7 +252,10 @@ class PropertyDetailsView extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryYellow,
                                   borderRadius: BorderRadius.circular(20),
@@ -258,7 +270,10 @@ class PropertyDetailsView extends StatelessWidget {
                               ),
                               const SizedBox(height: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.inputBackground,
                                   borderRadius: BorderRadius.circular(20),
@@ -277,7 +292,7 @@ class PropertyDetailsView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Address and Location
                     Container(
                       padding: const EdgeInsets.all(20),
@@ -289,8 +304,8 @@ class PropertyDetailsView extends StatelessWidget {
                       child: Row(
                         children: [
                           Icon(
-                            Icons.location_on, 
-                            color: AppColors.iconColor, 
+                            Icons.location_on,
+                            color: AppColors.iconColor,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
@@ -307,116 +322,143 @@ class PropertyDetailsView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Property Features
                     PropertyDetailsFeatures(property: safeProperty),
                     const SizedBox(height: 24),
-                    
-                                         // Description
-                     Text(
-                       'Description',
-                       style: TextStyle(
-                         fontSize: 20,
-                         fontWeight: FontWeight.bold,
-                         color: AppColors.textPrimary,
-                       ),
-                     ),
-                     const SizedBox(height: 12),
-                     Text(
-                       safeProperty.description ?? 'No description available',
-                       style: TextStyle(
-                         fontSize: 16,
-                         color: AppColors.textSecondary,
-                         height: 1.5,
-                       ),
-                     ),
-                     const SizedBox(height: 16),
-                     if ((safeProperty.features?.isNotEmpty ?? false) || (safeProperty.tags?.isNotEmpty ?? false)) ...[
-                       Text(
-                         'Highlights',
-                         style: TextStyle(
-                           fontSize: 20,
-                           fontWeight: FontWeight.bold,
-                           color: AppColors.textPrimary,
-                         ),
-                       ),
-                       const SizedBox(height: 12),
-                       Wrap(
-                         spacing: 8,
-                         runSpacing: 8,
-                         children: (
-                           (safeProperty.features != null && safeProperty.features!.isNotEmpty)
-                             ? safeProperty.features!
-                             : (safeProperty.tags ?? [])
-                         ).take(6).map((t) => Container(
-                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                           decoration: BoxDecoration(
-                             color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                             borderRadius: BorderRadius.circular(20),
-                             border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
-                           ),
-                           child: Text(
-                             t,
-                             style: TextStyle(
-                               color: AppColors.textPrimary,
-                               fontWeight: FontWeight.w500,
-                             ),
-                           ),
-                         )).toList(),
-                       ),
-                       const SizedBox(height: 24),
-                     ],
-                     const SizedBox(height: 24),
-                     
-                     // Additional Property Information
-                     _buildPropertyInfoSection(safeProperty),
-                     const SizedBox(height: 24),
-                     
-                     // Pricing Details
-                     _buildPricingSection(safeProperty),
-                     const SizedBox(height: 24),
-                     
-                     // Owner/Agent Information
-                     if (safeProperty.hasOwner || safeProperty.builderName?.isNotEmpty == true) ...[
-                       _buildContactSection(safeProperty),
-                       const SizedBox(height: 24),
-                     ],
-                     
-                     // Amenities
-                     Text(
-                       'Amenities',
-                       style: TextStyle(
-                         fontSize: 20,
-                         fontWeight: FontWeight.bold,
-                         color: AppColors.textPrimary,
-                       ),
-                     ),
+
+                    // Description
+                    Text(
+                      'Description',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      safeProperty.description ?? 'No description available',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if ((safeProperty.features?.isNotEmpty ?? false) ||
+                        (safeProperty.tags?.isNotEmpty ?? false)) ...[
+                      Text(
+                        'Highlights',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children:
+                            ((safeProperty.features != null &&
+                                        safeProperty.features!.isNotEmpty)
+                                    ? safeProperty.features!
+                                    : (safeProperty.tags ?? []))
+                                .take(6)
+                                .map(
+                                  (t) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryYellow.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppColors.primaryYellow
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      t,
+                                      style: TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    const SizedBox(height: 24),
+
+                    // Additional Property Information
+                    _buildPropertyInfoSection(safeProperty),
+                    const SizedBox(height: 24),
+
+                    // Pricing Details
+                    _buildPricingSection(safeProperty),
+                    const SizedBox(height: 24),
+
+                    // Owner/Agent Information
+                    if (safeProperty.hasOwner ||
+                        safeProperty.builderName?.isNotEmpty == true) ...[
+                      _buildContactSection(safeProperty),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Amenities
+                    Text(
+                      'Amenities',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: safeProperty.amenities?.map((amenity) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
-                          ),
-                                                     child: Text(
-                             amenity.title,
-                             style: TextStyle(
-                               color: AppColors.textPrimary,
-                               fontWeight: FontWeight.w500,
-                             ),
-                           ),
-                        );
-                      }).toList() ?? [],
+                      children:
+                          safeProperty.amenities?.map((amenity) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryYellow.withValues(
+                                  alpha: 0.1,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.primaryYellow.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                amenity.title,
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }).toList() ??
+                          [],
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // 360° Tour Embedded Section
-                    if (safeProperty.virtualTourUrl != null && safeProperty.virtualTourUrl!.isNotEmpty) ...[
+                    if (safeProperty.virtualTourUrl != null &&
+                        safeProperty.virtualTourUrl!.isNotEmpty) ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -440,14 +482,26 @@ class PropertyDetailsView extends StatelessWidget {
                           ),
                           InkWell(
                             onTap: () {
-                              Get.toNamed('/tour', arguments: safeProperty.virtualTourUrl);
+                              Get.toNamed(
+                                '/tour',
+                                arguments: safeProperty.virtualTourUrl,
+                              );
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                                color: AppColors.primaryYellow.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
+                                border: Border.all(
+                                  color: AppColors.primaryYellow.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -482,12 +536,14 @@ class PropertyDetailsView extends StatelessWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: _Embedded360TourDetails(tourUrl: safeProperty.virtualTourUrl!),
+                          child: _Embedded360TourDetails(
+                            tourUrl: safeProperty.virtualTourUrl!,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
                     ],
-                    
+
                     const SizedBox(height: 100), // Space for bottom buttons
                   ],
                 ),
@@ -496,7 +552,7 @@ class PropertyDetailsView extends StatelessWidget {
           ),
         ],
       ),
-      
+
       // Bottom Action Buttons
       bottomNavigationBar: Obx(() {
         // Find any upcoming scheduled visit for this property
@@ -524,7 +580,10 @@ class PropertyDetailsView extends StatelessWidget {
             width: double.infinity,
             child: scheduledVisit != null
                 ? Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.inputBackground,
                       borderRadius: BorderRadius.circular(12),
@@ -536,7 +595,7 @@ class PropertyDetailsView extends StatelessWidget {
                         Icon(Icons.check_circle, color: AppColors.accentGreen),
                         const SizedBox(width: 8),
                         Text(
-                          'Scheduled on ${scheduledVisit!.scheduledDate.day}/${scheduledVisit!.scheduledDate.month}/${scheduledVisit!.scheduledDate.year}',
+                          'Scheduled on ${scheduledVisit.scheduledDate.day}/${scheduledVisit.scheduledDate.month}/${scheduledVisit.scheduledDate.year}',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 16,
@@ -547,7 +606,11 @@ class PropertyDetailsView extends StatelessWidget {
                     ),
                   )
                 : ElevatedButton.icon(
-                    onPressed: () => _showBookVisitDialog(context, safeProperty, visitsController),
+                    onPressed: () => _showBookVisitDialog(
+                      context,
+                      safeProperty,
+                      visitsController,
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryYellow,
                       foregroundColor: Colors.black,
@@ -571,30 +634,6 @@ class PropertyDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildFeature(IconData icon, String value, String label) {
-    return Column(
-      children: [
-        Icon(icon, size: 24, color: AppColors.primaryYellow),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildPropertyInfoSection(PropertyModel property) {
     return Container(
@@ -609,7 +648,11 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: AppColors.primaryYellow, size: 20),
+              Icon(
+                Icons.info_outline,
+                color: AppColors.primaryYellow,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Property Information',
@@ -622,7 +665,7 @@ class PropertyDetailsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           _buildInfoRow('Status', property.statusString),
           _buildInfoRow('Purpose', property.purposeString),
           if (property.ageText.isNotEmpty)
@@ -632,7 +675,10 @@ class PropertyDetailsView extends StatelessWidget {
           if (property.minimumStayDays != null)
             _buildInfoRow('Minimum Stay', '${property.minimumStayDays} days'),
           if (property.availableFrom?.isNotEmpty == true)
-            _buildInfoRow('Available From', _formatDate(property.availableFrom!)),
+            _buildInfoRow(
+              'Available From',
+              _formatDate(property.availableFrom!),
+            ),
         ],
       ),
     );
@@ -651,7 +697,11 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.payments_outlined, color: AppColors.primaryYellow, size: 20),
+              Icon(
+                Icons.payments_outlined,
+                color: AppColors.primaryYellow,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Pricing Details',
@@ -664,18 +714,36 @@ class PropertyDetailsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
-          _buildInfoRow('Base Price', '₹${property.basePrice.toStringAsFixed(0)}'),
+
+          _buildInfoRow(
+            'Base Price',
+            '₹${property.basePrice.toStringAsFixed(0)}',
+          ),
           if (property.monthlyRent != null)
-            _buildInfoRow('Monthly Rent', '₹${property.monthlyRent!.toStringAsFixed(0)}'),
+            _buildInfoRow(
+              'Monthly Rent',
+              '₹${property.monthlyRent!.toStringAsFixed(0)}',
+            ),
           if (property.dailyRate != null)
-            _buildInfoRow('Daily Rate', '₹${property.dailyRate!.toStringAsFixed(0)}'),
+            _buildInfoRow(
+              'Daily Rate',
+              '₹${property.dailyRate!.toStringAsFixed(0)}',
+            ),
           if (property.securityDeposit != null)
-            _buildInfoRow('Security Deposit', '₹${property.securityDeposit!.toStringAsFixed(0)}'),
+            _buildInfoRow(
+              'Security Deposit',
+              '₹${property.securityDeposit!.toStringAsFixed(0)}',
+            ),
           if (property.maintenanceCharges != null)
-            _buildInfoRow('Maintenance', '₹${property.maintenanceCharges!.toStringAsFixed(0)}'),
+            _buildInfoRow(
+              'Maintenance',
+              '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
+            ),
           if (property.pricePerSqft != null)
-            _buildInfoRow('Price per Sq Ft', '₹${property.pricePerSqft!.toStringAsFixed(0)}'),
+            _buildInfoRow(
+              'Price per Sq Ft',
+              '₹${property.pricePerSqft!.toStringAsFixed(0)}',
+            ),
         ],
       ),
     );
@@ -694,7 +762,11 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.contact_phone, color: AppColors.primaryYellow, size: 20),
+              Icon(
+                Icons.contact_phone,
+                color: AppColors.primaryYellow,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Contact Information',
@@ -707,7 +779,7 @@ class PropertyDetailsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           if (property.hasOwner) ...[
             _buildInfoRow('Owner', property.ownerDisplayName),
             if (property.hasOwnerContact)
@@ -777,7 +849,18 @@ class PropertyDetailsView extends StatelessWidget {
       final dt = DateTime.tryParse(iso);
       if (dt == null) return iso;
       const months = [
-        'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
     } catch (_) {
@@ -785,13 +868,17 @@ class PropertyDetailsView extends StatelessWidget {
     }
   }
 
-  void _showBookVisitDialog(BuildContext context, PropertyModel safeProperty, VisitsController visitsController) {
+  void _showBookVisitDialog(
+    BuildContext context,
+    PropertyModel safeProperty,
+    VisitsController visitsController,
+  ) {
     // Default to next day and a fixed time for backend
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     const defaultHour = 10; // 10:00 AM default
     const defaultMinute = 0;
     final TextEditingController notesController = TextEditingController();
-    
+
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.surface,
@@ -812,10 +899,13 @@ class PropertyDetailsView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Date Selection
                 ListTile(
-                  leading: const Icon(Icons.calendar_today, color: AppColors.primaryYellow),
+                  leading: const Icon(
+                    Icons.calendar_today,
+                    color: AppColors.primaryYellow,
+                  ),
                   title: Text(
                     'Date',
                     style: TextStyle(color: AppColors.textPrimary),
@@ -887,7 +977,7 @@ class PropertyDetailsView extends StatelessWidget {
                 notes: notes,
               );
               Get.back();
-              
+
               Get.snackbar(
                 'Visit Scheduled!',
                 'Your visit to ${safeProperty.title} is scheduled for ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
@@ -911,17 +1001,18 @@ class PropertyDetailsView extends StatelessWidget {
 
 class _Embedded360TourDetails extends StatefulWidget {
   final String tourUrl;
-  
+
   const _Embedded360TourDetails({required this.tourUrl});
-  
+
   @override
-  State<_Embedded360TourDetails> createState() => _Embedded360TourDetailsState();
+  State<_Embedded360TourDetails> createState() =>
+      _Embedded360TourDetailsState();
 }
 
 class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
   late final WebViewController controller;
   bool isLoading = true;
-  
+
   @override
   void initState() {
     super.initState();
@@ -946,9 +1037,10 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
           },
         ),
       );
-    
+
     // Create optimized HTML for embedded Kuula tour
-    final htmlContent = '''
+    final htmlContent =
+        '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -979,10 +1071,10 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
       </body>
       </html>
     ''';
-    
+
     controller.loadHtmlString(htmlContent);
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -1015,4 +1107,4 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
       ],
     );
   }
-} 
+}

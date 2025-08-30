@@ -51,9 +51,9 @@ class AboutView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // App Description
             buildThemeAwareCard(
               child: Column(
@@ -72,9 +72,9 @@ class AboutView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Features Section
             buildThemeAwareCard(
               child: Column(
@@ -85,7 +85,8 @@ class AboutView extends StatelessWidget with ThemeMixin {
                   _buildFeatureItem(
                     icon: Icons.swipe,
                     title: 'Swipe to Discover',
-                    description: 'Dating-app style interface for property browsing',
+                    description:
+                        'Dating-app style interface for property browsing',
                   ),
                   _buildFeatureItem(
                     icon: Icons.threesixty,
@@ -100,7 +101,8 @@ class AboutView extends StatelessWidget with ThemeMixin {
                   _buildFeatureItem(
                     icon: Icons.location_on,
                     title: 'Location Intelligence',
-                    description: 'Detailed neighborhood information and mapping',
+                    description:
+                        'Detailed neighborhood information and mapping',
                   ),
                   _buildFeatureItem(
                     icon: Icons.person,
@@ -110,9 +112,9 @@ class AboutView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // App Information
             buildThemeAwareCard(
               child: Column(
@@ -124,9 +126,9 @@ class AboutView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Contact Information
             buildThemeAwareCard(
               child: Column(
@@ -155,31 +157,43 @@ class AboutView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Legal Section
             buildThemeAwareCard(
-              child: Column(  
+              child: Column(
                 children: [
                   ListTile(
-                    leading: Icon(Icons.description, color: AppColors.iconColor),
+                    leading: Icon(
+                      Icons.description,
+                      color: AppColors.iconColor,
+                    ),
                     title: Text(
                       'Terms of Service',
                       style: TextStyle(color: AppColors.textPrimary),
                     ),
-                    trailing: Icon(Icons.chevron_right, color: AppColors.iconColor),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: AppColors.iconColor,
+                    ),
                     onTap: () => _openTermsOfService(),
                     contentPadding: EdgeInsets.zero,
                   ),
                   Divider(color: AppColors.border, height: 1),
                   ListTile(
-                    leading: Icon(Icons.privacy_tip, color: AppColors.iconColor),
+                    leading: Icon(
+                      Icons.privacy_tip,
+                      color: AppColors.iconColor,
+                    ),
                     title: Text(
                       'Privacy Policy',
                       style: TextStyle(color: AppColors.textPrimary),
                     ),
-                    trailing: Icon(Icons.chevron_right, color: AppColors.iconColor),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: AppColors.iconColor,
+                    ),
                     onTap: () => _openPrivacyPolicy(),
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -190,16 +204,19 @@ class AboutView extends StatelessWidget with ThemeMixin {
                       'End User License Agreement',
                       style: TextStyle(color: AppColors.textPrimary),
                     ),
-                    trailing: Icon(Icons.chevron_right, color: AppColors.iconColor),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: AppColors.iconColor,
+                    ),
                     onTap: () => _openEULA(),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 30),
-            
+
             // Copyright
             Center(
               child: Column(
@@ -245,11 +262,7 @@ class AboutView extends StatelessWidget with ThemeMixin {
               color: AppColors.primaryYellow.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: AppColors.primaryYellow,
-              size: 20,
-            ),
+            child: Icon(icon, color: AppColors.primaryYellow, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -289,10 +302,7 @@ class AboutView extends StatelessWidget with ThemeMixin {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
           ),
           Text(
             value,
@@ -325,10 +335,7 @@ class AboutView extends StatelessWidget with ThemeMixin {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: 14,
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
       ),
       trailing: Icon(Icons.launch, color: AppColors.iconColor, size: 20),
       onTap: onTap,

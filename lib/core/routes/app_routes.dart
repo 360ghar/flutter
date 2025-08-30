@@ -1,6 +1,8 @@
 abstract class AppRoutes {
   static const splash = '/splash';
   static const login = '/login';
+  static const signup = '/signup';
+  static const forgotPassword = '/forgot-password';
   static const profileCompletion = '/profile-completion';
   static const dashboard = '/dashboard';
   static const home = '/discover'; // standardize legacy home to discover
@@ -19,4 +21,4 @@ abstract class AppRoutes {
   static const help = '/help';
   static const about = '/about';
   static const locationSearch = '/location-search';
-} 
+}

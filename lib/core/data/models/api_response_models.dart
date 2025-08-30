@@ -23,12 +23,10 @@ class PaginationParams {
   final int page;
   final int limit;
 
-  PaginationParams({
-    this.page = 1,
-    this.limit = 20,
-  });
+  PaginationParams({this.page = 1, this.limit = 20});
 
-  factory PaginationParams.fromJson(Map<String, dynamic> json) => _$PaginationParamsFromJson(json);
+  factory PaginationParams.fromJson(Map<String, dynamic> json) =>
+      _$PaginationParamsFromJson(json);
 
   Map<String, dynamic> toJson() => _$PaginationParamsToJson(this);
 
@@ -89,12 +87,10 @@ class MessageResponse {
   final String message;
   final bool success;
 
-  MessageResponse({
-    required this.message,
-    this.success = true,
-  });
+  MessageResponse({required this.message, this.success = true});
 
-  factory MessageResponse.fromJson(Map<String, dynamic> json) => _$MessageResponseFromJson(json);
+  factory MessageResponse.fromJson(Map<String, dynamic> json) =>
+      _$MessageResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MessageResponseToJson(this);
 }
@@ -106,13 +102,10 @@ class ErrorResponse {
   final String? errorCode;
   final Map<String, dynamic>? details;
 
-  ErrorResponse({
-    required this.message,
-    this.errorCode,
-    this.details,
-  });
+  ErrorResponse({required this.message, this.errorCode, this.details});
 
-  factory ErrorResponse.fromJson(Map<String, dynamic> json) => _$ErrorResponseFromJson(json);
+  factory ErrorResponse.fromJson(Map<String, dynamic> json) =>
+      _$ErrorResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$ErrorResponseToJson(this);
 }
@@ -136,11 +129,11 @@ class SearchParams {
     this.limit = 20,
   });
 
-  factory SearchParams.fromJson(Map<String, dynamic> json) => _$SearchParamsFromJson(json);
+  factory SearchParams.fromJson(Map<String, dynamic> json) =>
+      _$SearchParamsFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchParamsToJson(this);
 }
-
 
 @JsonSerializable()
 class NotificationSettings {
@@ -166,7 +159,8 @@ class NotificationSettings {
     this.promotionalEmails = false,
   });
 
-  factory NotificationSettings.fromJson(Map<String, dynamic> json) => _$NotificationSettingsFromJson(json);
+  factory NotificationSettings.fromJson(Map<String, dynamic> json) =>
+      _$NotificationSettingsFromJson(json);
 
   Map<String, dynamic> toJson() => _$NotificationSettingsToJson(this);
 
@@ -207,7 +201,8 @@ class PrivacySettings {
     this.searchHistoryTracking = true,
   });
 
-  factory PrivacySettings.fromJson(Map<String, dynamic> json) => _$PrivacySettingsFromJson(json);
+  factory PrivacySettings.fromJson(Map<String, dynamic> json) =>
+      _$PrivacySettingsFromJson(json);
 
   Map<String, dynamic> toJson() => _$PrivacySettingsToJson(this);
 
@@ -221,7 +216,8 @@ class PrivacySettings {
       profileVisibility: profileVisibility ?? this.profileVisibility,
       locationSharing: locationSharing ?? this.locationSharing,
       contactSharing: contactSharing ?? this.contactSharing,
-      searchHistoryTracking: searchHistoryTracking ?? this.searchHistoryTracking,
+      searchHistoryTracking:
+          searchHistoryTracking ?? this.searchHistoryTracking,
     );
   }
 
@@ -235,12 +231,10 @@ class LocationUpdate {
   final double latitude;
   final double longitude;
 
-  LocationUpdate({
-    required this.latitude,
-    required this.longitude,
-  });
+  LocationUpdate({required this.latitude, required this.longitude});
 
-  factory LocationUpdate.fromJson(Map<String, dynamic> json) => _$LocationUpdateFromJson(json);
+  factory LocationUpdate.fromJson(Map<String, dynamic> json) =>
+      _$LocationUpdateFromJson(json);
 
   Map<String, dynamic> toJson() => _$LocationUpdateToJson(this);
 }

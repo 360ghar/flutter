@@ -83,7 +83,10 @@ class Tour360Illustration extends StatelessWidget {
               Positioned(
                 bottom: 20,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.accentBlue,
                     borderRadius: BorderRadius.circular(20),
@@ -165,7 +168,9 @@ class VirtualToursIllustration extends StatelessWidget {
                               height: 120,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: AppTheme.accentBlue.withValues(alpha: 0.3),
+                                  color: AppTheme.accentBlue.withValues(
+                                    alpha: 0.3,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -205,13 +210,16 @@ class VirtualToursIllustration extends StatelessWidget {
                 top: 50,
                 right: 20,
                 child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(1, 0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: scaleAnimation as AnimationController,
-                    curve: const Interval(0.0, 0.3),
-                  )),
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(1, 0),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: scaleAnimation as AnimationController,
+                          curve: const Interval(0.0, 0.3),
+                        ),
+                      ),
                   child: const _FloatingIcon(
                     icon: Icons.access_time,
                     color: AppTheme.accentGreen,
@@ -223,13 +231,16 @@ class VirtualToursIllustration extends StatelessWidget {
                 bottom: 80,
                 left: 20,
                 child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(-1, 0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: scaleAnimation as AnimationController,
-                    curve: const Interval(0.2, 0.5),
-                  )),
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(-1, 0),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: scaleAnimation as AnimationController,
+                          curve: const Interval(0.2, 0.5),
+                        ),
+                      ),
                   child: const _FloatingIcon(
                     icon: Icons.location_on,
                     color: AppTheme.accentOrange,
@@ -241,13 +252,16 @@ class VirtualToursIllustration extends StatelessWidget {
                 top: 120,
                 left: 30,
                 child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, -1),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: scaleAnimation as AnimationController,
-                    curve: const Interval(0.4, 0.7),
-                  )),
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(0, -1),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: scaleAnimation as AnimationController,
+                          curve: const Interval(0.4, 0.7),
+                        ),
+                      ),
                   child: const _FloatingIcon(
                     icon: Icons.home_work,
                     color: AppTheme.accentBlue,
@@ -448,7 +462,10 @@ class LowBrokerageIllustration extends StatelessWidget {
                       top: 20,
                       right: 20,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.accentOrange,
                           borderRadius: BorderRadius.circular(20),
@@ -478,10 +495,20 @@ class LowBrokerageIllustration extends StatelessWidget {
                   Icons.security,
                   Icons.thumb_up,
                 ];
-                
+
                 return Positioned(
-                  left: 100 + radius * math.cos(angle + rotationAnimation.value * 2 * math.pi),
-                  top: 100 + radius * math.sin(angle + rotationAnimation.value * 2 * math.pi),
+                  left:
+                      100 +
+                      radius *
+                          math.cos(
+                            angle + rotationAnimation.value * 2 * math.pi,
+                          ),
+                  top:
+                      100 +
+                      radius *
+                          math.sin(
+                            angle + rotationAnimation.value * 2 * math.pi,
+                          ),
                   child: Container(
                     width: 40,
                     height: 40,
@@ -489,11 +516,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: AppTheme.accentBlue.withValues(alpha: 0.8),
                     ),
-                    child: Icon(
-                      icons[index],
-                      size: 20,
-                      color: Colors.white,
-                    ),
+                    child: Icon(icons[index], size: 20, color: Colors.white),
                   ),
                 );
               }),
@@ -533,9 +556,10 @@ class _FloatingIconState extends State<_FloatingIcon>
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
 
     Future.delayed(Duration(milliseconds: widget.delay), () {
       if (mounted) {
@@ -571,14 +595,10 @@ class _FloatingIconState extends State<_FloatingIcon>
                 ),
               ],
             ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: Icon(widget.icon, color: Colors.white, size: 24),
           ),
         );
       },
     );
   }
-} 
+}

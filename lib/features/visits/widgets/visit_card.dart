@@ -39,7 +39,10 @@ class VisitCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               RobustNetworkImage(
-                imageUrl: visit.property?.mainImage ?? visit.property?.mainImageUrl ?? '',
+                imageUrl:
+                    visit.property?.mainImage ??
+                    visit.property?.mainImageUrl ??
+                    '',
                 width: 64,
                 height: 64,
                 fit: BoxFit.cover,
@@ -81,21 +84,51 @@ class VisitCard extends StatelessWidget {
                       Row(
                         children: [
                           if (visit.property!.bedrooms != null) ...[
-                            Icon(Icons.bed, size: 14, color: AppColors.iconColor),
+                            Icon(
+                              Icons.bed,
+                              size: 14,
+                              color: AppColors.iconColor,
+                            ),
                             const SizedBox(width: 4),
-                            Text('${visit.property!.bedrooms} BHK', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            Text(
+                              '${visit.property!.bedrooms} BHK',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                             const SizedBox(width: 10),
                           ],
                           if (visit.property!.bathrooms != null) ...[
-                            Icon(Icons.bathtub_outlined, size: 14, color: AppColors.iconColor),
+                            Icon(
+                              Icons.bathtub_outlined,
+                              size: 14,
+                              color: AppColors.iconColor,
+                            ),
                             const SizedBox(width: 4),
-                            Text('${visit.property!.bathrooms} Bath', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            Text(
+                              '${visit.property!.bathrooms} Bath',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                             const SizedBox(width: 10),
                           ],
                           if (visit.property!.areaSqft != null) ...[
-                            Icon(Icons.square_foot, size: 14, color: AppColors.iconColor),
+                            Icon(
+                              Icons.square_foot,
+                              size: 14,
+                              color: AppColors.iconColor,
+                            ),
                             const SizedBox(width: 4),
-                            Text('${visit.property!.areaSqft!.toStringAsFixed(0)} sq ft', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            Text(
+                              '${visit.property!.areaSqft!.toStringAsFixed(0)} sq ft',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                           ],
                         ],
                       ),
@@ -103,7 +136,11 @@ class VisitCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                        Icon(
+                          Icons.calendar_today,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           dateText,
@@ -113,7 +150,11 @@ class VisitCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
+                        Icon(
+                          Icons.access_time,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           timeText,
@@ -166,7 +207,10 @@ class VisitCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       visit.specialRequirements!,
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -269,4 +313,3 @@ class VisitCard extends StatelessWidget {
     );
   }
 }
-

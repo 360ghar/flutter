@@ -143,30 +143,36 @@ lib/
 │   ├── navigation/        # Navigation components
 │   ├── property/          # Property-specific widgets
 │   └── splash/            # Splash-specific widgets
-└── main.dart             # App entry point
+├── main.dart             # App entry point
+└── root.dart             # Root authentication state router
 ```
 
 ### Key Architecture Components
 
+#### 0. Root Authentication Router (`lib/root.dart`)
+The app uses a centralized authentication state router that manages the entire app's authentication flow:
+- **Root Widget**: Listens to `AuthController.authStatus` and routes users to appropriate screens
+- **AuthStatus States**: `initial`, `authenticated`, `unauthenticated`, `requiresProfileCompletion`, `error`
+- **Dynamic Controller Registration**: Registers controllers only when needed for performance optimization
+- **Error Handling**: Provides retry and logout options for authentication errors
+
 #### 1. Controllers (GetX State Management)
 
 **Core Controllers** (`lib/core/controllers/`):
-- **AuthController**: User authentication and session management
-- **FilterService**: Centralized filtering and search service (consolidated from FilterController)
+- **AuthController**: User authentication and session management (phone-based login with OTP)
 - **LocationController**: Handles location permissions and GPS services
 - **LocalizationController**: Multi-language support and localization
 - **ThemeController**: Light/dark theme management and user preferences
+- **PageStateService**: Manages page state across app navigation
 
 **Feature Controllers** (`lib/features/*/controllers/`):
 - **DashboardController**: Manages dashboard data and navigation (`features/dashboard/`)
-- **DiscoverController**: Property discovery main interface (`features/discover/`)
-- **SwipeController**: Swipe mechanics for Bumble-style interface (`features/discover/`)
+- **DiscoverController**: Property discovery main interface with integrated swipe mechanics (`features/discover/`)
 - **ExploreController**: Map functionality and location-based exploration (`features/explore/`)
 - **LikesController**: Manages liked/passed properties and favorites (`features/likes/`)
-- **PropertyController**: Single property operations and details (`features/property_details/`)
 - **VisitsController**: Property visits and scheduling management (`features/visits/`)
-- **BookingController**: Property booking system (`features/booking/`)
 - **ProfileControllers**: Multiple controllers for profile management (`features/profile/`)
+- **LoginController**: Phone-based authentication with OTP verification (`features/auth/`)
 
 #### 2. Data Layer (`lib/core/data/`)
 - **Models** (`core/data/models/`): JSON serializable with `json_annotation`
@@ -182,9 +188,13 @@ lib/
   - **AgentModel**: Real estate agent information
 - **Providers** (`core/data/providers/`): 
   - **ApiService**: Primary API integration with error handling and authentication
+- **Services** (`core/services/`):
+  - **SecureTokenManager**: Enhanced secure token storage using FlutterSecureStorage with GetStorage fallback
 - **Repositories** (`core/data/repositories/`): Abstraction layer between controllers and data sources
   - **PropertiesRepository**: Property data access, caching, and filtering
   - **SwipesRepository**: Swipe interaction tracking and history
+  - **ProfileRepository**: User profile data management and updates
+  - **AuthRepository**: Authentication data handling and token management (`features/auth/data/`)
 
 #### 3. Module Structure
 **Core Infrastructure** (`lib/core/`):
@@ -222,7 +232,7 @@ feature_name/
 **Core Implementation**: Located in `lib/features/discover/widgets/`:
 - **SwipeStack**: Main swipe container with card stack management
 - **PropertySwipeCard**: Individual property cards with swipe gestures
-- **SwipeController**: Handles swipe logic and state management
+- **DiscoverController**: Handles swipe logic and state management (integrated into main discover controller)
 
 **Swipe Actions**:
 - **Swipe Right**: Like property (mark as favorite)
@@ -339,6 +349,7 @@ GOOGLE_PLACES_API_KEY=your_google_places_key  # For location search
 - **dio**: ^5.3.0 - HTTP client for API calls
 - **supabase_flutter**: ^2.8.0 - Backend as a Service integration
 - **get_storage**: ^2.1.1 - Local data persistence
+- **flutter_secure_storage**: ^9.2.2 - Secure token storage for authentication
 
 ### UI/UX
 - **google_fonts**: ^6.1.0 - Typography (Inter font family)
@@ -564,12 +575,13 @@ dart run build_runner build --delete-conflicting-outputs
 
 ## Authentication Flow
 
-### Login/Signup Process
-1. User enters credentials in auth views (LoginView/SignupView)
-2. AuthController validates input and calls ApiService
-3. Backend handles authentication and returns tokens
-4. Session stored in secure local storage
-5. User redirected to home or profile completion based on setup status
+### Phone-Based Login Process
+1. User enters phone number in LoginView (no signup required)
+2. System sends OTP via SMS for verification
+3. AuthController validates OTP and calls AuthRepository
+4. Backend handles authentication and returns secure tokens
+5. Tokens stored via SecureTokenManager in secure local storage
+6. User redirected to profile completion or home based on setup status
 
 ### Profile Completion Flow
 - **ProfileCompletionView**: Collects additional user information
@@ -652,7 +664,10 @@ cd ios && pod install                                     # iOS dependencies
 ### Key File Locations  
 - **Controllers**: `lib/core/controllers/` and `lib/features/*/controllers/`
 - **Models**: `lib/core/data/models/` (with .g.dart generated files)
+- **Authentication Models**: `lib/core/models/auth_status.dart`
 - **API Service**: `lib/core/data/providers/api_service.dart`
+- **Secure Token Manager**: `lib/core/services/secure_token_manager.dart`
+- **Root Router**: `lib/root.dart`
 - **Routes**: `lib/core/routes/app_routes.dart` and `app_pages.dart`
 - **Theme**: `lib/core/utils/theme.dart` and `app_colors.dart`  
 - **Translations**: `lib/core/translations/app_translations.dart`
@@ -660,7 +675,8 @@ cd ios && pod install                                     # iOS dependencies
 
 ### Architecture Pattern
 ```
-View (SafeGetView) → Controller (GetxController) → Repository → ApiService → Supabase
+Root Router → View (SafeGetView) → Controller (GetxController) → Repository → ApiService → Supabase
+                                                              ↘ SecureTokenManager ↗
 ```
 
 ### Essential GetX Patterns

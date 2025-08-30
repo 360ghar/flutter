@@ -63,9 +63,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Data Privacy
             buildThemeAwareCard(
               child: Column(
@@ -104,9 +104,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Communication Privacy
             buildThemeAwareCard(
               child: Column(
@@ -138,9 +138,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Data Management
             buildThemeAwareCard(
               child: Column(
@@ -170,9 +170,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Legal & Compliance
             buildThemeAwareCard(
               child: Column(
@@ -207,9 +207,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 30),
-            
+
             // Contact Support
             Center(
               child: TextButton(
@@ -244,11 +244,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
           color: AppColors.primaryYellow.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(
-          icon,
-          color: AppColors.primaryYellow,
-          size: 20,
-        ),
+        child: Icon(icon, color: AppColors.primaryYellow, size: 20),
       ),
       title: Text(
         title,
@@ -260,12 +256,10 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: 14,
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
       ),
-      trailing: trailing ?? Icon(Icons.chevron_right, color: AppColors.iconColor),
+      trailing:
+          trailing ?? Icon(Icons.chevron_right, color: AppColors.iconColor),
       onTap: onTap,
       contentPadding: EdgeInsets.zero,
     );
@@ -293,10 +287,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
         children: [
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 4),
           Text(
@@ -323,10 +314,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: textColor ?? AppColors.iconColor,
-      ),
+      leading: Icon(icon, color: textColor ?? AppColors.iconColor),
       title: Text(
         title,
         style: TextStyle(
@@ -337,10 +325,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: 14,
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
       ),
       trailing: Icon(Icons.chevron_right, color: AppColors.iconColor),
       onTap: onTap,
@@ -366,10 +351,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: 14,
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
       ),
       trailing: Icon(Icons.launch, color: AppColors.iconColor, size: 20),
       onTap: onTap,
@@ -516,10 +498,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                 colorText: AppColors.snackbarText,
               );
             },
-            child: Text(
-              'Clear',
-              style: TextStyle(color: AppColors.errorRed),
-            ),
+            child: Text('Clear', style: TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),
@@ -556,10 +535,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                 colorText: AppColors.snackbarText,
               );
             },
-            child: Text(
-              'Delete',
-              style: TextStyle(color: AppColors.errorRed),
-            ),
+            child: Text('Delete', style: TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),

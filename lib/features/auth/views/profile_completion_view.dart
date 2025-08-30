@@ -21,7 +21,7 @@ class ProfileCompletionView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 20),
-                      
+
                       // Header
                       const Text(
                         'Complete Your Profile',
@@ -34,18 +34,20 @@ class ProfileCompletionView extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         'Help us personalize your property search experience',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.grey,
-                            ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
-                      
+
                       // Progress Indicator (2 steps)
                       LinearProgressIndicator(
                         value: (controller.currentStep.value + 1) / 2,
                         backgroundColor: Colors.grey[300],
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -57,17 +59,17 @@ class ProfileCompletionView extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
-                      
+
                       // Step Content
                       _buildStepContent(controller),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Navigation Buttons
                       _buildNavigationButtons(controller),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Skip Button
                       TextButton(
                         onPressed: controller.skipToHome,
@@ -115,11 +117,11 @@ class ProfileCompletionView extends StatelessWidget {
         Expanded(
           flex: 2,
           child: ElevatedButton(
-            onPressed: controller.isLoading.value 
-                ? null 
-                : (controller.currentStep.value < 1 
-                    ? controller.nextStep 
-                    : controller.completeProfile),
+            onPressed: controller.isLoading.value
+                ? null
+                : (controller.currentStep.value < 1
+                      ? controller.nextStep
+                      : controller.completeProfile),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: AppTheme.primaryColor,
@@ -156,10 +158,7 @@ class ProfileCompletionView extends StatelessWidget {
       children: [
         const Text(
           'Personal Information',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         // Full Name
@@ -183,30 +182,6 @@ class ProfileCompletionView extends StatelessWidget {
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 16),
-        // Gender
-        DropdownButtonFormField<String>(
-          value: controller.selectedGender.value.isEmpty
-              ? null
-              : controller.selectedGender.value,
-          decoration: const InputDecoration(
-            labelText: 'Gender',
-            prefixIcon: Icon(Icons.wc_outlined),
-            border: OutlineInputBorder(),
-          ),
-          items: controller.genders
-              .map((g) => DropdownMenuItem<String>(
-                    value: g,
-                    child: Text(g.capitalize ?? g),
-                  ))
-              .toList(),
-          onChanged: (val) {
-            if (val != null) {
-              controller.selectedGender.value = val;
-              controller.update();
-            }
-          },
-        ),
-        const SizedBox(height: 16),
         // Date of Birth
         TextFormField(
           controller: controller.dateOfBirthController,
@@ -222,10 +197,10 @@ class ProfileCompletionView extends StatelessWidget {
       ],
     );
   }
+
   Widget _buildPurposeStep(ProfileCompletionController controller) {
     final theme = Get.context!.theme;
     final isDark = theme.brightness == Brightness.dark;
-    final surface = theme.colorScheme.surface;
     final onSurface = theme.colorScheme.onSurface;
     final selectedBg = AppTheme.primaryColor;
     final selectedFg = AppTheme.textDark;
@@ -261,9 +236,7 @@ class ProfileCompletionView extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: isDark
-                      ? AppTheme.darkShadow
-                      : AppTheme.cardShadow,
+                  color: isDark ? AppTheme.darkShadow : AppTheme.cardShadow,
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -297,10 +270,7 @@ class ProfileCompletionView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Text(
-          'What are you looking for?',
-          style: theme.textTheme.titleLarge,
-        ),
+        Text('What are you looking for?', style: theme.textTheme.titleLarge),
         const SizedBox(height: 12),
         Row(
           children: [

@@ -7,11 +7,7 @@ class ThemeToggleButton extends StatelessWidget {
   final bool showLabel;
   final double? iconSize;
 
-  const ThemeToggleButton({
-    super.key,
-    this.showLabel = false,
-    this.iconSize,
-  });
+  const ThemeToggleButton({super.key, this.showLabel = false, this.iconSize});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +15,7 @@ class ThemeToggleButton extends StatelessWidget {
 
     return Obx(() {
       final currentMode = themeController.currentThemeMode;
-      
+
       // Get appropriate icon based on current theme mode
       IconData getThemeIcon() {
         switch (currentMode) {
@@ -55,7 +51,7 @@ class ThemeToggleButton extends StatelessWidget {
             return 'Switch to Light Mode';
         }
       }
-      
+
       if (showLabel) {
         return InkWell(
           onTap: () => themeController.toggleTheme(),
@@ -73,22 +69,17 @@ class ThemeToggleButton extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   getThemeLabel(),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
         );
       }
-      
+
       return IconButton(
         onPressed: () => themeController.toggleTheme(),
-        icon: Icon(
-          getThemeIcon(),
-          size: iconSize ?? 24,
-        ),
+        icon: Icon(getThemeIcon(), size: iconSize ?? 24),
         tooltip: getTooltip(),
       );
     });
@@ -98,10 +89,7 @@ class ThemeToggleButton extends StatelessWidget {
 class AnimatedThemeToggle extends StatelessWidget {
   final double? size;
 
-  const AnimatedThemeToggle({
-    super.key,
-    this.size,
-  });
+  const AnimatedThemeToggle({super.key, this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +97,7 @@ class AnimatedThemeToggle extends StatelessWidget {
 
     return Obx(() {
       final currentMode = themeController.currentThemeMode;
-      
+
       // Get appropriate colors and icons based on current theme mode
       Color getBackgroundColor() {
         switch (currentMode) {
@@ -143,7 +131,7 @@ class AnimatedThemeToggle extends StatelessWidget {
             return Colors.blue[600]!;
         }
       }
-      
+
       return GestureDetector(
         onTap: () => themeController.toggleTheme(),
         child: AnimatedContainer(

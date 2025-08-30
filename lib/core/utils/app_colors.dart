@@ -9,7 +9,7 @@ class AppColors {
   static const Color accentOrange = AppTheme.accentOrange;
   static const Color accentBlue = AppTheme.accentBlue;
   static const Color accentGreen = AppTheme.accentGreen;
-  
+
   // Status colors (consistent across themes)
   static const Color successGreen = AppTheme.successGreen;
   static const Color warningAmber = AppTheme.warningAmber;
@@ -60,11 +60,15 @@ class AppColors {
   }
 
   static Color get divider {
-    return _isDarkMode ? AppTheme.darkBorder : AppTheme.textLight.withValues(alpha: 0.3);
+    return _isDarkMode
+        ? AppTheme.darkBorder
+        : AppTheme.textLight.withValues(alpha: 0.3);
   }
 
   static Color get border {
-    return _isDarkMode ? AppTheme.darkBorder : AppTheme.textLight.withValues(alpha: 0.2);
+    return _isDarkMode
+        ? AppTheme.darkBorder
+        : AppTheme.textLight.withValues(alpha: 0.2);
   }
 
   static Color get inputBackground {
@@ -190,7 +194,9 @@ class AppColors {
   }
 
   static Color get filterBorder {
-    return _isDarkMode ? AppTheme.darkBorder : AppTheme.textLight.withValues(alpha: 0.3);
+    return _isDarkMode
+        ? AppTheme.darkBorder
+        : AppTheme.textLight.withValues(alpha: 0.3);
   }
 
   // Tab colors
@@ -233,12 +239,16 @@ class AppColors {
   }
 
   static Color get switchTrackInactive {
-    return _isDarkMode ? AppTheme.darkTextTertiary.withValues(alpha: 0.3) : AppTheme.textLight.withValues(alpha: 0.3);
+    return _isDarkMode
+        ? AppTheme.darkTextTertiary.withValues(alpha: 0.3)
+        : AppTheme.textLight.withValues(alpha: 0.3);
   }
 
   // Method to get appropriate text color for given background
   static Color getTextColorForBackground(Color backgroundColor) {
-    return backgroundColor.computeLuminance() > 0.5 ? AppTheme.textDark : AppTheme.darkTextPrimary;
+    return backgroundColor.computeLuminance() > 0.5
+        ? AppTheme.textDark
+        : AppTheme.darkTextPrimary;
   }
 
   // Method to get contrast color

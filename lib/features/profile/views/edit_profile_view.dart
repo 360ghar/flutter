@@ -15,9 +15,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
       body: Obx(() {
         if (controller.isLoading.value) {
           return Center(
-            child: CircularProgressIndicator(
-              color: AppColors.loadingIndicator,
-            ),
+            child: CircularProgressIndicator(color: AppColors.loadingIndicator),
           );
         }
 
@@ -41,7 +39,8 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                                   backgroundColor: AppColors.primaryYellow,
                                   child: Text(
                                     controller.nameController.text.isNotEmpty
-                                        ? controller.nameController.text[0].toUpperCase()
+                                        ? controller.nameController.text[0]
+                                              .toUpperCase()
                                         : 'U',
                                     style: TextStyle(
                                       fontSize: 40,
@@ -56,7 +55,8 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                                 backgroundColor: AppColors.primaryYellow,
                                 child: Text(
                                   controller.nameController.text.isNotEmpty
-                                      ? controller.nameController.text[0].toUpperCase()
+                                      ? controller.nameController.text[0]
+                                            .toUpperCase()
                                       : 'U',
                                   style: TextStyle(
                                     fontSize: 40,
@@ -100,7 +100,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                     children: [
                       buildSectionTitle('Personal Information'),
                       const SizedBox(height: 20),
-                      
+
                       _buildTextField(
                         controller: controller.nameController,
                         label: 'Full Name',
@@ -113,21 +113,23 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       _buildTextField(
                         controller: controller.emailController,
                         label: 'Email Address',
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
-                          if (value != null && value.isNotEmpty && !GetUtils.isEmail(value)) {
+                          if (value != null &&
+                              value.isNotEmpty &&
+                              !GetUtils.isEmail(value)) {
                             return 'Please enter a valid email';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       _buildTextField(
                         controller: controller.locationController,
                         label: 'Location',
@@ -136,9 +138,9 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Date of Birth Section
                 buildThemeAwareCard(
                   child: Column(
@@ -146,11 +148,14 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                     children: [
                       buildSectionTitle('Additional Information'),
                       const SizedBox(height: 20),
-                      
+
                       GestureDetector(
                         onTap: () => controller.selectDateOfBirth(context),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.inputBackground,
                             borderRadius: BorderRadius.circular(12),
@@ -158,27 +163,35 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.calendar_today, color: AppColors.iconColor),
+                              Icon(
+                                Icons.calendar_today,
+                                color: AppColors.iconColor,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Obx(() => Text(
-                                  controller.dateOfBirth.value != null
-                                      ? controller.formatDate(controller.dateOfBirth.value!)
-                                      : 'Select your date of birth',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: controller.dateOfBirth.value != null 
-                                        ? AppColors.textPrimary
-                                        : AppColors.textSecondary,
+                                child: Obx(
+                                  () => Text(
+                                    controller.dateOfBirth.value != null
+                                        ? controller.formatDate(
+                                            controller.dateOfBirth.value!,
+                                          )
+                                        : 'Select your date of birth',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color:
+                                          controller.dateOfBirth.value != null
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
                                   ),
-                                )),
+                                ),
                               ),
                               if (controller.dateOfBirth.value != null)
                                 GestureDetector(
                                   onTap: controller.clearDateOfBirth,
                                   child: Icon(
-                                    Icons.clear, 
-                                    color: AppColors.iconColor, 
+                                    Icons.clear,
+                                    color: AppColors.iconColor,
                                     size: 20,
                                   ),
                                 ),
@@ -189,9 +202,9 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Save Button
                 SizedBox(
                   width: double.infinity,
@@ -214,7 +227,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
               ],
             ),
@@ -257,4 +270,4 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
       ),
     );
   }
-} 
+}

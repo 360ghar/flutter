@@ -62,7 +62,11 @@ class AgentCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.support_agent, color: AppColors.primaryYellow, size: 16),
+                    Icon(
+                      Icons.support_agent,
+                      color: AppColors.primaryYellow,
+                      size: 16,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Your Relationship Manager'.tr,
@@ -99,7 +103,11 @@ class AgentCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(Icons.work_outline, size: 14, color: AppColors.iconColor),
+                    Icon(
+                      Icons.work_outline,
+                      size: 14,
+                      color: AppColors.iconColor,
+                    ),
                     const SizedBox(width: 3),
                     Flexible(
                       child: Text(
@@ -180,4 +188,3 @@ class _CompactIconButton extends StatelessWidget {
     );
   }
 }
-

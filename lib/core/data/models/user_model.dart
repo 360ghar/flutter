@@ -37,7 +37,7 @@ class UserModel {
   final DateTime createdAt;
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
-  
+
   // Client-side fields (not from backend)
   final String? fcmToken;
 
@@ -63,7 +63,8 @@ class UserModel {
     this.fcmToken,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
+  factory UserModel.fromJson(Map<String, dynamic> json) =>
+      _$UserModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
@@ -110,7 +111,7 @@ class UserModel {
       fcmToken: fcmToken ?? this.fcmToken,
     );
   }
-  
+
   // Helper methods for date of birth
   DateTime? get dateOfBirthAsDate {
     if (dateOfBirth == null) return null;
@@ -120,48 +121,52 @@ class UserModel {
       return null;
     }
   }
-  
+
   int? get age {
     final dob = dateOfBirthAsDate;
     if (dob == null) return null;
     final now = DateTime.now();
     int age = now.year - dob.year;
-    if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+    if (now.month < dob.month ||
+        (now.month == dob.month && now.day < dob.day)) {
       age--;
     }
     return age;
   }
-  
+
   // Helper methods for location
   double? get latitudeAsDouble {
     return currentLatitude;
   }
-  
+
   double? get longitudeAsDouble {
     return currentLongitude;
   }
-  
+
   bool get hasLocation => currentLatitude != null && currentLongitude != null;
 
   // Convenience getters for backward compatibility
   String get name => fullName ?? 'Unknown User';
   String? get profileImage => profileImageUrl;
   DateTime get lastLogin => updatedAt ?? createdAt;
-  
+
   // Profile completion percentage
   int get profileCompletionPercentage {
     int completedFields = 0;
-    const int totalFields = 5; // email, fullName, dateOfBirth, phone, profileImageUrl
+    const int totalFields =
+        5; // email, fullName, dateOfBirth, phone, profileImageUrl
 
     if (email.isNotEmpty) completedFields++;
     if (fullName != null && fullName!.isNotEmpty) completedFields++;
     if (dateOfBirth != null && dateOfBirth!.isNotEmpty) completedFields++;
     if (phone != null && phone!.isNotEmpty) completedFields++;
-    if (profileImageUrl != null && profileImageUrl!.isNotEmpty) completedFields++;
+    if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
+      completedFields++;
+    }
 
     return ((completedFields / totalFields) * 100).round();
   }
-  
+
   // Check if profile is complete
   bool get isProfileComplete {
     // Align with Profile Completion flow: require these core fields

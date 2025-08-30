@@ -23,7 +23,7 @@ class AppTranslations extends Translations {
       'back': 'Back',
       'next': 'Next',
       'done': 'Done',
-      
+
       // Navigation
       'profile': 'Profile',
       'discover': 'Discover',
@@ -31,7 +31,7 @@ class AppTranslations extends Translations {
       'liked': 'Liked',
       'visits': 'Visits',
       'home': 'Home',
-      
+
       // Property Related
       'property_details': 'Property Details',
       'bedrooms': 'Bedrooms',
@@ -55,7 +55,7 @@ class AppTranslations extends Translations {
       'property_type': 'Property Type',
       'location': 'Location',
       'area': 'Area',
-      
+
       // Property Types
       'apartment': 'Apartment',
       'house': 'House',
@@ -63,7 +63,7 @@ class AppTranslations extends Translations {
       'villa': 'Villa',
       'penthouse': 'Penthouse',
       'studio': 'Studio',
-      
+
       // Profile
       'my_profile': 'My Profile',
       'edit_profile': 'Edit Profile',
@@ -78,14 +78,14 @@ class AppTranslations extends Translations {
       'notifications': 'Notifications',
       'privacy': 'Privacy',
       'terms': 'Terms & Conditions',
-      
+
       // Preferences
       'property_preferences': 'Property Preferences',
       'search_preferences': 'Search Preferences',
       'display_preferences': 'Display Preferences',
       'privacy_preferences': 'Privacy Preferences',
       'language_preferences': 'Language Preferences',
-      
+
       'push_notifications': 'Push Notifications',
       'push_notifications_desc': 'Receive notifications for new properties',
       'email_notifications': 'Email Notifications',
@@ -94,23 +94,29 @@ class AppTranslations extends Translations {
       'price_drop_alerts_desc': 'Notify when saved properties drop in price',
       'similar_properties': 'Similar Properties',
       'similar_properties_desc': 'Show similar properties in recommendations',
-      
+
       'save_search_history': 'Save Search History',
       'save_search_history_desc': 'Keep track of your property searches',
       'location_services': 'Location Services',
       'location_services_desc': 'Use location for nearby properties',
       'location_services_disabled': 'Location services are disabled',
-      'enable_location_services_message': 'Please enable location services to use location features',
+      'enable_location_services_message':
+          'Please enable location services to use location features',
       'location_permission': 'Location Permission',
-      'location_permission_permanently_denied': 'Location permission permanently denied',
-      'location_access_permanently_denied_message': 'Location access is permanently denied. Please enable it in settings.',
+      'location_permission_permanently_denied':
+          'Location permission permanently denied',
+      'location_access_permanently_denied_message':
+          'Location access is permanently denied. Please enable it in settings.',
       'location_permission_denied': 'Location permission denied',
-      'location_access_required_message': 'Location access is required for nearby properties and better recommendations.',
+      'location_access_required_message':
+          'Location access is required for nearby properties and better recommendations.',
       'location_error': 'Location Error',
       'failed_to_get_current_location': 'Failed to get current location',
       'failed_to_check_location_service': 'Failed to check location service',
-      'error_requesting_location_permission': 'Error requesting location permission',
-      'failed_to_get_location_message': 'Failed to get your current location. Please try again.',
+      'error_requesting_location_permission':
+          'Error requesting location permission',
+      'failed_to_get_location_message':
+          'Failed to get your current location. Please try again.',
       'search_error': 'Search Error',
       'failed_to_search_locations': 'Failed to search locations',
       'location_selected': 'Location Selected',
@@ -122,52 +128,52 @@ class AppTranslations extends Translations {
       'location_not_available': 'Location not available',
       'auto_complete_search': 'Auto-complete Search',
       'auto_complete_search_desc': 'Show search suggestions while typing',
-      
+
       'dark_theme': 'Dark Theme',
       'dark_theme_desc': 'Use dark theme for the app',
       'show_property_tour': 'Show Property Tour',
       'show_property_tour_desc': 'Display 360° tour button on property cards',
       'compact_view': 'Compact View',
       'compact_view_desc': 'Show more properties in compact layout',
-      
+
       'share_analytics': 'Share Analytics',
       'share_analytics_desc': 'Help improve the app by sharing usage data',
       'personalized_ads': 'Personalized Ads',
       'personalized_ads_desc': 'Show personalized advertisements',
-      
+
       'select_language': 'Select Language',
       'select_language_desc': 'Choose your preferred language',
       'save_preferences': 'Save Preferences',
       'preferences_saved': 'Preferences saved successfully',
       'preferences_save_error': 'Failed to save preferences',
-      
+
       // Language
       'language_changed': 'Language Changed',
       'language_changed_message': 'Language has been changed successfully',
-      
+
       // Explore/Map
       'explore_properties': 'Explore',
       'map_view': 'Map View',
       'list_view': 'List View',
       'nearby_properties': 'Nearby Properties',
-      
+
       // Favorites
       'my_favorites': 'My Favorites',
       'no_favorites': 'No favorites yet',
       'no_favorites_message': 'Properties you like will appear here',
-      
+
       // Visits
       'my_visits': 'My Visits',
       'scheduled_visits': 'Scheduled Visits',
       'past_visits': 'Past Visits',
       'no_visits': 'No visits scheduled',
-      
+
       // Search
       'search_properties': 'Search Properties',
       'search_hint': 'Search by location, property type...',
       'recent_searches': 'Recent Searches',
       'clear_search_history': 'Clear Search History',
-      
+
       // Filters
       'price_range': 'Price Range',
       'min_price': 'Min Price',
@@ -180,7 +186,7 @@ class AppTranslations extends Translations {
       'max_area': 'Max Area',
       'apply_filters': 'Apply Filters',
       'clear_filters': 'Clear Filters',
-      
+
       // Login/Auth
       'welcome': 'Welcome',
       'login': 'Login',
@@ -196,7 +202,57 @@ class AppTranslations extends Translations {
       'welcome_back': 'Welcome back!',
       'signed_in_with_google': 'Signed in with Google!',
       'enter_email_first': 'Please enter your email address first',
-      'password_reset_email_sent': 'Password reset email sent! Please check your inbox.',
+      'password_reset_email_sent':
+          'Password reset email sent! Please check your inbox.',
+      
+      // Authentication Form Fields
+      'phone_number': 'Phone Number',
+      'phone_hint': '10-digit mobile or +91XXXXXXXXXX',
+      'phone_required': 'Please enter your phone number',
+      'phone_invalid': 'Enter 10 digits or +91 followed by 10 digits',
+      'password_required': 'Please enter your password',
+      'password_min_length': 'Password must be at least 6 characters',
+      'confirm_password_required': 'Please confirm your password',
+      'passwords_dont_match': 'Passwords do not match',
+      'remember_me': 'Remember me',
+      
+      // Authentication Messages
+      'sign_in_subtitle': 'Sign in with your phone number',
+      'signup_subtitle': 'Create your account',
+      'invalid_credentials': 'Invalid phone number or password',
+      'login_error': 'An error occurred during login',
+      'signup_error': 'An error occurred during signup',
+      'create_account': 'Create Account',
+      
+      // OTP Verification
+      'verify_phone': 'Verify Phone',
+      'verify_phone_number': 'Verify Phone Number',
+      'otp_sent_message': 'A verification code has been sent to your phone',
+      'otp_verification_subtitle': 'We\'ve sent a verification code to your phone',
+      'enter_otp': 'Enter 6-digit code',
+      'enter_otp_subtitle': 'Enter the 6-digit code you received',
+      'verify_otp': 'Verify OTP',
+      'invalid_otp': 'Please enter a valid 6-digit OTP',
+      'otp_verification_error': 'An error occurred during OTP verification',
+      'otp_sent': 'OTP Sent',
+      'otp_resent_message': 'A new OTP has been sent to your phone',
+      'resend_code': 'Resend Code',
+      'resend_in': 'Resend in',
+      
+      // Password Reset
+      'reset_password': 'Reset Password',
+      'reset_password_subtitle': 'Reset via OTP sent to your phone',
+      'send_otp': 'Send OTP',
+      'back_to_login': 'Back to login',
+      'set_new_password': 'Set New Password',
+      'choose_new_password': 'Choose a new password',
+      'new_password': 'New Password',
+      'update_password': 'Update Password',
+      'password_reset_otp_sent': 'Password reset OTP sent to your phone',
+      'failed_to_send_otp': 'Failed to send OTP',
+      'password_updated_successfully': 'Password updated successfully',
+      'failed_to_update_password': 'Failed to update password',
+      
       'passed': 'Passed',
       'my_location': 'My Location',
       'light': 'Light',
@@ -222,7 +278,7 @@ class AppTranslations extends Translations {
       'back': 'वापस',
       'next': 'अगला',
       'done': 'पूर्ण',
-      
+
       // Navigation
       'profile': 'प्रोफाइल',
       'discover': 'खोजें',
@@ -230,7 +286,7 @@ class AppTranslations extends Translations {
       'liked': 'पसंदीदा',
       'visits': 'दौरे',
       'home': 'होम',
-      
+
       // Property Related
       'property_details': 'संपत्ति विवरण',
       'bedrooms': 'बेडरूम',
@@ -254,7 +310,7 @@ class AppTranslations extends Translations {
       'property_type': 'संपत्ति का प्रकार',
       'location': 'स्थान',
       'area': 'क्षेत्रफल',
-      
+
       // Property Types
       'apartment': 'अपार्टमेंट',
       'house': 'घर',
@@ -262,7 +318,7 @@ class AppTranslations extends Translations {
       'villa': 'विला',
       'penthouse': 'पेंटहाउस',
       'studio': 'स्टूडियो',
-      
+
       // Profile
       'my_profile': 'मेरी प्रोफाइल',
       'edit_profile': 'प्रोफाइल संपादित करें',
@@ -277,39 +333,47 @@ class AppTranslations extends Translations {
       'notifications': 'सूचनाएं',
       'privacy': 'गोपनीयता',
       'terms': 'नियम और शर्तें',
-      
+
       // Preferences
       'property_preferences': 'संपत्ति प्राथमिकताएं',
       'search_preferences': 'खोज प्राथमिकताएं',
       'display_preferences': 'प्रदर्शन प्राथमिकताएं',
       'privacy_preferences': 'गोपनीयता प्राथमिकताएं',
       'language_preferences': 'भाषा प्राथमिकताएं',
-      
+
       'push_notifications': 'पुश सूचनाएं',
       'push_notifications_desc': 'नई संपत्तियों के लिए सूचनाएं प्राप्त करें',
       'email_notifications': 'ईमेल सूचनाएं',
       'email_notifications_desc': 'ईमेल के द्वारा संपत्ति अपडेट प्राप्त करें',
       'price_drop_alerts': 'कीमत में कमी की चेतावनी',
-      'price_drop_alerts_desc': 'जब सेव की गई संपत्तियों की कीमत घटे तो सूचित करें',
+      'price_drop_alerts_desc':
+          'जब सेव की गई संपत्तियों की कीमत घटे तो सूचित करें',
       'similar_properties': 'समान संपत्तियां',
       'similar_properties_desc': 'सुझावों में समान संपत्तियां दिखाएं',
-      
+
       'save_search_history': 'खोज इतिहास सेव करें',
       'save_search_history_desc': 'अपनी संपत्ति खोजों का ट्रैक रखें',
       'location_services': 'स्थान सेवाएं',
-      'location_services_desc': 'आस-पास की संपत्तियों के लिए स्थान का उपयोग करें',
+      'location_services_desc':
+          'आस-पास की संपत्तियों के लिए स्थान का उपयोग करें',
       'location_services_disabled': 'स्थान सेवाएं अक्षम हैं',
-      'enable_location_services_message': 'स्थान सुविधाओं का उपयोग करने के लिए कृपया स्थान सेवाएं सक्षम करें',
+      'enable_location_services_message':
+          'स्थान सुविधाओं का उपयोग करने के लिए कृपया स्थान सेवाएं सक्षम करें',
       'location_permission': 'स्थान अनुमति',
-      'location_permission_permanently_denied': 'स्थान अनुमति स्थायी रूप से अस्वीकृत',
-      'location_access_permanently_denied_message': 'स्थान पहुंच स्थायी रूप से अस्वीकृत है। कृपया इसे सेटिंग्स में सक्षम करें।',
+      'location_permission_permanently_denied':
+          'स्थान अनुमति स्थायी रूप से अस्वीकृत',
+      'location_access_permanently_denied_message':
+          'स्थान पहुंच स्थायी रूप से अस्वीकृत है। कृपया इसे सेटिंग्स में सक्षम करें।',
       'location_permission_denied': 'स्थान अनुमति अस्वीकृत',
-      'location_access_required_message': 'आस-पास की संपत्तियों और बेहतर सिफारिशों के लिए स्थान पहुंच आवश्यक है।',
+      'location_access_required_message':
+          'आस-पास की संपत्तियों और बेहतर सिफारिशों के लिए स्थान पहुंच आवश्यक है।',
       'location_error': 'स्थान त्रुटि',
       'failed_to_get_current_location': 'वर्तमान स्थान प्राप्त करने में विफल',
       'failed_to_check_location_service': 'स्थान सेवा जांचने में विफल',
-      'error_requesting_location_permission': 'स्थान अनुमति का अनुरोध करने में त्रुटि',
-      'failed_to_get_location_message': 'आपका वर्तमान स्थान प्राप्त करने में विफल। कृपया फिर से कोशिश करें।',
+      'error_requesting_location_permission':
+          'स्थान अनुमति का अनुरोध करने में त्रुटि',
+      'failed_to_get_location_message':
+          'आपका वर्तमान स्थान प्राप्त करने में विफल। कृपया फिर से कोशिश करें।',
       'search_error': 'खोज त्रुटि',
       'failed_to_search_locations': 'स्थानों की खोज करने में विफल',
       'location_selected': 'स्थान चुना गया',
@@ -321,52 +385,53 @@ class AppTranslations extends Translations {
       'location_not_available': 'स्थान उपलब्ध नहीं',
       'auto_complete_search': 'ऑटो-कंप्लीट खोज',
       'auto_complete_search_desc': 'टाइप करते समय खोज सुझाव दिखाएं',
-      
+
       'dark_theme': 'डार्क थीम',
       'dark_theme_desc': 'ऐप के लिए डार्क थीम का उपयोग करें',
       'show_property_tour': 'संपत्ति टूर दिखाएं',
       'show_property_tour_desc': 'संपत्ति कार्ड पर 360° टूर बटन प्रदर्शित करें',
       'compact_view': 'कॉम्पैक्ट व्यू',
       'compact_view_desc': 'कॉम्पैक्ट लेआउट में अधिक संपत्तियां दिखाएं',
-      
+
       'share_analytics': 'एनालिटिक्स साझा करें',
-      'share_analytics_desc': 'उपयोग डेटा साझा करके ऐप को बेहतर बनाने में मदद करें',
+      'share_analytics_desc':
+          'उपयोग डेटा साझा करके ऐप को बेहतर बनाने में मदद करें',
       'personalized_ads': 'व्यक्तिगत विज्ञापन',
       'personalized_ads_desc': 'व्यक्तिगत विज्ञापन दिखाएं',
-      
+
       'select_language': 'भाषा चुनें',
       'select_language_desc': 'अपनी पसंदीदा भाषा चुनें',
       'save_preferences': 'प्राथमिकताएं सेव करें',
       'preferences_saved': 'प्राथमिकताएं सफलतापूर्वक सेव हो गईं',
       'preferences_save_error': 'प्राथमिकताएं सेव करने में विफल',
-      
+
       // Language
       'language_changed': 'भाषा बदली गई',
       'language_changed_message': 'भाषा सफलतापूर्वक बदली गई है',
-      
+
       // Explore/Map
       'explore_properties': 'संपत्तियों का अन्वेषण करें',
       'map_view': 'मैप व्यू',
       'list_view': 'लिस्ट व्यू',
       'nearby_properties': 'आस-पास की संपत्तियां',
-      
+
       // Favorites
       'my_favorites': 'मेरी पसंदीदा',
       'no_favorites': 'अभी तक कोई पसंदीदा नहीं',
       'no_favorites_message': 'आपकी पसंदीदा संपत्तियां यहां दिखाई देंगी',
-      
+
       // Visits
       'my_visits': 'मेरे दौरे',
       'scheduled_visits': 'निर्धारित दौरे',
       'past_visits': 'पिछले दौरे',
       'no_visits': 'कोई दौरा निर्धारित नहीं',
-      
+
       // Search
       'search_properties': 'संपत्ति खोजें',
       'search_hint': 'स्थान, संपत्ति प्रकार के द्वारा खोजें...',
       'recent_searches': 'हाल की खोजें',
       'clear_search_history': 'खोज इतिहास साफ करें',
-      
+
       // Filters
       'price_range': 'कीमत रेंज',
       'min_price': 'न्यूनतम कीमत',
@@ -379,7 +444,7 @@ class AppTranslations extends Translations {
       'max_area': 'अधिकतम क्षेत्रफल',
       'apply_filters': 'फिल्टर लागू करें',
       'clear_filters': 'फिल्टर साफ करें',
-      
+
       // Login/Auth
       'welcome': 'स्वागत है',
       'login': 'लॉगिन',
@@ -395,11 +460,61 @@ class AppTranslations extends Translations {
       'welcome_back': 'वापसी पर स्वागत है!',
       'signed_in_with_google': 'गूगल के साथ साइन इन हो गया!',
       'enter_email_first': 'कृपया पहले अपना ईमेल पता दर्ज करें',
-      'password_reset_email_sent': 'पासवर्ड रीसेट ईमेल भेजा गया है! कृपया अपना इनबॉक्स जांचें।',
+      'password_reset_email_sent':
+          'पासवर्ड रीसेट ईमेल भेजा गया है! कृपया अपना इनबॉक्स जांचें।',
+      
+      // Authentication Form Fields
+      'phone_number': 'फोन नंबर',
+      'phone_hint': '10-अंकीय मोबाइल या +91XXXXXXXXXX',
+      'phone_required': 'कृपया अपना फोन नंबर दर्ज करें',
+      'phone_invalid': '10 अंक या +91 के बाद 10 अंक दर्ज करें',
+      'password_required': 'कृपया अपना पासवर्ड दर्ज करें',
+      'password_min_length': 'पासवर्ड कम से कम 6 अक्षर का होना चाहिए',
+      'confirm_password_required': 'कृपया अपने पासवर्ड की पुष्टि करें',
+      'passwords_dont_match': 'पासवर्ड मेल नहीं खाते',
+      'remember_me': 'मुझे याद रखें',
+      
+      // Authentication Messages
+      'sign_in_subtitle': 'अपने फोन नंबर से साइन इन करें',
+      'signup_subtitle': 'अपना खाता बनाएं',
+      'invalid_credentials': 'गलत फोन नंबर या पासवर्ड',
+      'login_error': 'लॉगिन के दौरान एक त्रुटि हुई',
+      'signup_error': 'साइन अप के दौरान एक त्रुटि हुई',
+      'create_account': 'खाता बनाएं',
+      
+      // OTP Verification
+      'verify_phone': 'फोन सत्यापित करें',
+      'verify_phone_number': 'फोन नंबर सत्यापित करें',
+      'otp_sent_message': 'आपके फोन पर एक सत्यापन कोड भेजा गया है',
+      'otp_verification_subtitle': 'हमने आपके फोन पर एक सत्यापन कोड भेजा है',
+      'enter_otp': '6-अंकीय कोड दर्ज करें',
+      'enter_otp_subtitle': 'आपको मिला 6-अंकीय कोड दर्ज करें',
+      'verify_otp': 'OTP सत्यापित करें',
+      'invalid_otp': 'कृपया एक वैध 6-अंकीय OTP दर्ज करें',
+      'otp_verification_error': 'OTP सत्यापन के दौरान एक त्रुटि हुई',
+      'otp_sent': 'OTP भेजा गया',
+      'otp_resent_message': 'आपके फोन पर एक नया OTP भेजा गया है',
+      'resend_code': 'कोड फिर से भेजें',
+      'resend_in': 'फिर से भेजें',
+      
+      // Password Reset
+      'reset_password': 'पासवर्ड रीसेट करें',
+      'reset_password_subtitle': 'आपके फोन पर भेजे गए OTP के माध्यम से रीसेट करें',
+      'send_otp': 'OTP भेजें',
+      'back_to_login': 'लॉगिन पर वापस जाएं',
+      'set_new_password': 'नया पासवर्ड सेट करें',
+      'choose_new_password': 'एक नया पासवर्ड चुनें',
+      'new_password': 'नया पासवर्ड',
+      'update_password': 'पासवर्ड अपडेट करें',
+      'password_reset_otp_sent': 'पासवर्ड रीसेट OTP आपके फोन पर भेजा गया',
+      'failed_to_send_otp': 'OTP भेजने में विफल',
+      'password_updated_successfully': 'पासवर्ड सफलतापूर्वक अपडेट हो गया',
+      'failed_to_update_password': 'पासवर्ड अपडेट करने में विफल',
+      
       'passed': 'पास',
       'my_location': 'मेरा स्थान',
       'light': 'हल्का',
       'dark': 'गहरा',
     },
   };
-} 
+}

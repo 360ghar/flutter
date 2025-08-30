@@ -2,8 +2,12 @@ import 'package:get/get.dart';
 import '../../features/splash/bindings/splash_binding.dart';
 import '../../features/splash/views/splash_view.dart';
 import '../../features/auth/bindings/auth_binding.dart';
+import '../../features/auth/bindings/signup_binding.dart';
+import '../../features/auth/bindings/forgot_password_binding.dart';
 import '../../features/auth/bindings/profile_completion_binding.dart';
 import '../../features/auth/views/login_view.dart';
+import '../../features/auth/views/signup_view.dart';
+import '../../features/auth/views/forgot_password_view.dart';
 import '../../features/auth/views/profile_completion_view.dart';
 import '../../features/dashboard/bindings/dashboard_binding.dart';
 import '../../features/dashboard/views/dashboard_view.dart';
@@ -53,6 +57,18 @@ class AppPages {
       middlewares: [GuestMiddleware()],
     ),
     GetPage(
+      name: AppRoutes.signup,
+      page: () => const SignUpView(),
+      binding: SignUpBinding(),
+      middlewares: [GuestMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.forgotPassword,
+      page: () => const ForgotPasswordView(),
+      binding: ForgotPasswordBinding(),
+      middlewares: [GuestMiddleware()],
+    ),
+    GetPage(
       name: AppRoutes.profileCompletion,
       page: () => const ProfileCompletionView(),
       binding: ProfileCompletionBinding(),
@@ -64,31 +80,31 @@ class AppPages {
       middlewares: [AuthMiddleware()],
       children: [
         GetPage(
-            name: AppRoutes.discover,
-            page: () => const DiscoverView(),
-            binding: DiscoverBinding(),
-          ),
-          GetPage(
-            name: AppRoutes.explore,
-            page: () => ExploreView(),
-            binding: ExploreBinding(),
-          ),
-          GetPage(
-            name: AppRoutes.likes,
-            page: () => LikesView(),
-            binding: LikesBinding(),
-          ),
-          GetPage(
-            name: AppRoutes.visits,
-            page: () => const VisitsView(),
-            binding: VisitsBinding(),
-          ),
-          GetPage(
-            name: AppRoutes.profile,
-            page: () => const ProfileView(),
-            binding: ProfileBinding(),
-          ),
-        ],
+          name: AppRoutes.discover,
+          page: () => const DiscoverView(),
+          binding: DiscoverBinding(),
+        ),
+        GetPage(
+          name: AppRoutes.explore,
+          page: () => ExploreView(),
+          binding: ExploreBinding(),
+        ),
+        GetPage(
+          name: AppRoutes.likes,
+          page: () => LikesView(),
+          binding: LikesBinding(),
+        ),
+        GetPage(
+          name: AppRoutes.visits,
+          page: () => const VisitsView(),
+          binding: VisitsBinding(),
+        ),
+        GetPage(
+          name: AppRoutes.profile,
+          page: () => const ProfileView(),
+          binding: ProfileBinding(),
+        ),
+      ],
     ),
     // Legacy /home retained only if needed. Prefer /discover
     GetPage(
@@ -164,4 +180,4 @@ class AppPages {
       middlewares: [AuthMiddleware()],
     ),
   ];
-} 
+}

@@ -43,9 +43,9 @@ class HelpView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Frequently Asked Questions
             buildThemeAwareCard(
               child: Column(
@@ -55,30 +55,35 @@ class HelpView extends StatelessWidget with ThemeMixin {
                   const SizedBox(height: 16),
                   _buildFAQItem(
                     question: 'How do I search for properties?',
-                    answer: 'Use the swipe interface on the home screen to browse properties. You can also use the search filters to narrow down your options.',
+                    answer:
+                        'Use the swipe interface on the home screen to browse properties. You can also use the search filters to narrow down your options.',
                   ),
                   _buildFAQItem(
                     question: 'How do I save my favorite properties?',
-                    answer: 'Tap the heart icon on any property card or swipe right to add it to your favorites. You can view all saved properties in the Favorites tab.',
+                    answer:
+                        'Tap the heart icon on any property card or swipe right to add it to your favorites. You can view all saved properties in the Favorites tab.',
                   ),
                   _buildFAQItem(
                     question: 'How do I schedule a property visit?',
-                    answer: 'Go to the property details page and tap "Schedule Visit" or contact the agent directly using the provided contact information.',
+                    answer:
+                        'Go to the property details page and tap "Schedule Visit" or contact the agent directly using the provided contact information.',
                   ),
                   _buildFAQItem(
                     question: 'How do I change my location preferences?',
-                    answer: 'Go to Profile > Preferences and update your preferred location and search radius.',
+                    answer:
+                        'Go to Profile > Preferences and update your preferred location and search radius.',
                   ),
                   _buildFAQItem(
                     question: 'How do I enable/disable notifications?',
-                    answer: 'Go to Profile > Notifications to customize your notification preferences.',
+                    answer:
+                        'Go to Profile > Notifications to customize your notification preferences.',
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Troubleshooting
             buildThemeAwareCard(
               child: Column(
@@ -116,9 +121,9 @@ class HelpView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Guides & Tutorials
             buildThemeAwareCard(
               child: Column(
@@ -153,9 +158,9 @@ class HelpView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Contact Information
             buildThemeAwareCard(
               child: Column(
@@ -166,12 +171,14 @@ class HelpView extends StatelessWidget with ThemeMixin {
                   _buildContactInfo(
                     icon: Icons.access_time,
                     title: 'Support Hours',
-                    details: 'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed',
+                    details:
+                        'Monday - Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed',
                   ),
                   _buildContactInfo(
                     icon: Icons.location_on,
                     title: 'Office Address',
-                    details: '123 Real Estate Plaza\nDowntown Business District\nNew York, NY 10001',
+                    details:
+                        '123 Real Estate Plaza\nDowntown Business District\nNew York, NY 10001',
                   ),
                   _buildContactInfo(
                     icon: Icons.language,
@@ -181,9 +188,9 @@ class HelpView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Feedback
             buildThemeAwareCard(
               child: Column(
@@ -244,11 +251,7 @@ class HelpView extends StatelessWidget with ThemeMixin {
           color: AppColors.primaryYellow.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(
-          icon,
-          color: AppColors.primaryYellow,
-          size: 20,
-        ),
+        child: Icon(icon, color: AppColors.primaryYellow, size: 20),
       ),
       title: Text(
         title,
@@ -260,10 +263,7 @@ class HelpView extends StatelessWidget with ThemeMixin {
       ),
       subtitle: Text(
         description,
-        style: TextStyle(
-          fontSize: 14,
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
       ),
       trailing: Icon(Icons.chevron_right, color: AppColors.iconColor),
       onTap: onTap,
@@ -271,10 +271,7 @@ class HelpView extends StatelessWidget with ThemeMixin {
     );
   }
 
-  Widget _buildFAQItem({
-    required String question,
-    required String answer,
-  }) {
+  Widget _buildFAQItem({required String question, required String answer}) {
     return ExpansionTile(
       title: Text(
         question,
@@ -320,33 +317,35 @@ class HelpView extends StatelessWidget with ThemeMixin {
             ),
           ),
           const SizedBox(height: 8),
-          ...solutions.map((solution) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(top: 6, right: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryYellow,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    solution,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      height: 1.4,
+          ...solutions.map(
+            (solution) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    margin: const EdgeInsets.only(top: 6, right: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryYellow,
+                      shape: BoxShape.circle,
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: Text(
+                      solution,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -370,10 +369,7 @@ class HelpView extends StatelessWidget with ThemeMixin {
       ),
       subtitle: Text(
         description,
-        style: TextStyle(
-          fontSize: 14,
-          color: AppColors.textSecondary,
-        ),
+        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
       ),
       trailing: Icon(Icons.chevron_right, color: AppColors.iconColor),
       onTap: onTap,

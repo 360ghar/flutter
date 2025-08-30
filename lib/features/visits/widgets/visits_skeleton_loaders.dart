@@ -21,7 +21,8 @@ class VisitSkeletonLoader extends StatelessWidget {
     return Shimmer.fromColors(
       baseColor: AppColors.inputBackground,
       highlightColor: AppColors.surface,
-      child: child ??
+      child:
+          child ??
           Container(
             width: width,
             height: height,

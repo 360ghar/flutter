@@ -58,10 +58,11 @@ class _TourViewState extends State<TourView> {
           },
         ),
       );
-    
+
     // Check if it's a Kuula URL and wrap it properly
     if (tourUrl.contains('kuula.co')) {
-      final htmlContent = '''
+      final htmlContent =
+          '''
         <!DOCTYPE html>
         <html>
         <head>
@@ -177,4 +178,4 @@ class _TourViewState extends State<TourView> {
       ),
     );
   }
-} 
+}

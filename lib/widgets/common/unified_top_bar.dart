@@ -7,7 +7,8 @@ import '../../core/data/models/page_state_model.dart';
 import 'location_selector.dart';
 import 'property_filter_widget.dart';
 
-class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWidget {
+class UnifiedTopBar extends GetView<PageStateService>
+    implements PreferredSizeWidget {
   final PageType pageType;
   final String title;
   final bool showSearch;
@@ -16,8 +17,8 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
   final VoidCallback? onSearchClear;
   final List<Widget>? additionalActions;
   final PreferredSizeWidget? bottom;
-  
-  UnifiedTopBar({
+
+  const UnifiedTopBar({
     super.key,
     required this.pageType,
     required this.title,
@@ -34,7 +35,8 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
     return Obx(() {
       // Determine bottom search row visibility
       final bool supportsSearch = _shouldShowSearch();
-      final bool searchVisible = supportsSearch && controller.isSearchVisible(pageType);
+      final bool searchVisible =
+          supportsSearch && controller.isSearchVisible(pageType);
 
       final PreferredSizeWidget? bottomWidget = searchVisible
           ? _buildBottomSearchBar(controller)
@@ -60,9 +62,9 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
           children: [
             // Location selector
             LocationSelector(pageType: pageType),
-            
+
             const Spacer(),
-            
+
             // Search toggle (only for Explore and Likes)
             if (supportsSearch) _buildSearchToggle(controller),
 
@@ -71,7 +73,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
 
             // Filter button
             _buildFilterButton(context, controller),
-            
+
             // Additional actions
             if (additionalActions != null) ...additionalActions!,
           ],
@@ -85,7 +87,6 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
     // Only show search for Explore and Likes pages
     return pageType == PageType.explore || pageType == PageType.likes;
   }
-
 
   PreferredSizeWidget _buildBottomSearchBar(PageStateService pageStateService) {
     return PreferredSize(
@@ -113,10 +114,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
                 ..selection = TextSelection.fromPosition(
                   TextPosition(offset: searchQuery.length),
                 ),
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 hintText: _getSearchHint(),
                 hintStyle: TextStyle(
@@ -155,19 +153,18 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
     );
   }
 
-  Widget _buildFilterButton(BuildContext context, PageStateService pageStateService) {
+  Widget _buildFilterButton(
+    BuildContext context,
+    PageStateService pageStateService,
+  ) {
     return Obx(() {
       final currentState = _getCurrentPageState(pageStateService);
       final activeFiltersCount = currentState.activeFiltersCount;
-      
+
       return IconButton(
         icon: Stack(
           children: [
-            Icon(
-              Icons.tune,
-              color: AppColors.iconColor,
-              size: 24,
-            ),
+            Icon(Icons.tune, color: AppColors.iconColor, size: 24),
             if (activeFiltersCount > 0)
               Positioned(
                 right: 0,
@@ -195,10 +192,10 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
               ),
           ],
         ),
-        onPressed: onFilterTap ?? () => showPropertyFilterBottomSheet(
-          context,
-          pageType: pageType.name,
-        ),
+        onPressed:
+            onFilterTap ??
+            () =>
+                showPropertyFilterBottomSheet(context, pageType: pageType.name),
       );
     });
   }
@@ -261,8 +258,9 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
   Size get preferredSize {
     double height = kToolbarHeight;
     final bool supportsSearch = _shouldShowSearch();
-    final bool searchVisible = supportsSearch && controller.isSearchVisible(pageType);
-    
+    final bool searchVisible =
+        supportsSearch && controller.isSearchVisible(pageType);
+
     if (searchVisible) {
       height += 52; // Add height for search bar
     }
@@ -299,39 +297,32 @@ extension UnifiedTopBarBuilder on Widget {
 
 // Specialized top bars for different page types
 class ExploreTopBar extends UnifiedTopBar {
-  ExploreTopBar({
+  const ExploreTopBar({
     super.key,
     super.onSearchChanged,
     super.onFilterTap,
     super.additionalActions,
   }) : super(
-          pageType: PageType.explore,
-          title: 'Explore Properties',
-          showSearch: true,
-        );
+         pageType: PageType.explore,
+         title: 'Explore Properties',
+         showSearch: true,
+       );
 }
 
 class DiscoverTopBar extends UnifiedTopBar {
-  DiscoverTopBar({
-    super.key,
-    super.onFilterTap,
-    super.additionalActions,
-  }) : super(
-          pageType: PageType.discover,
-          title: 'app_name'.tr,
-          showSearch: false, // Discover doesn't have search
-        );
+  DiscoverTopBar({super.key, super.onFilterTap, super.additionalActions})
+    : super(
+        pageType: PageType.discover,
+        title: 'app_name'.tr,
+        showSearch: false, // Discover doesn't have search
+      );
 }
 
 class LikesTopBar extends UnifiedTopBar {
-  LikesTopBar({
+  const LikesTopBar({
     super.key,
     super.onSearchChanged,
     super.onFilterTap,
     super.additionalActions,
-  }) : super(
-          pageType: PageType.likes,
-          title: 'My Likes',
-          showSearch: true,
-        );
+  }) : super(pageType: PageType.likes, title: 'My Likes', showSearch: true);
 }

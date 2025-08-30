@@ -19,9 +19,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
         children: [
           _buildSearchBar(context),
           _buildCurrentLocationTile(context),
-          Expanded(
-            child: _buildSuggestionsList(context),
-          ),
+          Expanded(child: _buildSuggestionsList(context)),
         ],
       ),
     );
@@ -46,17 +44,17 @@ class LocationSearchView extends GetView<LocationSearchController> {
         decoration: InputDecoration(
           hintText: 'Search for a city or area...',
           prefixIcon: const Icon(Icons.search),
-          suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: controller.clearSearch,
-                )
-              : const SizedBox.shrink()),
+          suffixIcon: Obx(
+            () => controller.searchQuery.value.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: controller.clearSearch,
+                  )
+                : const SizedBox.shrink(),
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context).dividerColor,
-            ),
+            borderSide: BorderSide(color: Theme.of(context).dividerColor),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -66,10 +64,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: AppTheme.primaryColor,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
           filled: true,
           fillColor: Theme.of(context).scaffoldBackgroundColor,
@@ -81,7 +76,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
 
   Widget _buildCurrentLocationTile(BuildContext context) {
     final locationController = Get.find<LocationController>();
-    
+
     return Obx(() {
       if (!locationController.hasLocation) {
         return ListTile(
@@ -91,7 +86,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
           onTap: controller.useCurrentLocation,
         );
       }
-      
+
       return ListTile(
         leading: const Icon(Icons.my_location, color: AppTheme.primaryColor),
         title: const Text('Use Current Location'),
@@ -107,24 +102,23 @@ class LocationSearchView extends GetView<LocationSearchController> {
 
   Widget _buildSuggestionsList(BuildContext context) {
     final locationController = Get.find<LocationController>();
-    
+
     return Obx(() {
-      if (controller.isLoading.value || locationController.isSearchingPlaces.value) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
+      if (controller.isLoading.value ||
+          locationController.isSearchingPlaces.value) {
+        return const Center(child: CircularProgressIndicator());
       }
-      
+
       final suggestions = locationController.placeSuggestions;
-      
+
       if (suggestions.isEmpty && controller.searchQuery.value.isNotEmpty) {
         return _buildEmptyState(context);
       }
-      
+
       if (suggestions.isEmpty) {
         return _buildPopularCities(context);
       }
-      
+
       return ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: suggestions.length,
@@ -179,7 +173,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
       {'name': 'Pune', 'state': 'Maharashtra'},
       {'name': 'Ahmedabad', 'state': 'Gujarat'},
     ];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -187,9 +181,9 @@ class LocationSearchView extends GetView<LocationSearchController> {
           padding: const EdgeInsets.all(16),
           child: Text(
             'Popular Cities',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
         Expanded(
@@ -202,7 +196,8 @@ class LocationSearchView extends GetView<LocationSearchController> {
                 leading: const Icon(Icons.location_city_outlined),
                 title: Text(city['name']!),
                 subtitle: Text(city['state']!),
-                onTap: () => controller.selectCity(city['name']!, city['state']!),
+                onTap: () =>
+                    controller.selectCity(city['name']!, city['state']!),
               );
             },
           ),

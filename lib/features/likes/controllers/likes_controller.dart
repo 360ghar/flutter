@@ -2,45 +2,31 @@ import 'dart:async';
 import 'package:get/get.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/page_state_model.dart';
-import '../../../core/data/models/unified_filter_model.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
 
-import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/page_state_service.dart';
 import '../../../core/utils/debug_logger.dart';
 
 enum LikesSegment { liked, passed }
 
-enum LikesState {
-  initial,
-  loading,
-  loaded,
-  empty,
-  error,
-  loadingMore,
-}
+enum LikesState { initial, loading, loaded, empty, error, loadingMore }
 
 class LikesController extends GetxController {
   final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
-  final FilterService _filterService = Get.find<FilterService>();
   final PageStateService _pageStateService = Get.find<PageStateService>();
 
   // Current segment (Liked or Passed)
   final Rx<LikesSegment> currentSegment = LikesSegment.liked.obs;
-  
+
   // No longer need swipe ID mapping since properties have liked attribute
 
   // State management for liked properties
   final Rx<LikesState> likedState = LikesState.initial.obs;
   final RxList<PropertyModel> likedProperties = <PropertyModel>[].obs;
-  int _likedPage = 1;
-  bool _likedHasMore = true;
 
   // State management for passed properties
   final Rx<LikesState> passedState = LikesState.initial.obs;
   final RxList<PropertyModel> passedProperties = <PropertyModel>[].obs;
-  int _passedPage = 1;
-  bool _passedHasMore = true;
 
   // Search functionality
   final RxString searchQuery = ''.obs;
@@ -54,8 +40,6 @@ class LikesController extends GetxController {
 
   // Pagination totals tracked via server pages; counts not required per spec
 
-  // Constants
-  static const int _limit = 50;
 
   // Page activation listener
   Worker? _pageActivationWorker;
@@ -71,14 +55,14 @@ class LikesController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    
+
     // Set up listener for page activation
     _pageActivationWorker = ever(_pageStateService.currentPageType, (pageType) {
       if (pageType == PageType.likes) {
         activatePage();
       }
     });
-    
+
     // Initial activation if already on this page (with delay to ensure full initialization)
     if (_pageStateService.currentPageType.value == PageType.likes) {
       Future.delayed(const Duration(milliseconds: 100), () {
@@ -88,33 +72,50 @@ class LikesController extends GetxController {
   }
 
   void activatePage() {
-    final ps = _pageStateService.likesState.value;
-    // Keep controller's segment in sync with PageStateService
-    final segStr = _pageStateService.currentLikesSegment;
-    currentSegment.value = segStr == 'liked' ? LikesSegment.liked : LikesSegment.passed;
-
-    // Ensure we have a location, then load current segment via PageStateService
-    if (!ps.hasLocation) {
-      _pageStateService.useCurrentLocationForPage(PageType.likes).whenComplete(() {
-        _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
-      });
-      return;
-    }
-
-    if (ps.properties.isEmpty && !ps.isLoading) {
-      _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
-    } else if (ps.isDataStale) {
-      _pageStateService.loadPageData(PageType.likes, backgroundRefresh: true);
-    }
-  }
-
-  Future<void> _refreshInBackground() async {
     try {
-      await _pageStateService.loadPageData(PageType.likes, backgroundRefresh: true);
-    } catch (e) {
-      DebugLogger.error('❌ Background refresh failed: $e');
+      DebugLogger.debug('💖 [LIKES_CONTROLLER] activatePage() called');
+      final ps = _pageStateService.likesState.value;
+      DebugLogger.debug('💖 [LIKES_CONTROLLER] Page state: hasLocation=${ps.hasLocation}, isLoading=${ps.isLoading}, propertiesCount=${ps.properties.length}');
+      
+      // Keep controller's segment in sync with PageStateService
+      final segStr = _pageStateService.currentLikesSegment;
+      DebugLogger.debug('💖 [LIKES_CONTROLLER] Current segment string: $segStr');
+      
+      currentSegment.value = segStr == 'liked'
+          ? LikesSegment.liked
+          : LikesSegment.passed;
+      DebugLogger.debug('💖 [LIKES_CONTROLLER] Segment updated to: ${currentSegment.value}');
+
+      // Ensure we have a location, then load current segment via PageStateService
+      if (!ps.hasLocation) {
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] No location available, requesting location');
+        _pageStateService.useCurrentLocationForPage(PageType.likes).whenComplete(
+          () {
+            DebugLogger.debug('💖 [LIKES_CONTROLLER] Location obtained, loading data');
+            _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+          },
+        );
+        return;
+      }
+
+      if (ps.properties.isEmpty && !ps.isLoading) {
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] No properties and not loading, requesting data');
+        _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+      } else if (ps.isDataStale) {
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] Data is stale, refreshing in background');
+        _pageStateService.loadPageData(PageType.likes, backgroundRefresh: true);
+      } else {
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] Data is current, no action needed');
+      }
+    } catch (e, stackTrace) {
+      DebugLogger.error('❌ [LIKES_CONTROLLER] Error in activatePage: $e');
+      DebugLogger.error('❌ [LIKES_CONTROLLER] Stack trace: $stackTrace');
+      if (e.toString().contains('Null check operator used on a null value')) {
+        DebugLogger.error('🚨 [LIKES_CONTROLLER] NULL CHECK OPERATOR ERROR in activatePage!');
+      }
     }
   }
+
 
   @override
   void onClose() {
@@ -127,47 +128,59 @@ class LikesController extends GetxController {
     // Apply search filter whenever search query changes
     debounce(searchQuery, (_) {
       // Propagate to global filter so API gets 'q'
-      _filterService.updateSearchQuery(searchQuery.value);
+      _pageStateService.updatePageSearch(PageType.likes, searchQuery.value);
     }, time: const Duration(milliseconds: 300));
   }
 
-  Future<void> _loadInitialData() async {
-    // Load current segment only via PageStateService
-    await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
-  }
 
   // Segment switching
   void switchToSegment(LikesSegment segment) {
     if (currentSegment.value == segment) return;
     currentSegment.value = segment;
     DebugLogger.api('📱 Switched to ${segment.name} segment');
-    _pageStateService.updateLikesSegment(segment == LikesSegment.liked ? 'liked' : 'passed');
+    _pageStateService.updateLikesSegment(
+      segment == LikesSegment.liked ? 'liked' : 'passed',
+    );
   }
 
   // Deprecated loaders replaced by PageStateService handlers (kept to avoid breaking references)
-  Future<void> _loadLikedProperties({
-    required int page,
-    bool isInitial = false,
-    bool isLoadMore = false,
-    bool backgroundRefresh = false,
-  }) async {
-    await _pageStateService.loadPageData(PageType.likes, forceRefresh: isInitial, backgroundRefresh: backgroundRefresh);
-  }
-
-  Future<void> _loadPassedProperties({
-    required int page,
-    bool isInitial = false,
-    bool isLoadMore = false,
-    bool backgroundRefresh = false,
-  }) async {
-    await _pageStateService.loadPageData(PageType.likes, forceRefresh: isInitial, backgroundRefresh: backgroundRefresh);
-  }
 
   // Search functionality
   void updateSearchQuery(String query) {
     searchQuery.value = query;
-    _filterService.updateSearchQuery(query);
+    _pageStateService.updatePageSearch(PageType.likes, query);
     DebugLogger.api('🔍 Search query updated: "$query"');
+  }
+
+  // Favorite management methods (moved from PropertyController)
+  bool isFavourite(dynamic propertyId) {
+    final id = propertyId.toString();
+    final likedProperties = _pageStateService.likesState.value.properties;
+    return likedProperties.any((property) => property.id.toString() == id);
+  }
+
+  Future<void> addToFavourites(dynamic propertyId) async {
+    try {
+      DebugLogger.info('💖 Adding property $propertyId to favorites');
+      await _swipesRepository.recordSwipe(propertyId: int.parse(propertyId.toString()), isLiked: true);
+      // Refresh the liked properties to reflect the change
+      await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+      DebugLogger.success('✅ Property $propertyId added to favorites');
+    } catch (e) {
+      DebugLogger.error('❌ Failed to add property $propertyId to favorites: $e');
+    }
+  }
+
+  Future<void> removeFromFavourites(dynamic propertyId) async {
+    try {
+      DebugLogger.info('💔 Removing property $propertyId from favorites');
+      await _swipesRepository.recordSwipe(propertyId: int.parse(propertyId.toString()), isLiked: false);
+      // Refresh the liked properties to reflect the change
+      await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+      DebugLogger.success('✅ Property $propertyId removed from favorites');
+    } catch (e) {
+      DebugLogger.error('❌ Failed to remove property $propertyId from favorites: $e');
+    }
   }
 
   void clearSearch() {
@@ -175,14 +188,6 @@ class LikesController extends GetxController {
   }
 
   // Helper method to build filters with search query
-  UnifiedFilterModel _buildFiltersWithSearch() {
-    // Use centralized filters that already hold searchQuery
-    return _filterService.currentFilter;
-  }
-
-  void _applySearchFilter() {
-    // Server handles filtering; no client-side filtering required
-  }
 
   // Client-side matching deprecated in favor of server-side filtering
 
@@ -245,7 +250,6 @@ class LikesController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 3),
       );
-
     } catch (e) {
       DebugLogger.error('❌ Failed to remove from likes: $e');
 
@@ -270,9 +274,11 @@ class LikesController extends GetxController {
     }
   }
 
-  void retryLiked() => _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+  void retryLiked() =>
+      _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
 
-  void retryPassed() => _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+  void retryPassed() =>
+      _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
 
   // Getters for current segment
   List<PropertyModel> get currentProperties {
@@ -298,30 +304,39 @@ class LikesController extends GetxController {
 
   // Statistics
   String get currentSegmentTitle {
-    return currentSegment.value == LikesSegment.liked ? 'Liked Properties' : 'Passed Properties';
+    return currentSegment.value == LikesSegment.liked
+        ? 'Liked Properties'
+        : 'Passed Properties';
   }
 
   String get currentCountText {
     final count = currentProperties.length;
-    return searchQuery.value.isNotEmpty ? '$count results' : (count == 1 ? '$count property' : '$count properties');
+    return searchQuery.value.isNotEmpty
+        ? '$count results'
+        : (count == 1 ? '$count property' : '$count properties');
   }
 
   String get emptyStateMessage {
     if (searchQuery.value.isNotEmpty) {
       return 'No properties match your search';
     }
-    
-    return currentSegment.value == LikesSegment.liked 
+
+    return currentSegment.value == LikesSegment.liked
         ? 'No liked properties yet.\nStart swiping to see properties you love!'
         : 'No passed properties yet.\nProperties you swipe left on will appear here.';
   }
 
   // Helper getters
   bool get isCurrentLoading => _pageStateService.likesState.value.isLoading;
-  bool get isCurrentEmpty => !_pageStateService.likesState.value.isLoading && currentProperties.isEmpty && _pageStateService.likesState.value.error == null;
+  bool get isCurrentEmpty =>
+      !_pageStateService.likesState.value.isLoading &&
+      currentProperties.isEmpty &&
+      _pageStateService.likesState.value.error == null;
   bool get hasCurrentError => _pageStateService.likesState.value.error != null;
-  bool get isCurrentLoaded => !isCurrentLoading && !isCurrentEmpty && !hasCurrentError;
-  bool get isCurrentLoadingMore => _pageStateService.likesState.value.isLoadingMore;
+  bool get isCurrentLoaded =>
+      !isCurrentLoading && !isCurrentEmpty && !hasCurrentError;
+  bool get isCurrentLoadingMore =>
+      _pageStateService.likesState.value.isLoadingMore;
   bool get hasCurrentProperties => currentProperties.isNotEmpty;
   bool get hasSearchQuery => searchQuery.value.isNotEmpty;
 }

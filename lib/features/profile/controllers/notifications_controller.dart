@@ -19,7 +19,10 @@ class NotificationsController extends GetxController {
 
   // Quiet Hours
   final RxBool quietHoursEnabled = false.obs;
-  final Rx<TimeOfDay> quietHoursStart = const TimeOfDay(hour: 22, minute: 0).obs;
+  final Rx<TimeOfDay> quietHoursStart = const TimeOfDay(
+    hour: 22,
+    minute: 0,
+  ).obs;
   final Rx<TimeOfDay> quietHoursEnd = const TimeOfDay(hour: 7, minute: 0).obs;
 
   // Notification Frequency
@@ -34,10 +37,14 @@ class NotificationsController extends GetxController {
 
   void _loadNotificationSettings() {
     // Push Notifications
-    pushNotificationsMaster.value = _storage.read('pushNotificationsMaster') ?? true;
-    newPropertiesNotifications.value = _storage.read('newPropertiesNotifications') ?? true;
-    priceDropNotifications.value = _storage.read('priceDropNotifications') ?? true;
-    favoritesNotifications.value = _storage.read('favoritesNotifications') ?? true;
+    pushNotificationsMaster.value =
+        _storage.read('pushNotificationsMaster') ?? true;
+    newPropertiesNotifications.value =
+        _storage.read('newPropertiesNotifications') ?? true;
+    priceDropNotifications.value =
+        _storage.read('priceDropNotifications') ?? true;
+    favoritesNotifications.value =
+        _storage.read('favoritesNotifications') ?? true;
     tourReminders.value = _storage.read('tourReminders') ?? true;
 
     // Email Notifications
@@ -66,15 +73,20 @@ class NotificationsController extends GetxController {
     }
 
     // Notification Frequency
-    newPropertiesFrequency.value = _storage.read('newPropertiesFrequency') ?? 'Daily';
-    priceAlertsFrequency.value = _storage.read('priceAlertsFrequency') ?? 'Instant';
+    newPropertiesFrequency.value =
+        _storage.read('newPropertiesFrequency') ?? 'Daily';
+    priceAlertsFrequency.value =
+        _storage.read('priceAlertsFrequency') ?? 'Instant';
   }
 
   void saveNotificationSettings() {
     try {
       // Push Notifications
       _storage.write('pushNotificationsMaster', pushNotificationsMaster.value);
-      _storage.write('newPropertiesNotifications', newPropertiesNotifications.value);
+      _storage.write(
+        'newPropertiesNotifications',
+        newPropertiesNotifications.value,
+      );
       _storage.write('priceDropNotifications', priceDropNotifications.value);
       _storage.write('favoritesNotifications', favoritesNotifications.value);
       _storage.write('tourReminders', tourReminders.value);
@@ -119,21 +131,23 @@ class NotificationsController extends GetxController {
 
   // Helper methods to check if notifications are enabled
   bool get arePushNotificationsEnabled => pushNotificationsMaster.value;
-  bool get areNewPropertiesNotificationsEnabled => 
+  bool get areNewPropertiesNotificationsEnabled =>
       pushNotificationsMaster.value && newPropertiesNotifications.value;
-  bool get arePriceDropNotificationsEnabled => 
+  bool get arePriceDropNotificationsEnabled =>
       pushNotificationsMaster.value && priceDropNotifications.value;
-  bool get areFavoritesNotificationsEnabled => 
+  bool get areFavoritesNotificationsEnabled =>
       pushNotificationsMaster.value && favoritesNotifications.value;
-  bool get areTourRemindersEnabled => 
+  bool get areTourRemindersEnabled =>
       pushNotificationsMaster.value && tourReminders.value;
 
   bool isInQuietHours() {
     if (!quietHoursEnabled.value) return false;
 
     final now = TimeOfDay.now();
-    final startMinutes = quietHoursStart.value.hour * 60 + quietHoursStart.value.minute;
-    final endMinutes = quietHoursEnd.value.hour * 60 + quietHoursEnd.value.minute;
+    final startMinutes =
+        quietHoursStart.value.hour * 60 + quietHoursStart.value.minute;
+    final endMinutes =
+        quietHoursEnd.value.hour * 60 + quietHoursEnd.value.minute;
     final nowMinutes = now.hour * 60 + now.minute;
 
     if (startMinutes <= endMinutes) {

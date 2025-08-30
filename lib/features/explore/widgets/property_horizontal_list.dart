@@ -28,7 +28,9 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
   void initState() {
     super.initState();
     // Listen to selected property changes to auto-scroll
-    _selectionWorker = ever(widget.controller.selectedProperty, (PropertyModel? p) {
+    _selectionWorker = ever(widget.controller.selectedProperty, (
+      PropertyModel? p,
+    ) {
       if (p == null) return;
       if (_lastSelectedId == p.id) return;
       _lastSelectedId = p.id;
@@ -48,7 +50,9 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
 
   void _scrollToProperty(int propertyId) {
     try {
-      final index = widget.controller.properties.indexWhere((e) => e.id == propertyId);
+      final index = widget.controller.properties.indexWhere(
+        (e) => e.id == propertyId,
+      );
       if (index == -1) return;
 
       // Calculate target offset roughly based on item width and spacing
@@ -73,7 +77,10 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
       try {
         final offset = _scrollController.offset;
         final rawIndex = offset / (_itemWidth + _spacing);
-        final index = rawIndex.round().clamp(0, widget.controller.properties.length - 1);
+        final index = rawIndex.round().clamp(
+          0,
+          widget.controller.properties.length - 1,
+        );
         if (widget.controller.properties.isEmpty) return;
         final property = widget.controller.properties[index];
         if (property.id != _lastSelectedId) {
@@ -104,7 +111,8 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemBuilder: (context, index) {
             final property = properties[index];
-            final isSelected = widget.controller.selectedProperty.value?.id == property.id;
+            final isSelected =
+                widget.controller.selectedProperty.value?.id == property.id;
             final isFavourite = widget.controller.isPropertyLiked(property);
 
             return AnimatedContainer(
@@ -115,7 +123,9 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: isSelected ? AppColors.getCardShadow() : null,
                 border: Border.all(
-                  color: isSelected ? AppColors.primaryYellow : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.primaryYellow
+                      : Colors.transparent,
                   width: 2,
                 ),
               ),

@@ -7,19 +7,19 @@ import '../models/visit_model.dart';
 import '../models/unified_property_response.dart';
 import '../models/unified_filter_model.dart';
 import '../models/agent_model.dart';
+import '../../controllers/auth_controller.dart';
 
 import '../models/amenity_model.dart';
 import '../models/api_response_models.dart';
 import '../../utils/debug_logger.dart';
 import '../../utils/error_handler.dart';
-import '../../utils/theme.dart';
 
 class ApiAuthException implements Exception {
   final String message;
   final int? statusCode;
-  
+
   ApiAuthException(this.message, {this.statusCode});
-  
+
   @override
   String toString() => 'ApiAuthException: $message';
 }
@@ -28,9 +28,9 @@ class ApiException implements Exception {
   final String message;
   final int? statusCode;
   final String? response;
-  
+
   ApiException(this.message, {this.statusCode, this.response});
-  
+
   @override
   String toString() => 'ApiException: $message (Status: $statusCode)';
 }
@@ -112,20 +112,23 @@ class VisitListResponse {
   factory VisitListResponse.fromJson(Map<String, dynamic> json) {
     try {
       final safeJson = Map<String, dynamic>.from(json);
-      
+
       // Parse visits array
       List<VisitModel> visits = [];
       if (safeJson['visits'] is List) {
         final visitsData = safeJson['visits'] as List;
         visits = visitsData.map((item) => VisitModel.fromJson(item)).toList();
       }
-      
+
       return VisitListResponse(
         visits: visits,
         total: safeJson['total'] ?? visits.length,
-        upcoming: safeJson['upcoming'] ?? visits.where((v) => v.isUpcoming).length,
-        completed: safeJson['completed'] ?? visits.where((v) => v.isCompleted).length,
-        cancelled: safeJson['cancelled'] ?? visits.where((v) => v.isCancelled).length,
+        upcoming:
+            safeJson['upcoming'] ?? visits.where((v) => v.isUpcoming).length,
+        completed:
+            safeJson['completed'] ?? visits.where((v) => v.isCompleted).length,
+        cancelled:
+            safeJson['cancelled'] ?? visits.where((v) => v.isCancelled).length,
       );
     } catch (e, stackTrace) {
       DebugLogger.error('Error in VisitListResponse.fromJson', e, stackTrace);
@@ -145,52 +148,37 @@ class VisitListResponse {
 
 class ApiService extends getx.GetConnect {
   static ApiService get instance => getx.Get.find<ApiService>();
-  
+
   late final String _baseUrl;
   late final SupabaseClient _supabase;
+  // Removed token cache - trust Supabase session management
 
   @override
   Future<void> onInit() async {
     super.onInit();
     await _initializeService();
     httpClient.baseUrl = _baseUrl;
-    
+
     // Request modifier to add authentication token
     httpClient.addRequestModifier<Object?>((request) async {
       final token = await _authToken;
       if (token != null && token.trim().isNotEmpty) {
         request.headers['Authorization'] = 'Bearer ${token.trim()}';
+        DebugLogger.auth('➡️ Attaching Authorization header to ${request.url}');
       } else {
         request.headers.remove('Authorization');
+        DebugLogger.auth('➡️ No Authorization header for ${request.url}');
       }
       request.headers['Content-Type'] = 'application/json';
       return request;
     });
-    
-    // Response interceptor for auth error handling
+
+    // Simplified response interceptor - trust Supabase's automatic refresh
     httpClient.addResponseModifier((request, response) async {
       if (response.statusCode == 401) {
-        try {
-          // Let the Supabase client handle the refresh
-          await _supabase.auth.refreshSession();
-          // Retry the original request
-          final newToken = await _authToken;
-          if (newToken != null && newToken.trim().isNotEmpty) {
-            request.headers['Authorization'] = 'Bearer ${newToken.trim()}';
-          } else {
-            request.headers.remove('Authorization');
-          }
-          // Note: For requests with body (POST/PUT), the body will be lost on retry
-          // This is a limitation of the current GetConnect response interceptor design
-          return await httpClient.request(
-            request.url.toString(),
-            request.method,
-            headers: request.headers,
-          );
-        } catch (e) {
-          DebugLogger.error('Token refresh failed', e);
-          _handleAuthenticationFailure();
-        }
+        DebugLogger.warning('🔐 Received 401 response, clearing authentication');
+        _handleAuthenticationFailure();
+        throw ApiAuthException('Authentication failed', statusCode: 401);
       }
       return response;
     });
@@ -203,13 +191,17 @@ class ApiService extends getx.GetConnect {
       // Extract base URL without /api/v1 for GetConnect
       _baseUrl = fullApiUrl.replaceAll('/api/v1', '');
       DebugLogger.startup('API Service initialized with base URL: $_baseUrl');
-      
+
+      // SecureTokenManager removed - trusting Supabase session management
+
       // Check if Supabase is already initialized
       try {
         _supabase = Supabase.instance.client;
         DebugLogger.success('Supabase client found');
       } catch (e) {
-        DebugLogger.warning('Supabase not initialized, attempting to initialize...');
+        DebugLogger.warning(
+          'Supabase not initialized, attempting to initialize...',
+        );
         // Initialize Supabase if not already initialized
         await Supabase.initialize(
           url: dotenv.env['SUPABASE_URL'] ?? '',
@@ -222,19 +214,17 @@ class ApiService extends getx.GetConnect {
       DebugLogger.error('Error initializing API service', e, stackTrace);
       // Create a mock client or handle the error appropriately
     }
-    
+
     // Listen to auth state changes with proper cleanup
     _supabase.auth.onAuthStateChange.listen((data) {
       final AuthChangeEvent event = data.event;
       final Session? session = data.session;
-      
+
       switch (event) {
         case AuthChangeEvent.signedIn:
           DebugLogger.auth('User signed in');
           if (session != null) {
-            DebugLogger.logJWTToken(
-              session.accessToken,
-            );
+            DebugLogger.logJWTToken(session.accessToken);
           }
           break;
         case AuthChangeEvent.signedOut:
@@ -252,52 +242,31 @@ class ApiService extends getx.GetConnect {
     });
   }
 
+  /// Retrieves the current valid JWT access token from the Supabase session.
+  /// Supabase client handles secure storage and automatic token refreshing.
   Future<String?> get _authToken async {
     final session = _supabase.auth.currentSession;
-    final token = session?.accessToken;
-    
-    // Log JWT Token for debugging
-    if (token != null) {
-      DebugLogger.logJWTToken(
-        token,
-        expiresAt: session?.expiresAt != null 
-            ? DateTime.fromMillisecondsSinceEpoch(session!.expiresAt! * 1000)
-            : null,
-        userId: session?.user.id,
-      );
-    } else {
-      DebugLogger.warning('No JWT Token available');
+    if (session == null) {
+      DebugLogger.auth('No active Supabase session found.');
+      return null;
     }
-    
-    return token;
+    // The accessToken is automatically refreshed by the Supabase client library.
+    DebugLogger.auth('Retrieved access token from Supabase session.');
+    return session.accessToken;
   }
 
-
-  /// Handles authentication failure by redirecting to login
+  /// Handles authentication failure by signing the user out and redirecting to login.
   void _handleAuthenticationFailure() {
-    DebugLogger.auth('🚪 Authentication failed: redirecting to login');
-    
-    // Clear the current session
-    _supabase.auth.signOut();
-    
-    // Navigate to login screen
-    // Use GetX navigation to redirect to login
-    try {
-      if (getx.Get.currentRoute != '/login') {
-        getx.Get.offAllNamed('/login');
-        
-        // Show user-friendly message
-        getx.Get.snackbar(
-          'Session Expired',
-          'Please log in again to continue',
-          snackPosition: getx.SnackPosition.TOP,
-          duration: const Duration(seconds: 3),
-          backgroundColor: AppTheme.errorRed,
-          colorText: AppTheme.backgroundWhite,
-        );
-      }
-    } catch (e) {
-      DebugLogger.error('❌ Navigation error during auth failure: $e');
+    DebugLogger.auth('Authentication failed. Signing out and redirecting to login.');
+
+    // Use AuthController to sign out, which will trigger a global state change.
+    // This is safer than directly navigating.
+    if (getx.Get.isRegistered<AuthController>()) {
+      getx.Get.find<AuthController>().signOut();
+    } else {
+      // Fallback if AuthController isn't available for some reason
+      _supabase.auth.signOut();
+      getx.Get.offAllNamed('/login');
     }
   }
 
@@ -312,14 +281,16 @@ class ApiService extends getx.GetConnect {
   }) async {
     Exception? lastException;
     final operation = operationName ?? '$method $endpoint';
-    
+
     for (int attempt = 0; attempt <= retries; attempt++) {
       try {
         // Prepend /api/v1 to all endpoints
         final fullEndpoint = '/api/v1$endpoint';
-        
+
         // Single-line API request log for debugging
-        DebugLogger.api('🚀 API $method $fullEndpoint${queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : ''}${body != null && body.isNotEmpty ? ' | Body: $body' : ''}');
+        DebugLogger.api(
+          '🚀 API $method $fullEndpoint${queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : ''}${body != null && body.isNotEmpty ? ' | Body: $body' : ''}',
+        );
 
         DebugLogger.logAPIRequest(
           method: method,
@@ -347,8 +318,12 @@ class ApiService extends getx.GetConnect {
         }
 
         // Single-line API response log for debugging
-        DebugLogger.api('📨 API $method $fullEndpoint → ${response.statusCode}');
-        DebugLogger.api('📨 API $method $fullEndpoint → ${response.bodyString}');
+        DebugLogger.api(
+          '📨 API $method $fullEndpoint → ${response.statusCode}',
+        );
+        DebugLogger.api(
+          '📨 API $method $fullEndpoint → ${response.bodyString}',
+        );
 
         // Log response
         DebugLogger.logAPIResponse(
@@ -357,26 +332,66 @@ class ApiService extends getx.GetConnect {
           body: response.bodyString ?? '',
         );
 
-        if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+        if (response.statusCode != null &&
+            response.statusCode! >= 200 &&
+            response.statusCode! < 300) {
           final responseData = response.body;
-          if (responseData is Map<String, dynamic>) {
-            return fromJson(responseData);
-          } else if (responseData is List) {
-            // Normalize bare list payloads to a map shape
-            return fromJson({'data': responseData});
-          } else {
-            return fromJson({'data': responseData});
+          DebugLogger.api('📊 [_makeRequest] Raw response data type: ${responseData?.runtimeType}');
+          DebugLogger.api('📊 [_makeRequest] Raw response data: $responseData');
+          
+          try {
+            if (responseData is Map<String, dynamic>) {
+              DebugLogger.api('📊 [_makeRequest] Calling fromJson with Map<String, dynamic>: $responseData');
+              final result = fromJson(responseData);
+              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
+              return result;
+            } else if (responseData is List) {
+              DebugLogger.api('📊 [_makeRequest] Normalizing List response to Map for $operation');
+              final normalizedData = {'data': responseData};
+              DebugLogger.api('📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData');
+              final result = fromJson(normalizedData);
+              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
+              return result;
+            } else {
+              DebugLogger.api('📊 [_makeRequest] Normalizing ${responseData?.runtimeType} response to Map for $operation');
+              final normalizedData = {'data': responseData};
+              DebugLogger.api('📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData');
+              final result = fromJson(normalizedData);
+              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
+              return result;
+            }
+          } catch (e, stackTrace) {
+            DebugLogger.error('🚨 [_makeRequest] ERROR in fromJson callback for $operation: $e');
+            DebugLogger.error('🚨 [_makeRequest] Response data that caused error: $responseData');
+            DebugLogger.error('🚨 [_makeRequest] Error type: ${e.runtimeType}');
+            DebugLogger.error('🚨 [_makeRequest] Stack trace: $stackTrace');
+            
+            if (e.toString().contains('Null check operator used on a null value')) {
+              DebugLogger.error('🚨 [_makeRequest] NULL CHECK OPERATOR ERROR in fromJson callback!');
+              DebugLogger.error('🚨 [_makeRequest] This error is coming from the parsing logic');
+              DebugLogger.error('🚨 [_makeRequest] Operation: $operation');
+            }
+            
+            rethrow;
           }
         } else if (response.statusCode == 401) {
           // Token expired - the response interceptor will handle this
           DebugLogger.auth('🔒 Authentication failed for $operation');
-          throw ApiAuthException('Authentication failed', statusCode: 401);
+          throw ApiAuthException(
+            'Authentication failed for $operation',
+            statusCode: 401,
+          );
         } else if (response.statusCode == 403) {
           DebugLogger.auth('🚫 Access forbidden for $operation');
-          throw ApiAuthException('Access forbidden', statusCode: 403);
+          throw ApiAuthException(
+            'Access forbidden for $operation',
+            statusCode: 403,
+          );
         } else if (response.statusCode! >= 500 && attempt < retries) {
           // Server error - retry
-          DebugLogger.warning('🔄 Server error (${response.statusCode}) for $operation, retrying... (${attempt + 1}/$retries)');
+          DebugLogger.warning(
+            '🔄 Server error (${response.statusCode}) for $operation, retrying... (${attempt + 1}/$retries)',
+          );
           await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
           continue;
         } else {
@@ -390,12 +405,21 @@ class ApiService extends getx.GetConnect {
             DebugLogger.error('🚫 Response Body: ${response.bodyString}');
             DebugLogger.error('🚫 Response Headers: ${response.headers}');
           }
-          
+
+          // Enhanced error logging for 409 Conflict errors
+          if (response.statusCode == 409) {
+            DebugLogger.error('⚡ 409 Conflict detected for $operation');
+            DebugLogger.error('⚡ This indicates a concurrent update conflict');
+            DebugLogger.error('⚡ Endpoint: $fullEndpoint');
+            DebugLogger.error('⚡ Response Body: ${response.bodyString}');
+          }
+
           // Use ErrorHandler for comprehensive error handling
-          final errorMessage = 'HTTP ${response.statusCode}: ${response.statusText ?? 'Unknown error'}';
+          final errorMessage =
+              'HTTP ${response.statusCode}: ${response.statusText ?? 'Unknown error'}';
           DebugLogger.error('❌ API Error for $operation: $errorMessage');
           ErrorHandler.handleNetworkError(response.bodyString ?? errorMessage);
-          
+
           throw ApiException(
             response.statusText ?? 'API Error',
             statusCode: response.statusCode,
@@ -404,28 +428,43 @@ class ApiService extends getx.GetConnect {
         }
       } catch (e) {
         lastException = e is Exception ? e : Exception(e.toString());
-        
+
         // If it's an auth exception, don't retry
         if (e is ApiAuthException) {
           DebugLogger.auth('🔒 Authentication error for $operation: $e');
           rethrow;
         }
-        
+
         // If this is the last attempt, handle with ErrorHandler
         if (attempt == retries) {
-          DebugLogger.error('💥 API Request failed for $operation after ${attempt + 1} attempts: $e');
-          
+          // Enhanced error reporting with stack trace preservation
+          DebugLogger.reportError(
+            context: 'API Request Failed',
+            error: e,
+            stackTrace: StackTrace.current,
+            metadata: {
+              'operation': operation,
+              'attempts': attempt + 1,
+              'endpoint': endpoint,
+              'method': method,
+              'hasBody': body != null,
+              'hasQuery': queryParams != null && queryParams.isNotEmpty,
+            },
+          );
+
           // Use ErrorHandler for comprehensive error categorization
-          ErrorHandler.handleNetworkError(e);
+          ErrorHandler.handleNetworkError(e, stackTrace: StackTrace.current);
           rethrow;
         }
-        
+
         // Wait before retry
-        DebugLogger.warning('🔄 Request failed for $operation, retrying... (${attempt + 1}/$retries)');
+        DebugLogger.warning(
+          '🔄 Request failed for $operation, retrying... (${attempt + 1}/$retries)',
+        );
         await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
       }
     }
-    
+
     throw lastException ?? Exception('Unknown error occurred for $operation');
   }
 
@@ -433,16 +472,16 @@ class ApiService extends getx.GetConnect {
   static UserModel _parseUserModel(Map<String, dynamic> json) {
     try {
       final safeJson = Map<String, dynamic>.from(json);
-      
-      // Ensure required fields have defaults  
+
+      // Ensure required fields have defaults
       safeJson['email'] ??= '';
       safeJson['phone'] ??= '';
-      
+
       // Handle preferences
       if (safeJson['preferences'] is! Map) {
         safeJson['preferences'] = <String, dynamic>{};
       }
-      
+
       return UserModel.fromJson(safeJson);
     } catch (e) {
       DebugLogger.error('❌ Error parsing user model: $e');
@@ -454,12 +493,51 @@ class ApiService extends getx.GetConnect {
   // Helper method for safer property model parsing
   static PropertyModel _parsePropertyModel(Map<String, dynamic> json) {
     try {
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] Starting property parsing for ID: ${json['id']}');
+      DebugLogger.api('📊 [PROPERTY_PARSER] RAW JSON RECEIVED: $json');
+      
       // Normalize fields that may vary in type from different backends
       final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
 
       // Features should remain as List, no conversion needed
       if (safeJson['calendar_data'] is List) {
         safeJson['calendar_data'] = <String, dynamic>{};
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] Converted calendar_data from List to Map');
+      }
+
+      // Log critical fields for debugging
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] Critical fields - id: ${safeJson['id']}, title: ${safeJson['title']}, property_type: ${safeJson['property_type']}, purpose: ${safeJson['purpose']}');
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] Timestamp fields - created_at: ${safeJson['created_at']}, updated_at: ${safeJson['updated_at']}');
+
+      // Log all fields to understand what's being parsed
+      safeJson.forEach((key, value) {
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] Field "$key": ${value?.runtimeType} = $value');
+      });
+
+      // Log specific problematic fields
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] REQUIRED FIELD CHECK - id: ${safeJson['id']} (${safeJson['id']?.runtimeType})');
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] REQUIRED FIELD CHECK - title: ${safeJson['title']} (${safeJson['title']?.runtimeType})');
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] BASE PRICE CHECK - base_price: ${safeJson['base_price']} (${safeJson['base_price']?.runtimeType})');
+      
+      // Check for nested objects that could cause null pointer issues
+      if (safeJson['images'] != null) {
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] IMAGES FIELD: ${safeJson['images']} (${safeJson['images']?.runtimeType})');
+        if (safeJson['images'] is List) {
+          final images = safeJson['images'] as List;
+          for (int i = 0; i < images.length; i++) {
+            DebugLogger.debug('🏠 [PROPERTY_PARSER] IMAGE[$i]: ${images[i]} (${images[i]?.runtimeType})');
+          }
+        }
+      }
+      
+      if (safeJson['amenities'] != null) {
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] AMENITIES FIELD: ${safeJson['amenities']} (${safeJson['amenities']?.runtimeType})');
+        if (safeJson['amenities'] is List) {
+          final amenities = safeJson['amenities'] as List;
+          for (int i = 0; i < amenities.length; i++) {
+            DebugLogger.debug('🏠 [PROPERTY_PARSER] AMENITY[$i]: ${amenities[i]} (${amenities[i]?.runtimeType})');
+          }
+        }
       }
 
       // Ensure numeric fields are parsed as double when provided as int/strings
@@ -469,84 +547,224 @@ class ApiService extends getx.GetConnect {
         if (v is String) return double.tryParse(v);
         return null;
       }
+
       if (safeJson.containsKey('base_price')) {
+        final originalValue = safeJson['base_price'];
         safeJson['base_price'] = toDouble(safeJson['base_price']) ?? 0.0;
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - base_price: $originalValue -> ${safeJson['base_price']}');
       }
       if (safeJson.containsKey('price_per_sqft')) {
+        final originalValue = safeJson['price_per_sqft'];
         safeJson['price_per_sqft'] = toDouble(safeJson['price_per_sqft']);
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - price_per_sqft: $originalValue -> ${safeJson['price_per_sqft']}');
       }
       if (safeJson.containsKey('monthly_rent')) {
+        final originalValue = safeJson['monthly_rent'];
         safeJson['monthly_rent'] = toDouble(safeJson['monthly_rent']);
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - monthly_rent: $originalValue -> ${safeJson['monthly_rent']}');
       }
       if (safeJson.containsKey('daily_rate')) {
+        final originalValue = safeJson['daily_rate'];
         safeJson['daily_rate'] = toDouble(safeJson['daily_rate']);
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - daily_rate: $originalValue -> ${safeJson['daily_rate']}');
       }
       if (safeJson.containsKey('security_deposit')) {
+        final originalValue = safeJson['security_deposit'];
         safeJson['security_deposit'] = toDouble(safeJson['security_deposit']);
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - security_deposit: $originalValue -> ${safeJson['security_deposit']}');
       }
       if (safeJson.containsKey('maintenance_charges')) {
-        safeJson['maintenance_charges'] = toDouble(safeJson['maintenance_charges']);
+        final originalValue = safeJson['maintenance_charges'];
+        safeJson['maintenance_charges'] = toDouble(
+          safeJson['maintenance_charges'],
+        );
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - maintenance_charges: $originalValue -> ${safeJson['maintenance_charges']}');
       }
 
       // Validate critical fields before parsing
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] About to validate property JSON');
       _validatePropertyJson(json);
-      return PropertyModel.fromJson(safeJson);
-    } catch (e) {
-      DebugLogger.error('❌ Error parsing property model: $e');
-      DebugLogger.api('📊 Raw JSON: $json');
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] Validation passed, calling PropertyModel.fromJson');
+      DebugLogger.api('📊 [PROPERTY_PARSER] SAFE JSON TO BE PARSED: $safeJson');
       
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] CALLING PropertyModel.fromJson() - this is where null check errors often occur');
+      
+      // Call PropertyModel.fromJson with detailed error context
+      PropertyModel property;
+      try {
+        property = PropertyModel.fromJson(safeJson);
+        DebugLogger.debug('🏠 [PROPERTY_PARSER] PropertyModel.fromJson() completed successfully');
+      } catch (e, stackTrace) {
+        DebugLogger.error('🚨 [PROPERTY_PARSER] PropertyModel.fromJson() FAILED: $e');
+        DebugLogger.error('🚨 [PROPERTY_PARSER] This is the exact point where the null check error occurs');
+        DebugLogger.error('🚨 [PROPERTY_PARSER] Generated code in property_model.g.dart is the culprit');
+        DebugLogger.api('📊 [PROPERTY_PARSER] JSON that failed PropertyModel.fromJson(): $safeJson');
+        
+        // Try to identify which generated method line is causing the issue
+        final stackString = stackTrace.toString();
+        if (stackString.contains('property_model.g.dart')) {
+          DebugLogger.error('🚨 [PROPERTY_PARSER] Error is in generated property_model.g.dart file');
+          // Extract line numbers from stack trace if possible
+          final lines = stackString.split('\n');
+          for (final line in lines) {
+            if (line.contains('property_model.g.dart')) {
+              DebugLogger.error('🚨 [PROPERTY_PARSER] Specific line: $line');
+            }
+          }
+        }
+        rethrow;
+      }
+      
+      DebugLogger.debug('🏠 [PROPERTY_PARSER] Successfully parsed property: ${property.id} - ${property.title}');
+      return property;
+    } catch (e, stackTrace) {
+      DebugLogger.error('❌ [PROPERTY_PARSER] CRITICAL ERROR parsing property model: $e');
+      DebugLogger.error('❌ [PROPERTY_PARSER] Stack trace: $stackTrace');
+      DebugLogger.api('📊 [PROPERTY_PARSER] Raw JSON that caused error: $json');
+
+      // Special handling for null check operator errors with detailed analysis
+      if (e.toString().contains('Null check operator used on a null value')) {
+        DebugLogger.error('🚨 [PROPERTY_PARSER] NULL CHECK OPERATOR ERROR DETECTED!');
+        DebugLogger.error('🚨 [PROPERTY_PARSER] This is likely in PropertyModel.fromJson or related code');
+        DebugLogger.error('🚨 [PROPERTY_PARSER] Check generated property_model.g.dart file');
+        
+        // Detailed analysis of which field might be causing the issue
+        DebugLogger.error('🔍 [PROPERTY_PARSER] FIELD ANALYSIS FOR NULL CHECK ERROR:');
+        
+        // Check required fields that have non-nullable conversions in generated code
+        final fieldsToCheck = [
+          'id', 'title', 'base_price', 'is_active', 'view_count', 
+          'like_count', 'interest_count', 'liked', 'country'
+        ];
+        
+        for (final field in fieldsToCheck) {
+          final value = json[field];
+          DebugLogger.error('🔍 [PROPERTY_PARSER] $field: $value (${value?.runtimeType}) - ${value == null ? "NULL!" : "OK"}');
+        }
+
+        // Check nested objects that could cause issues
+        if (json['images'] is List) {
+          final images = json['images'] as List;
+          for (int i = 0; i < images.length; i++) {
+            final image = images[i];
+            if (image is Map) {
+              final imageUrl = image['image_url'];
+              DebugLogger.error('🔍 [PROPERTY_PARSER] images[$i].image_url: $imageUrl - ${imageUrl == null ? "NULL!" : "OK"}');
+            }
+          }
+        }
+        
+        if (json['amenities'] is List) {
+          final amenities = json['amenities'] as List;
+          for (int i = 0; i < amenities.length; i++) {
+            final amenity = amenities[i];
+            if (amenity is Map) {
+              final id = amenity['id'];
+              final title = amenity['title'];
+              DebugLogger.error('🔍 [PROPERTY_PARSER] amenities[$i].id: $id - ${id == null ? "NULL!" : "OK"}');
+              DebugLogger.error('🔍 [PROPERTY_PARSER] amenities[$i].title: $title - ${title == null ? "NULL!" : "OK"}');
+            }
+          }
+        }
+        
+        // Check datetime fields
+        final dateFields = ['created_at', 'updated_at', 'available_from'];
+        for (final field in dateFields) {
+          final value = json[field];
+          if (value != null && value is! String) {
+            DebugLogger.error('🔍 [PROPERTY_PARSER] $field: $value (${value?.runtimeType}) - WRONG TYPE! Should be String or null');
+          }
+        }
+      }
+
       // Log specific field issues
-      if (json['id'] == null) DebugLogger.error('🚫 Missing required field: id');
-      if (json['title'] == null) DebugLogger.error('🚫 Missing required field: title');
-      if (json['property_type'] == null) DebugLogger.error('🚫 Missing required field: property_type');
-      if (json['purpose'] == null) DebugLogger.error('🚫 Missing required field: purpose');
-      
+      if (json['id'] == null) {
+        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing required field: id');
+      }
+      if (json['title'] == null) {
+        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing required field: title (has default: "Unknown Property")');
+      }
+      if (json['property_type'] == null) {
+        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing field: property_type (should be nullable)');
+      }
+      if (json['purpose'] == null) {
+        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing field: purpose (should be nullable)');
+      }
+      if (json['created_at'] == null) {
+        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing field: created_at (should be nullable)');
+      }
+
       rethrow;
     }
   }
-  
+
   // Validate property JSON before parsing
   static void _validatePropertyJson(Map<String, dynamic> json) {
     final requiredFields = ['id', 'title', 'property_type', 'purpose'];
     final missingFields = <String>[];
-    
+
     for (final field in requiredFields) {
       if (json[field] == null) {
         missingFields.add(field);
       }
     }
-    
+
     if (missingFields.isNotEmpty) {
       throw Exception('Missing required fields: ${missingFields.join(', ')}');
     }
   }
 
   // Helper method for parsing unified property response
-  static UnifiedPropertyResponse _parseUnifiedPropertyResponse(Map<String, dynamic> json) {
+  static UnifiedPropertyResponse _parseUnifiedPropertyResponse(
+    Map<String, dynamic> json,
+  ) {
     try {
+      DebugLogger.api('📊 [UNIFIED_PARSER] RAW API RESPONSE: $json');
       final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
 
       // Accept multiple shapes: { properties: [...] }, { data: [...] }, or nested common keys
-      dynamic rawList = safeJson['properties'] ?? safeJson['data'] ?? safeJson['results'] ?? safeJson['items'];
+      dynamic rawList =
+          safeJson['properties'] ??
+          safeJson['data'] ??
+          safeJson['results'] ??
+          safeJson['items'];
       final List<dynamic> list = rawList is List ? rawList : <dynamic>[];
+
+      DebugLogger.api('📦 [UNIFIED_PARSER] Found ${list.length} properties to parse');
+      DebugLogger.debug('📦 [UNIFIED_PARSER] Property list type: ${list.runtimeType}');
 
       final List<PropertyModel> parsed = <PropertyModel>[];
       int failedCount = 0;
       for (int i = 0; i < list.length; i++) {
         final item = list[i];
+        DebugLogger.debug('🏠 [UNIFIED_PARSER] Processing item $i: ${item?.runtimeType}');
+        
         if (item is Map<String, dynamic>) {
           try {
-            parsed.add(_parsePropertyModel(item));
-          } catch (_) {
+            DebugLogger.debug('🏠 [UNIFIED_PARSER] About to parse property $i: $item');
+            final property = _parsePropertyModel(item);
+            parsed.add(property);
+            DebugLogger.debug('🏠 [UNIFIED_PARSER] Successfully parsed property $i: ${property.title}');
+          } catch (e, stackTrace) {
+            DebugLogger.error('❌ [UNIFIED_PARSER] Failed to parse property $i: $e');
+            DebugLogger.error('❌ [UNIFIED_PARSER] Failed property data: $item');
+            DebugLogger.error('❌ [UNIFIED_PARSER] Stack trace: $stackTrace');
+            
+            if (e.toString().contains('Null check operator used on a null value')) {
+              DebugLogger.error('🚨 [UNIFIED_PARSER] NULL CHECK OPERATOR ERROR at property index $i!');
+              DebugLogger.error('🚨 [UNIFIED_PARSER] This should provide more details from _parsePropertyModel');
+            }
+            
             failedCount++;
           }
         } else {
+          DebugLogger.warning('⚠️ [UNIFIED_PARSER] Invalid property at index $i: $item (${item?.runtimeType})');
           failedCount++;
         }
       }
 
       if (failedCount > 0) {
-        DebugLogger.warning('⚠️ Skipped $failedCount invalid properties');
+        DebugLogger.warning('⚠️ [UNIFIED_PARSER] Skipped $failedCount invalid properties out of ${list.length}');
       }
 
       // Metadata with safe fallbacks
@@ -565,7 +783,9 @@ class ApiService extends getx.GetConnect {
 
       Map<String, dynamic> filtersApplied = {};
       if (safeJson['filters_applied'] is Map<String, dynamic>) {
-        filtersApplied = Map<String, dynamic>.from(safeJson['filters_applied'] as Map);
+        filtersApplied = Map<String, dynamic>.from(
+          safeJson['filters_applied'] as Map,
+        );
       }
 
       SearchCenter? searchCenter;
@@ -574,7 +794,10 @@ class ApiService extends getx.GetConnect {
         final lat = sc['latitude'] ?? sc['lat'];
         final lng = sc['longitude'] ?? sc['lng'];
         if (lat is num && lng is num) {
-          searchCenter = SearchCenter(latitude: lat.toDouble(), longitude: lng.toDouble());
+          searchCenter = SearchCenter(
+            latitude: lat.toDouble(),
+            longitude: lng.toDouble(),
+          );
         } else if (lat is String && lng is String) {
           final dLat = double.tryParse(lat);
           final dLng = double.tryParse(lng);
@@ -599,12 +822,14 @@ class ApiService extends getx.GetConnect {
       rethrow;
     }
   }
-  
 
   // Authentication Methods
 
   // Phone + password sign-in (Supabase supports phone in signInWithPassword)
-  Future<AuthResponse> signInWithPhonePassword(String phone, String password) async {
+  Future<AuthResponse> signInWithPhonePassword(
+    String phone,
+    String password,
+  ) async {
     final response = await _supabase.auth.signInWithPassword(
       phone: phone,
       password: password,
@@ -612,15 +837,16 @@ class ApiService extends getx.GetConnect {
     return response;
   }
 
-
   Future<void> signOut() async {
     await _supabase.auth.signOut();
   }
 
-
   // Send OTP to a phone number
   // shouldCreateUser=false is safer for verification/resend/login flows
-  Future<void> sendPhoneOtp(String phone, {bool shouldCreateUser = false}) async {
+  Future<void> sendPhoneOtp(
+    String phone, {
+    bool shouldCreateUser = false,
+  }) async {
     await _supabase.auth.signInWithOtp(
       phone: phone,
       shouldCreateUser: shouldCreateUser,
@@ -641,7 +867,11 @@ class ApiService extends getx.GetConnect {
   }
 
   // Sign up using phone and password, triggers SMS OTP verification
-  Future<AuthResponse> signUpWithPhonePassword(String phone, String password, {Map<String, dynamic>? data}) async {
+  Future<AuthResponse> signUpWithPhonePassword(
+    String phone,
+    String password, {
+    Map<String, dynamic>? data,
+  }) async {
     final response = await _supabase.auth.signUp(
       phone: phone,
       password: password,
@@ -649,7 +879,6 @@ class ApiService extends getx.GetConnect {
     );
     return response;
   }
-
 
   Future<UserModel> getCurrentUser() async {
     return await _makeRequest('/users/profile', (json) {
@@ -659,19 +888,95 @@ class ApiService extends getx.GetConnect {
     }, operationName: 'Get Current User');
   }
 
-
   // User Management
   Future<UserModel> updateUserProfile(Map<String, dynamic> profileData) async {
-    return await _makeRequest(
-      '/users/profile',
-      (json) {
-        final userData = json['data'] ?? json;
-        return _parseUserModel(userData);
-      },
-      method: 'PUT',
-      body: profileData,
-      operationName: 'Update User Profile',
-    );
+    // Create a copy to avoid modifying the original
+    final filteredData = Map<String, dynamic>.from(profileData);
+    
+    // Separate preference fields from profile fields
+    final preferenceFields = <String, dynamic>{};
+    final preferenceKeys = ['property_purpose', 'budget_min', 'budget_max', 'preferred_locations', 'property_types'];
+    
+    for (final key in preferenceKeys) {
+      if (filteredData.containsKey(key)) {
+        preferenceFields[key] = filteredData.remove(key);
+      }
+    }
+    
+    // Handle date_of_birth format conversion
+    if (filteredData['date_of_birth'] != null) {
+      final dobString = filteredData['date_of_birth'].toString();
+      try {
+        // Convert various date formats to ISO format
+        DateTime? parsedDate;
+        
+        // Try parsing common formats like "4/9/2007", "04/09/2007", "2007-04-09"
+        if (dobString.contains('/')) {
+          final parts = dobString.split('/');
+          if (parts.length == 3) {
+            int month, day, year;
+            if (parts[2].length == 4) {
+              // Format: M/d/yyyy or MM/dd/yyyy
+              month = int.parse(parts[0]);
+              day = int.parse(parts[1]);
+              year = int.parse(parts[2]);
+            } else {
+              // Format: yyyy/M/d or yyyy/MM/dd (less common)
+              year = int.parse(parts[0]);
+              month = int.parse(parts[1]);
+              day = int.parse(parts[2]);
+            }
+            parsedDate = DateTime(year, month, day);
+          }
+        } else if (dobString.contains('-')) {
+          // Try ISO format parsing
+          parsedDate = DateTime.parse(dobString);
+        }
+        
+        if (parsedDate != null) {
+          // Format as ISO date string (YYYY-MM-DD)
+          filteredData['date_of_birth'] = "${parsedDate.year.toString().padLeft(4, '0')}-${parsedDate.month.toString().padLeft(2, '0')}-${parsedDate.day.toString().padLeft(2, '0')}";
+          DebugLogger.info('📅 Converted date_of_birth from "$dobString" to "${filteredData['date_of_birth']}"');
+        }
+      } catch (e) {
+        DebugLogger.warning('⚠️ Failed to parse date_of_birth "$dobString": $e');
+        // Remove invalid date to prevent API error
+        filteredData.remove('date_of_birth');
+      }
+    }
+    
+    // Log what we're sending (without sensitive data)
+    DebugLogger.info('📝 Profile update fields: ${filteredData.keys.toList()}');
+    if (preferenceFields.isNotEmpty) {
+      DebugLogger.info('⚙️ Preference fields (will be sent separately): ${preferenceFields.keys.toList()}');
+    }
+    
+    // Update preferences first if there are any
+    if (preferenceFields.isNotEmpty) {
+      try {
+        await updateUserPreferences(preferenceFields);
+        DebugLogger.success('✅ User preferences updated successfully');
+      } catch (e) {
+        DebugLogger.warning('⚠️ Failed to update preferences, continuing with profile update: $e');
+      }
+    }
+    
+    // Update profile (only if there are profile fields left)
+    if (filteredData.isNotEmpty) {
+      return await _makeRequest(
+        '/users/profile',
+        (json) {
+          final userData = json['data'] ?? json;
+          return _parseUserModel(userData);
+        },
+        method: 'PUT',
+        body: filteredData,
+        operationName: 'Update User Profile',
+      );
+    } else {
+      // If no profile fields, just return current user
+      return await getCurrentUser();
+    }
   }
 
   Future<void> updateUserPreferences(Map<String, dynamic> preferences) async {
@@ -690,13 +995,12 @@ class ApiService extends getx.GetConnect {
       (json) => json,
       method: 'PUT',
       body: {
-        'latitude': latitude.toString(),
-        'longitude': longitude.toString(),
+        'latitude': latitude,
+        'longitude': longitude,
       },
       operationName: 'Update User Location',
     );
   }
-
 
   // Unified property search method that supports all filters
   Future<UnifiedPropertyResponse> searchProperties({
@@ -710,15 +1014,21 @@ class ApiService extends getx.GetConnect {
   }) async {
     // Validate parameters to prevent 422 errors
     if (latitude < -90 || latitude > 90) {
-      DebugLogger.error('🚫 Invalid latitude: $latitude (must be between -90 and 90)');
+      DebugLogger.error(
+        '🚫 Invalid latitude: $latitude (must be between -90 and 90)',
+      );
       throw ArgumentError('Invalid latitude: $latitude');
     }
     if (longitude < -180 || longitude > 180) {
-      DebugLogger.error('🚫 Invalid longitude: $longitude (must be between -180 and 180)');
+      DebugLogger.error(
+        '🚫 Invalid longitude: $longitude (must be between -180 and 180)',
+      );
       throw ArgumentError('Invalid longitude: $longitude');
     }
     if (radiusKm <= 0 || radiusKm > 1000) {
-      DebugLogger.error('🚫 Invalid radius: $radiusKm (must be between 0 and 1000 km)');
+      DebugLogger.error(
+        '🚫 Invalid radius: $radiusKm (must be between 0 and 1000 km)',
+      );
       throw ArgumentError('Invalid radius: $radiusKm');
     }
     if (page <= 0) {
@@ -733,13 +1043,17 @@ class ApiService extends getx.GetConnect {
     final queryParams = <String, String>{
       'page': page.toString(),
       'limit': limit.toString(),
-      'lat': latitude.toStringAsFixed(6), // Limit precision to avoid float precision issues
+      'lat': latitude.toStringAsFixed(
+        6,
+      ), // Limit precision to avoid float precision issues
       'lng': longitude.toStringAsFixed(6),
       'radius': radiusKm.toInt().toString(),
     };
-    
-    DebugLogger.api('🔍 Search parameters - lat: $latitude, lng: $longitude, radius: $radiusKm km');
-    
+
+    DebugLogger.api(
+      '🔍 Search parameters - lat: $latitude, lng: $longitude, radius: $radiusKm km',
+    );
+
     // Convert filters to query parameters with validation
     final filterMap = filters.toJson();
     filterMap.forEach((key, value) {
@@ -757,7 +1071,11 @@ class ApiService extends getx.GetConnect {
           // Handle list parameters (like amenities, property_type)
           if (value.isNotEmpty) {
             // Validate list items are not empty strings
-            final cleanList = value.where((item) => item != null && item.toString().trim().isNotEmpty).toList();
+            final cleanList = value
+                .where(
+                  (item) => item != null && item.toString().trim().isNotEmpty,
+                )
+                .toList();
             if (cleanList.isNotEmpty) {
               queryParams[key] = cleanList.join(',');
             }
@@ -869,7 +1187,8 @@ class ApiService extends getx.GetConnect {
 
     // Add all filters as query parameters
     filters.forEach((key, value) {
-      if (value != null && key != 'radius_km') { // Skip radius_km as we already added it as 'radius'
+      if (value != null && key != 'radius_km') {
+        // Skip radius_km as we already added it as 'radius'
         if (value is List) {
           if (value.isNotEmpty) {
             queryParams[key] = value.join(',');
@@ -890,18 +1209,11 @@ class ApiService extends getx.GetConnect {
   }
 
   Future<PropertyModel> getPropertyDetails(int propertyId) async {
-    return await _makeRequest(
-      '/properties/$propertyId',
-      (json) {
-        final propertyData = json['data'] ?? json;
-        return _parsePropertyModel(propertyData);
-      },
-      operationName: 'Get Property Details',
-    );
+    return await _makeRequest('/properties/$propertyId', (json) {
+      final propertyData = json['data'] ?? json;
+      return _parsePropertyModel(propertyData);
+    }, operationName: 'Get Property Details');
   }
-
-
-
 
   // Connection Testing
   Future<bool> testConnection() async {
@@ -913,18 +1225,21 @@ class ApiService extends getx.GetConnect {
           throw Exception('Connection timeout');
         },
       );
-      
+
       DebugLogger.api('🏥 Health check response: ${response.statusCode}');
-      
+
       // Consider 200, 404, and 405 as "server is reachable"
-      final isReachable = response.statusCode == 200 || 
-                         response.statusCode == 404 || 
-                         response.statusCode == 405;
-      
+      final isReachable =
+          response.statusCode == 200 ||
+          response.statusCode == 404 ||
+          response.statusCode == 405;
+
       if (isReachable) {
-        DebugLogger.success('✅ Backend server is reachable (status: ${response.statusCode})');
+        DebugLogger.success(
+          '✅ Backend server is reachable (status: ${response.statusCode})',
+        );
       }
-      
+
       return isReachable;
     } catch (e) {
       DebugLogger.warning('🔍 Primary health check failed: $e');
@@ -937,16 +1252,19 @@ class ApiService extends getx.GetConnect {
           },
         );
         DebugLogger.api('🔄 Alternative endpoint test: ${response.statusCode}');
-        
+
         // Server is reachable if we get any HTTP response (including 405, 404)
-        final isReachable = response.statusCode == 200 || 
-                           response.statusCode == 404 || 
-                           response.statusCode == 405;
-                           
+        final isReachable =
+            response.statusCode == 200 ||
+            response.statusCode == 404 ||
+            response.statusCode == 405;
+
         if (isReachable) {
-          DebugLogger.success('✅ Backend server is reachable via alternative test (status: ${response.statusCode})');
+          DebugLogger.success(
+            '✅ Backend server is reachable via alternative test (status: ${response.statusCode})',
+          );
         }
-        
+
         return isReachable;
       } catch (e2) {
         DebugLogger.warning('💔 Backend server unreachable: $e2');
@@ -956,7 +1274,9 @@ class ApiService extends getx.GetConnect {
   }
 
   // Swipe System
-  Future<void> swipeProperty(int propertyId, bool isLiked, {
+  Future<void> swipeProperty(
+    int propertyId,
+    bool isLiked, {
     double? userLocationLat,
     double? userLocationLng,
     String? sessionId,
@@ -1034,10 +1354,18 @@ class ApiService extends getx.GetConnect {
     if (purpose != null) queryParams['purpose'] = purpose;
     if (priceMin != null) queryParams['price_min'] = priceMin.toString();
     if (priceMax != null) queryParams['price_max'] = priceMax.toString();
-    if (bedroomsMin != null) queryParams['bedrooms_min'] = bedroomsMin.toString();
-    if (bedroomsMax != null) queryParams['bedrooms_max'] = bedroomsMax.toString();
-    if (bathroomsMin != null) queryParams['bathrooms_min'] = bathroomsMin.toString();
-    if (bathroomsMax != null) queryParams['bathrooms_max'] = bathroomsMax.toString();
+    if (bedroomsMin != null) {
+      queryParams['bedrooms_min'] = bedroomsMin.toString();
+    }
+    if (bedroomsMax != null) {
+      queryParams['bedrooms_max'] = bedroomsMax.toString();
+    }
+    if (bathroomsMin != null) {
+      queryParams['bathrooms_min'] = bathroomsMin.toString();
+    }
+    if (bathroomsMax != null) {
+      queryParams['bathrooms_max'] = bathroomsMax.toString();
+    }
     if (areaMin != null) queryParams['area_min'] = areaMin.toString();
     if (areaMax != null) queryParams['area_max'] = areaMax.toString();
 
@@ -1045,9 +1373,15 @@ class ApiService extends getx.GetConnect {
     if (amenities != null && amenities.isNotEmpty) {
       queryParams['amenities'] = amenities.join(',');
     }
-    if (parkingSpacesMin != null) queryParams['parking_spaces_min'] = parkingSpacesMin.toString();
-    if (floorNumberMin != null) queryParams['floor_number_min'] = floorNumberMin.toString();
-    if (floorNumberMax != null) queryParams['floor_number_max'] = floorNumberMax.toString();
+    if (parkingSpacesMin != null) {
+      queryParams['parking_spaces_min'] = parkingSpacesMin.toString();
+    }
+    if (floorNumberMin != null) {
+      queryParams['floor_number_min'] = floorNumberMin.toString();
+    }
+    if (floorNumberMax != null) {
+      queryParams['floor_number_max'] = floorNumberMax.toString();
+    }
     if (ageMax != null) queryParams['age_max'] = ageMax.toString();
 
     // Short Stay Filters
@@ -1069,11 +1403,7 @@ class ApiService extends getx.GetConnect {
     );
   }
 
-
-
-
   // Location Services
-
 
   // Visit Scheduling
   Future<Map<String, dynamic>> scheduleVisit({
@@ -1088,7 +1418,8 @@ class ApiService extends getx.GetConnect {
       body: {
         'property_id': propertyId,
         'scheduled_date': scheduledDate,
-        if (specialRequirements != null) 'special_requirements': specialRequirements,
+        if (specialRequirements != null)
+          'special_requirements': specialRequirements,
       },
       operationName: 'Schedule Visit',
     );
@@ -1100,21 +1431,30 @@ class ApiService extends getx.GetConnect {
       queryParams['visit_type'] = visitType;
     }
 
-    final response = await _makeRequest<List<dynamic>>(
+    final response = await _makeRequest<Map<String, dynamic>>(
       '/visits/',
-      (json) => json['visits'] as List<dynamic>,
+      (json) => json,
       queryParams: queryParams,
       operationName: 'Get My Visits',
     );
 
+    // Parse the response structure with upcoming_visits and past_visits
+    final List<dynamic> upcoming = response['upcoming_visits'] ?? [];
+    final List<dynamic> past = response['past_visits'] ?? [];
+
+    final allVisitsData = [...upcoming, ...past];
+
     // Convert the list to VisitModel objects
-    return response.map((item) => VisitModel.fromJson(item as Map<String, dynamic>)).toList();
+    return allVisitsData
+        .map((item) => VisitModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
-  
-
   // Generic method to update visit (reschedule or cancel)
-  Future<VisitModel> updateVisit(int visitId, Map<String, dynamic> updateData) async {
+  Future<VisitModel> updateVisit(
+    int visitId,
+    Map<String, dynamic> updateData,
+  ) async {
     return await _makeRequest(
       '/visits/$visitId',
       (json) => VisitModel.fromJson(json),
@@ -1125,11 +1465,14 @@ class ApiService extends getx.GetConnect {
   }
 
   // Convenience method for rescheduling
-  Future<VisitModel> rescheduleVisit(int visitId, String newScheduledDate) async {
+  Future<VisitModel> rescheduleVisit(
+    int visitId,
+    String newScheduledDate,
+  ) async {
     return await updateVisit(visitId, {'scheduled_date': newScheduledDate});
   }
 
-  // Convenience method for cancelling  
+  // Convenience method for cancelling
   Future<VisitModel> cancelVisit(int visitId, {String? reason}) async {
     final updateData = <String, dynamic>{};
     if (reason != null) {
@@ -1139,34 +1482,29 @@ class ApiService extends getx.GetConnect {
   }
 
   Future<AgentModel> getRelationshipManager() async {
-    return await _makeRequest(
-      '/agents/assigned/',
-      (json) {
-        // The API returns the agent object directly, not wrapped in 'data'
-        return AgentModel.fromJson(json);
-      },
-      operationName: 'Get Assigned Agent',
-    );
+    return await _makeRequest('/agents/assigned/', (json) {
+      // The API returns the agent object directly, not wrapped in 'data'
+      return AgentModel.fromJson(json);
+    }, operationName: 'Get Assigned Agent');
   }
-
-
 
   // Amenities Management
   Future<List<AmenityModel>> getAllAmenities() async {
-    return await _makeRequest(
-      '/amenities',
-      (json) {
-        final amenitiesData = json['data'] ?? json;
-        
-        if (amenitiesData is List) {
-          return amenitiesData.map((item) => AmenityModel.fromJson(item)).toList();
-        } else {
-          throw Exception('Expected list of amenities but got: ${amenitiesData.runtimeType}');
-        }
-      },
-      operationName: 'Get All Amenities',
-    );
+    return await _makeRequest('/amenities', (json) {
+      final amenitiesData = json['data'] ?? json;
+
+      if (amenitiesData is List) {
+        return amenitiesData
+            .map((item) => AmenityModel.fromJson(item))
+            .toList();
+      } else {
+        throw Exception(
+          'Expected list of amenities but got: ${amenitiesData.runtimeType}',
+        );
+      }
+    }, operationName: 'Get All Amenities');
   }
+
   // User Search History
   Future<void> recordSearchHistory({
     String? searchQuery,
@@ -1197,7 +1535,7 @@ class ApiService extends getx.GetConnect {
       operationName: 'Record Search History',
     );
   }
-  
+
   // Enhanced user settings
   Future<void> updateNotificationSettings(NotificationSettings settings) async {
     await _makeRequest(
@@ -1210,14 +1548,10 @@ class ApiService extends getx.GetConnect {
   }
 
   Future<NotificationSettings> getNotificationSettings() async {
-    return await _makeRequest(
-      '/users/notification-settings',
-      (json) {
-        final settingsData = json['data'] ?? json;
-        return NotificationSettings.fromJson(settingsData);
-      },
-      operationName: 'Get Notification Settings',
-    );
+    return await _makeRequest('/users/notification-settings', (json) {
+      final settingsData = json['data'] ?? json;
+      return NotificationSettings.fromJson(settingsData);
+    }, operationName: 'Get Notification Settings');
   }
 
   Future<void> updatePrivacySettings(PrivacySettings settings) async {
@@ -1231,15 +1565,9 @@ class ApiService extends getx.GetConnect {
   }
 
   Future<PrivacySettings> getPrivacySettings() async {
-    return await _makeRequest(
-      '/users/privacy-settings',
-      (json) {
-        final settingsData = json['data'] ?? json;
-        return PrivacySettings.fromJson(settingsData);
-      },
-      operationName: 'Get Privacy Settings',
-    );
+    return await _makeRequest('/users/privacy-settings', (json) {
+      final settingsData = json['data'] ?? json;
+      return PrivacySettings.fromJson(settingsData);
+    }, operationName: 'Get Privacy Settings');
   }
-
-
 }

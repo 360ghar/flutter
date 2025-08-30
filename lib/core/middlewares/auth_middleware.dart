@@ -1,6 +1,9 @@
+// lib/core/middlewares/auth_middleware.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
+import '../models/auth_status.dart';
 import '../routes/app_routes.dart';
 
 class AuthMiddleware extends GetMiddleware {
@@ -9,71 +12,32 @@ class AuthMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-    try {
-      // Get the AuthController instance
-      final authController = Get.find<AuthController>();
-      
-      // Check if user is authenticated
-      if (!authController.isAuthenticated) {
-        // Check if the current route is a public route that doesn't require auth
-        if (route != null && _isPublicRoute(route)) {
-          return null; // Allow access to public routes
-        }
-        
-        // Redirect to login for protected routes
-        return const RouteSettings(name: AppRoutes.login);
-      }
-      
-      // User is authenticated, allow access
-      return null;
-    } catch (e) {
-      // If AuthController is not found (app not initialized), redirect to splash
-      return const RouteSettings(name: AppRoutes.splash);
-    }
-  }
-
-  /// Checks if a route is public and doesn't require authentication
-  bool _isPublicRoute(String route) {
-    const publicRoutes = [
-      AppRoutes.splash,
-      AppRoutes.login,
-      AppRoutes.profileCompletion,
-      // Add any other public routes here
-    ];
+    final authController = Get.find<AuthController>();
     
-    return publicRoutes.contains(route);
+    // If the user is authenticated, allow access.
+    if (authController.authStatus.value == AuthStatus.authenticated) {
+      return null;
+    }
+    
+    // Otherwise, redirect to the login page.
+    return const RouteSettings(name: AppRoutes.login);
   }
 }
 
-/// Middleware specifically for routes that should redirect authenticated users
-/// (e.g., login page should redirect to home if user is already logged in)
 class GuestMiddleware extends GetMiddleware {
   @override
   int? get priority => 2;
 
   @override
   RouteSettings? redirect(String? route) {
-    try {
-      final authController = Get.find<AuthController>();
-      
-      // If user is authenticated and trying to access guest-only routes
-      if (route != null && authController.isAuthenticated && _isGuestOnlyRoute(route)) {
-        return const RouteSettings(name: AppRoutes.discover);
-      }
-      
-      return null;
-    } catch (e) {
-      // If AuthController is not found, allow access
-      return null;
+    final authController = Get.find<AuthController>();
+
+    // If the user is authenticated, redirect them away from guest-only pages.
+    if (authController.isAuthenticated) {
+      return const RouteSettings(name: AppRoutes.dashboard);
     }
-  }
-
-  /// Routes that authenticated users shouldn't access
-  bool _isGuestOnlyRoute(String route) {
-    const guestOnlyRoutes = [
-      AppRoutes.login,
-    ];
-
-    return guestOnlyRoutes.contains(route);
+    
+    // Otherwise, allow access.
+    return null;
   }
 }

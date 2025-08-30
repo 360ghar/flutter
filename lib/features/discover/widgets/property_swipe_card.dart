@@ -60,348 +60,442 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                   builder: (context, constraints) {
                     // Use available parent height instead of full screen height
                     // This ensures we don't overlap with app bar or other UI elements
-                    final availableHeight = constraints.maxHeight > 0 
-                        ? constraints.maxHeight 
-                        : MediaQuery.of(context).size.height - 200; // Fallback with safe margins
-                    
+                    final availableHeight = constraints.maxHeight > 0
+                        ? constraints.maxHeight
+                        : MediaQuery.of(context).size.height -
+                              200; // Fallback with safe margins
+
                     return SizedBox(
-                      height: math.min(availableHeight * 0.8, 600), // Cap at reasonable max height
+                      height: math.min(
+                        availableHeight * 0.8,
+                        600,
+                      ), // Cap at reasonable max height
                       child: Stack(
                         children: [
-                      // Main property image
-                      Positioned.fill(
-                        child: RobustNetworkImage(
-                          imageUrl: widget.property.mainImage,
-                          fit: BoxFit.cover,
-                          placeholder: Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                color: AppTheme.primaryYellow,
+                          // Main property image
+                          Positioned.fill(
+                            child: RobustNetworkImage(
+                              imageUrl: widget.property.mainImage,
+                              fit: BoxFit.cover,
+                              placeholder: Container(
+                                color: Colors.grey[300],
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppTheme.primaryYellow,
+                                  ),
+                                ),
+                              ),
+                              errorWidget: Container(
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.error),
                               ),
                             ),
                           ),
-                          errorWidget: Container(
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.error),
-                          ),
-                        ),
-                      ),
-                      
-                      // Gradient overlay for text readability
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.7),
-                              ],
-                              stops: const [0.0, 0.5, 1.0],
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      // Share button
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.share,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
 
-                      // 360° badge when virtual tour is available
-                      if (widget.property.hasVirtualTour)
-                        Positioned(
-                          top: 16,
-                          left: 16,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.55),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.threesixty, color: Colors.white, size: 16),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Virtual tour',
-                                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                          // Gradient overlay for text readability
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.7),
+                                  ],
+                                  stops: const [0.0, 0.5, 1.0],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      
-                      // Property details overlay at bottom
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Price with purpose-based display
-                              Row(
+
+                          // Share button
+                          Positioned(
+                            top: 16,
+                            right: 16,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Icon(
+                                Icons.share,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+
+                          // 360° badge when virtual tour is available
+                          if (widget.property.hasVirtualTour)
+                            Positioned(
+                              top: 16,
+                              left: 16,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.55),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(
+                                      Icons.threesixty,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Virtual tour',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                          // Property details overlay at bottom
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  RichText(
-                                    text: TextSpan(
-                                      children: [
-                                        TextSpan(
-                                          text: widget.property.formattedPrice,
+                                  // Price with purpose-based display
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: widget
+                                                  .property
+                                                  .formattedPrice,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 28,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            if (widget.property.purpose ==
+                                                PropertyPurpose.rent)
+                                              const TextSpan(
+                                                text: ' /mo',
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            if (widget.property.purpose ==
+                                                PropertyPurpose.shortStay)
+                                              const TextSpan(
+                                                text: ' /day',
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryYellow,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          widget.property.purposeString,
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 28,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        if (widget.property.purpose == PropertyPurpose.rent)
-                                          const TextSpan(
-                                            text: ' /mo',
-                                            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
-                                          ),
-                                        if (widget.property.purpose == PropertyPurpose.shortStay)
-                                          const TextSpan(
-                                            text: ' /day',
-                                            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryYellow,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      widget.property.purposeString,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
                                       ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  // Title
+                                  Text(
+                                    widget.property.title,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              
-                              // Title
-                              Text(
-                                widget.property.title,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              
-                              // Location
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.location_on,
-                                    color: Colors.white70,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      widget.property.addressDisplay,
-                                      style: const TextStyle(
+                                  const SizedBox(height: 4),
+
+                                  // Location
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.location_on,
                                         color: Colors.white70,
-                                        fontSize: 14,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              
-                              // Property specs with enhanced info
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: [
-                                  // Basic specs
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      widget.property.bedroomBathroomText.isNotEmpty 
-                                          ? widget.property.bedroomBathroomText 
-                                          : 'Property',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                  
-                                  // Area if available
-                                  if (widget.property.areaText.isNotEmpty)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        widget.property.areaText,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  
-                                  // Floor info if available
-                                  if (widget.property.floorText.isNotEmpty)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        widget.property.floorText,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  // Price per sqft if available
-                                  if (widget.property.pricePerSqft != null)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        '₹${widget.property.pricePerSqft!.toStringAsFixed(0)}/sqft',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  // Parking if available
-                                  if (widget.property.parkingSpaces != null)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        '${widget.property.parkingSpaces} Parking',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              // Lightweight metrics
-                              Row(
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.visibility, color: Colors.white70, size: 14),
-                                      const SizedBox(width: 4),
-                                      Text('${widget.property.viewCount}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.favorite, color: Colors.white70, size: 14),
-                                      const SizedBox(width: 4),
-                                      Text('${widget.property.likeCount}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Scroll indicator
-                              Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.keyboard_arrow_down,
-                                        color: Colors.black87,
                                         size: 16,
                                       ),
                                       const SizedBox(width: 4),
-                                      const Text(
-                                        'Scroll for more details',
-                                        style: TextStyle(
-                                          color: Colors.black87,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
+                                      Expanded(
+                                        child: Text(
+                                          widget.property.addressDisplay,
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 14,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
+                                  const SizedBox(height: 8),
+
+                                  // Property specs with enhanced info
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 4,
+                                    children: [
+                                      // Basic specs
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          widget
+                                                  .property
+                                                  .bedroomBathroomText
+                                                  .isNotEmpty
+                                              ? widget
+                                                    .property
+                                                    .bedroomBathroomText
+                                              : 'Property',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Area if available
+                                      if (widget.property.areaText.isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            widget.property.areaText,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+
+                                      // Floor info if available
+                                      if (widget.property.floorText.isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            widget.property.floorText,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      // Price per sqft if available
+                                      if (widget.property.pricePerSqft != null)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '₹${widget.property.pricePerSqft!.toStringAsFixed(0)}/sqft',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      // Parking if available
+                                      if (widget.property.parkingSpaces != null)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '${widget.property.parkingSpaces} Parking',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  // Lightweight metrics
+                                  Row(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.visibility,
+                                            color: Colors.white70,
+                                            size: 14,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${widget.property.viewCount}',
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.favorite,
+                                            color: Colors.white70,
+                                            size: 14,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${widget.property.likeCount}',
+                                            style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Scroll indicator
+                                  Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.9,
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.keyboard_arrow_down,
+                                            color: Colors.black87,
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          const Text(
+                                            'Scroll for more details',
+                                            style: TextStyle(
+                                              color: Colors.black87,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
                         ],
                       ),
                     );
                   },
                 ),
-                
+
                 // Additional Details Section (Scrollable content)
                 Container(
                   color: Colors.white,
@@ -420,7 +514,9 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.accentBlue.withValues(alpha: 0.1),
+                                color: AppTheme.accentBlue.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -439,7 +535,9 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.accentGreen.withValues(alpha: 0.1),
+                                color: AppTheme.accentGreen.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -454,7 +552,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           ],
                         ),
                         const SizedBox(height: 20),
-                        
+
                         // Description
                         const Text(
                           'Description',
@@ -466,7 +564,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          widget.property.description?.isNotEmpty == true 
+                          widget.property.description?.isNotEmpty == true
                               ? widget.property.description!
                               : 'Beautiful ${widget.property.propertyTypeString} in ${widget.property.city ?? "prime location"}. ${widget.property.areaSqft != null ? "Spacious ${widget.property.areaSqft!.toInt()} sq ft area with modern amenities." : "Perfect for your needs."}',
                           style: const TextStyle(
@@ -478,7 +576,8 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                         const SizedBox(height: 20),
 
                         // Highlights (features/tags)
-                        if ((widget.property.features?.isNotEmpty ?? false) || (widget.property.tags?.isNotEmpty ?? false)) ...[
+                        if ((widget.property.features?.isNotEmpty ?? false) ||
+                            (widget.property.tags?.isNotEmpty ?? false)) ...[
                           const Text(
                             'Highlights',
                             style: TextStyle(
@@ -491,30 +590,47 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: (
-                              (widget.property.features != null && widget.property.features!.isNotEmpty)
-                                ? widget.property.features!
-                                : (widget.property.tags ?? [])
-                            ).take(4).map((t) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppTheme.accentOrange.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppTheme.accentOrange.withValues(alpha: 0.3)),
-                              ),
-                              child: Text(
-                                t,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.accentOrange,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            )).toList(),
+                            children:
+                                ((widget.property.features != null &&
+                                            widget
+                                                .property
+                                                .features!
+                                                .isNotEmpty)
+                                        ? widget.property.features!
+                                        : (widget.property.tags ?? []))
+                                    .take(4)
+                                    .map(
+                                      (t) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.accentOrange
+                                              .withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          border: Border.all(
+                                            color: AppTheme.accentOrange
+                                                .withValues(alpha: 0.3),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          t,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.accentOrange,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
                           ),
                           const SizedBox(height: 20),
                         ],
-                        
+
                         // Amenities section
                         if (widget.property.hasAmenities) ...[
                           const Text(
@@ -529,22 +645,36 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: widget.property.amenitiesList.take(6).map((amenity) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppTheme.accentBlue.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppTheme.accentBlue.withValues(alpha: 0.3)),
-                              ),
-                              child: Text(
-                                amenity,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.accentBlue,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            )).toList(),
+                            children: widget.property.amenitiesList
+                                .take(6)
+                                .map(
+                                  (amenity) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.accentBlue.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppTheme.accentBlue.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      amenity,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.accentBlue,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
                           if (widget.property.amenitiesList.length > 6)
                             Padding(
@@ -560,11 +690,12 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                             ),
                           const SizedBox(height: 20),
                         ],
-                        
+
                         // Note: Additional images not available in PropertyCardModel
-                        
+
                         // 360° Tour Embedded Section
-                        if (widget.property.virtualTourUrl != null && widget.property.virtualTourUrl!.isNotEmpty) ...[
+                        if (widget.property.virtualTourUrl != null &&
+                            widget.property.virtualTourUrl!.isNotEmpty) ...[
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -585,14 +716,26 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                               const Spacer(),
                               InkWell(
                                 onTap: () {
-                                  Get.toNamed('/tour', arguments: widget.property.virtualTourUrl);
+                                  Get.toNamed(
+                                    '/tour',
+                                    arguments: widget.property.virtualTourUrl,
+                                  );
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryYellow.withValues(alpha: 0.1),
+                                    color: AppTheme.primaryYellow.withValues(
+                                      alpha: 0.1,
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: AppTheme.primaryYellow.withValues(alpha: 0.3)),
+                                    border: Border.all(
+                                      color: AppTheme.primaryYellow.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -636,7 +779,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                               height: 500,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppTheme.textLight.withValues(alpha: 0.2)),
+                                border: Border.all(
+                                  color: AppTheme.textLight.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppTheme.cardShadow,
@@ -648,13 +795,15 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: _EmbeddedSwipe360Tour(tourUrl: widget.property.virtualTourUrl!),
+                                child: _EmbeddedSwipe360Tour(
+                                  tourUrl: widget.property.virtualTourUrl!,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 16),
                         ],
-                        
+
                         // Property Details
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -674,37 +823,79 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              _buildDetailRow('Property Type', widget.property.propertyTypeString),
-                              _buildDetailRow('Purpose', widget.property.purposeString),
-                              _buildDetailRow('Status', widget.property.statusString),
+                              _buildDetailRow(
+                                'Property Type',
+                                widget.property.propertyTypeString,
+                              ),
+                              _buildDetailRow(
+                                'Purpose',
+                                widget.property.purposeString,
+                              ),
+                              _buildDetailRow(
+                                'Status',
+                                widget.property.statusString,
+                              ),
                               if (widget.property.bedrooms != null)
-                                _buildDetailRow('Bedrooms', '${widget.property.bedrooms}'),
+                                _buildDetailRow(
+                                  'Bedrooms',
+                                  '${widget.property.bedrooms}',
+                                ),
                               if (widget.property.bathrooms != null)
-                                _buildDetailRow('Bathrooms', '${widget.property.bathrooms}'),
+                                _buildDetailRow(
+                                  'Bathrooms',
+                                  '${widget.property.bathrooms}',
+                                ),
                               if (widget.property.areaSqft != null)
-                                _buildDetailRow('Area', widget.property.areaText),
+                                _buildDetailRow(
+                                  'Area',
+                                  widget.property.areaText,
+                                ),
                               if (widget.property.floorText.isNotEmpty)
-                                _buildDetailRow('Floor', widget.property.floorText),
+                                _buildDetailRow(
+                                  'Floor',
+                                  widget.property.floorText,
+                                ),
                               if (widget.property.ageText.isNotEmpty)
                                 _buildDetailRow('Age', widget.property.ageText),
                               if (widget.property.parkingSpaces != null)
-                                _buildDetailRow('Parking', '${widget.property.parkingSpaces} spaces'),
+                                _buildDetailRow(
+                                  'Parking',
+                                  '${widget.property.parkingSpaces} spaces',
+                                ),
                               if (widget.property.balconies != null)
-                                _buildDetailRow('Balconies', '${widget.property.balconies}'),
+                                _buildDetailRow(
+                                  'Balconies',
+                                  '${widget.property.balconies}',
+                                ),
                               if (widget.property.distanceKm != null)
-                                _buildDetailRow('Distance', widget.property.distanceText),
-                              _buildDetailRow('Location', widget.property.addressDisplay),
+                                _buildDetailRow(
+                                  'Distance',
+                                  widget.property.distanceText,
+                                ),
+                              _buildDetailRow(
+                                'Location',
+                                widget.property.addressDisplay,
+                              ),
                               if (widget.property.hasOwner)
-                                _buildDetailRow('Owner', widget.property.ownerDisplayName),
-                              if (widget.property.builderName?.isNotEmpty == true)
-                                _buildDetailRow('Builder', widget.property.builderName!),
+                                _buildDetailRow(
+                                  'Owner',
+                                  widget.property.ownerDisplayName,
+                                ),
+                              if (widget.property.builderName?.isNotEmpty ==
+                                  true)
+                                _buildDetailRow(
+                                  'Builder',
+                                  widget.property.builderName!,
+                                ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 20),
-                        
+
                         // Swipe Instructions (conditional)
-                        ..._buildSwipeInstructions(widget.showSwipeInstructions),
+                        ..._buildSwipeInstructions(
+                          widget.showSwipeInstructions,
+                        ),
                       ],
                     ),
                   ),
@@ -713,11 +904,9 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
             ),
           ),
         ),
-        ),
-      );
+      ),
+    );
   }
-
-
 
   List<Widget> _buildSwipeInstructions(bool show) {
     if (!show) return const [];
@@ -733,11 +922,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
         ),
         child: Row(
           children: const [
-            Icon(
-              Icons.swipe,
-              color: AppTheme.primaryYellow,
-              size: 24,
-            ),
+            Icon(Icons.swipe, color: AppTheme.primaryYellow, size: 24),
             SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -762,13 +947,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
           Text(
             value,
             style: const TextStyle(
@@ -781,8 +960,6 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
       ),
     );
   }
-
-
 }
 
 class PropertySwipeStack extends StatefulWidget {
@@ -812,21 +989,23 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
   late AnimationController _sparklesAnimationController;
   late Animation<double> _swipeAnimation;
   late Animation<double> _sparklesAnimation;
-  
 
   Offset _dragPosition = Offset.zero;
   bool _isDragging = false;
   double _rotation = 0;
   bool _showSparkles = false;
   bool _isSwipingRight = false;
-  bool _blockGestures = false; // block horizontal drag when interacting with 360
+  bool _blockGestures =
+      false; // block horizontal drag when interacting with 360
 
   @override
   void initState() {
     super.initState();
     _properties = List.from(widget.properties);
-    DebugLogger.debug('PropertySwipeStack initialized with ${_properties.length} properties');
-    
+    DebugLogger.debug(
+      'PropertySwipeStack initialized with ${_properties.length} properties',
+    );
+
     // Animation for the swipe out effect
     _swipeAnimationController = AnimationController(
       vsync: this,
@@ -836,7 +1015,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
       parent: _swipeAnimationController,
       curve: Curves.easeInOut,
     );
-    
+
     // Animation for sparkles effect
     _sparklesAnimationController = AnimationController(
       vsync: this,
@@ -846,7 +1025,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
       parent: _sparklesAnimationController,
       curve: Curves.easeOut,
     );
-    
+
     _swipeAnimationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (_properties.isNotEmpty) {
@@ -866,11 +1045,13 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
   @override
   void didUpdateWidget(PropertySwipeStack oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Update properties when widget properties change
     if (widget.properties != oldWidget.properties) {
       _properties = List.from(widget.properties);
-      DebugLogger.debug('PropertySwipeStack updated with ${_properties.length} properties');
+      DebugLogger.debug(
+        'PropertySwipeStack updated with ${_properties.length} properties',
+      );
       setState(() {});
     }
   }
@@ -901,7 +1082,8 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
     final rotationThreshold = 0.3; // About 17 degrees
 
     // Check if we should trigger a swipe
-    if (dragDistance.abs() > dragThreshold || _rotation.abs() > rotationThreshold) {
+    if (dragDistance.abs() > dragThreshold ||
+        _rotation.abs() > rotationThreshold) {
       if (dragDistance > 0 || _rotation > 0) {
         // Swipe right - like with sparkles
         _isSwipingRight = true;
@@ -924,68 +1106,52 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
-    final positionTween = Tween<Offset>(
-      begin: _dragPosition,
-      end: Offset.zero,
-    );
-    
-    final rotationTween = Tween<double>(
-      begin: _rotation,
-      end: 0,
-    );
-    
+
+    final positionTween = Tween<Offset>(begin: _dragPosition, end: Offset.zero);
+
+    final rotationTween = Tween<double>(begin: _rotation, end: 0);
+
     final snapAnimation = CurvedAnimation(
       parent: snapController,
       curve: Curves.elasticOut,
     );
-    
+
     snapController.addListener(() {
       setState(() {
         _dragPosition = positionTween.evaluate(snapAnimation);
         _rotation = rotationTween.evaluate(snapAnimation);
       });
     });
-    
+
     snapController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         snapController.dispose();
       }
     });
-    
+
     snapController.forward();
   }
 
   @override
   Widget build(BuildContext context) {
     // Avoid excessively verbose logs on every build to keep UI smooth
-    
+
     if (_properties.isEmpty) {
       DebugLogger.warning('PropertySwipeStack: No properties to display');
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.home_outlined,
-              size: 64,
-              color: Colors.grey,
-            ),
+            Icon(Icons.home_outlined, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text(
               'No more properties to show',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
             SizedBox(height: 8),
             Text(
               'Check back later for new listings!',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
         ),
@@ -993,14 +1159,15 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
     }
 
     final screenSize = MediaQuery.of(context).size;
-    DebugLogger.debug('PropertySwipeStack: Rendering ${_properties.length} properties');
+    DebugLogger.debug(
+      'PropertySwipeStack: Rendering ${_properties.length} properties',
+    );
 
     return GestureDetector(
       onHorizontalDragStart: (details) {
         if (_blockGestures) return;
         setState(() {
           _isDragging = true;
-
         });
       },
       onHorizontalDragUpdate: (details) {
@@ -1016,7 +1183,8 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
         _handlePanEnd(details, screenSize);
       },
       child: Stack(
-        clipBehavior: Clip.hardEdge, // Prevent cards from rendering outside bounds
+        clipBehavior:
+            Clip.hardEdge, // Prevent cards from rendering outside bounds
         children: [
           // Background cards with subtle scaling
           if (_properties.length > 1)
@@ -1027,8 +1195,10 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
                   opacity: 0.8,
                   child: PropertySwipeCard(
                     property: _properties[1],
-                    onInteractionStart: () => setState(() => _blockGestures = true),
-                    onInteractionEnd: () => setState(() => _blockGestures = false),
+                    onInteractionStart: () =>
+                        setState(() => _blockGestures = true),
+                    onInteractionEnd: () =>
+                        setState(() => _blockGestures = false),
                   ),
                 ),
               ),
@@ -1041,45 +1211,50 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
                   opacity: 0.6,
                   child: PropertySwipeCard(
                     property: _properties[2],
-                    onInteractionStart: () => setState(() => _blockGestures = true),
-                    onInteractionEnd: () => setState(() => _blockGestures = false),
+                    onInteractionStart: () =>
+                        setState(() => _blockGestures = true),
+                    onInteractionEnd: () =>
+                        setState(() => _blockGestures = false),
                   ),
                 ),
               ),
             ),
-          
+
           // Top card with realistic rotation
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _swipeAnimation,
               builder: (context, child) {
-                final swipeOffset = _isDragging 
+                final swipeOffset = _isDragging
                     ? Offset(_dragPosition.dx, 0)
                     : Offset(
                         _dragPosition.dx * (1 + _swipeAnimation.value * 2),
                         0,
                       );
-                
-                final swipeRotation = _isDragging 
-                    ? _rotation 
+
+                final swipeRotation = _isDragging
+                    ? _rotation
                     : _rotation * (1 + _swipeAnimation.value * 2);
 
                 return Transform.translate(
                   offset: swipeOffset,
                   child: Transform(
-                    alignment: Alignment.bottomCenter, // Rotate from bottom center like a hinge
+                    alignment: Alignment
+                        .bottomCenter, // Rotate from bottom center like a hinge
                     transform: Matrix4.identity()
                       ..setEntry(3, 2, 0.001) // Add perspective
                       ..rotateZ(swipeRotation),
                     child: Opacity(
-                      opacity: _swipeAnimationController.isAnimating 
-                          ? (1 - _swipeAnimation.value) 
+                      opacity: _swipeAnimationController.isAnimating
+                          ? (1 - _swipeAnimation.value)
                           : 1.0,
                       child: PropertySwipeCard(
                         property: _properties[0],
                         showSwipeInstructions: widget.showSwipeInstructions,
-                        onInteractionStart: () => setState(() => _blockGestures = true),
-                        onInteractionEnd: () => setState(() => _blockGestures = false),
+                        onInteractionStart: () =>
+                            setState(() => _blockGestures = true),
+                        onInteractionEnd: () =>
+                            setState(() => _blockGestures = false),
                       ),
                     ),
                   ),
@@ -1087,7 +1262,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
               },
             ),
           ),
-          
+
           // Sparkles animation for right swipe
           if (_showSparkles && _isSwipingRight)
             Positioned.fill(
@@ -1095,9 +1270,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
                 animation: _sparklesAnimation,
                 builder: (context, child) {
                   return IgnorePointer(
-                    child: SparklesWidget(
-                      animation: _sparklesAnimation,
-                    ),
+                    child: SparklesWidget(animation: _sparklesAnimation),
                   );
                 },
               ),
@@ -1111,11 +1284,8 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
 // Sparkles widget for the enthusiasm animation
 class SparklesWidget extends StatelessWidget {
   final Animation<double> animation;
-  
-  const SparklesWidget({
-    super.key,
-    required this.animation,
-  });
+
+  const SparklesWidget({super.key, required this.animation});
 
   @override
   Widget build(BuildContext context) {
@@ -1128,7 +1298,7 @@ class SparklesWidget extends StatelessWidget {
 
 class SparklesPainter extends CustomPainter {
   final double animationValue;
-  
+
   SparklesPainter(this.animationValue);
 
   @override
@@ -1152,38 +1322,44 @@ class SparklesPainter extends CustomPainter {
     for (int i = 0; i < sparklePositions.length; i++) {
       final position = sparklePositions[i];
       final delay = i * 0.1;
-      final sparkleAnimation = ((animationValue - delay) / (1 - delay)).clamp(0.0, 1.0);
-      
+      final sparkleAnimation = ((animationValue - delay) / (1 - delay)).clamp(
+        0.0,
+        1.0,
+      );
+
       if (sparkleAnimation > 0) {
-        final sparkleSize = 8.0 * sparkleAnimation * (1 - sparkleAnimation * 0.5);
+        final sparkleSize =
+            8.0 * sparkleAnimation * (1 - sparkleAnimation * 0.5);
         final sparkleOpacity = (1 - sparkleAnimation).clamp(0.0, 1.0);
-        
-        paint.color = AppTheme.primaryYellow.withValues(alpha: sparkleOpacity * 0.8);
-        
+
+        paint.color = AppTheme.primaryYellow.withValues(
+          alpha: sparkleOpacity * 0.8,
+        );
+
         // Draw sparkle as a star shape
         _drawStar(canvas, paint, position, sparkleSize);
       }
     }
   }
-  
+
   void _drawStar(Canvas canvas, Paint paint, Offset center, double size) {
     final path = Path();
     final outerRadius = size;
     final innerRadius = size * 0.4;
-    
+
     for (int i = 0; i < 8; i++) {
       final angle = (i * 45) * (3.14159 / 180);
       final radius = i.isEven ? outerRadius : innerRadius;
       final x = center.dx + radius * math.cos(angle);
       final y = center.dy + radius * math.sin(angle);
-      
+
       if (i == 0) {
         path.moveTo(x, y);
       } else {
         path.lineTo(x, y);
       }
     }
-    
+
     path.close();
     canvas.drawPath(path, paint);
   }
@@ -1196,9 +1372,9 @@ class SparklesPainter extends CustomPainter {
 
 class _EmbeddedSwipe360Tour extends StatefulWidget {
   final String tourUrl;
-  
+
   const _EmbeddedSwipe360Tour({required this.tourUrl});
-  
+
   @override
   State<_EmbeddedSwipe360Tour> createState() => _EmbeddedSwipe360TourState();
 }
@@ -1207,18 +1383,18 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
   WebViewController? controller;
   bool isLoading = true;
   bool hasError = false;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeWebView();
   }
-  
+
   void _initializeWebView() {
     try {
       // Ensure WebView platform is initialized
       WebViewHelper.ensureInitialized();
-      
+
       controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(const Color(0x00000000))
@@ -1232,7 +1408,9 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
               }
             },
             onWebResourceError: (WebResourceError error) {
-              DebugLogger.warning('WebView error in 360° tour: ${error.description}');
+              DebugLogger.warning(
+                'WebView error in 360° tour: ${error.description}',
+              );
               if (mounted) {
                 setState(() {
                   isLoading = false;
@@ -1242,9 +1420,10 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
             },
           ),
         );
-    
-    // Create optimized HTML for embedded Kuula tour
-    final htmlContent = '''
+
+      // Create optimized HTML for embedded Kuula tour
+      final htmlContent =
+          '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -1275,10 +1454,14 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
       </body>
       </html>
     ''';
-    
+
       controller!.loadHtmlString(htmlContent);
     } catch (e, stackTrace) {
-      DebugLogger.error('Error initializing WebView for 360° tour', e, stackTrace);
+      DebugLogger.error(
+        'Error initializing WebView for 360° tour',
+        e,
+        stackTrace,
+      );
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -1287,7 +1470,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     if (hasError || controller == null) {
@@ -1324,7 +1507,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
         ),
       );
     }
-    
+
     return Stack(
       children: [
         WebViewWidget(controller: controller!),
@@ -1342,10 +1525,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
                   const SizedBox(height: 8),
                   Text(
                     'Loading 360° Tour...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textGray,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppTheme.textGray),
                   ),
                 ],
               ),
@@ -1354,4 +1534,4 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
       ],
     );
   }
-} 
+}

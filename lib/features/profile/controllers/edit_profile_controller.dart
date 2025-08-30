@@ -4,14 +4,14 @@ import '../../../core/controllers/auth_controller.dart';
 
 class EditProfileController extends GetxController {
   final AuthController _authController = Get.find<AuthController>();
-  
+
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  
+
   // Form controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
-  
+
   // Observable fields
   final RxString profileImageUrl = ''.obs;
   final Rx<DateTime?> dateOfBirth = Rx<DateTime?>(null);
@@ -56,12 +56,11 @@ class EditProfileController extends GetxController {
     Get.dialog(
       AlertDialog(
         title: const Text('Profile Picture'),
-        content: const Text('Image picker functionality would be implemented here using image_picker package.'),
+        content: const Text(
+          'Image picker functionality would be implemented here using image_picker package.',
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('OK'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('OK')),
         ],
       ),
     );
@@ -70,9 +69,13 @@ class EditProfileController extends GetxController {
   Future<void> selectDateOfBirth(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: dateOfBirth.value ?? DateTime.now().subtract(const Duration(days: 365 * 25)),
+      initialDate:
+          dateOfBirth.value ??
+          DateTime.now().subtract(const Duration(days: 365 * 25)),
       firstDate: DateTime(1900),
-      lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)), // Minimum 13 years old
+      lastDate: DateTime.now().subtract(
+        const Duration(days: 365 * 13),
+      ), // Minimum 13 years old
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -84,7 +87,7 @@ class EditProfileController extends GetxController {
         );
       },
     );
-    
+
     if (picked != null) {
       dateOfBirth.value = picked;
     }
@@ -113,26 +116,31 @@ class EditProfileController extends GetxController {
       }
 
       // Prepare updated preferences (keep app-specific data like location)
-      final updatedPreferences = Map<String, dynamic>.from(currentUser.preferences ?? {});
+      final updatedPreferences = Map<String, dynamic>.from(
+        currentUser.preferences ?? {},
+      );
       updatedPreferences['location'] = locationController.text.trim();
 
       // Prepare profile data for update (align with backend fields)
       final profileData = <String, dynamic>{
         'full_name': nameController.text.trim(),
-        'profile_image_url': profileImageUrl.value.isEmpty ? null : profileImageUrl.value,
+        'profile_image_url': profileImageUrl.value.isEmpty
+            ? null
+            : profileImageUrl.value,
       };
 
       // Save date of birth to top-level user field
       if (dateOfBirth.value != null) {
         final dob = dateOfBirth.value!;
-        profileData['date_of_birth'] = '${dob.year.toString().padLeft(4, '0')}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}';
+        profileData['date_of_birth'] =
+            '${dob.year.toString().padLeft(4, '0')}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}';
       } else {
         profileData['date_of_birth'] = null;
       }
 
       // Update user profile
       await _authController.updateUserProfile(profileData);
-      
+
       // Update preferences separately
       await _authController.updateUserPreferences(updatedPreferences);
 
@@ -158,4 +166,4 @@ class EditProfileController extends GetxController {
       isLoading.value = false;
     }
   }
-} 
+}

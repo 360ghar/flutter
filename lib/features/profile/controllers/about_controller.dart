@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AboutController extends GetxController {
-  
   void openPrivacyPolicy() {
     Get.snackbar(
       'Privacy Policy',
@@ -60,10 +59,7 @@ class AboutController extends GetxController {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
         ],
       ),
     );

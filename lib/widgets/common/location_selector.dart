@@ -8,10 +8,7 @@ import '../../core/data/models/page_state_model.dart';
 class LocationSelector extends GetView<LocationController> {
   final PageType pageType;
 
-  const LocationSelector({
-    super.key,
-    required this.pageType,
-  });
+  const LocationSelector({super.key, required this.pageType});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +17,7 @@ class LocationSelector extends GetView<LocationController> {
     return Obx(() {
       final currentPageState = _getPageState(pageStateService);
       final locationText = currentPageState.locationDisplayText;
-      
+
       return GestureDetector(
         onTap: () => _showLocationPicker(context),
         child: Container(
@@ -33,11 +30,7 @@ class LocationSelector extends GetView<LocationController> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.location_on,
-                size: 16,
-                color: AppColors.primaryYellow,
-              ),
+              Icon(Icons.location_on, size: 16, color: AppColors.primaryYellow),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
@@ -88,10 +81,7 @@ class LocationSelector extends GetView<LocationController> {
 class LocationPickerModal extends StatefulWidget {
   final PageType pageType;
 
-  const LocationPickerModal({
-    super.key,
-    required this.pageType,
-  });
+  const LocationPickerModal({super.key, required this.pageType});
 
   @override
   State<LocationPickerModal> createState() => _LocationPickerModalState();
@@ -202,27 +192,32 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                 suffixIcon: Obx(() {
                   if (locationController.isSearchingPlaces.value) {
                     return Container(
-                        width: 20,
-                        height: 20,
-                        margin: const EdgeInsets.all(12),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                      width: 20,
+                      height: 20,
+                      margin: const EdgeInsets.all(12),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primaryYellow,
                         ),
-                      );
+                      ),
+                    );
                   } else if (_searchController.text.isNotEmpty) {
                     return IconButton(
-                            icon: Icon(Icons.clear, color: AppColors.iconColor),
-                            onPressed: () {
-                              _searchController.clear();
-                              locationController.clearPlaceSuggestions();
-                            },
-                          );
+                      icon: Icon(Icons.clear, color: AppColors.iconColor),
+                      onPressed: () {
+                        _searchController.clear();
+                        locationController.clearPlaceSuggestions();
+                      },
+                    );
                   }
                   return const SizedBox.shrink();
                 }),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -254,7 +249,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
           Expanded(
             child: Obx(() {
               final suggestions = locationController.placeSuggestions;
-              
+
               if (suggestions.isEmpty && _searchController.text.isNotEmpty) {
                 return Center(
                   child: Column(
@@ -298,7 +293,10 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
 
   Widget _buildRadiusSelector() {
     final current = _getPageState(pageStateService);
-    final radiusValue = (_radiusKm ?? current.filters.radiusKm ?? 10.0).clamp(5.0, 50.0);
+    final radiusValue = (_radiusKm ?? current.filters.radiusKm ?? 10.0).clamp(
+      5.0,
+      50.0,
+    );
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
@@ -323,10 +321,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
               ),
               Text(
                 '${radiusValue.toInt()} km',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -341,7 +336,10 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
               setState(() => _radiusKm = val);
               final state = _getPageState(pageStateService);
               final updatedFilters = state.filters.copyWith(radiusKm: val);
-              pageStateService.updatePageFilters(widget.pageType, updatedFilters);
+              pageStateService.updatePageFilters(
+                widget.pageType,
+                updatedFilters,
+              );
             },
           ),
         ],
@@ -376,10 +374,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 12,
-          ),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
@@ -387,9 +382,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
           color: AppColors.textSecondary,
         ),
         onTap: onTap,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         tileColor: AppColors.surface,
       ),
     );
@@ -419,10 +412,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       subtitle: subtitle.isNotEmpty
           ? Text(
               subtitle,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             )
           : null,
       onTap: onTap,
@@ -433,7 +423,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
     try {
       Navigator.of(context).pop();
       await pageStateService.useCurrentLocationForPage(widget.pageType);
-      
+
       Get.snackbar(
         'Location Updated',
         'Using your current location',
@@ -454,15 +444,19 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   void _selectPlaceSuggestion(PlaceSuggestion suggestion) async {
     try {
       Navigator.of(context).pop();
-      
+
       // Get place details with preferred name from autocomplete selection
       final locationData = await locationController.getPlaceDetails(
         suggestion.placeId,
         preferredName: suggestion.mainText,
       );
       if (locationData != null) {
-        await pageStateService.updateLocationForPage(widget.pageType, locationData, source: 'manual');
-        
+        await pageStateService.updateLocationForPage(
+          widget.pageType,
+          locationData,
+          source: 'manual',
+        );
+
         Get.snackbar(
           'Location Selected',
           suggestion.mainText,

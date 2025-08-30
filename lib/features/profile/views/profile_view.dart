@@ -10,111 +10,113 @@ class ProfileView extends GetView<AuthController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBackground,
-        elevation: 0,
-        title: Text(
-          'profile'.tr,
-          style: TextStyle(
-            color: AppColors.appBarText,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+    return Obx(
+      () => Scaffold(
+        backgroundColor: AppColors.scaffoldBackground,
+        appBar: AppBar(
+          backgroundColor: AppColors.appBarBackground,
+          elevation: 0,
+          title: Text(
+            'profile'.tr,
+            style: TextStyle(
+              color: AppColors.appBarText,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+          actions: [
+            const ThemeToggleButton(),
+            IconButton(
+              icon: Icon(Icons.settings, color: AppColors.appBarIcon),
+              onPressed: () => Get.toNamed('/preferences'),
+            ),
+          ],
         ),
-        actions: [
-          const ThemeToggleButton(),
-          IconButton(
-            icon: Icon(Icons.settings, color: AppColors.appBarIcon),
-            onPressed: () => Get.toNamed('/preferences'),
-          ),
-        ],
+        body: Obx(() {
+          if (controller.isLoading.value) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: AppColors.loadingIndicator,
+              ),
+            );
+          }
+
+          final user = controller.currentUser.value;
+          if (user == null) {
+            return Center(
+              child: Text(
+                'No user data available',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            );
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                // Profile Header
+                _buildProfileHeader(user),
+                const SizedBox(height: 30),
+
+                // Profile Completion
+                _buildProfileCompletion(),
+                const SizedBox(height: 30),
+
+                // Menu Items
+                _buildMenuItem(
+                  icon: Icons.person_outline,
+                  title: 'edit_profile'.tr,
+                  subtitle: 'Update your personal information',
+                  onTap: () => Get.toNamed('/edit-profile'),
+                ),
+                _buildMenuItem(
+                  icon: Icons.favorite_outline,
+                  title: 'my_preferences'.tr,
+                  subtitle: 'Property preferences and filters',
+                  onTap: () => Get.toNamed('/preferences'),
+                ),
+                _buildMenuItem(
+                  icon: Icons.history,
+                  title: 'Search History',
+                  subtitle: 'Your recent property searches',
+                  onTap: () => Get.toNamed('/search-history'),
+                ),
+                _buildMenuItem(
+                  icon: Icons.notifications,
+                  title: 'notifications'.tr,
+                  subtitle: 'Manage notification settings',
+                  onTap: () => Get.toNamed('/notifications'),
+                ),
+                _buildMenuItem(
+                  icon: Icons.security,
+                  title: 'Privacy & Security',
+                  subtitle: 'Account security settings',
+                  onTap: () => Get.toNamed('/privacy'),
+                ),
+                _buildMenuItem(
+                  icon: Icons.help_outline,
+                  title: 'help'.tr,
+                  subtitle: 'Get help and contact support',
+                  onTap: () => Get.toNamed('/help'),
+                ),
+                _buildMenuItem(
+                  icon: Icons.info_outline,
+                  title: 'about'.tr,
+                  subtitle: 'App version and information',
+                  onTap: () => Get.toNamed('/about'),
+                ),
+                const SizedBox(height: 20),
+
+                // Logout Button
+                _buildLogoutButton(),
+                const SizedBox(height: 40),
+              ],
+            ),
+          );
+        }),
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: AppColors.loadingIndicator,
-            ),
-          );
-        }
-
-        final user = controller.currentUser.value;
-        if (user == null) {
-          return Center(
-            child: Text(
-              'No user data available',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          );
-        }
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // Profile Header
-              _buildProfileHeader(user),
-              const SizedBox(height: 30),
-              
-              // Profile Completion
-              _buildProfileCompletion(),
-              const SizedBox(height: 30),
-              
-              // Menu Items
-              _buildMenuItem(
-                icon: Icons.person_outline,
-                title: 'edit_profile'.tr,
-                subtitle: 'Update your personal information',
-                onTap: () => Get.toNamed('/edit-profile'),
-              ),
-              _buildMenuItem(
-                icon: Icons.favorite_outline,
-                title: 'my_preferences'.tr,
-                subtitle: 'Property preferences and filters',
-                onTap: () => Get.toNamed('/preferences'),
-              ),
-              _buildMenuItem(
-                icon: Icons.history,
-                title: 'Search History',
-                subtitle: 'Your recent property searches',
-                onTap: () => Get.toNamed('/search-history'),
-              ),
-              _buildMenuItem(
-                icon: Icons.notifications,
-                title: 'notifications'.tr,
-                subtitle: 'Manage notification settings',
-                onTap: () => Get.toNamed('/notifications'),
-              ),
-              _buildMenuItem(
-                icon: Icons.security,
-                title: 'Privacy & Security',
-                subtitle: 'Account security settings',
-                onTap: () => Get.toNamed('/privacy'),
-              ),
-              _buildMenuItem(
-                icon: Icons.help_outline,
-                title: 'help'.tr,
-                subtitle: 'Get help and contact support',
-                onTap: () => Get.toNamed('/help'),
-              ),
-              _buildMenuItem(
-                icon: Icons.info_outline,
-                title: 'about'.tr,
-                subtitle: 'App version and information',
-                onTap: () => Get.toNamed('/about'),
-              ),
-              const SizedBox(height: 20),
-              
-              // Logout Button
-              _buildLogoutButton(),
-              const SizedBox(height: 40),
-            ],
-          ),
-        );
-      }),
-    ));
+    );
   }
 
   Widget _buildProfileHeader(dynamic user) {
@@ -138,7 +140,9 @@ class ProfileView extends GetView<AuthController> {
                         radius: 50,
                         backgroundColor: AppColors.primaryYellow,
                         child: Text(
-                          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                          user.name.isNotEmpty
+                              ? user.name[0].toUpperCase()
+                              : 'U',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -167,10 +171,7 @@ class ProfileView extends GetView<AuthController> {
                   decoration: BoxDecoration(
                     color: AppColors.primaryYellow,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.surface,
-                      width: 2,
-                    ),
+                    border: Border.all(color: AppColors.surface, width: 2),
                   ),
                   child: Icon(
                     Icons.camera_alt,
@@ -182,7 +183,7 @@ class ProfileView extends GetView<AuthController> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Name
           Text(
             user.name.isNotEmpty ? user.name : 'User Name',
@@ -193,25 +194,19 @@ class ProfileView extends GetView<AuthController> {
             ),
           ),
           const SizedBox(height: 4),
-          
+
           // Email
           Text(
             user.email.isNotEmpty ? user.email : '',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
-          
+
           // Phone
           if (user.phone.isNotEmpty)
             Text(
               user.phone,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textTertiary,
-              ),
+              style: TextStyle(fontSize: 14, color: AppColors.textTertiary),
             ),
         ],
       ),
@@ -240,29 +235,32 @@ class ProfileView extends GetView<AuthController> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              Obx(() => Text(
-                '${controller.profileCompletionPercentage.value}%',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryYellow,
+              Obx(
+                () => Text(
+                  '${controller.profileCompletionPercentage.value}%',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryYellow,
+                  ),
                 ),
-              )),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Obx(() => LinearProgressIndicator(
-            value: controller.profileCompletionPercentage.value / 100,
-            backgroundColor: AppColors.inputBackground,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
-          )),
+          Obx(
+            () => LinearProgressIndicator(
+              value: controller.profileCompletionPercentage.value / 100,
+              backgroundColor: AppColors.inputBackground,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppColors.primaryYellow,
+              ),
+            ),
+          ),
           const SizedBox(height: 8),
           Text(
             'Complete your profile to get better property recommendations',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -285,11 +283,7 @@ class ProfileView extends GetView<AuthController> {
             color: AppColors.primaryYellow.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            icon,
-            color: AppColors.primaryYellow,
-            size: 24,
-          ),
+          child: Icon(icon, color: AppColors.primaryYellow, size: 24),
         ),
         title: Text(
           title,
@@ -301,10 +295,7 @@ class ProfileView extends GetView<AuthController> {
         ),
         subtitle: Text(
           subtitle,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
@@ -312,9 +303,7 @@ class ProfileView extends GetView<AuthController> {
           color: AppColors.iconColor,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         tileColor: AppColors.surface,
       ),
     );
@@ -348,10 +337,7 @@ class ProfileView extends GetView<AuthController> {
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text(
-          'Logout',
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
+        title: Text('Logout', style: TextStyle(color: AppColors.textPrimary)),
         content: Text(
           'Are you sure you want to logout?',
           style: TextStyle(color: AppColors.textSecondary),
@@ -369,15 +355,10 @@ class ProfileView extends GetView<AuthController> {
               Get.back();
               controller.signOut();
             },
-            child: Text(
-              'Logout',
-              style: TextStyle(color: AppColors.errorRed),
-            ),
+            child: Text('Logout', style: TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),
     );
   }
-
-
-} 
+}

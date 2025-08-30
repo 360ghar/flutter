@@ -135,6 +135,7 @@ class PreferencesController extends GetxController {
         return 'System';
     }
   }
+
   bool get isShowPropertyTourEnabled => showPropertyTour.value;
   bool get isCompactViewEnabled => compactView.value;
   bool get isShareAnalyticsEnabled => shareAnalytics.value;

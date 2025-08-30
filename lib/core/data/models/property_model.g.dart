@@ -27,10 +27,13 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) =>
       id: (json['id'] as num).toInt(),
       title: json['title'] as String? ?? 'Unknown Property',
       description: json['description'] as String?,
-      propertyType: $enumDecode(_$PropertyTypeEnumMap, json['property_type']),
-      purpose: $enumDecode(_$PropertyPurposeEnumMap, json['purpose']),
+      propertyType: $enumDecodeNullable(
+        _$PropertyTypeEnumMap,
+        json['property_type'],
+      ),
+      purpose: $enumDecodeNullable(_$PropertyPurposeEnumMap, json['purpose']),
       basePrice: (json['base_price'] as num?)?.toDouble() ?? 0.0,
-      status: $enumDecode(_$PropertyStatusEnumMap, json['status']),
+      status: $enumDecodeNullable(_$PropertyStatusEnumMap, json['status']),
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       city: json['city'] as String?,
@@ -65,7 +68,7 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) =>
           .toList(),
       mainImageUrl: json['main_image_url'] as String?,
       virtualTourUrl: json['virtual_tour_url'] as String?,
-      isAvailable: json['is_available'] as bool? ?? true,
+      isAvailable: json['is_active'] as bool? ?? true,
       availableFrom: json['available_from'] as String?,
       calendarData: json['calendar_data'] as Map<String, dynamic>?,
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
@@ -75,7 +78,9 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) =>
       viewCount: (json['view_count'] as num?)?.toInt() ?? 0,
       likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
       interestCount: (json['interest_count'] as num?)?.toInt() ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] == null
           ? null
           : DateTime.parse(json['updated_at'] as String),
@@ -91,10 +96,10 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
       'id': instance.id,
       'title': instance.title,
       'description': instance.description,
-      'property_type': _$PropertyTypeEnumMap[instance.propertyType]!,
-      'purpose': _$PropertyPurposeEnumMap[instance.purpose]!,
+      'property_type': _$PropertyTypeEnumMap[instance.propertyType],
+      'purpose': _$PropertyPurposeEnumMap[instance.purpose],
       'base_price': instance.basePrice,
-      'status': _$PropertyStatusEnumMap[instance.status]!,
+      'status': _$PropertyStatusEnumMap[instance.status],
       'latitude': instance.latitude,
       'longitude': instance.longitude,
       'city': instance.city,
@@ -125,7 +130,7 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
       'features': instance.features,
       'main_image_url': instance.mainImageUrl,
       'virtual_tour_url': instance.virtualTourUrl,
-      'is_available': instance.isAvailable,
+      'is_active': instance.isAvailable,
       'available_from': instance.availableFrom,
       'calendar_data': instance.calendarData,
       'tags': instance.tags,
@@ -135,7 +140,7 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
       'view_count': instance.viewCount,
       'like_count': instance.likeCount,
       'interest_count': instance.interestCount,
-      'created_at': instance.createdAt.toIso8601String(),
+      'created_at': instance.createdAt?.toIso8601String(),
       'updated_at': instance.updatedAt?.toIso8601String(),
       'images': instance.images?.map((e) => e.toJson()).toList(),
       'distance_km': instance.distanceKm,
@@ -147,6 +152,8 @@ const _$PropertyTypeEnumMap = {
   PropertyType.apartment: 'apartment',
   PropertyType.builderFloor: 'builder_floor',
   PropertyType.room: 'room',
+  PropertyType.villa: 'villa',
+  PropertyType.plot: 'plot',
 };
 
 const _$PropertyPurposeEnumMap = {

@@ -6,18 +6,19 @@ import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/debug_logger.dart';
 
 class DashboardController extends GetxController {
-
   late final AuthController _authController;
   late final PageStateService _pageStateService;
 
   final RxMap<String, dynamic> dashboardData = <String, dynamic>{}.obs;
-  final RxList<Map<String, dynamic>> searchHistory = <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> recentActivity = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> searchHistory =
+      <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> recentActivity =
+      <Map<String, dynamic>>[].obs;
   final RxMap<String, dynamic> userStats = <String, dynamic>{}.obs;
   final RxBool isLoading = false.obs;
   final RxBool isRefreshing = false.obs;
   final RxString error = ''.obs;
-  
+
   // Bottom navigation state
   final RxInt currentIndex = 2.obs; // Default to Discover tab (index 2)
 
@@ -27,20 +28,20 @@ class DashboardController extends GetxController {
 
     _authController = Get.find<AuthController>();
     _pageStateService = Get.find<PageStateService>();
-    
+
     // Listen to authentication state changes
-    ever(_authController.isLoggedIn, (bool isLoggedIn) {
-      if (isLoggedIn) {
-        // User is logged in, safe to fetch data
+    ever(_authController.authStatus, (authStatus) {
+      if (_authController.isAuthenticated) {
+        // User is authenticated, safe to fetch data
         loadDashboardData();
       } else {
         // User logged out, clear all data
         _clearAllData();
       }
     });
-    
-    // If already logged in, load dashboard data
-    if (_authController.isLoggedIn.value) {
+
+    // If already authenticated, load dashboard data
+    if (_authController.isAuthenticated) {
       loadDashboardData();
     }
   }
@@ -48,11 +49,13 @@ class DashboardController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    
+
     // Activate the initial page (Discover by default)
     final initialIndex = currentIndex.value;
-    DebugLogger.info('🚀 Dashboard ready, activating initial tab: $initialIndex');
-    
+    DebugLogger.info(
+      '🚀 Dashboard ready, activating initial tab: $initialIndex',
+    );
+
     // Activate the default page without changing the index
     PageType? pageType;
     switch (initialIndex) {
@@ -66,7 +69,7 @@ class DashboardController extends GetxController {
         pageType = PageType.likes;
         break;
     }
-    
+
     if (pageType != null) {
       _pageStateService.notifyPageActivated(pageType);
     }
@@ -78,24 +81,23 @@ class DashboardController extends GetxController {
     try {
       isLoading.value = true;
       error.value = '';
-      
+
       // Load dashboard data (analytics removed)
       final results = await Future.wait([
         _loadUserStats(),
         _loadRecentActivity(),
       ]);
-      
+
       userStats.value = results[0] as Map<String, dynamic>;
       recentActivity.value = results[1] as List<Map<String, dynamic>>;
-      
+
       // Clear analytics data that's no longer available
       dashboardData.value = {};
       searchHistory.value = [];
-      
     } catch (e, stackTrace) {
       error.value = 'Failed to load dashboard data';
       DebugLogger.error('Error loading dashboard data', e, stackTrace);
-      
+
       Get.snackbar(
         'Dashboard Error',
         'Failed to load dashboard data. Please try again.',
@@ -142,19 +144,25 @@ class DashboardController extends GetxController {
         {
           'type': 'property_view',
           'title': 'Viewed luxury apartment',
-          'timestamp': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+          'timestamp': DateTime.now()
+              .subtract(const Duration(hours: 2))
+              .toIso8601String(),
           'icon': 'visibility',
         },
         {
           'type': 'search',
           'title': 'Searched for 2BHK apartments',
-          'timestamp': DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
+          'timestamp': DateTime.now()
+              .subtract(const Duration(hours: 5))
+              .toIso8601String(),
           'icon': 'search',
         },
         {
           'type': 'like',
           'title': 'Liked villa in Bandra',
-          'timestamp': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+          'timestamp': DateTime.now()
+              .subtract(const Duration(days: 1))
+              .toIso8601String(),
           'icon': 'favorite',
         },
       ];
@@ -176,8 +184,9 @@ class DashboardController extends GetxController {
   int get totalViews => dashboardData['total_views'] ?? 0;
   int get totalLikes => dashboardData['total_likes'] ?? 0;
   int get totalVisitsScheduled => dashboardData['total_visits_scheduled'] ?? 0;
-  double get conversionRate => dashboardData['conversion_rate']?.toDouble() ?? 0.0;
-  
+  double get conversionRate =>
+      dashboardData['conversion_rate']?.toDouble() ?? 0.0;
+
   List<String> get preferredLocations {
     final locations = dashboardData['preferred_locations'];
     if (locations is List) {
@@ -186,7 +195,8 @@ class DashboardController extends GetxController {
     return [];
   }
 
-  Map<String, dynamic> get activitySummary => dashboardData['activity_summary'] ?? {};
+  Map<String, dynamic> get activitySummary =>
+      dashboardData['activity_summary'] ?? {};
 
   // User stats getters
   int get propertiesViewed => userStats['properties_viewed'] ?? 0;
@@ -203,24 +213,26 @@ class DashboardController extends GetxController {
 
   void clearSearchHistory() {
     searchHistory.clear();
-    // Also clear from backend if needed  
+    // Also clear from backend if needed
     // Note: clearSearchHistory method needs to be implemented in ApiService
   }
 
   // Dashboard insights
   String get topPerformingSearchTerm {
     if (searchHistory.isEmpty) return 'No searches yet';
-    
+
     // Find most frequent search term
     final searchTerms = <String, int>{};
     for (final search in searchHistory) {
       final term = search['query'] as String? ?? '';
       searchTerms[term] = (searchTerms[term] ?? 0) + 1;
     }
-    
+
     if (searchTerms.isEmpty) return 'No searches yet';
-    
-    final topTerm = searchTerms.entries.reduce((a, b) => a.value > b.value ? a : b);
+
+    final topTerm = searchTerms.entries.reduce(
+      (a, b) => a.value > b.value ? a : b,
+    );
     return topTerm.key;
   }
 
@@ -288,11 +300,11 @@ class DashboardController extends GetxController {
     'top_search_term': topPerformingSearchTerm,
     'favorite_location': favoriteLocation,
   };
-  
+
   // Navigation methods
   void changeTab(int index) {
     currentIndex.value = index;
-    
+
     // Notify page state service about the page change
     PageType? pageType;
     switch (index) {
@@ -308,7 +320,7 @@ class DashboardController extends GetxController {
       case 4:
         break;
     }
-    
+
     if (pageType != null) {
       _pageStateService.notifyPageActivated(pageType);
     }

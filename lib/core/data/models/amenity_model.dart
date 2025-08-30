@@ -25,7 +25,8 @@ class AmenityModel {
     this.updatedAt,
   });
 
-  factory AmenityModel.fromJson(Map<String, dynamic> json) => _$AmenityModelFromJson(json);
+  factory AmenityModel.fromJson(Map<String, dynamic> json) =>
+      _$AmenityModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$AmenityModelToJson(this);
 
@@ -65,7 +66,7 @@ class PropertyAmenityModel {
   final int amenityId;
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
-  
+
   // Relationship data
   final AmenityModel? amenity;
 
@@ -77,7 +78,8 @@ class PropertyAmenityModel {
     this.amenity,
   });
 
-  factory PropertyAmenityModel.fromJson(Map<String, dynamic> json) => _$PropertyAmenityModelFromJson(json);
+  factory PropertyAmenityModel.fromJson(Map<String, dynamic> json) =>
+      _$PropertyAmenityModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$PropertyAmenityModelToJson(this);
 
@@ -102,7 +104,8 @@ class PropertyAmenityResponse {
     this.category,
   });
 
-  factory PropertyAmenityResponse.fromJson(Map<String, dynamic> json) => _$PropertyAmenityResponseFromJson(json);
+  factory PropertyAmenityResponse.fromJson(Map<String, dynamic> json) =>
+      _$PropertyAmenityResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$PropertyAmenityResponseToJson(this);
 

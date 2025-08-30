@@ -1,5 +1,9 @@
 import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
+import '../../../core/controllers/page_state_service.dart';
+import '../../../core/data/repositories/properties_repository.dart';
+import '../../../core/data/repositories/swipes_repository.dart';
+import '../../../core/data/repositories/profile_repository.dart';
 import '../../profile/bindings/profile_binding.dart';
 import '../../explore/bindings/explore_binding.dart';
 import '../../discover/bindings/discover_binding.dart';
@@ -9,14 +13,44 @@ import '../../visits/bindings/visits_binding.dart';
 class DashboardBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<DashboardController>(() => DashboardController());
+    // Register core repositories needed by features
+    if (!Get.isRegistered<PropertiesRepository>()) {
+      Get.lazyPut<PropertiesRepository>(
+        () => PropertiesRepository(),
+        fenix: true,
+      );
+    }
     
+    if (!Get.isRegistered<SwipesRepository>()) {
+      Get.lazyPut<SwipesRepository>(
+        () => SwipesRepository(),
+        fenix: true,
+      );
+    }
+    
+    if (!Get.isRegistered<ProfileRepository>()) {
+      Get.lazyPut<ProfileRepository>(
+        () => ProfileRepository(),
+        fenix: true,
+      );
+    }
+    
+    // Register PageStateService if not already registered
+    if (!Get.isRegistered<PageStateService>()) {
+      Get.lazyPut<PageStateService>(
+        () => PageStateService(),
+        fenix: true,
+      );
+    }
+
+    Get.lazyPut<DashboardController>(() => DashboardController());
+
     // Initialize all tab controllers
     ProfileBinding().dependencies();
     ExploreBinding().dependencies();
     DiscoverBinding().dependencies();
     LikesBinding().dependencies();
     VisitsBinding().dependencies();
-    // Filters binding removed; FilterService is globally available
+    // PageStateService and repositories are now available for all features
   }
 }

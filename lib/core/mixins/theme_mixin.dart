@@ -74,7 +74,9 @@ mixin ThemeMixin {
           if (icon != null) ...[
             Icon(
               icon,
-              color: enabled ? AppTheme.primaryColor : Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              color: enabled
+                  ? AppTheme.primaryColor
+                  : Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
               size: 24,
             ),
             const SizedBox(width: 16),
@@ -88,14 +90,20 @@ mixin ThemeMixin {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: enabled ? Get.theme.colorScheme.onSurface : Get.theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: enabled
+                        ? Get.theme.colorScheme.onSurface
+                        : Get.theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Get.theme.colorScheme.onSurface.withValues(
+                      alpha: 0.7,
+                    ),
                     fontSize: 14,
                   ),
                 ),
@@ -105,7 +113,7 @@ mixin ThemeMixin {
           Switch(
             value: value,
             onChanged: enabled ? onChanged : null,
-            activeColor: AppTheme.primaryColor,
+            activeThumbColor: AppTheme.primaryColor,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
@@ -133,7 +141,9 @@ mixin ThemeMixin {
               if (icon != null) ...[
                 Icon(
                   icon,
-                  color: isDestructive ? AppTheme.errorRed : AppTheme.primaryColor,
+                  color: isDestructive
+                      ? AppTheme.errorRed
+                      : AppTheme.primaryColor,
                   size: 24,
                 ),
                 const SizedBox(width: 16),
@@ -147,14 +157,18 @@ mixin ThemeMixin {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
-                        color: isDestructive ? AppTheme.errorRed : Get.theme.colorScheme.onSurface,
+                        color: isDestructive
+                            ? AppTheme.errorRed
+                            : Get.theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: Get.theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
                         fontSize: 14,
                       ),
                     ),
@@ -182,10 +196,7 @@ mixin ThemeMixin {
   }) {
     return Scaffold(
       backgroundColor: Get.theme.scaffoldBackgroundColor,
-      appBar: buildThemeAwareAppBar(
-        title: title,
-        actions: actions,
-      ),
+      appBar: buildThemeAwareAppBar(title: title, actions: actions),
       body: body,
       floatingActionButton: floatingActionButton,
     );

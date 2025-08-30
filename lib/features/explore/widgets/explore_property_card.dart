@@ -24,9 +24,7 @@ class ExplorePropertyCard extends StatelessWidget {
       elevation: 2,
       color: AppColors.propertyCardBackground,
       shadowColor: AppColors.shadowColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
           Get.toNamed('/property-details', arguments: property);
@@ -46,7 +44,9 @@ class ExplorePropertyCard extends StatelessWidget {
                       height: 120,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
                       memCacheWidth: 200,
                       memCacheHeight: 120,
                       placeholder: Container(
@@ -54,7 +54,9 @@ class ExplorePropertyCard extends StatelessWidget {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: AppColors.inputBackground,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
                         ),
                         child: Center(
                           child: Column(
@@ -87,7 +89,10 @@ class ExplorePropertyCard extends StatelessWidget {
                     top: 8,
                     left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryYellow,
                         borderRadius: BorderRadius.circular(12),
@@ -120,7 +125,9 @@ class ExplorePropertyCard extends StatelessWidget {
                       child: IconButton(
                         icon: Icon(
                           isFavourite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavourite ? AppColors.favoriteActive : Colors.white,
+                          color: isFavourite
+                              ? AppColors.favoriteActive
+                              : Colors.white,
                           size: 20,
                         ),
                         onPressed: onFavouriteToggle,
@@ -132,7 +139,7 @@ class ExplorePropertyCard extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +169,7 @@ class ExplorePropertyCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       property.addressDisplay,
                       style: TextStyle(
@@ -172,7 +179,7 @@ class ExplorePropertyCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
                         if (property.bedroomBathroomText.isNotEmpty) ...[
@@ -210,8 +217,9 @@ class ExplorePropertyCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    if (property.floorText.isNotEmpty || property.ageText.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+                    if (property.floorText.isNotEmpty ||
+                        property.ageText.isNotEmpty) ...[
+                      const SizedBox(height: 1),
                       Flexible(
                         child: Row(
                           children: [
@@ -241,7 +249,8 @@ class ExplorePropertyCard extends StatelessWidget {
                               ),
                             ],
                             if (property.ageText.isNotEmpty) ...[
-                              if (property.floorText.isNotEmpty) const SizedBox(width: 8),
+                              if (property.floorText.isNotEmpty)
+                                const SizedBox(width: 8),
                               Flexible(
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -280,4 +289,3 @@ class ExplorePropertyCard extends StatelessWidget {
     );
   }
 }
-

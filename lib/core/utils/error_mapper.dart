@@ -7,13 +7,76 @@ import 'debug_logger.dart';
 class ErrorMapper {
   // Map API errors to user-friendly messages
   static AppException mapApiError(dynamic error) {
-    // Avoid alarming error logs for expected mapping; use warning
-    DebugLogger.warning('🗺️ Mapping error: type=${error.runtimeType}, error=$error');
+    // Log the incoming error being normalized to an AppException (informational, not a failure)
+    DebugLogger.info(
+      '🗺️ [ERROR_MAPPER] Mapping incoming error: type=${error.runtimeType}, error=$error',
+    );
+
+    // Special handling for null check operator errors
+    if (error.toString().contains('Null check operator used on a null value')) {
+      DebugLogger.error('🚨 [ERROR_MAPPER] NULL CHECK OPERATOR ERROR DETECTED!');
+      DebugLogger.error('🚨 [ERROR_MAPPER] Error type: ${error.runtimeType}');
+      DebugLogger.error('🚨 [ERROR_MAPPER] Error string: ${error.toString()}');
+      
+      // CRITICAL: Get the current stack trace to see where this error is coming from
+      DebugLogger.error('🚨 [ERROR_MAPPER] CURRENT STACK TRACE (where ErrorMapper.map was called):');
+      final currentStackTrace = StackTrace.current;
+      DebugLogger.error('🚨 [ERROR_MAPPER] ${currentStackTrace.toString()}');
+      
+      // Try to get original stack trace if available
+      try {
+        if (error is Error) {
+          DebugLogger.error('🚨 [ERROR_MAPPER] ORIGINAL ERROR STACK TRACE:');
+          DebugLogger.error('🚨 [ERROR_MAPPER] ${error.stackTrace}');
+        }
+      } catch (e) {
+        DebugLogger.error('🚨 [ERROR_MAPPER] Could not get original stack trace: $e');
+      }
+      
+      // Log error source analysis
+      final stackString = currentStackTrace.toString();
+      if (stackString.contains('property_model.g.dart')) {
+        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_model.g.dart (generated code)');
+      } else if (stackString.contains('property_image_model.g.dart')) {
+        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_image_model.g.dart (generated code)');
+      } else if (stackString.contains('explore_controller.dart')) {
+        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: explore_controller.dart');
+      } else if (stackString.contains('likes_controller.dart')) {
+        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: likes_controller.dart');
+      } else if (stackString.contains('page_state_service.dart')) {
+        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: page_state_service.dart');
+      } else {
+        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: Unknown location - check full stack trace above');
+      }
+      
+      // Extract and log the specific lines from the stack trace
+      final lines = stackString.split('\n');
+      DebugLogger.error('🚨 [ERROR_MAPPER] STACK TRACE ANALYSIS:');
+      for (int i = 0; i < lines.length && i < 10; i++) {
+        final line = lines[i].trim();
+        if (line.contains('.dart')) {
+          DebugLogger.error('🚨 [ERROR_MAPPER] [$i] $line');
+        }
+      }
+    }
+
+    // Handle string error messages by wrapping them appropriately
+    if (error is String) {
+      // Check if it's a specific error pattern
+      if (error.contains('Null check operator used on a null value')) {
+        return NetworkException(
+          'A data processing error occurred. Please try again.',
+          details: error,
+        );
+      }
+      // Return as a generic network exception for string errors
+      return NetworkException(error, details: error);
+    }
 
     if (error is DioException) {
       return _mapDioException(error);
     }
-    
+
     if (error is ApiException) {
       return _mapApiException(error);
     }
@@ -30,7 +93,9 @@ class ErrorMapper {
     // Handle wrapped ApiException (Exception: ApiException: ...)
     if (error is Exception && error.toString().contains('ApiException:')) {
       final errorString = error.toString();
-      final match = RegExp(r'ApiException: (.+) \(Status: (\d+)\)').firstMatch(errorString);
+      final match = RegExp(
+        r'ApiException: (.+) \(Status: (\d+)\)',
+      ).firstMatch(errorString);
       if (match != null) {
         final message = match.group(1)!;
         final statusCode = int.tryParse(match.group(2)!);
@@ -81,7 +146,10 @@ class ErrorMapper {
         );
 
       case DioExceptionType.badResponse:
-        return _mapHttpStatusCode(error.response?.statusCode, error.response?.data);
+        return _mapHttpStatusCode(
+          error.response?.statusCode,
+          error.response?.data,
+        );
 
       case DioExceptionType.cancel:
         return NetworkException(
@@ -103,11 +171,14 @@ class ErrorMapper {
     if (error.statusCode != null) {
       return _mapHttpStatusCode(error.statusCode, error.response);
     }
-    
+
     return NetworkException(error.message, details: error.response);
   }
 
-  static AppException _mapHttpStatusCode(int? statusCode, dynamic responseData) {
+  static AppException _mapHttpStatusCode(
+    int? statusCode,
+    dynamic responseData,
+  ) {
     switch (statusCode) {
       case 400:
         return ValidationException(
@@ -147,7 +218,8 @@ class ErrorMapper {
 
       case 422:
         return ValidationException(
-          _extractValidationMessage(responseData) ?? 'Please check your input and try again.',
+          _extractValidationMessage(responseData) ??
+              'Please check your input and try again.',
           code: 'VALIDATION_ERROR',
           details: responseData,
           fieldErrors: _extractFieldErrors(responseData),
@@ -200,7 +272,7 @@ class ErrorMapper {
       if (responseData['detail'] is String) {
         return responseData['detail'];
       }
-      
+
       // Extract first error from errors object
       if (responseData['errors'] is Map) {
         final errors = responseData['errors'] as Map;
@@ -220,7 +292,7 @@ class ErrorMapper {
     if (responseData is Map<String, dynamic> && responseData['errors'] is Map) {
       final errors = responseData['errors'] as Map<String, dynamic>;
       final fieldErrors = <String, List<String>>{};
-      
+
       errors.forEach((field, error) {
         if (error is List) {
           fieldErrors[field] = error.cast<String>();
@@ -228,7 +300,7 @@ class ErrorMapper {
           fieldErrors[field] = [error];
         }
       });
-      
+
       return fieldErrors.isNotEmpty ? fieldErrors : null;
     }
     return null;
@@ -237,7 +309,7 @@ class ErrorMapper {
   // Show user-friendly error messages
   static void showErrorSnackbar(AppException error) {
     String title = 'Error';
-    
+
     if (error is NetworkException) {
       title = 'Connection Error';
     } else if (error is AuthenticationException) {
@@ -260,7 +332,9 @@ class ErrorMapper {
     );
 
     // Log the full error for debugging
-    DebugLogger.error('❌ Error shown to user: title=$title, message=${error.message}');
+    DebugLogger.error(
+      '❌ Error shown to user: title=$title, message=${error.message}',
+    );
     if (error.details != null) {
       DebugLogger.error('Details: ${error.details}');
     }
@@ -273,15 +347,15 @@ class ErrorMapper {
         return 'Check Connection & Retry';
       }
     }
-    
+
     if (error is ServerException) {
       return 'Try Again Later';
     }
-    
+
     if (error is AuthenticationException) {
       return 'Log In Again';
     }
-    
+
     return 'Try Again';
   }
 
@@ -295,19 +369,19 @@ class ErrorMapper {
     if (error is NetworkException) {
       return error.code != 'CANCELLED';
     }
-    
+
     if (error is ServerException) {
       return error.statusCode != null && error.statusCode! >= 500;
     }
-    
+
     if (error is AuthenticationException) {
       return false; // Auth errors need manual intervention
     }
-    
+
     if (error is ValidationException) {
       return false; // Validation errors need input changes
     }
-    
+
     return true; // Default to retryable
   }
 

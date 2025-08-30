@@ -6,9 +6,11 @@ import '../../../core/utils/debug_logger.dart';
 
 class SearchHistoryController extends GetxController {
   final GetStorage _storage = GetStorage();
-  
-  final RxList<Map<String, dynamic>> searchHistory = <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> filteredHistory = <Map<String, dynamic>>[].obs;
+
+  final RxList<Map<String, dynamic>> searchHistory =
+      <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> filteredHistory =
+      <Map<String, dynamic>>[].obs;
   final RxBool isLoading = false.obs;
 
   @override
@@ -91,10 +93,10 @@ class SearchHistoryController extends GetxController {
         final searchQuery = search['query']?.toString().toLowerCase() ?? '';
         final location = search['location']?.toString().toLowerCase() ?? '';
         final filters = search['filters']?.join(' ').toLowerCase() ?? '';
-        
+
         return searchQuery.contains(query.toLowerCase()) ||
-               location.contains(query.toLowerCase()) ||
-               filters.contains(query.toLowerCase());
+            location.contains(query.toLowerCase()) ||
+            filters.contains(query.toLowerCase());
       }).toList();
     }
   }
@@ -105,16 +107,18 @@ class SearchHistoryController extends GetxController {
       if (!searchData.containsKey('timestamp')) {
         searchData['timestamp'] = DateTime.now().toIso8601String();
       }
-      
+
       // Add unique ID if not present
       if (!searchData.containsKey('id')) {
         searchData['id'] = DateTime.now().millisecondsSinceEpoch.toString();
       }
 
       // Remove duplicate if exists (same query and location)
-      searchHistory.removeWhere((item) =>
-          item['query'] == searchData['query'] &&
-          item['location'] == searchData['location']);
+      searchHistory.removeWhere(
+        (item) =>
+            item['query'] == searchData['query'] &&
+            item['location'] == searchData['location'],
+      );
 
       // Add to beginning of list
       searchHistory.insert(0, searchData);
@@ -136,7 +140,7 @@ class SearchHistoryController extends GetxController {
       searchHistory.removeWhere((item) => item['id'] == id);
       filteredHistory.value = List.from(searchHistory);
       _saveSearchHistory();
-      
+
       Get.snackbar(
         'Removed',
         'Search removed from history',
@@ -151,12 +155,11 @@ class SearchHistoryController extends GetxController {
     Get.dialog(
       AlertDialog(
         title: const Text('Clear Search History'),
-        content: const Text('Are you sure you want to clear all search history? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to clear all search history? This action cannot be undone.',
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               searchHistory.clear();
@@ -179,10 +182,10 @@ class SearchHistoryController extends GetxController {
   void repeatSearch(Map<String, dynamic> search) {
     // Navigate back to search/home page with the search parameters
     Get.back(); // Go back to profile
-    Get.offNamed('/discover', arguments: {
-      'search': search,
-      'autoSearch': true,
-    });
+    Get.offNamed(
+      '/discover',
+      arguments: {'search': search, 'autoSearch': true},
+    );
   }
 
   void _saveSearchHistory() {
@@ -195,7 +198,7 @@ class SearchHistoryController extends GetxController {
 
   String formatDate(String? timestamp) {
     if (timestamp == null) return '';
-    
+
     try {
       final date = DateTime.parse(timestamp);
       final now = DateTime.now();

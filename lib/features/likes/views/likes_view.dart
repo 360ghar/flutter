@@ -19,119 +19,135 @@ class LikesView extends GetView<LikesController> {
   Widget build(BuildContext context) {
     return Obx(() {
       final pageStateService = Get.find<PageStateService>();
-      
+
       // Make Scaffold reactive to search visibility changes for proper space allocation
       final searchVisible = pageStateService.isSearchVisible(PageType.likes);
-      
+
       return DefaultTabController(
         length: 2,
         child: Scaffold(
           backgroundColor: AppColors.scaffoldBackground,
           appBar: LikesTopBar(
-            key: ValueKey('likes_topbar_$searchVisible'), // Force recreation when visibility changes
+            key: ValueKey(
+              'likes_topbar_$searchVisible',
+            ), // Force recreation when visibility changes
             onSearchChanged: controller.updateSearchQuery,
-            onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'likes'),
+            onFilterTap: () =>
+                showPropertyFilterBottomSheet(context, pageType: 'likes'),
           ),
-        body: Column(
-          children: [
-            // Subtle refresh indicator
-            if (pageStateService.likesState.value.isRefreshing)
-              LinearProgressIndicator(
-                minHeight: 2,
-                backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
-              ),
-            // Tab bar directly under the unified top bar
-            Container(
-              color: AppColors.appBarBackground,
-              child: TabBar(
-                labelColor: AppColors.primaryYellow,
-                unselectedLabelColor: AppColors.textSecondary,
-                indicatorColor: AppColors.primaryYellow,
-                indicatorWeight: 3,
-                labelStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          body: Column(
+            children: [
+              // Subtle refresh indicator
+              if (pageStateService.likesState.value.isRefreshing)
+                LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryYellow,
+                  ),
                 ),
-                onTap: (index) {
-                  final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
-                  controller.switchToSegment(segment);
-                },
-                tabs: [
-                  Tab(
-                    child: Obx(() => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.favorite, size: 18),
-                        const SizedBox(width: 8),
-                        const Text('Liked'),
-                        if (controller.currentSegment.value == LikesSegment.liked &&
-                            controller.hasCurrentProperties) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryYellow,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${controller.currentProperties.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    )),
+              // Tab bar directly under the unified top bar
+              Container(
+                color: AppColors.appBarBackground,
+                child: TabBar(
+                  labelColor: AppColors.primaryYellow,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: AppColors.primaryYellow,
+                  indicatorWeight: 3,
+                  labelStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  Tab(
-                    child: Obx(() => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.not_interested, size: 18),
-                        const SizedBox(width: 8),
-                        const Text('Passed'),
-                        if (controller.currentSegment.value == LikesSegment.passed &&
-                            controller.hasCurrentProperties) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.grey,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${controller.currentProperties.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                  onTap: (index) {
+                    final segment = index == 0
+                        ? LikesSegment.liked
+                        : LikesSegment.passed;
+                    controller.switchToSegment(segment);
+                  },
+                  tabs: [
+                    Tab(
+                      child: Obx(
+                        () => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.favorite, size: 18),
+                            const SizedBox(width: 8),
+                            const Text('Liked'),
+                            if (controller.currentSegment.value ==
+                                    LikesSegment.liked &&
+                                controller.hasCurrentProperties) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryYellow,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${controller.currentProperties.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    )),
-                  ),
-                ],
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    Tab(
+                      child: Obx(
+                        () => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.not_interested, size: 18),
+                            const SizedBox(width: 8),
+                            const Text('Passed'),
+                            if (controller.currentSegment.value ==
+                                    LikesSegment.passed &&
+                                controller.hasCurrentProperties) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${controller.currentProperties.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _buildLikesTab(),
-                  _buildPassedTab(),
-                ],
+              Expanded(
+                child: TabBarView(
+                  children: [_buildLikesTab(), _buildPassedTab()],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  });
+      );
+    });
   }
 
   Widget _buildLikesTab() {
@@ -140,15 +156,15 @@ class LikesView extends GetView<LikesController> {
       if (controller.isCurrentLoading) {
         return LoadingStates.propertyGridSkeleton();
       }
-      
+
       if (controller.hasCurrentError) {
         return _buildErrorState();
       }
-      
+
       if (controller.isCurrentEmpty) {
         return _buildEmptyState(true);
       }
-      
+
       return _buildPropertyGrid();
     });
   }
@@ -159,15 +175,15 @@ class LikesView extends GetView<LikesController> {
       if (controller.isCurrentLoading) {
         return LoadingStates.propertyGridSkeleton();
       }
-      
+
       if (controller.hasCurrentError) {
         return _buildErrorState();
       }
-      
+
       if (controller.isCurrentEmpty) {
         return _buildEmptyState(false);
       }
-      
+
       return _buildPropertyGrid();
     });
   }
@@ -180,84 +196,96 @@ class LikesView extends GetView<LikesController> {
         slivers: [
           // Results header
           SliverToBoxAdapter(
-            child: Obx(() => Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Text(
-                    controller.currentCountText,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (controller.hasSearchQuery)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+            child: Obx(
+              () => Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Text(
+                      controller.currentCountText,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
-                      child: Text(
-                        'Filtered',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.primaryYellow,
+                    ),
+                    const Spacer(),
+                    if (controller.hasSearchQuery)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Filtered',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.primaryYellow,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            )),
+            ),
           ),
-          
+
           // Properties grid
-          Obx(() => SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final properties = controller.currentProperties;
-                
-                // Show load more indicator at the end
-                if (index == properties.length) {
-                  if (controller.currentHasMore && !controller.isCurrentLoadingMore) {
-                    // Trigger load more
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      controller.loadMoreCurrentSegment();
-                    });
+          Obx(
+            () => SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final properties = controller.currentProperties;
+
+                  // Show load more indicator at the end
+                  if (index == properties.length) {
+                    if (controller.currentHasMore &&
+                        !controller.isCurrentLoadingMore) {
+                      // Trigger load more
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        controller.loadMoreCurrentSegment();
+                      });
+                    }
+
+                    return controller.isCurrentLoadingMore
+                        ? const Center(child: CircularProgressIndicator())
+                        : const SizedBox();
                   }
-                  
-                  return controller.isCurrentLoadingMore
-                      ? const Center(child: CircularProgressIndicator())
-                      : const SizedBox();
-                }
-                
-                final property = properties[index];
-                final isLiked = controller.currentSegment.value == LikesSegment.liked;
-                
-                return LikesPropertyCard(
-                  property: property,
-                  isFavourite: isLiked,
-                  onFavouriteToggle: () => _handleFavoriteToggle(property, isLiked),
-                );
-              },
-              childCount: controller.currentProperties.length + 
-                         (controller.currentHasMore || controller.isCurrentLoadingMore ? 1 : 0),
+
+                  final property = properties[index];
+                  final isLiked =
+                      controller.currentSegment.value == LikesSegment.liked;
+
+                  return LikesPropertyCard(
+                    property: property,
+                    isFavourite: isLiked,
+                    onFavouriteToggle: () =>
+                        _handleFavoriteToggle(property, isLiked),
+                  );
+                },
+                childCount:
+                    controller.currentProperties.length +
+                    (controller.currentHasMore ||
+                            controller.isCurrentLoadingMore
+                        ? 1
+                        : 0),
+              ),
             ),
-          )),
-          
-          // Bottom padding for FAB
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 100),
           ),
+
+          // Bottom padding for FAB
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
@@ -267,9 +295,10 @@ class LikesView extends GetView<LikesController> {
     return Obx(() {
       final errorMessage = controller.currentError;
       if (errorMessage == null) return const SizedBox();
-      
+
       try {
-        final exception = ErrorMapper.mapApiError(Exception(errorMessage));
+        // Don't wrap in Exception() - pass the original error message directly
+        final exception = ErrorMapper.mapApiError(errorMessage);
         return ErrorStates.genericError(
           error: exception,
           onRetry: controller.retryCurrentSegment,
@@ -290,7 +319,7 @@ class LikesView extends GetView<LikesController> {
         onClearSearch: controller.clearSearch,
       );
     }
-    
+
     return ErrorStates.emptyState(
       title: isLiked ? 'No Liked Properties' : 'No Passed Properties',
       message: controller.emptyStateMessage,

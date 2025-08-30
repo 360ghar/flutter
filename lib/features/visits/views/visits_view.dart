@@ -54,23 +54,28 @@ class VisitsView extends GetView<VisitsController> {
                           children: [
                             Text('scheduled_visits'.tr),
                             const SizedBox(width: 8),
-                            Obx(() => controller.upcomingVisits.isNotEmpty
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryYellow,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      '${controller.upcomingVisits.length}',
-                                      style: TextStyle(
-                                        color: AppColors.buttonText,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
+                            Obx(
+                              () => controller.upcomingVisits.isNotEmpty
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
                                       ),
-                                    ),
-                                  )
-                                : const SizedBox.shrink()),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryYellow,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '${controller.upcomingVisits.length}',
+                                        style: TextStyle(
+                                          color: AppColors.buttonText,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
                           ],
                         ),
                       ),
@@ -80,30 +85,35 @@ class VisitsView extends GetView<VisitsController> {
                           children: [
                             Text('past_visits'.tr),
                             const SizedBox(width: 8),
-                            Obx(() => controller.pastVisits.isNotEmpty
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.inputBackground,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      '${controller.pastVisits.length}',
-                                      style: TextStyle(
-                                        color: AppColors.textPrimary,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
+                            Obx(
+                              () => controller.pastVisits.isNotEmpty
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
                                       ),
-                                    ),
-                                  )
-                                : const SizedBox.shrink()),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.inputBackground,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '${controller.pastVisits.length}',
+                                        style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                
+
                 // Relationship Manager Section - Always visible
                 Container(
                   color: AppColors.scaffoldBackground,
@@ -112,14 +122,14 @@ class VisitsView extends GetView<VisitsController> {
                     child: _buildRelationshipManagerCard(),
                   ),
                 ),
-                
+
                 // Tab Views
                 Expanded(
                   child: TabBarView(
                     children: [
                       // Upcoming Visits Tab
                       _buildUpcomingVisitsTab(),
-                      
+
                       // Past Visits Tab
                       _buildPastVisitsTab(),
                     ],
@@ -129,7 +139,6 @@ class VisitsView extends GetView<VisitsController> {
             );
           }),
         ),
-
       ),
     );
   }
@@ -138,11 +147,8 @@ class VisitsView extends GetView<VisitsController> {
     return Column(
       children: [
         // TabBar skeleton
-        Container(
-          height: 48,
-          color: AppColors.scaffoldBackground,
-        ),
-        
+        Container(height: 48, color: AppColors.scaffoldBackground),
+
         // Agent skeleton loader
         Container(
           color: AppColors.scaffoldBackground,
@@ -151,7 +157,7 @@ class VisitsView extends GetView<VisitsController> {
             child: RelationshipManagerSkeleton(),
           ),
         ),
-        
+
         // Tab content skeleton loaders
         Expanded(
           child: TabBarView(
@@ -166,15 +172,12 @@ class VisitsView extends GetView<VisitsController> {
       ],
     );
   }
-  
+
   Widget _buildSkeletonList() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
-        children: List.generate(
-          3,
-          (index) => const VisitCardSkeleton(),
-        ),
+        children: List.generate(3, (index) => const VisitCardSkeleton()),
       ),
     );
   }
@@ -197,17 +200,23 @@ class VisitsView extends GetView<VisitsController> {
                   AppColors.primaryYellow,
                 );
               }
-              
+
               return Column(
                 children: controller.upcomingVisits
-                    .map((visit) => VisitCard(
-                          visit: visit,
-                          isUpcoming: true,
-                          dateText: controller.formatVisitDate(visit.scheduledDate),
-                          timeText: controller.formatVisitTime(visit.scheduledDate),
-                          onReschedule: () => _showRescheduleDialog(visit),
-                          onCancel: () => _showCancelDialog(visit),
-                        ))
+                    .map(
+                      (visit) => VisitCard(
+                        visit: visit,
+                        isUpcoming: true,
+                        dateText: controller.formatVisitDate(
+                          visit.scheduledDate,
+                        ),
+                        timeText: controller.formatVisitTime(
+                          visit.scheduledDate,
+                        ),
+                        onReschedule: () => _showRescheduleDialog(visit),
+                        onCancel: () => _showCancelDialog(visit),
+                      ),
+                    )
                     .toList(),
               );
             }),
@@ -235,17 +244,23 @@ class VisitsView extends GetView<VisitsController> {
                   AppColors.iconColor,
                 );
               }
-              
+
               return Column(
                 children: controller.pastVisits
-                    .map((visit) => VisitCard(
-                          visit: visit,
-                          isUpcoming: false,
-                          dateText: controller.formatVisitDate(visit.scheduledDate),
-                          timeText: controller.formatVisitTime(visit.scheduledDate),
-                          onReschedule: () => _showRescheduleDialog(visit),
-                          onCancel: () => _showCancelDialog(visit),
-                        ))
+                    .map(
+                      (visit) => VisitCard(
+                        visit: visit,
+                        isUpcoming: false,
+                        dateText: controller.formatVisitDate(
+                          visit.scheduledDate,
+                        ),
+                        timeText: controller.formatVisitTime(
+                          visit.scheduledDate,
+                        ),
+                        onReschedule: () => _showRescheduleDialog(visit),
+                        onCancel: () => _showCancelDialog(visit),
+                      ),
+                    )
                     .toList(),
               );
             }),
@@ -258,7 +273,8 @@ class VisitsView extends GetView<VisitsController> {
   Widget _buildRelationshipManagerCard() {
     // Initialize agent data loading once on card build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!controller.hasLoadedAgent.value && !controller.isLoadingAgent.value) {
+      if (!controller.hasLoadedAgent.value &&
+          !controller.isLoadingAgent.value) {
         controller.loadRelationshipManagerLazy();
       }
     });
@@ -267,12 +283,12 @@ class VisitsView extends GetView<VisitsController> {
       if (controller.isLoadingAgent.value) {
         return const RelationshipManagerSkeleton();
       }
-      
+
       final agent = controller.relationshipManager.value;
       if (agent == null) {
         return const RelationshipManagerSkeleton();
       }
-      
+
       return AgentCard(
         agent: agent,
         onCall: () {
@@ -286,61 +302,17 @@ class VisitsView extends GetView<VisitsController> {
   }
 
 
-  Widget _buildStatusChip(VisitStatus status) {
-    Color color;
-    String text;
-    
-    switch (status) {
-      case VisitStatus.scheduled:
-        color = AppColors.primaryYellow;
-        text = 'Scheduled';
-        break;
-      case VisitStatus.confirmed:
-        color = AppColors.accentGreen;
-        text = 'Confirmed';
-        break;
-      case VisitStatus.completed:
-        color = AppColors.accentGreen;
-        text = 'Completed';
-        break;
-      case VisitStatus.cancelled:
-        color = AppColors.errorRed;
-        text = 'Cancelled';
-        break;
-      case VisitStatus.rescheduled:
-        color = AppColors.primaryYellow;
-        text = 'Rescheduled';
-        break;
-    }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(String title, String subtitle, IconData icon, Color color) {
+  Widget _buildEmptyState(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(32),
       child: Column(
         children: [
-          Icon(
-            icon,
-            size: 64,
-            color: color,
-          ),
+          Icon(icon, size: 64, color: color),
           const SizedBox(height: 16),
           Text(
             title,
@@ -353,10 +325,7 @@ class VisitsView extends GetView<VisitsController> {
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -368,7 +337,7 @@ class VisitsView extends GetView<VisitsController> {
     DateTime selectedDate = visit.scheduledDate;
     const defaultHour = 10; // Use default time (10:00 AM)
     const defaultMinute = 0;
-    
+
     Get.dialog(
       AlertDialog(
         title: const Text('Reschedule Visit'),
@@ -382,12 +351,17 @@ class VisitsView extends GetView<VisitsController> {
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Date Selection
                 ListTile(
-                  leading: Icon(Icons.calendar_today, color: AppColors.primaryYellow),
+                  leading: Icon(
+                    Icons.calendar_today,
+                    color: AppColors.primaryYellow,
+                  ),
                   title: const Text('Date'),
-                  subtitle: Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
+                  subtitle: Text(
+                    '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                  ),
                   onTap: () async {
                     final DateTime? picked = await showDatePicker(
                       context: context,
@@ -402,17 +376,14 @@ class VisitsView extends GetView<VisitsController> {
                     }
                   },
                 ),
-                
+
                 // Time selection removed; default time will be applied
               ],
             );
           },
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final newDateTime = DateTime(
@@ -422,7 +393,7 @@ class VisitsView extends GetView<VisitsController> {
                 defaultHour,
                 defaultMinute,
               );
-              
+
               controller.rescheduleVisit(visit.id.toString(), newDateTime);
               Get.back();
             },
@@ -445,7 +416,9 @@ class VisitsView extends GetView<VisitsController> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Are you sure you want to cancel your visit to ${visit.propertyTitle}?'),
+            Text(
+              'Are you sure you want to cancel your visit to ${visit.propertyTitle}?',
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: reasonController,
@@ -463,10 +436,7 @@ class VisitsView extends GetView<VisitsController> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('No'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('No')),
           ElevatedButton(
             onPressed: () {
               final reason = reasonController.text.trim();

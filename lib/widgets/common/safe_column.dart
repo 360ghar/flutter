@@ -136,9 +136,7 @@ class OverflowSafeContainer extends StatelessWidget {
 
     // If scrollable, wrap in SingleChildScrollView
     if (scrollable) {
-      content = SingleChildScrollView(
-        child: content,
-      );
+      content = SingleChildScrollView(child: content);
     }
 
     // Apply constraints if specified
@@ -174,7 +172,7 @@ extension OverflowDebugger on Widget {
       // In debug mode, wrap with debugging information
       return true;
     }());
-    
+
     // In release mode, return the widget as-is
     return this;
   }

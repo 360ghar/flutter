@@ -18,7 +18,8 @@ class SwipeStack extends StatefulWidget {
   State<SwipeStack> createState() => _SwipeStackState();
 }
 
-class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMixin {
+class _SwipeStackState extends State<SwipeStack>
+    with SingleTickerProviderStateMixin {
   late List<PropertyModel> _properties;
   late AnimationController _animationController;
 
@@ -34,7 +35,6 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-
   }
 
   @override
@@ -46,9 +46,7 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     if (_properties.isEmpty) {
-      return const Center(
-        child: Text('No more properties to show'),
-      );
+      return const Center(child: Text('No more properties to show'));
     }
 
     return GestureDetector(
@@ -114,4 +112,4 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
       ),
     );
   }
-} 
+}

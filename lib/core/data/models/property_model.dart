@@ -13,6 +13,10 @@ enum PropertyType {
   builderFloor,
   @JsonValue('room')
   room,
+  @JsonValue('villa')
+  villa,
+  @JsonValue('plot')
+  plot,
 }
 
 enum PropertyPurpose {
@@ -51,7 +55,8 @@ class PropertyAmenity {
     this.category,
   });
 
-  factory PropertyAmenity.fromJson(Map<String, dynamic> json) => _$PropertyAmenityFromJson(json);
+  factory PropertyAmenity.fromJson(Map<String, dynamic> json) =>
+      _$PropertyAmenityFromJson(json);
   Map<String, dynamic> toJson() => _$PropertyAmenityToJson(this);
 }
 
@@ -62,12 +67,12 @@ class PropertyModel {
   final String title;
   final String? description;
   @JsonKey(name: 'property_type')
-  final PropertyType propertyType;
-  final PropertyPurpose purpose;
+  final PropertyType? propertyType;
+  final PropertyPurpose? purpose;
   @JsonKey(name: 'base_price', defaultValue: 0.0)
   final double basePrice;
-  final PropertyStatus status;
-  
+  final PropertyStatus? status;
+
   // Location fields
   final double? latitude;
   final double? longitude;
@@ -84,7 +89,7 @@ class PropertyModel {
   final String? fullAddress;
   @JsonKey(name: 'area_type')
   final String? areaType;
-  
+
   // Property details
   @JsonKey(name: 'area_sqft')
   final double? areaSqft;
@@ -93,7 +98,7 @@ class PropertyModel {
   final int? balconies;
   @JsonKey(name: 'parking_spaces')
   final int? parkingSpaces;
-  
+
   // Pricing
   @JsonKey(name: 'price_per_sqft')
   final double? pricePerSqft;
@@ -105,7 +110,7 @@ class PropertyModel {
   final double? securityDeposit;
   @JsonKey(name: 'maintenance_charges')
   final double? maintenanceCharges;
-  
+
   // Building details
   @JsonKey(name: 'floor_number')
   final int? floorNumber;
@@ -113,13 +118,13 @@ class PropertyModel {
   final int? totalFloors;
   @JsonKey(name: 'age_of_property')
   final int? ageOfProperty;
-  
+
   // Accommodation details
   @JsonKey(name: 'max_occupancy')
   final int? maxOccupancy;
   @JsonKey(name: 'minimum_stay_days')
   final int? minimumStayDays;
-  
+
   // Features and amenities
   final List<PropertyAmenity>? amenities;
   final List<String>? features;
@@ -127,15 +132,15 @@ class PropertyModel {
   final String? mainImageUrl;
   @JsonKey(name: 'virtual_tour_url')
   final String? virtualTourUrl;
-  
+
   // Availability
-  @JsonKey(name: 'is_available', defaultValue: true)
+  @JsonKey(name: 'is_active', defaultValue: true)
   final bool isAvailable;
   @JsonKey(name: 'available_from')
   final String? availableFrom;
   @JsonKey(name: 'calendar_data')
   final Map<String, dynamic>? calendarData;
-  
+
   // SEO and metadata
   final List<String>? tags;
   @JsonKey(name: 'owner_name')
@@ -144,7 +149,7 @@ class PropertyModel {
   final String? ownerContact;
   @JsonKey(name: 'builder_name')
   final String? builderName;
-  
+
   // Performance metrics
   @JsonKey(name: 'view_count', defaultValue: 0)
   final int viewCount;
@@ -152,16 +157,16 @@ class PropertyModel {
   final int likeCount;
   @JsonKey(name: 'interest_count', defaultValue: 0)
   final int interestCount;
-  
+
   // Timestamps
   @JsonKey(name: 'created_at')
-  final DateTime createdAt;
+  final DateTime? createdAt;
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
-  
+
   // Relationships
   final List<PropertyImageModel>? images;
-  
+
   // Client-side calculated fields
   @JsonKey(name: 'distance_km')
   final double? distanceKm;
@@ -174,10 +179,10 @@ class PropertyModel {
     required this.id,
     required this.title,
     this.description,
-    required this.propertyType,
-    required this.purpose,
+    this.propertyType,
+    this.purpose,
     required this.basePrice,
-    required this.status,
+    this.status,
     this.latitude,
     this.longitude,
     this.city,
@@ -218,14 +223,15 @@ class PropertyModel {
     required this.viewCount,
     required this.likeCount,
     required this.interestCount,
-    required this.createdAt,
+    this.createdAt,
     this.updatedAt,
     this.images,
     this.distanceKm,
     this.liked = false,
   });
 
-  factory PropertyModel.fromJson(Map<String, dynamic> json) => _$PropertyModelFromJson(json);
+  factory PropertyModel.fromJson(Map<String, dynamic> json) =>
+      _$PropertyModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$PropertyModelToJson(this);
 
@@ -248,9 +254,11 @@ class PropertyModel {
         return dailyRate ?? basePrice;
       case PropertyPurpose.buy:
         return basePrice;
+      default:
+        return basePrice;
     }
   }
-  
+
   String get propertyTypeString {
     switch (propertyType) {
       case PropertyType.house:
@@ -261,9 +269,15 @@ class PropertyModel {
         return 'Builder Floor';
       case PropertyType.room:
         return 'Room';
+      case PropertyType.villa:
+        return 'Villa';
+      case PropertyType.plot:
+        return 'Plot';
+      default:
+        return 'Property';
     }
   }
-  
+
   String get purposeString {
     switch (purpose) {
       case PropertyPurpose.buy:
@@ -272,9 +286,11 @@ class PropertyModel {
         return 'Rent';
       case PropertyPurpose.shortStay:
         return 'Short Stay';
+      default:
+        return 'For Sale';
     }
   }
-  
+
   String get statusString {
     switch (status) {
       case PropertyStatus.available:
@@ -287,12 +303,16 @@ class PropertyModel {
         return 'Under Offer';
       case PropertyStatus.maintenance:
         return 'Maintenance';
+      default:
+        return 'Available';
     }
   }
 
   String get addressDisplay {
     if (fullAddress?.isNotEmpty == true) return fullAddress!;
-    if (locality?.isNotEmpty == true && city?.isNotEmpty == true) return '$locality, $city';
+    if (locality?.isNotEmpty == true && city?.isNotEmpty == true) {
+      return '$locality, $city';
+    }
     return city ?? 'Unknown Location';
   }
 
@@ -315,20 +335,21 @@ class PropertyModel {
 
   // Location convenience methods
   bool get hasLocation => latitude != null && longitude != null;
-  
+
   // Amenities convenience methods
   bool get hasAmenities => amenities?.isNotEmpty == true;
-  List<String> get amenitiesList => amenities?.map((a) => a.title).toList() ?? [];
+  List<String> get amenitiesList =>
+      amenities?.map((a) => a.title).toList() ?? [];
   List<PropertyAmenity> get amenitiesData => amenities ?? [];
-  
+
   // Virtual tour convenience methods
   bool get hasVirtualTour => virtualTourUrl?.isNotEmpty == true;
-  
+
   // Agent/Owner convenience methods
   bool get hasOwner => ownerName?.isNotEmpty == true;
   String get ownerDisplayName => ownerName ?? 'Property Owner';
   bool get hasOwnerContact => ownerContact?.isNotEmpty == true;
-  
+
   // Property details convenience methods
   String get bedroomBathroomText {
     if (bedrooms != null && bathrooms != null) {
@@ -363,7 +384,7 @@ class PropertyModel {
   String get imageDescription {
     return '$propertyTypeString in ${city ?? 'Unknown Location'}';
   }
-  
+
   // Get initials for fallback display
   String get titleInitials {
     final words = title.split(' ');
@@ -399,5 +420,4 @@ class PropertyModel {
     }
     return '';
   }
-
-} 
+}

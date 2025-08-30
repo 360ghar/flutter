@@ -21,9 +21,15 @@ class PageStateService extends GetxController {
   final _authController = Get.find<AuthController>();
 
   // Page states
-  final Rx<PageStateModel> exploreState = PageStateModel.initial(PageType.explore).obs;
-  final Rx<PageStateModel> discoverState = PageStateModel.initial(PageType.discover).obs;
-  final Rx<PageStateModel> likesState = PageStateModel.initial(PageType.likes).obs;
+  final Rx<PageStateModel> exploreState = PageStateModel.initial(
+    PageType.explore,
+  ).obs;
+  final Rx<PageStateModel> discoverState = PageStateModel.initial(
+    PageType.discover,
+  ).obs;
+  final Rx<PageStateModel> likesState = PageStateModel.initial(
+    PageType.likes,
+  ).obs;
 
   // Current active page
   final Rx<PageType> currentPageType = PageType.discover.obs;
@@ -135,7 +141,9 @@ class PageStateService extends GetxController {
     if (exploreState.value.hasLocation &&
         discoverState.value.hasLocation &&
         likesState.value.hasLocation) {
-      DebugLogger.success('✅ All page states already have a location. Bootstrap complete.');
+      DebugLogger.success(
+        '✅ All page states already have a location. Bootstrap complete.',
+      );
       // Still normalize saved names if placeholders slipped in
       await _normalizeSavedLocations();
       return;
@@ -146,18 +154,31 @@ class PageStateService extends GetxController {
 
       // Update each page state if it doesn't have a location
       if (!exploreState.value.hasLocation) {
-        await updateLocationForPage(PageType.explore, initialLocation, source: 'initial');
+        await updateLocationForPage(
+          PageType.explore,
+          initialLocation,
+          source: 'initial',
+        );
       }
       if (!discoverState.value.hasLocation) {
-        await updateLocationForPage(PageType.discover, initialLocation, source: 'initial');
+        await updateLocationForPage(
+          PageType.discover,
+          initialLocation,
+          source: 'initial',
+        );
       }
       if (!likesState.value.hasLocation) {
-        await updateLocationForPage(PageType.likes, initialLocation, source: 'initial');
+        await updateLocationForPage(
+          PageType.likes,
+          initialLocation,
+          source: 'initial',
+        );
       }
       // After bootstrapping, ensure names are user-friendly
       await _normalizeSavedLocations();
-      DebugLogger.success('✅ Successfully bootstrapped initial location for all pages.');
-
+      DebugLogger.success(
+        '✅ Successfully bootstrapped initial location for all pages.',
+      );
     } catch (e, st) {
       DebugLogger.error('❌ Failed to bootstrap initial location', e, st);
       // You can show a global error snackbar here if needed
@@ -188,10 +209,8 @@ class PageStateService extends GetxController {
     _locationController.currentPosition.listen((position) async {
       if (position != null) {
         // Get real address from coordinates
-        final locationName = await _locationController.getAddressFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
+        final locationName = await _locationController
+            .getAddressFromCoordinates(position.latitude, position.longitude);
         final loc = LocationData(
           name: locationName,
           latitude: position.latitude,
@@ -203,17 +222,21 @@ class PageStateService extends GetxController {
   }
 
   // Update location only for a specific page
-  Future<void> updateLocationForPage(PageType pageType, LocationData location, {String source = 'manual'}) async {
-    DebugLogger.info('📍 Updating location for ${pageType.name}: ${location.name} (${location.latitude}, ${location.longitude}) from $source');
+  Future<void> updateLocationForPage(
+    PageType pageType,
+    LocationData location, {
+    String source = 'manual',
+  }) async {
+    DebugLogger.info(
+      '📍 Updating location for ${pageType.name}: ${location.name} (${location.latitude}, ${location.longitude}) from $source',
+    );
 
     // Resolve human-friendly name if placeholder
     LocationData finalLocation = location;
     if (_isPlaceholderLocationName(location.name)) {
       try {
-        final resolvedName = await _locationController.getAddressFromCoordinates(
-          location.latitude,
-          location.longitude,
-        );
+        final resolvedName = await _locationController
+            .getAddressFromCoordinates(location.latitude, location.longitude);
         finalLocation = LocationData(
           name: resolvedName,
           latitude: location.latitude,
@@ -221,7 +244,9 @@ class PageStateService extends GetxController {
         );
         DebugLogger.info('🧭 Resolved location name to "$resolvedName"');
       } catch (e, st) {
-        DebugLogger.warning('Reverse geocoding failed, keeping provided name. $e');
+        DebugLogger.warning(
+          'Reverse geocoding failed, keeping provided name. $e',
+        );
         DebugLogger.warning(st.toString());
       }
     }
@@ -236,10 +261,14 @@ class PageStateService extends GetxController {
 
     // Only trigger a data refresh if the source is not 'initial' or 'hydrate'
     if (source != 'initial' && source != 'hydrate') {
-      DebugLogger.info('🔄 Debouncing refresh for ${pageType.name} after location update');
+      DebugLogger.info(
+        '🔄 Debouncing refresh for ${pageType.name} after location update',
+      );
       _debounceRefresh(pageType);
     } else {
-      DebugLogger.info('⏭️ Skipping refresh for initial/hydrate location update.');
+      DebugLogger.info(
+        '⏭️ Skipping refresh for initial/hydrate location update.',
+      );
     }
   }
 
@@ -258,10 +287,14 @@ class PageStateService extends GetxController {
   void setCurrentPage(PageType pageType) {
     final oldPageType = currentPageType.value;
     currentPageType.value = pageType;
-    DebugLogger.info('📱 Switched from ${oldPageType.name} to ${pageType.name} page');
-    
+    DebugLogger.info(
+      '📱 Switched from ${oldPageType.name} to ${pageType.name} page',
+    );
+
     if (pageType == PageType.explore) {
-      DebugLogger.info('🗺️ Explore page activated - current properties: ${exploreState.value.properties.length}');
+      DebugLogger.info(
+        '🗺️ Explore page activated - current properties: ${exploreState.value.properties.length}',
+      );
     }
   }
 
@@ -269,28 +302,44 @@ class PageStateService extends GetxController {
     DebugLogger.info('📢 Page activated: ${pageType.name}');
     setCurrentPage(pageType);
     final state = _getStateForPage(pageType);
-    DebugLogger.info('📋 ${pageType.name} state - properties: ${state.properties.length}, loading: ${state.isLoading}, stale: ${state.isDataStale}');
-    
+    DebugLogger.info(
+      '📋 ${pageType.name} state - properties: ${state.properties.length}, loading: ${state.isLoading}, stale: ${state.isDataStale}',
+    );
+
     if (!state.isLoading && state.isDataStale) {
-      DebugLogger.info('🔄 Data is stale for ${pageType.name}, loading page data in background');
+      DebugLogger.info(
+        '🔄 Data is stale for ${pageType.name}, loading page data in background',
+      );
       loadPageData(pageType, backgroundRefresh: true);
     } else {
-      DebugLogger.info('⏸️ No background refresh needed for ${pageType.name} - loading: ${state.isLoading}, stale: ${state.isDataStale}');
+      DebugLogger.info(
+        '⏸️ No background refresh needed for ${pageType.name} - loading: ${state.isLoading}, stale: ${state.isDataStale}',
+      );
     }
   }
 
   // Location management
-  Future<void> updateLocation(LocationData location, {String source = 'manual'}) async {
+  Future<void> updateLocation(
+    LocationData location, {
+    String source = 'manual',
+  }) async {
     try {
       // Update backend if authenticated
       if (_authController.isAuthenticated) {
-        await _authController.updateUserLocation(location.latitude, location.longitude);
+        await _authController.updateUserLocation({
+          'current_latitude': location.latitude,
+          'current_longitude': location.longitude,
+        });
       }
       // Update only current page to keep independent state per page
-      await updateLocationForPage(currentPageType.value, location, source: source);
+      await updateLocationForPage(
+        currentPageType.value,
+        location,
+        source: source,
+      );
 
       DebugLogger.success('✅ Location updated: ${location.name}');
-      
+
       // Trigger data refresh just for current page
       _debounceRefresh(currentPageType.value);
     } catch (e) {
@@ -304,10 +353,8 @@ class PageStateService extends GetxController {
       final position = _locationController.currentPosition.value;
       if (position != null) {
         // Get real address from coordinates
-        final locationName = await _locationController.getAddressFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
+        final locationName = await _locationController
+            .getAddressFromCoordinates(position.latitude, position.longitude);
         final location = LocationData(
           name: locationName,
           latitude: position.latitude,
@@ -332,10 +379,8 @@ class PageStateService extends GetxController {
       final position = _locationController.currentPosition.value;
       if (position != null) {
         // Get real address from coordinates
-        final locationName = await _locationController.getAddressFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
+        final locationName = await _locationController
+            .getAddressFromCoordinates(position.latitude, position.longitude);
         final loc = LocationData(
           name: locationName,
           latitude: position.latitude,
@@ -360,15 +405,21 @@ class PageStateService extends GetxController {
   void updatePageFilters(PageType pageType, UnifiedFilterModel filters) {
     switch (pageType) {
       case PageType.explore:
-        exploreState.value = exploreState.value.copyWith(filters: filters).resetData();
+        exploreState.value = exploreState.value
+            .copyWith(filters: filters)
+            .resetData();
         _debounceRefresh(pageType);
         break;
       case PageType.discover:
-        discoverState.value = discoverState.value.copyWith(filters: filters).resetData();
+        discoverState.value = discoverState.value
+            .copyWith(filters: filters)
+            .resetData();
         _debounceRefresh(pageType);
         break;
       case PageType.likes:
-        likesState.value = likesState.value.copyWith(filters: filters).resetData();
+        likesState.value = likesState.value
+            .copyWith(filters: filters)
+            .resetData();
         _debounceRefresh(pageType);
         break;
     }
@@ -381,11 +432,15 @@ class PageStateService extends GetxController {
 
     switch (pageType) {
       case PageType.explore:
-        exploreState.value = exploreState.value.copyWith(searchQuery: query).resetData();
+        exploreState.value = exploreState.value
+            .copyWith(searchQuery: query)
+            .resetData();
         _debounceRefresh(pageType);
         break;
       case PageType.likes:
-        likesState.value = likesState.value.copyWith(searchQuery: query).resetData();
+        likesState.value = likesState.value
+            .copyWith(searchQuery: query)
+            .resetData();
         _debounceRefresh(pageType);
         break;
       default:
@@ -399,110 +454,135 @@ class PageStateService extends GetxController {
   }
 
   // Data loading
-  Future<void> loadPageData(PageType pageType, {bool forceRefresh = false, bool backgroundRefresh = false}) async {
+  Future<void> loadPageData(
+    PageType pageType, {
+    bool forceRefresh = false,
+    bool backgroundRefresh = false,
+  }) async {
     try {
       final state = _getStateForPage(pageType);
       if (state.isLoading) return;
 
-      // Skip if data is fresh and not forcing refresh
-      if (!forceRefresh && !backgroundRefresh && !state.isDataStale && state.properties.isNotEmpty) {
+      if (!forceRefresh &&
+          !backgroundRefresh &&
+          !state.isDataStale &&
+          state.properties.isNotEmpty) {
         return;
       }
 
-      // Set appropriate loading state
       if (!backgroundRefresh) {
-        _updatePageState(pageType, state.copyWith(isLoading: true, error: null));
-      } else {
-        // For background refreshes, reflect both in-page state and top bar indicator
-        notifyPageRefreshing(pageType, true);
-        _updatePageState(pageType, state.copyWith(isRefreshing: true, error: null));
-      }
-
-      // Ensure we have a location; if not, try to bootstrap quickly
-      final loc = state.selectedLocation;
-      if (loc == null) {
-        DebugLogger.warning('⚠️ No location set for ${pageType.name} while loading data. Attempting bootstrap.');
-        final initialLocation = await _locationController.getInitialLocation();
-        await updateLocationForPage(pageType, initialLocation, source: 'initial');
-      }
-
-      final effectiveState = _getStateForPage(pageType);
-      // If location is still unavailable, surface a friendly error instead of crashing
-      if (effectiveState.selectedLocation == null) {
-        final friendlyError =
-            'Location not available. Please enable location or choose a place.';
         _updatePageState(
           pageType,
-          state.copyWith(
-            isLoading: false,
-            isRefreshing: false,
-            error: friendlyError,
-          ),
+          state.copyWith(isLoading: true, error: null),
         );
-        DebugLogger.error('❌ Failed to load ${pageType.name}: $friendlyError');
-        return;
+      } else {
+        notifyPageRefreshing(pageType, true);
+        _updatePageState(
+          pageType,
+          state.copyWith(isRefreshing: true, error: null),
+        );
       }
-      final selectedLoc = effectiveState.selectedLocation!;
 
-      // Branch behavior per page
+      // --- ROBUST LOCATION HANDLING ---
+      LocationData? locationToUse = state.selectedLocation;
+      if (locationToUse == null) {
+        DebugLogger.warning(
+          '⚠️ No location set for ${pageType.name}. Bootstrapping location...',
+        );
+        try {
+          locationToUse = await _locationController.getInitialLocation();
+        } catch (e) {
+          final friendlyError = 'Location not available. Please enable location or choose a place.';
+          _updatePageState(
+            pageType,
+            state.copyWith(isLoading: false, isRefreshing: false, error: friendlyError),
+          );
+          DebugLogger.error('❌ Failed to load ${pageType.name}: $friendlyError', e);
+          notifyPageRefreshing(pageType, false);
+          return;
+        }
+      }
+      // --- END ROBUST LOCATION HANDLING ---
+
       if (pageType == PageType.likes) {
         final isLikedSegment =
-            (effectiveState.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
+            (state.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
+        
+        DebugLogger.api('📊 [PAGE_STATE_SERVICE] About to call getSwipeHistoryProperties for likes');
+        DebugLogger.api('📊 [PAGE_STATE_SERVICE] isLikedSegment: $isLikedSegment');
+        DebugLogger.api('📊 [PAGE_STATE_SERVICE] Location: (${locationToUse.latitude}, ${locationToUse.longitude})');
+        DebugLogger.api('📊 [PAGE_STATE_SERVICE] Filters: ${state.filters.toJson()}');
+        
         final response = await _swipesRepository.getSwipeHistoryProperties(
-          filters: effectiveState.filters.copyWith(searchQuery: effectiveState.searchQuery),
-          latitude: selectedLoc.latitude,
-          longitude: selectedLoc.longitude,
+          filters: state.filters.copyWith(searchQuery: state.searchQuery),
+          latitude: locationToUse.latitude,
+          longitude: locationToUse.longitude,
           page: 1,
           limit: 50,
           isLiked: isLikedSegment,
         );
+        DebugLogger.api('📊 [PAGE_STATE_SERVICE] getSwipeHistoryProperties completed successfully');
 
-        _updatePageState(pageType, state.copyWith(
-          properties: response.properties,
-          currentPage: 1,
-          totalPages: response.totalPages,
-          hasMore: response.hasMore,
-          isLoading: false,
-          isRefreshing: false,
-          lastFetched: DateTime.now(),
-        ));
+        _updatePageState(
+          pageType,
+          state.copyWith(
+            properties: response.properties,
+            selectedLocation: locationToUse, // Persist the location used
+            currentPage: 1,
+            totalPages: response.totalPages,
+            hasMore: response.hasMore,
+            isLoading: false,
+            isRefreshing: false,
+            lastFetched: DateTime.now(),
+          ),
+        );
       } else {
         final response = await _propertiesRepository.getProperties(
-          filters: effectiveState.filters.copyWith(searchQuery: effectiveState.searchQuery),
+          filters: state.filters.copyWith(searchQuery: state.searchQuery),
           page: 1,
           limit: pageType == PageType.discover ? 20 : 50,
-          latitude: selectedLoc.latitude,
-          longitude: selectedLoc.longitude,
-          radiusKm: effectiveState.filters.radiusKm ?? 10.0,
+          latitude: locationToUse.latitude,
+          longitude: locationToUse.longitude,
+          radiusKm: state.filters.radiusKm ?? 10.0,
           excludeSwiped: pageType == PageType.discover,
         );
 
-        _updatePageState(pageType, state.copyWith(
-          properties: response.properties,
-          currentPage: 1,
-          totalPages: response.totalPages,
-          hasMore: response.hasMore,
-          isLoading: false,
-          isRefreshing: false,
-          lastFetched: DateTime.now(),
-        ));
+        _updatePageState(
+          pageType,
+          state.copyWith(
+            properties: response.properties,
+            selectedLocation: locationToUse, // Persist the location used
+            currentPage: 1,
+            totalPages: response.totalPages,
+            hasMore: response.hasMore,
+            isLoading: false,
+            isRefreshing: false,
+            lastFetched: DateTime.now(),
+          ),
+        );
       }
 
       final updatedCount = _getStateForPage(pageType).properties.length;
       DebugLogger.success('✅ Loaded $updatedCount properties for ${pageType.name}');
-    } catch (e) {
+    } catch (e, stackTrace) {
       DebugLogger.error('❌ Failed to load ${pageType.name} data: $e');
-      final state = _getStateForPage(pageType);
-      _updatePageState(pageType, state.copyWith(
-        isLoading: false,
-        isRefreshing: false,
-        error: e.toString(),
-      ));
-    } finally {
-      if (backgroundRefresh) {
-        // Ensure the top bar indicator is turned off
-        notifyPageRefreshing(pageType, false);
+      DebugLogger.error('❌ [PAGE_STATE_SERVICE] Stack trace for ${pageType.name} load error: $stackTrace');
+      
+      if (e.toString().contains('Null check operator used on a null value')) {
+        DebugLogger.error('🚨 [PAGE_STATE_SERVICE] NULL CHECK OPERATOR ERROR during ${pageType.name} data load!');
+        if (pageType == PageType.likes) {
+          DebugLogger.error('🚨 [PAGE_STATE_SERVICE] This error occurred in SwipesRepository.getSwipeHistoryProperties()');
+          DebugLogger.error('🚨 [PAGE_STATE_SERVICE] Check the detailed API parsing logs above for the root cause');
+        }
       }
+      
+      final state = _getStateForPage(pageType);
+      _updatePageState(
+        pageType,
+        state.copyWith(isLoading: false, isRefreshing: false, error: e.toString()),
+      );
+    } finally {
+      notifyPageRefreshing(pageType, false);
     }
   }
 
@@ -515,14 +595,17 @@ class PageStateService extends GetxController {
 
       final loc = state.selectedLocation;
       if (loc == null) {
-        DebugLogger.warning('⚠️ No location set for ${pageType.name} while loading more. Skipping.');
+        DebugLogger.warning(
+          '⚠️ No location set for ${pageType.name} while loading more. Skipping.',
+        );
         _updatePageState(pageType, state.copyWith(isLoadingMore: false));
         return;
       }
 
       if (pageType == PageType.likes) {
         final isLikedSegment =
-            (state.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
+            (state.getAdditionalData<String>('currentSegment') ?? 'liked') ==
+            'liked';
         final response = await _swipesRepository.getSwipeHistoryProperties(
           filters: state.filters.copyWith(searchQuery: state.searchQuery),
           latitude: loc.latitude,
@@ -533,13 +616,16 @@ class PageStateService extends GetxController {
         );
 
         final newProperties = [...state.properties, ...response.properties];
-        _updatePageState(pageType, state.copyWith(
-          properties: newProperties,
-          currentPage: state.currentPage + 1,
-          totalPages: response.totalPages,
-          hasMore: response.hasMore,
-          isLoadingMore: false,
-        ));
+        _updatePageState(
+          pageType,
+          state.copyWith(
+            properties: newProperties,
+            currentPage: state.currentPage + 1,
+            totalPages: response.totalPages,
+            hasMore: response.hasMore,
+            isLoadingMore: false,
+          ),
+        );
       } else {
         final response = await _propertiesRepository.getProperties(
           filters: state.filters.copyWith(searchQuery: state.searchQuery),
@@ -552,17 +638,22 @@ class PageStateService extends GetxController {
         );
 
         final newProperties = [...state.properties, ...response.properties];
-        _updatePageState(pageType, state.copyWith(
-          properties: newProperties,
-          currentPage: state.currentPage + 1,
-          totalPages: response.totalPages,
-          hasMore: response.hasMore,
-          isLoadingMore: false,
-        ));
+        _updatePageState(
+          pageType,
+          state.copyWith(
+            properties: newProperties,
+            currentPage: state.currentPage + 1,
+            totalPages: response.totalPages,
+            hasMore: response.hasMore,
+            isLoadingMore: false,
+          ),
+        );
       }
 
       final totalCount = _getStateForPage(pageType).properties.length;
-      DebugLogger.success('✅ Loaded more properties for ${pageType.name} (total: $totalCount)');
+      DebugLogger.success(
+        '✅ Loaded more properties for ${pageType.name} (total: $totalCount)',
+      );
     } catch (e) {
       DebugLogger.error('❌ Failed to load more ${pageType.name} data: $e');
       final state = _getStateForPage(pageType);
@@ -589,7 +680,7 @@ class PageStateService extends GetxController {
 
   void resetAllFilters() {
     exploreState.value = exploreState.value.resetFilters();
-    discoverState.value = discoverState.value.resetFilters();  
+    discoverState.value = discoverState.value.resetFilters();
     likesState.value = likesState.value.resetFilters();
     _refreshAllPagesData();
     DebugLogger.info('🔄 Reset all page filters');
@@ -601,12 +692,18 @@ class PageStateService extends GetxController {
       final state = _getStateForPage(page);
       if (onlyIfUnset && state.filters.purpose != null) return;
       final updatedFilters = state.filters.copyWith(purpose: purpose);
-      _updatePageState(page, state.copyWith(filters: updatedFilters).resetData());
+      _updatePageState(
+        page,
+        state.copyWith(filters: updatedFilters).resetData(),
+      );
     }
+
     setFor(PageType.explore);
     setFor(PageType.discover);
     setFor(PageType.likes);
-    DebugLogger.info('🎯 Set default purpose="$purpose" for all pages (onlyIfUnset=$onlyIfUnset)');
+    DebugLogger.info(
+      '🎯 Set default purpose="$purpose" for all pages (onlyIfUnset=$onlyIfUnset)',
+    );
   }
 
   // Helper methods
@@ -674,12 +771,15 @@ class PageStateService extends GetxController {
     loadPageData(PageType.likes, forceRefresh: true);
   }
 
-  String get currentLikesSegment => likesState.value.getAdditionalData<String>('currentSegment') ?? 'liked';
+  String get currentLikesSegment =>
+      likesState.value.getAdditionalData<String>('currentSegment') ?? 'liked';
 
   // Mutations for likes page (optimistic UI updates)
   void removePropertyFromLikes(int propertyId) {
     final state = likesState.value;
-    final updatedList = state.properties.where((p) => p.id != propertyId).toList();
+    final updatedList = state.properties
+        .where((p) => p.id != propertyId)
+        .toList();
     _updatePageState(PageType.likes, state.copyWith(properties: updatedList));
   }
 
@@ -710,8 +810,13 @@ class PageStateService extends GetxController {
   // Optimistically remove a property from Discover list
   void removePropertyFromDiscover(int propertyId) {
     final state = discoverState.value;
-    final updatedList = state.properties.where((p) => p.id != propertyId).toList();
-    _updatePageState(PageType.discover, state.copyWith(properties: updatedList));
+    final updatedList = state.properties
+        .where((p) => p.id != propertyId)
+        .toList();
+    _updatePageState(
+      PageType.discover,
+      state.copyWith(properties: updatedList),
+    );
   }
 
   // Sync preferences to backend

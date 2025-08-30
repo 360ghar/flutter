@@ -109,10 +109,7 @@ class PrivacyController extends GetxController {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               Get.back();
@@ -187,15 +184,16 @@ class PrivacyController extends GetxController {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildLoginActivityItem('iPhone 13', 'Current session', 'Now'),
-            _buildLoginActivityItem('MacBook Pro', 'Mumbai, India', '2 hours ago'),
+            _buildLoginActivityItem(
+              'MacBook Pro',
+              'Mumbai, India',
+              '2 hours ago',
+            ),
             _buildLoginActivityItem('iPad', 'Delhi, India', '1 day ago'),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
         ],
       ),
     );
@@ -212,8 +210,14 @@ class PrivacyController extends GetxController {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(device, style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text(location, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  device,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  location,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ),
@@ -237,10 +241,7 @@ class PrivacyController extends GetxController {
           'This may take up to 24 hours.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               Get.back();
@@ -266,10 +267,7 @@ class PrivacyController extends GetxController {
           'This action cannot be undone.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               _storage.remove('searchHistory');
@@ -293,10 +291,7 @@ class PrivacyController extends GetxController {
           'This will not affect your account data.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               // Reset preferences to default
@@ -307,7 +302,7 @@ class PrivacyController extends GetxController {
               dataCollection.value = true;
               personalizedAds.value = false;
               crashReports.value = true;
-              
+
               savePrivacySettings();
               Get.back();
               Get.snackbar('Success', 'Preferences reset to default');
@@ -329,17 +324,16 @@ class PrivacyController extends GetxController {
           'This action cannot be undone and all your data will be lost.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               Get.back();
               Get.dialog(
                 AlertDialog(
                   title: const Text('Final Confirmation'),
-                  content: const Text('Type "DELETE" to confirm account deletion:'),
+                  content: const Text(
+                    'Type "DELETE" to confirm account deletion:',
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Get.back(),
@@ -348,9 +342,14 @@ class PrivacyController extends GetxController {
                     ElevatedButton(
                       onPressed: () {
                         Get.back();
-                        Get.snackbar('Info', 'Account deletion process initiated');
+                        Get.snackbar(
+                          'Info',
+                          'Account deletion process initiated',
+                        );
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
                       child: const Text('DELETE ACCOUNT'),
                     ),
                   ],

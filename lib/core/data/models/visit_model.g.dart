@@ -54,6 +54,8 @@ VisitModel _$VisitModelFromJson(Map<String, dynamic> json) => VisitModel(
   agents: json['agents'] == null
       ? null
       : VisitAgentInfo.fromJson(json['agents'] as Map<String, dynamic>),
+  propertyTitleApi: json['property_title'] as String?,
+  agentNameApi: json['agent_name'] as String?,
 );
 
 Map<String, dynamic> _$VisitModelToJson(VisitModel instance) =>
@@ -75,8 +77,10 @@ Map<String, dynamic> _$VisitModelToJson(VisitModel instance) =>
       'rescheduled_from': instance.rescheduledFrom?.toIso8601String(),
       'created_at': instance.createdAt.toIso8601String(),
       'updated_at': instance.updatedAt?.toIso8601String(),
-      'property': instance.property?.toJson(),
+      'property': instance.property,
       'agents': instance.agents,
+      'property_title': instance.propertyTitleApi,
+      'agent_name': instance.agentNameApi,
     };
 
 const _$VisitStatusEnumMap = {

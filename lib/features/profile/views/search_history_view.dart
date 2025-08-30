@@ -70,9 +70,9 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Recent Searches
             buildThemeAwareCard(
               child: Column(
@@ -120,15 +120,16 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                     query: 'Pet-friendly apartments Queens',
                     timestamp: '1 week ago',
                     results: '31 properties found',
-                    onTap: () => _repeatSearch('Pet-friendly apartments Queens'),
+                    onTap: () =>
+                        _repeatSearch('Pet-friendly apartments Queens'),
                     onDelete: () => _deleteSearchItem('recent_4'),
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Saved Searches
             buildThemeAwareCard(
               child: Column(
@@ -142,7 +143,8 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                     notifications: true,
                     lastUpdate: '3 new properties',
                     onTap: () => _viewSavedSearch('saved_1'),
-                    onToggleNotifications: () => _toggleNotifications('saved_1'),
+                    onToggleNotifications: () =>
+                        _toggleNotifications('saved_1'),
                     onDelete: () => _deleteSavedSearch('saved_1'),
                   ),
                   _buildSavedSearchItem(
@@ -151,7 +153,8 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                     notifications: false,
                     lastUpdate: 'No new properties',
                     onTap: () => _viewSavedSearch('saved_2'),
-                    onToggleNotifications: () => _toggleNotifications('saved_2'),
+                    onToggleNotifications: () =>
+                        _toggleNotifications('saved_2'),
                     onDelete: () => _deleteSavedSearch('saved_2'),
                   ),
                   _buildSavedSearchItem(
@@ -160,15 +163,16 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                     notifications: true,
                     lastUpdate: '1 new property',
                     onTap: () => _viewSavedSearch('saved_3'),
-                    onToggleNotifications: () => _toggleNotifications('saved_3'),
+                    onToggleNotifications: () =>
+                        _toggleNotifications('saved_3'),
                     onDelete: () => _deleteSavedSearch('saved_3'),
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Search Filters History
             buildThemeAwareCard(
               child: Column(
@@ -180,22 +184,46 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _buildFilterChip('2-3 Bedrooms', () => _applyFilter('bedrooms')),
-                      _buildFilterChip('\$1500-2500', () => _applyFilter('price')),
-                      _buildFilterChip('Pet Friendly', () => _applyFilter('pets')),
-                      _buildFilterChip('Parking Included', () => _applyFilter('parking')),
-                      _buildFilterChip('Gym/Fitness', () => _applyFilter('gym')),
-                      _buildFilterChip('Washer/Dryer', () => _applyFilter('laundry')),
-                      _buildFilterChip('Manhattan', () => _applyFilter('manhattan')),
-                      _buildFilterChip('Brooklyn', () => _applyFilter('brooklyn')),
+                      _buildFilterChip(
+                        '2-3 Bedrooms',
+                        () => _applyFilter('bedrooms'),
+                      ),
+                      _buildFilterChip(
+                        '\$1500-2500',
+                        () => _applyFilter('price'),
+                      ),
+                      _buildFilterChip(
+                        'Pet Friendly',
+                        () => _applyFilter('pets'),
+                      ),
+                      _buildFilterChip(
+                        'Parking Included',
+                        () => _applyFilter('parking'),
+                      ),
+                      _buildFilterChip(
+                        'Gym/Fitness',
+                        () => _applyFilter('gym'),
+                      ),
+                      _buildFilterChip(
+                        'Washer/Dryer',
+                        () => _applyFilter('laundry'),
+                      ),
+                      _buildFilterChip(
+                        'Manhattan',
+                        () => _applyFilter('manhattan'),
+                      ),
+                      _buildFilterChip(
+                        'Brooklyn',
+                        () => _applyFilter('brooklyn'),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Search Settings
             buildThemeAwareCard(
               child: Column(
@@ -204,7 +232,10 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                   buildSectionTitle('Search Settings'),
                   const SizedBox(height: 16),
                   ListTile(
-                    leading: Icon(Icons.auto_delete, color: AppColors.iconColor),
+                    leading: Icon(
+                      Icons.auto_delete,
+                      color: AppColors.iconColor,
+                    ),
                     title: Text(
                       'Auto-Delete History',
                       style: TextStyle(
@@ -223,15 +254,18 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                     trailing: Switch(
                       value: true,
                       onChanged: (_) => _toggleAutoDelete(),
-                      activeColor: AppColors.switchActive,
+                      activeThumbColor: AppColors.switchActive,
                       activeTrackColor: AppColors.switchTrackActive,
-                      
+
                       inactiveTrackColor: AppColors.switchTrackInactive,
                     ),
                     contentPadding: EdgeInsets.zero,
                   ),
                   ListTile(
-                    leading: Icon(Icons.trending_up, color: AppColors.iconColor),
+                    leading: Icon(
+                      Icons.trending_up,
+                      color: AppColors.iconColor,
+                    ),
                     title: Text(
                       'Search Suggestions',
                       style: TextStyle(
@@ -250,9 +284,9 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                     trailing: Switch(
                       value: true,
                       onChanged: (_) => _toggleSearchSuggestions(),
-                      activeColor: AppColors.switchActive,
+                      activeThumbColor: AppColors.switchActive,
                       activeTrackColor: AppColors.switchTrackActive,
-                      
+
                       inactiveTrackColor: AppColors.switchTrackInactive,
                     ),
                     contentPadding: EdgeInsets.zero,
@@ -279,11 +313,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: AppColors.primaryYellow,
-            size: 24,
-          ),
+          Icon(icon, color: AppColors.primaryYellow, size: 24),
           const SizedBox(height: 8),
           Text(
             value,
@@ -296,10 +326,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
           const SizedBox(height: 4),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -322,11 +349,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
           color: AppColors.primaryYellow.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(
-          Icons.search,
-          color: AppColors.primaryYellow,
-          size: 20,
-        ),
+        child: Icon(Icons.search, color: AppColors.primaryYellow, size: 20),
       ),
       title: Text(
         query,
@@ -341,18 +364,12 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
         children: [
           Text(
             results,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 2),
           Text(
             timestamp,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textTertiary,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
         ],
       ),
@@ -379,10 +396,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
               children: [
                 Icon(Icons.delete, color: AppColors.errorRed),
                 const SizedBox(width: 12),
-                Text(
-                  'Delete',
-                  style: TextStyle(color: AppColors.errorRed),
-                ),
+                Text('Delete', style: TextStyle(color: AppColors.errorRed)),
               ],
             ),
           ),
@@ -435,8 +449,12 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                   children: [
                     IconButton(
                       icon: Icon(
-                        notifications ? Icons.notifications : Icons.notifications_off,
-                        color: notifications ? AppColors.primaryYellow : AppColors.iconColor,
+                        notifications
+                            ? Icons.notifications
+                            : Icons.notifications_off,
+                        color: notifications
+                            ? AppColors.primaryYellow
+                            : AppColors.iconColor,
                         size: 20,
                       ),
                       onPressed: onToggleNotifications,
@@ -458,10 +476,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
             const SizedBox(height: 8),
             Text(
               query,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 8),
             Row(
@@ -471,7 +486,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                     lastUpdate,
                     style: TextStyle(
                       fontSize: 12,
-                      color: lastUpdate.contains('new') 
+                      color: lastUpdate.contains('new')
                           ? AppColors.successGreen
                           : AppColors.textTertiary,
                       fontWeight: lastUpdate.contains('new')
@@ -593,10 +608,7 @@ class SearchHistoryView extends StatelessWidget with ThemeMixin {
                 colorText: AppColors.snackbarText,
               );
             },
-            child: Text(
-              'Clear',
-              style: TextStyle(color: AppColors.errorRed),
-            ),
+            child: Text('Clear', style: TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),

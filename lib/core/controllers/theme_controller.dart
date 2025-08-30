@@ -6,19 +6,19 @@ enum AppThemeMode { light, dark, system }
 
 class ThemeController extends GetxController {
   final GetStorage _storage = GetStorage();
-  
+
   final Rx<AppThemeMode> _themeMode = AppThemeMode.system.obs;
   final RxBool isDarkMode = false.obs;
-  
+
   AppThemeMode get currentThemeMode => _themeMode.value;
-  
+
   @override
   void onInit() {
     super.onInit();
     _loadThemeFromStorage();
     _updateThemeBasedOnMode();
   }
-  
+
   void _loadThemeFromStorage() {
     final storedThemeMode = _storage.read('themeMode');
     if (storedThemeMode != null) {
@@ -42,7 +42,7 @@ class ThemeController extends GetxController {
       _storage.write('themeMode', _themeMode.value.name);
     }
   }
-  
+
   void _updateThemeBasedOnMode() {
     switch (_themeMode.value) {
       case AppThemeMode.light:
@@ -52,12 +52,14 @@ class ThemeController extends GetxController {
         isDarkMode.value = true;
         break;
       case AppThemeMode.system:
-        isDarkMode.value = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+        isDarkMode.value =
+            WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+            Brightness.dark;
         break;
     }
     _updateAppTheme();
   }
-  
+
   void toggleTheme() {
     // Cycle through: light -> dark -> system -> light...
     switch (_themeMode.value) {
@@ -72,7 +74,7 @@ class ThemeController extends GetxController {
         break;
     }
   }
-  
+
   void setThemeMode(AppThemeMode mode) {
     _themeMode.value = mode;
     _updateThemeBasedOnMode();
@@ -80,11 +82,11 @@ class ThemeController extends GetxController {
     // Force app update to ensure immediate rebuilds
     Get.forceAppUpdate();
   }
-  
+
   void setTheme(bool darkMode) {
     setThemeMode(darkMode ? AppThemeMode.dark : AppThemeMode.light);
   }
-  
+
   void _updateAppTheme() {
     ThemeMode flutterThemeMode;
     switch (_themeMode.value) {
@@ -100,26 +102,28 @@ class ThemeController extends GetxController {
     }
     Get.changeThemeMode(flutterThemeMode);
   }
-  
+
   void _saveThemeToStorage() {
     _storage.write('themeMode', _themeMode.value.name);
   }
-  
+
   // Sync with preferences controller
   void syncWithPreferences(bool darkThemeFromPreferences) {
-    final newMode = darkThemeFromPreferences ? AppThemeMode.dark : AppThemeMode.light;
+    final newMode = darkThemeFromPreferences
+        ? AppThemeMode.dark
+        : AppThemeMode.light;
     if (_themeMode.value != newMode) {
       setThemeMode(newMode);
     }
   }
-  
+
   // Listen to system theme changes when in system mode
   void handleSystemThemeChange() {
     if (_themeMode.value == AppThemeMode.system) {
       _updateThemeBasedOnMode();
     }
   }
-  
+
   ThemeMode get themeMode {
     switch (_themeMode.value) {
       case AppThemeMode.light:
@@ -130,7 +134,7 @@ class ThemeController extends GetxController {
         return ThemeMode.system;
     }
   }
-  
+
   String get currentThemeName {
     switch (_themeMode.value) {
       case AppThemeMode.light:
@@ -141,6 +145,6 @@ class ThemeController extends GetxController {
         return 'System';
     }
   }
-  
+
   bool get isSystemMode => _themeMode.value == AppThemeMode.system;
 }

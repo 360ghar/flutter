@@ -1,8 +1,6 @@
 import 'package:get/get.dart';
 import '../data/providers/api_service.dart';
 import 'debug_logger.dart';
-import '../../features/property_details/controllers/property_controller.dart';
-import '../../features/discover/controllers/swipe_controller.dart';
 import '../../features/visits/controllers/visits_controller.dart';
 import '../controllers/localization_controller.dart';
 
@@ -23,8 +21,6 @@ class DependencyManager {
   static void cleanupDependencies() {
     try {
       // Clean up controllers by type instead of tag since they are registered without tags
-      _cleanupController<PropertyController>('PropertyController');
-      _cleanupController<SwipeController>('SwipeController');
       _cleanupController<VisitsController>('VisitsController');
       _cleanupController<LocalizationController>('LocalizationController');
     } catch (e, stackTrace) {
@@ -73,7 +69,11 @@ class DependencyManager {
       }
       return null;
     } catch (e, stackTrace) {
-      DebugLogger.error('Error finding dependency ${T.toString()}', e, stackTrace);
+      DebugLogger.error(
+        'Error finding dependency ${T.toString()}',
+        e,
+        stackTrace,
+      );
       return null;
     }
   }
@@ -86,8 +86,12 @@ class DependencyManager {
       }
       return Get.put<T>(creator(), permanent: permanent);
     } catch (e, stackTrace) {
-      DebugLogger.error('Error initializing dependency ${T.toString()}', e, stackTrace);
+      DebugLogger.error(
+        'Error initializing dependency ${T.toString()}',
+        e,
+        stackTrace,
+      );
       return null;
     }
   }
-} 
+}

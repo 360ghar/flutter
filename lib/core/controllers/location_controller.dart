@@ -17,12 +17,13 @@ class LocationController extends GetxController {
   final RxBool isLocationPermissionGranted = false.obs;
   final RxBool isLoading = false.obs;
   final RxString locationError = ''.obs;
-  
+
   // Location search
-  final RxList<Map<String, dynamic>> searchResults = <Map<String, dynamic>>[].obs;
-  
+  final RxList<Map<String, dynamic>> searchResults =
+      <Map<String, dynamic>>[].obs;
+
   final RxString currentAddress = ''.obs;
-  
+
   // Google Places suggestions
   final RxList<PlaceSuggestion> placeSuggestions = <PlaceSuggestion>[].obs;
   final RxBool isSearchingPlaces = false.obs;
@@ -60,15 +61,21 @@ class LocationController extends GetxController {
         final String? region = (data['region'] as String?)?.trim();
 
         if (lat != null && lon != null) {
-          DebugLogger.success('✅ IP-based location: $city, $region ($lat,$lon)');
+          DebugLogger.success(
+            '✅ IP-based location: $city, $region ($lat,$lon)',
+          );
           return LocationData(
-            name: city != null && region != null ? '$city, $region' : (city ?? 'IP-based Location'),
+            name: city != null && region != null
+                ? '$city, $region'
+                : (city ?? 'IP-based Location'),
             latitude: lat,
             longitude: lon,
           );
         }
       } else {
-        DebugLogger.warning('IP location HTTP ${response.statusCode}: ${response.body}');
+        DebugLogger.warning(
+          'IP location HTTP ${response.statusCode}: ${response.body}',
+        );
       }
     } on TimeoutException catch (e) {
       DebugLogger.error('IP location request timed out', e);
@@ -98,11 +105,11 @@ class LocationController extends GetxController {
   Future<void> _requestLocationPermission() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
-      
+
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
         isLocationPermissionGranted.value = false;
         locationError.value = 'location_permission_permanently_denied'.tr;
@@ -113,7 +120,7 @@ class LocationController extends GetxController {
         );
         return;
       }
-      
+
       if (permission == LocationPermission.denied) {
         isLocationPermissionGranted.value = false;
         locationError.value = 'location_permission_denied'.tr;
@@ -124,7 +131,7 @@ class LocationController extends GetxController {
         );
         return;
       }
-      
+
       isLocationPermissionGranted.value = true;
       locationError.value = '';
     } catch (e, stackTrace) {
@@ -148,28 +155,26 @@ class LocationController extends GetxController {
     try {
       isLoading.value = true;
       locationError.value = '';
-      
+
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
           distanceFilter: 10,
         ),
       );
-      
+
       currentPosition.value = position;
-      
+
       // Update user location in backend
       if (_authController.isAuthenticated) {
-        await _authController.updateUserLocation(
-          position.latitude,
-          position.longitude,
-        );
+        await _authController.updateUserLocation({
+          'current_latitude': position.latitude,
+          'current_longitude': position.longitude,
+        });
       }
-      
+
       // Get address from coordinates
       await _getAddressFromCoordinates(position.latitude, position.longitude);
-      
-      
     } catch (e, stackTrace) {
       locationError.value = 'failed_to_get_current_location'.tr;
       DebugLogger.error('Error getting current location', e, stackTrace);
@@ -184,26 +189,43 @@ class LocationController extends GetxController {
     }
   }
 
-  Future<void> _getAddressFromCoordinates(double latitude, double longitude) async {
+  Future<void> _getAddressFromCoordinates(
+    double latitude,
+    double longitude,
+  ) async {
     try {
       final address = await getAddressFromCoordinates(latitude, longitude);
       currentAddress.value = address;
     } catch (e, stackTrace) {
-      DebugLogger.error('Error getting address from coordinates', e, stackTrace);
+      DebugLogger.error(
+        'Error getting address from coordinates',
+        e,
+        stackTrace,
+      );
     }
   }
-  
+
   // Public method for reverse geocoding that other services can use
-  Future<String> getAddressFromCoordinates(double latitude, double longitude) async {
+  Future<String> getAddressFromCoordinates(
+    double latitude,
+    double longitude,
+  ) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        latitude,
+        longitude,
+      );
       if (placemarks.isNotEmpty) {
         final placemark = placemarks.first;
         return _formatAddress(placemark);
       }
       return 'Location (${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)})'; // Better fallback
     } catch (e, stackTrace) {
-      DebugLogger.error('Error getting address from coordinates', e, stackTrace);
+      DebugLogger.error(
+        'Error getting address from coordinates',
+        e,
+        stackTrace,
+      );
       return 'Location Coordinates'; // A better fallback than hardcoded text
     }
   }
@@ -232,7 +254,10 @@ class LocationController extends GetxController {
         currentPosition.value = position;
 
         // Reverse geocode to get the location name
-        final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+        final placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
         if (placemarks.isNotEmpty) {
           final placemark = placemarks.first;
           final locationName = _formatAddress(placemark);
@@ -245,27 +270,39 @@ class LocationController extends GetxController {
           );
         }
       } on TimeoutException {
-        DebugLogger.warning('⚠️ High-accuracy location timed out. Falling back...');
+        DebugLogger.warning(
+          '⚠️ High-accuracy location timed out. Falling back...',
+        );
       } catch (e, st) {
-        DebugLogger.warning('⚠️ Failed to get high-accuracy location: $e', e, st);
+        DebugLogger.warning(
+          '⚠️ Failed to get high-accuracy location: $e',
+          e,
+          st,
+        );
       } finally {
         isLoading.value = false;
       }
     } else {
-      DebugLogger.warning('⚠️ GPS permissions not granted or service disabled. Falling back...');
+      DebugLogger.warning(
+        '⚠️ GPS permissions not granted or service disabled. Falling back...',
+      );
     }
 
     // 3. Fallback to IP-based location
     DebugLogger.info('🌍 Attempting IP-based location fallback...');
     final ipLocation = await getIpLocation();
     if (ipLocation != null) {
-      DebugLogger.success('✅ IP-based location fallback successful: ${ipLocation.name}');
+      DebugLogger.success(
+        '✅ IP-based location fallback successful: ${ipLocation.name}',
+      );
       return ipLocation;
     }
 
     // 4. If all fails, throw an exception as per requirements
     DebugLogger.error('❌ Critical: Could not determine any user location.');
-    throw Exception('Unable to determine user location. Please check network and location settings.');
+    throw Exception(
+      'Unable to determine user location. Please check network and location settings.',
+    );
   }
 
   String _formatAddress(Placemark placemark) {
@@ -274,7 +311,7 @@ class LocationController extends GetxController {
     final state = placemark.administrativeArea;
     final area = placemark.subLocality;
     final street = placemark.street;
-    
+
     // Priority order: Area+City+State, City+State, Street+City, or any available info
     if (area != null && area.isNotEmpty && city != null && city.isNotEmpty) {
       return '$area, $city';
@@ -288,7 +325,7 @@ class LocationController extends GetxController {
     if (street != null && street.isNotEmpty) {
       return street;
     }
-    
+
     // Fallback to any available information
     List<String> addressParts = [];
     if (placemark.name?.isNotEmpty == true) {
@@ -300,7 +337,7 @@ class LocationController extends GetxController {
     if (placemark.administrativeArea?.isNotEmpty == true) {
       addressParts.add(placemark.administrativeArea!);
     }
-    
+
     return addressParts.isNotEmpty ? addressParts.join(', ') : 'Location';
   }
 
@@ -312,11 +349,10 @@ class LocationController extends GetxController {
 
     try {
       isLoading.value = true;
-      
+
       // Use Google Places API for location search
       final results = await _searchGooglePlaces(query.trim());
       searchResults.value = results;
-      
     } catch (e, stackTrace) {
       DebugLogger.error('Error searching locations', e, stackTrace);
       Get.snackbar(
@@ -340,20 +376,26 @@ class LocationController extends GetxController {
       }
 
       // Gurgaon/Gurugram coordinates: 28.4595, 77.0266
-      final url = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
-        'input': query,
-        'location': '28.4595,77.0266',
-        'radius': '25000', // 25km radius to cover entire Gurgaon area
-        'components': 'country:$countryCode',
-        'strictbounds': 'true', // Restrict results to the specified area only
-        'key': apiKey,
-      });
+      final url = Uri.https(
+        'maps.googleapis.com',
+        '/maps/api/place/autocomplete/json',
+        {
+          'input': query,
+          'location': '28.4595,77.0266',
+          'radius': '25000', // 25km radius to cover entire Gurgaon area
+          'components': 'country:$countryCode',
+          'strictbounds': 'true', // Restrict results to the specified area only
+          'key': apiKey,
+        },
+      );
 
       // Add timeout and error handling
       final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        DebugLogger.error('Google Places API request failed: ${response.statusCode}');
+        DebugLogger.error(
+          'Google Places API request failed: ${response.statusCode}',
+        );
         DebugLogger.error('Response body: ${response.body}');
         return [];
       }
@@ -364,53 +406,74 @@ class LocationController extends GetxController {
       switch (status) {
         case 'OK':
           final predictions = data['predictions'] as List;
-          return predictions.map((prediction) => {
-            'id': prediction['place_id'],
-            'name': prediction['description'],
-            'city': prediction['structured_formatting']['main_text'],
-            'region': prediction['structured_formatting']['secondary_text'],
-            'type': 'google_places'
-          }).toList();
+          return predictions
+              .map(
+                (prediction) => {
+                  'id': prediction['place_id'],
+                  'name': prediction['description'],
+                  'city': prediction['structured_formatting']['main_text'],
+                  'region':
+                      prediction['structured_formatting']['secondary_text'],
+                  'type': 'google_places',
+                },
+              )
+              .toList();
 
         case 'ZERO_RESULTS':
-          DebugLogger.info('Google Places API returned no results for query: $query');
+          DebugLogger.info(
+            'Google Places API returned no results for query: $query',
+          );
           return [];
 
         case 'OVER_QUERY_LIMIT':
-          DebugLogger.error('Google Places API quota exceeded for query: $query');
+          DebugLogger.error(
+            'Google Places API quota exceeded for query: $query',
+          );
           DebugLogger.error('Response: ${response.body}');
           // Could implement retry logic with backoff here
           return [];
 
         case 'REQUEST_DENIED':
-          DebugLogger.error('Google Places API request denied for query: $query');
+          DebugLogger.error(
+            'Google Places API request denied for query: $query',
+          );
           DebugLogger.error('Response: ${response.body}');
           // Could check API key validity here
           return [];
 
         case 'INVALID_REQUEST':
-          DebugLogger.error('Invalid Google Places API request for query: $query');
+          DebugLogger.error(
+            'Invalid Google Places API request for query: $query',
+          );
           DebugLogger.error('Response: ${response.body}');
           return [];
 
         default:
-          DebugLogger.warning('Unknown Google Places API status: $status for query: $query');
+          DebugLogger.warning(
+            'Unknown Google Places API status: $status for query: $query',
+          );
           DebugLogger.warning('Response: ${response.body}');
           return [];
       }
     } on TimeoutException catch (e) {
-      DebugLogger.error('Google Places API request timed out for query: $query', e);
+      DebugLogger.error(
+        'Google Places API request timed out for query: $query',
+        e,
+      );
       return [];
     } catch (e, stackTrace) {
-      DebugLogger.error('Error calling Google Places API for query: $query', e, stackTrace);
+      DebugLogger.error(
+        'Error calling Google Places API for query: $query',
+        e,
+        stackTrace,
+      );
       return [];
     }
   }
 
-
   void selectLocation(Map<String, dynamic> location) {
     final locationName = location['name'] ?? location['city'] ?? '';
-    
+
     Get.snackbar(
       'location_selected'.tr,
       'location_selected_message'.tr + locationName,
@@ -450,14 +513,20 @@ class LocationController extends GetxController {
 
   double? get currentLatitude => currentPosition.value?.latitude;
   double? get currentLongitude => currentPosition.value?.longitude;
-  
+
   bool get hasLocation => currentPosition.value != null;
-  
+
   String get locationStatusText {
     if (!isLocationEnabled.value) return 'location_services_disabled'.tr;
-    if (!isLocationPermissionGranted.value) return 'location_permission_denied'.tr;
+    if (!isLocationPermissionGranted.value) {
+      return 'location_permission_denied'.tr;
+    }
     if (isLoading.value) return 'getting_location'.tr;
-    if (hasLocation) return currentAddress.value.isNotEmpty ? currentAddress.value : 'location_found'.tr;
+    if (hasLocation) {
+      return currentAddress.value.isNotEmpty
+          ? currentAddress.value
+          : 'location_found'.tr;
+    }
     return 'location_not_available'.tr;
   }
 
@@ -480,7 +549,8 @@ class LocationController extends GetxController {
 
   // Distance calculation helper
   double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000; // Convert to kilometers
+    return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) /
+        1000; // Convert to kilometers
   }
 
   String formatDistance(double distanceInKm) {
@@ -514,20 +584,26 @@ class LocationController extends GetxController {
       final countryCode = dotenv.env['DEFAULT_COUNTRY'] ?? 'in';
 
       // Gurgaon/Gurugram coordinates: 28.4595, 77.0266
-      final url = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
-        'input': query,
-        'location': '28.4595,77.0266',
-        'radius': '25000', // 25km radius to cover entire Gurgaon area
-        'components': 'country:$countryCode',
-        'strictbounds': 'true', // Restrict results to the specified area only
-        'key': apiKey,
-      });
+      final url = Uri.https(
+        'maps.googleapis.com',
+        '/maps/api/place/autocomplete/json',
+        {
+          'input': query,
+          'location': '28.4595,77.0266',
+          'radius': '25000', // 25km radius to cover entire Gurgaon area
+          'components': 'country:$countryCode',
+          'strictbounds': 'true', // Restrict results to the specified area only
+          'key': apiKey,
+        },
+      );
 
       // Add timeout and error handling
       final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        DebugLogger.error('Google Places API request failed: ${response.statusCode}');
+        DebugLogger.error(
+          'Google Places API request failed: ${response.statusCode}',
+        );
         DebugLogger.error('Response body: ${response.body}');
         return [];
       }
@@ -543,7 +619,8 @@ class LocationController extends GetxController {
               placeId: prediction['place_id'],
               description: prediction['description'],
               mainText: prediction['structured_formatting']?['main_text'] ?? '',
-              secondaryText: prediction['structured_formatting']?['secondary_text'] ?? '',
+              secondaryText:
+                  prediction['structured_formatting']?['secondary_text'] ?? '',
             );
           }).toList();
 
@@ -551,40 +628,57 @@ class LocationController extends GetxController {
           return suggestions;
 
         case 'ZERO_RESULTS':
-          DebugLogger.info('Google Places API returned no results for query: $query');
+          DebugLogger.info(
+            'Google Places API returned no results for query: $query',
+          );
           placeSuggestions.clear();
           return [];
 
         case 'OVER_QUERY_LIMIT':
-          DebugLogger.error('Google Places API quota exceeded for query: $query');
+          DebugLogger.error(
+            'Google Places API quota exceeded for query: $query',
+          );
           DebugLogger.error('Response: ${response.body}');
           placeSuggestions.clear();
           return [];
 
         case 'REQUEST_DENIED':
-          DebugLogger.error('Google Places API request denied for query: $query');
+          DebugLogger.error(
+            'Google Places API request denied for query: $query',
+          );
           DebugLogger.error('Response: ${response.body}');
           placeSuggestions.clear();
           return [];
 
         case 'INVALID_REQUEST':
-          DebugLogger.error('Invalid Google Places API request for query: $query');
+          DebugLogger.error(
+            'Invalid Google Places API request for query: $query',
+          );
           DebugLogger.error('Response: ${response.body}');
           placeSuggestions.clear();
           return [];
 
         default:
-          DebugLogger.warning('Unknown Google Places API status: $status for query: $query');
+          DebugLogger.warning(
+            'Unknown Google Places API status: $status for query: $query',
+          );
           DebugLogger.warning('Response: ${response.body}');
           placeSuggestions.clear();
           return [];
       }
     } on TimeoutException catch (e) {
-      DebugLogger.error('Google Places API request timed out for query: $query', e);
+      DebugLogger.error(
+        'Google Places API request timed out for query: $query',
+        e,
+      );
       placeSuggestions.clear();
       return [];
     } catch (e, stackTrace) {
-      DebugLogger.error('Error getting place suggestions for query: $query', e, stackTrace);
+      DebugLogger.error(
+        'Error getting place suggestions for query: $query',
+        e,
+        stackTrace,
+      );
       placeSuggestions.clear();
       return [];
     } finally {
@@ -592,7 +686,10 @@ class LocationController extends GetxController {
     }
   }
 
-  Future<LocationData?> getPlaceDetails(String placeId, {String? preferredName}) async {
+  Future<LocationData?> getPlaceDetails(
+    String placeId, {
+    String? preferredName,
+  }) async {
     try {
       isLoading.value = true;
 
@@ -602,17 +699,20 @@ class LocationController extends GetxController {
         return null;
       }
 
-      final url = Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
-        'place_id': placeId,
-        'fields': 'name,geometry,address_components',
-        'key': apiKey,
-      });
+      final url =
+          Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
+            'place_id': placeId,
+            'fields': 'name,geometry,address_components',
+            'key': apiKey,
+          });
 
       // Add timeout and error handling
       final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        DebugLogger.error('Google Places Details API request failed: ${response.statusCode}');
+        DebugLogger.error(
+          'Google Places Details API request failed: ${response.statusCode}',
+        );
         DebugLogger.error('Response body: ${response.body}');
         return null;
       }
@@ -631,7 +731,9 @@ class LocationController extends GetxController {
             String displayName;
             if (preferredName != null && preferredName.isNotEmpty) {
               displayName = preferredName;
-              DebugLogger.info('🏷️ Using preferred name from selection: $displayName');
+              DebugLogger.info(
+                '🏷️ Using preferred name from selection: $displayName',
+              );
             } else {
               // Fallback to formatted address for GPS/other sources
               String? city;
@@ -646,7 +748,7 @@ class LocationController extends GetxController {
                   city = component['long_name'];
                 }
               }
-              
+
               // Use city and locality to create a display name
               displayName = result['name'] ?? '';
               if (locality != null && city != null) {
@@ -665,25 +767,35 @@ class LocationController extends GetxController {
               longitude: location['lng'].toDouble(),
             );
           }
-          DebugLogger.warning('Google Places Details API returned null result for placeId: $placeId');
+          DebugLogger.warning(
+            'Google Places Details API returned null result for placeId: $placeId',
+          );
           return null;
 
         case 'ZERO_RESULTS':
-          DebugLogger.info('Google Places Details API returned no results for placeId: $placeId');
+          DebugLogger.info(
+            'Google Places Details API returned no results for placeId: $placeId',
+          );
           return null;
 
         case 'OVER_QUERY_LIMIT':
-          DebugLogger.error('Google Places Details API quota exceeded for placeId: $placeId');
+          DebugLogger.error(
+            'Google Places Details API quota exceeded for placeId: $placeId',
+          );
           DebugLogger.error('Response: ${response.body}');
           return null;
 
         case 'REQUEST_DENIED':
-          DebugLogger.error('Google Places Details API request denied for placeId: $placeId');
+          DebugLogger.error(
+            'Google Places Details API request denied for placeId: $placeId',
+          );
           DebugLogger.error('Response: ${response.body}');
           return null;
 
         case 'INVALID_REQUEST':
-          DebugLogger.error('Invalid Google Places Details API request for placeId: $placeId');
+          DebugLogger.error(
+            'Invalid Google Places Details API request for placeId: $placeId',
+          );
           DebugLogger.error('Response: ${response.body}');
           return null;
 
@@ -693,15 +805,24 @@ class LocationController extends GetxController {
           return null;
 
         default:
-          DebugLogger.warning('Unknown Google Places Details API status: $status for placeId: $placeId');
+          DebugLogger.warning(
+            'Unknown Google Places Details API status: $status for placeId: $placeId',
+          );
           DebugLogger.warning('Response: ${response.body}');
           return null;
       }
     } on TimeoutException catch (e) {
-      DebugLogger.error('Google Places Details API request timed out for placeId: $placeId', e);
+      DebugLogger.error(
+        'Google Places Details API request timed out for placeId: $placeId',
+        e,
+      );
       return null;
     } catch (e, stackTrace) {
-      DebugLogger.error('Error getting place details for placeId: $placeId', e, stackTrace);
+      DebugLogger.error(
+        'Error getting place details for placeId: $placeId',
+        e,
+        stackTrace,
+      );
       return null;
     } finally {
       isLoading.value = false;

@@ -14,13 +14,12 @@ class SwipesRepository extends GetxService {
     required bool isLiked,
   }) async {
     try {
-      DebugLogger.api('👆 RECORDING SWIPE: ${isLiked ? 'LIKE' : 'DISLIKE'} property $propertyId');
+      DebugLogger.api(
+        '👆 RECORDING SWIPE: ${isLiked ? 'LIKE' : 'DISLIKE'} property $propertyId',
+      );
       DebugLogger.api('🔄 Swipe will update liked status to: $isLiked');
 
-      await _apiService.swipeProperty(
-        propertyId,
-        isLiked,
-      );
+      await _apiService.swipeProperty(propertyId, isLiked);
 
       DebugLogger.success('✅ Swipe recorded successfully');
     } catch (e) {
@@ -85,14 +84,56 @@ class SwipesRepository extends GetxService {
         limit: limit,
       );
 
+      // Log raw API response for debugging
+      DebugLogger.api('📊 [SWIPES_REPO] RAW API RESPONSE: $responseJson');
+
       // Parse properties from the new response format
       final List<dynamic> propertiesJson = responseJson['properties'] ?? [];
-      DebugLogger.api('📦 New API format: Found ${propertiesJson.length} properties in response');
-      final properties = propertiesJson.map((json) {
-        final property = PropertyModel.fromJson(json);
-        DebugLogger.api('🏠 Property: ${property.title} (liked: ${property.liked})');
-        return property;
-      }).toList();
+      DebugLogger.api(
+        '📦 [SWIPES_REPO] New API format: Found ${propertiesJson.length} properties in response',
+      );
+      
+      // Log each property's raw data before parsing
+      for (int i = 0; i < propertiesJson.length; i++) {
+        DebugLogger.debug('📦 [SWIPES_REPO] RAW PROPERTY[$i]: ${propertiesJson[i]}');
+      }
+      
+      final properties = <PropertyModel>[];
+      for (int i = 0; i < propertiesJson.length; i++) {
+        try {
+          DebugLogger.debug('🏠 [SWIPES_REPO] Parsing property ${i + 1}/${propertiesJson.length}');
+          final propertyJson = propertiesJson[i];
+          DebugLogger.api('📊 [SWIPES_REPO] About to parse property JSON: $propertyJson');
+          
+          final property = PropertyModel.fromJson(propertyJson);
+          DebugLogger.api(
+            '🏠 [SWIPES_REPO] Property: ${property.title} (liked: ${property.liked})',
+          );
+          properties.add(property);
+        } catch (e, stackTrace) {
+          DebugLogger.error('❌ [SWIPES_REPO] Error parsing property ${i + 1}: $e');
+          DebugLogger.error('❌ [SWIPES_REPO] Property JSON that failed: ${propertiesJson[i]}');
+          DebugLogger.error('❌ [SWIPES_REPO] Error type: ${e.runtimeType}');
+          DebugLogger.error('❌ [SWIPES_REPO] Stack trace: $stackTrace');
+          
+          if (e.toString().contains('Null check operator used on a null value')) {
+            DebugLogger.error('🚨 [SWIPES_REPO] NULL CHECK OPERATOR ERROR in property parsing!');
+            DebugLogger.error('🚨 [SWIPES_REPO] This error occurred while parsing property index $i');
+            DebugLogger.error('🚨 [SWIPES_REPO] The PropertyModel.fromJson() call in _parsePropertyModel should provide more details');
+          }
+          
+          // Log the specific property data that's causing issues
+          if (propertiesJson[i] is Map<String, dynamic>) {
+            final failedProperty = propertiesJson[i] as Map<String, dynamic>;
+            DebugLogger.error('🚨 [SWIPES_REPO] FAILED PROPERTY FIELD ANALYSIS:');
+            failedProperty.forEach((key, value) {
+              DebugLogger.error('🚨 [SWIPES_REPO] $key: $value (${value?.runtimeType})');
+            });
+          }
+          
+          // Continue with other properties instead of failing entirely
+        }
+      }
 
       // Create UnifiedPropertyResponse with the new format
       final response = UnifiedPropertyResponse(
@@ -102,12 +143,38 @@ class SwipesRepository extends GetxService {
         totalPages: responseJson['total_pages'] ?? 1,
         limit: responseJson['limit'] ?? limit,
         filtersApplied: responseJson['filters_applied'] ?? filters.toJson(),
-        searchCenter: responseJson['search_center'] != null
-          ? SearchCenter(
-              latitude: responseJson['search_center']['latitude'],
-              longitude: responseJson['search_center']['longitude'],
-            )
-          : null,
+        searchCenter: () {
+          try {
+            DebugLogger.debug('🗺️ [SWIPES_REPO] Processing search_center data');
+            final searchCenterData = responseJson['search_center'];
+            DebugLogger.debug('🗺️ [SWIPES_REPO] search_center exists: ${searchCenterData != null}');
+            
+            if (searchCenterData != null) {
+              final lat = searchCenterData['latitude'];
+              final lng = searchCenterData['longitude'];
+              DebugLogger.debug('🗺️ [SWIPES_REPO] Latitude: $lat, Longitude: $lng');
+              
+              if (lat != null && lng != null) {
+                final searchCenter = SearchCenter(
+                  latitude: lat.toDouble(),
+                  longitude: lng.toDouble(),
+                );
+                DebugLogger.debug('🗺️ [SWIPES_REPO] Created SearchCenter: ${searchCenter.latitude}, ${searchCenter.longitude}');
+                return searchCenter;
+              } else {
+                DebugLogger.debug('🗺️ [SWIPES_REPO] Latitude or longitude is null');
+              }
+            }
+            return null;
+          } catch (e, stackTrace) {
+            DebugLogger.error('❌ [SWIPES_REPO] Error creating SearchCenter: $e');
+            DebugLogger.error('❌ [SWIPES_REPO] SearchCenter stack trace: $stackTrace');
+            if (e.toString().contains('Null check operator used on a null value')) {
+              DebugLogger.error('🚨 [SWIPES_REPO] NULL CHECK OPERATOR ERROR in SearchCenter creation!');
+            }
+            return null;
+          }
+        }(),
       );
 
       DebugLogger.success(
@@ -129,7 +196,9 @@ class SwipesRepository extends GetxService {
     int limit = 50,
   }) async {
     try {
-      DebugLogger.api('❤️ Fetching liked properties (server-side): page=$page, limit=$limit');
+      DebugLogger.api(
+        '❤️ Fetching liked properties (server-side): page=$page, limit=$limit',
+      );
       final response = await getSwipeHistoryProperties(
         filters: filters,
         latitude: latitude,
@@ -154,7 +223,9 @@ class SwipesRepository extends GetxService {
     int limit = 50,
   }) async {
     try {
-      DebugLogger.api('👎 Fetching passed properties (server-side): page=$page, limit=$limit');
+      DebugLogger.api(
+        '👎 Fetching passed properties (server-side): page=$page, limit=$limit',
+      );
       final response = await getSwipeHistoryProperties(
         filters: filters,
         latitude: latitude,
@@ -190,7 +261,9 @@ class SwipesRepository extends GetxService {
         isLiked: true,
       );
 
-      DebugLogger.success('✅ Loaded ${response.properties.length} liked properties');
+      DebugLogger.success(
+        '✅ Loaded ${response.properties.length} liked properties',
+      );
       return response.properties;
     } catch (e) {
       DebugLogger.error('❌ Failed to fetch liked properties: $e');
@@ -211,5 +284,4 @@ class SwipesRepository extends GetxService {
       isLiked: null, // Get both liked and disliked
     );
   }
-
 }

@@ -21,22 +21,26 @@ class DiscoverView extends GetView<DiscoverController> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: DiscoverTopBar(
-        onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'discover'),
+        onFilterTap: () =>
+            showPropertyFilterBottomSheet(context, pageType: 'discover'),
       ),
       body: Obx(() {
         // Debug snapshot of controller and page state for diagnosing stuck loaders
         // ignore: unused_local_variable
-        final _debug = () {
+        final debug = () {
           try {
             final ps = pageStateService.discoverState.value;
             // Lightweight log; avoid spamming every frame
-            if (controller.state.value == DiscoverState.loading && (DateTime.now().millisecond % 7 == 0)) {
-              DebugLogger.info('🧭 DiscoverView: state=${controller.state.value}, deck=${controller.deck.length}, ps.loading=${ps.isLoading}, ps.refreshing=${ps.isRefreshing}, ps.props=${ps.properties.length}');
+            if (controller.state.value == DiscoverState.loading &&
+                (DateTime.now().millisecond % 7 == 0)) {
+              DebugLogger.info(
+                '🧭 DiscoverView: state=${controller.state.value}, deck=${controller.deck.length}, ps.loading=${ps.isLoading}, ps.refreshing=${ps.isRefreshing}, ps.props=${ps.properties.length}',
+              );
             }
           } catch (_) {}
         }();
         final isRefreshing = pageStateService.discoverState.value.isRefreshing;
-        
+
         return Column(
           children: [
             // Subtle refresh indicator
@@ -44,7 +48,9 @@ class DiscoverView extends GetView<DiscoverController> {
               LinearProgressIndicator(
                 minHeight: 2,
                 backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.primaryYellow,
+                ),
               ),
             // Main content
             Expanded(
@@ -54,17 +60,17 @@ class DiscoverView extends GetView<DiscoverController> {
                   switch (controller.state.value) {
                     case DiscoverState.loading:
                       return _buildLoadingState();
-                      
+
                     case DiscoverState.error:
                       return _buildErrorState();
-                      
+
                     case DiscoverState.empty:
                       return _buildEmptyState(context);
-                      
+
                     case DiscoverState.loaded:
                     case DiscoverState.prefetching:
                       return _buildSwipeInterface(context);
-                      
+
                     default:
                       return _buildLoadingState();
                   }
@@ -92,7 +98,9 @@ class DiscoverView extends GetView<DiscoverController> {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryYellow,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -109,11 +117,9 @@ class DiscoverView extends GetView<DiscoverController> {
           }
           return const SizedBox();
         }),
-        
+
         // Main loading
-        Expanded(
-          child: LoadingStates.swipeCardSkeleton(),
-        ),
+        Expanded(child: LoadingStates.swipeCardSkeleton()),
       ],
     );
   }
@@ -122,10 +128,11 @@ class DiscoverView extends GetView<DiscoverController> {
     return Obx(() {
       final errorMessage = controller.error.value;
       if (errorMessage == null) return const SizedBox();
-      
+
       // Try to map the error for better user experience
       try {
-        final exception = ErrorMapper.mapApiError(Exception(errorMessage));
+        // Don't wrap in Exception() - pass the original error message directly
+        final exception = ErrorMapper.mapApiError(errorMessage);
         return ErrorStates.genericError(
           error: exception,
           onRetry: controller.retryLoading,
@@ -142,7 +149,10 @@ class DiscoverView extends GetView<DiscoverController> {
   Widget _buildEmptyState(BuildContext context) {
     return ErrorStates.swipeDeckEmpty(
       onRefresh: controller.refreshDeck,
-      onChangeFilters: () => showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'discover'),
+      onChangeFilters: () => showPropertyFilterBottomSheet(
+        Get.context ?? context,
+        pageType: 'discover',
+      ),
     );
   }
 
@@ -152,17 +162,22 @@ class DiscoverView extends GetView<DiscoverController> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Obx(() => PropertySwipeStack(
-              properties: controller.deck.take(3).toList(), // Show max 3 cards in stack
-              onSwipeLeft: controller.swipeLeft,
-              onSwipeRight: controller.swipeRight,
-              onSwipeUp: (property) => controller.viewPropertyDetails(property),
-              showSwipeInstructions: controller.totalSwipesInSession.value < 3,
-            )),
+            child: Obx(
+              () => PropertySwipeStack(
+                properties: controller.deck
+                    .take(3)
+                    .toList(), // Show max 3 cards in stack
+                onSwipeLeft: controller.swipeLeft,
+                onSwipeRight: controller.swipeRight,
+                onSwipeUp: (property) =>
+                    controller.viewPropertyDetails(property),
+                showSwipeInstructions:
+                    controller.totalSwipesInSession.value < 3,
+              ),
+            ),
           ),
         ),
       ],
     );
   }
-
 }

@@ -26,7 +26,7 @@ class UnifiedPropertyResponse {
     this.searchCenter,
   });
 
-  factory UnifiedPropertyResponse.fromJson(Map<String, dynamic> json) => 
+  factory UnifiedPropertyResponse.fromJson(Map<String, dynamic> json) =>
       _$UnifiedPropertyResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$UnifiedPropertyResponseToJson(this);
@@ -41,12 +41,9 @@ class SearchCenter {
   final double latitude;
   final double longitude;
 
-  SearchCenter({
-    required this.latitude,
-    required this.longitude,
-  });
+  SearchCenter({required this.latitude, required this.longitude});
 
-  factory SearchCenter.fromJson(Map<String, dynamic> json) => 
+  factory SearchCenter.fromJson(Map<String, dynamic> json) =>
       _$SearchCenterFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchCenterToJson(this);

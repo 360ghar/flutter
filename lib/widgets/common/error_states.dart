@@ -22,34 +22,30 @@ class ErrorStates {
               style: const TextStyle(fontSize: 64),
             ),
             const SizedBox(height: 16),
-            
+
             // Error title
             Text(
               _getErrorTitle(error),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            
+
             // Error message
             Text(
               customMessage ?? error.message,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
-            
+
             if (onRetry != null && ErrorMapper.isRetryable(error)) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: Text(customRetryText ?? ErrorMapper.getRetryActionText(error)),
+                label: Text(
+                  customRetryText ?? ErrorMapper.getRetryActionText(error),
+                ),
               ),
             ],
           ],
@@ -59,42 +55,30 @@ class ErrorStates {
   }
 
   // Network error specifically
-  static Widget networkError({
-    VoidCallback? onRetry,
-    String? customMessage,
-  }) {
+  static Widget networkError({VoidCallback? onRetry, String? customMessage}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.wifi_off,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.wifi_off, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            
+
             const Text(
               'Connection Error',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            
+
             Text(
-              customMessage ?? 'Please check your internet connection and try again.',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              customMessage ??
+                  'Please check your internet connection and try again.',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
-            
+
             if (onRetry != null) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
@@ -126,51 +110,31 @@ class ErrorStates {
           children: [
             // Icon or emoji
             if (emoji != null)
-              Text(
-                emoji,
-                style: const TextStyle(fontSize: 64),
-              )
+              Text(emoji, style: const TextStyle(fontSize: 64))
             else if (icon != null)
-              Icon(
-                icon,
-                size: 64,
-                color: Colors.grey[400],
-              )
+              Icon(icon, size: 64, color: Colors.grey[400])
             else
-              Icon(
-                Icons.inbox_outlined,
-                size: 64,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            
+
             // Title
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            
+
             // Message
             Text(
               message,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
-            
+
             if (onAction != null && actionText != null) ...[
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: onAction,
-                child: Text(actionText),
-              ),
+              ElevatedButton(onPressed: onAction, child: Text(actionText)),
             ],
           ],
         ),
@@ -190,33 +154,23 @@ class ErrorStates {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            
+
             const Text(
               'No Results Found',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            
+
             Text(
               'We couldn\'t find any properties matching "$searchQuery"',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            
+
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -227,7 +181,7 @@ class ErrorStates {
                   ),
                   const SizedBox(width: 16),
                 ],
-                
+
                 if (onTryDifferentSearch != null)
                   OutlinedButton(
                     onPressed: onTryDifferentSearch,
@@ -252,33 +206,23 @@ class ErrorStates {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.location_off,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.location_off, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            
+
             const Text(
               'Location Access Needed',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            
+
             Text(
               'We need location access to show properties near you.',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            
+
             Column(
               children: [
                 if (onRequestPermission != null) ...[
@@ -289,7 +233,7 @@ class ErrorStates {
                   ),
                   const SizedBox(height: 12),
                 ],
-                
+
                 if (onOpenSettings != null)
                   TextButton(
                     onPressed: onOpenSettings,
@@ -316,27 +260,21 @@ class ErrorStates {
           children: [
             const Text('🏠', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 16),
-            
+
             const Text(
               'No More Properties',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            
+
             Text(
               'You\'ve seen all properties matching your criteria.',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            
+
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -348,7 +286,7 @@ class ErrorStates {
                   ),
                   const SizedBox(width: 16),
                 ],
-                
+
                 if (onRefresh != null)
                   OutlinedButton.icon(
                     onPressed: onRefresh,
@@ -374,30 +312,20 @@ class ErrorStates {
       child: Row(
         children: [
           if (showIcon) ...[
-            Icon(
-              Icons.error_outline,
-              color: Colors.red[400],
-              size: 20,
-            ),
+            Icon(Icons.error_outline, color: Colors.red[400], size: 20),
             const SizedBox(width: 8),
           ],
-          
+
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                color: Colors.red[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.red[600], fontSize: 14),
             ),
           ),
-          
+
           if (onRetry != null) ...[
             const SizedBox(width: 8),
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
+            TextButton(onPressed: onRetry, child: const Text('Retry')),
           ],
         ],
       ),
@@ -416,34 +344,24 @@ class ErrorStates {
       color: Colors.red[50],
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: Colors.red[600],
-            size: 20,
-          ),
+          Icon(Icons.error_outline, color: Colors.red[600], size: 20),
           const SizedBox(width: 8),
-          
+
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                color: Colors.red[800],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.red[800], fontSize: 14),
             ),
           ),
-          
+
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (onRetry != null) ...[
-                TextButton(
-                  onPressed: onRetry,
-                  child: const Text('Retry'),
-                ),
+                TextButton(onPressed: onRetry, child: const Text('Retry')),
                 const SizedBox(width: 4),
               ],
-              
+
               if (onDismiss != null)
                 IconButton(
                   onPressed: onDismiss,
@@ -454,6 +372,70 @@ class ErrorStates {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  // Profile loading error with retry and sign out options
+  static Widget profileLoadError({
+    VoidCallback? onRetry,
+    VoidCallback? onSignOut,
+    String? customMessage,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Error icon
+            Icon(Icons.account_circle_outlined, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+
+            // Error title
+            const Text(
+              'Profile Load Error',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+
+            // Error message
+            Text(
+              customMessage ?? 'Unable to load your profile. Please try again or sign out to start fresh.',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+
+            // Action buttons
+            Column(
+              children: [
+                if (onRetry != null) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: onRetry,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try Again'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                if (onSignOut != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onSignOut,
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Sign Out'),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

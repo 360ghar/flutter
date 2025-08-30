@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../controllers/explore_controller.dart';
-import '../../../core/controllers/filter_service.dart';
 import '../../../core/controllers/page_state_service.dart';
 import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/app_colors.dart';
@@ -19,7 +18,7 @@ import '../widgets/property_horizontal_list.dart';
 class ExploreView extends GetView<ExploreController> {
   const ExploreView({super.key});
 
-  FilterService get filterService => Get.find<FilterService>();
+  PageStateService get pageStateService => Get.find<PageStateService>();
 
   @override
   Widget build(BuildContext context) {
@@ -69,12 +68,19 @@ class ExploreView extends GetView<ExploreController> {
                   switch (currentState) {
                     case ExploreState.loading:
                       // If location is available, keep the map visible and let markers update
-                      final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                      final hasLocation = Get.find<PageStateService>()
+                          .exploreState
+                          .value
+                          .hasLocation;
                       if (hasLocation) {
-                        DebugLogger.info('💻 Loading properties, rendering map with pending markers');
+                        DebugLogger.info(
+                          '💻 Loading properties, rendering map with pending markers',
+                        );
                         return _buildMapInterface(context);
                       }
-                      DebugLogger.info('💻 Rendering loading state (no location yet)');
+                      DebugLogger.info(
+                        '💻 Rendering loading state (no location yet)',
+                      );
                       return _buildLoadingState();
 
                     case ExploreState.error:
@@ -93,12 +99,19 @@ class ExploreView extends GetView<ExploreController> {
                       return _buildMapInterface(context);
 
                     default:
-                      final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                      final hasLocation = Get.find<PageStateService>()
+                          .exploreState
+                          .value
+                          .hasLocation;
                       if (hasLocation) {
-                        DebugLogger.info('🔄 Initializing; rendering map while loading');
+                        DebugLogger.info(
+                          '🔄 Initializing; rendering map while loading',
+                        );
                         return _buildMapInterface(context);
                       }
-                      DebugLogger.info('🔄 Rendering default loading state (no location yet)');
+                      DebugLogger.info(
+                        '🔄 Rendering default loading state (no location yet)',
+                      );
                       return _buildLoadingState();
                   }
                 }),
@@ -142,7 +155,8 @@ class ExploreView extends GetView<ExploreController> {
       if (errorMessage == null) return const SizedBox();
 
       try {
-        final exception = ErrorMapper.mapApiError(Exception(errorMessage));
+        // Don't wrap in Exception() - pass the original error message directly
+        final exception = ErrorMapper.mapApiError(errorMessage);
         return ErrorStates.genericError(
           error: exception,
           onRetry: controller.retryLoading,
@@ -192,7 +206,9 @@ class ExploreView extends GetView<ExploreController> {
                     onPositionChanged: (position, hasGesture) {
                       if (hasGesture && controller.isMapReady.value) {
                         final zoomChanged =
-                            (position.zoom - controller.currentZoom.value).abs() > 0.1;
+                            (position.zoom - controller.currentZoom.value)
+                                .abs() >
+                            0.1;
                         final distance = _calculateDistance(
                           controller.currentCenter.value,
                           position.center,
@@ -226,14 +242,20 @@ class ExploreView extends GetView<ExploreController> {
                     ),
                     // Search radius circle (reactive)
                     Obx(() {
-                      if (!filterService.hasLocation) return const SizedBox.shrink();
+                      if (!pageStateService.getCurrentPageState().hasLocation) {
+                        return const SizedBox.shrink();
+                      }
                       return CircleLayer(
                         circles: [
                           CircleMarker(
                             point: controller.currentCenter.value,
                             radius: controller.currentRadius.value * 1000,
-                            color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                            borderColor: AppColors.primaryYellow.withValues(alpha: 0.5),
+                            color: AppColors.primaryYellow.withValues(
+                              alpha: 0.1,
+                            ),
+                            borderColor: AppColors.primaryYellow.withValues(
+                              alpha: 0.5,
+                            ),
                             borderStrokeWidth: 2,
                           ),
                         ],
@@ -252,7 +274,9 @@ class ExploreView extends GetView<ExploreController> {
                                 height: 40,
                                 child: GestureDetector(
                                   onTap: () {
-                                    DebugLogger.info('📍 Property marker tapped: ${marker.property.title}');
+                                    DebugLogger.info(
+                                      '📍 Property marker tapped: ${marker.property.title}',
+                                    );
                                     controller.selectProperty(marker.property);
                                   },
                                   child: Container(
@@ -261,10 +285,15 @@ class ExploreView extends GetView<ExploreController> {
                                           ? AppColors.primaryYellow
                                           : AppColors.accentBlue,
                                       borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: Colors.white, width: 2),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.2),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.2,
+                                          ),
                                           blurRadius: 6,
                                           offset: const Offset(0, 2),
                                         ),
@@ -272,10 +301,22 @@ class ExploreView extends GetView<ExploreController> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        marker.property.formattedPrice.isNotEmpty
-                                            ? (marker.property.formattedPrice.length > 4
-                                                ? marker.property.formattedPrice.substring(0, 4)
-                                                : marker.property.formattedPrice)
+                                        marker
+                                                .property
+                                                .formattedPrice
+                                                .isNotEmpty
+                                            ? (marker
+                                                          .property
+                                                          .formattedPrice
+                                                          .length >
+                                                      4
+                                                  ? marker
+                                                        .property
+                                                        .formattedPrice
+                                                        .substring(0, 4)
+                                                  : marker
+                                                        .property
+                                                        .formattedPrice)
                                             : '₹--',
                                         style: const TextStyle(
                                           color: Colors.white,

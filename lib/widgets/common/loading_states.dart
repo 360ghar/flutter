@@ -18,7 +18,9 @@ class LoadingStates {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[300],
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
               ),
             ),
             Padding(
@@ -108,7 +110,9 @@ class LoadingStates {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.grey[300],
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -181,7 +185,9 @@ class LoadingStates {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
                 ),
               ),
             ),
@@ -249,10 +255,7 @@ class LoadingStates {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text(
-              'Loading properties...',
-              style: TextStyle(fontSize: 16),
-            ),
+            Text('Loading properties...', style: TextStyle(fontSize: 16)),
           ],
         ),
       ),
@@ -265,7 +268,7 @@ class LoadingStates {
     String? message,
   }) {
     final progress = total > 0 ? current / total : 0.0;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -300,9 +303,7 @@ class LoadingStates {
   static Widget pullToRefreshIndicator(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 
@@ -310,9 +311,7 @@ class LoadingStates {
   static Widget loadMoreIndicator() {
     return Container(
       padding: const EdgeInsets.all(16),
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 
@@ -321,10 +320,7 @@ class LoadingStates {
     return SizedBox(
       width: size,
       height: size,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        color: color,
-      ),
+      child: CircularProgressIndicator(strokeWidth: 2, color: color),
     );
   }
 
@@ -379,10 +375,7 @@ class LoadingStates {
         children: [
           CircularProgressIndicator(),
           SizedBox(height: 16),
-          Text(
-            'Searching properties...',
-            style: TextStyle(fontSize: 16),
-          ),
+          Text('Searching properties...', style: TextStyle(fontSize: 16)),
         ],
       ),
     );
@@ -396,10 +389,7 @@ class LoadingStates {
         children: [
           CircularProgressIndicator(),
           SizedBox(height: 16),
-          Text(
-            'Getting your location...',
-            style: TextStyle(fontSize: 16),
-          ),
+          Text('Getting your location...', style: TextStyle(fontSize: 16)),
         ],
       ),
     );

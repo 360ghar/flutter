@@ -10,17 +10,17 @@ enum PageType { explore, discover, likes }
 class PageStateModel {
   // Page identification
   final PageType pageType;
-  
+
   // Location state
   final LocationData? selectedLocation;
   final String? locationSource; // 'gps', 'ip', 'manual'
-  
+
   // Filter state
   final UnifiedFilterModel filters;
-  
+
   // Search state (null for discover page)
   final String? searchQuery;
-  
+
   // Properties data
   final List<PropertyModel> properties;
   final int currentPage;
@@ -31,7 +31,7 @@ class PageStateModel {
   final bool isRefreshing;
   final String? error;
   final DateTime? lastFetched;
-  
+
   // Additional state for specific pages
   final Map<String, dynamic>? additionalData;
 
@@ -58,9 +58,9 @@ class PageStateModel {
       pageType: pageType,
       filters: UnifiedFilterModel.initial(),
       properties: [],
-      additionalData: pageType == PageType.likes 
-        ? {'currentSegment': 'liked'} 
-        : null,
+      additionalData: pageType == PageType.likes
+          ? {'currentSegment': 'liked'}
+          : null,
     );
   }
 
@@ -107,12 +107,12 @@ class PageStateModel {
 
   // Getters for common operations
   bool get hasLocation => selectedLocation != null;
-  
-  bool get hasActiveFilters => filters.activeFilterCount > 0 || 
-                              (searchQuery?.isNotEmpty ?? false);
-  
-  int get activeFiltersCount => filters.activeFilterCount + 
-                               (searchQuery?.isNotEmpty ?? false ? 1 : 0);
+
+  bool get hasActiveFilters =>
+      filters.activeFilterCount > 0 || (searchQuery?.isNotEmpty ?? false);
+
+  int get activeFiltersCount =>
+      filters.activeFilterCount + (searchQuery?.isNotEmpty ?? false ? 1 : 0);
 
   String get locationDisplayText {
     if (hasLocation) {

@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import '../../visits/controllers/visits_controller.dart';
-import '../controllers/property_controller.dart';
+import '../../likes/controllers/likes_controller.dart';
 import '../../../core/data/repositories/properties_repository.dart';
 
 class PropertyDetailsBinding extends Bindings {
@@ -8,12 +8,17 @@ class PropertyDetailsBinding extends Bindings {
   void dependencies() {
     // Register PropertiesRepository if not already registered
     if (!Get.isRegistered<PropertiesRepository>()) {
-      Get.lazyPut<PropertiesRepository>(() => PropertiesRepository(), fenix: true);
+      Get.lazyPut<PropertiesRepository>(
+        () => PropertiesRepository(),
+        fenix: true,
+      );
     }
-    
-    // Register PropertyController
-    Get.lazyPut<PropertyController>(() => PropertyController(), fenix: true);
-    
+
+    // Register LikesController for favorite management
+    if (!Get.isRegistered<LikesController>()) {
+      Get.lazyPut<LikesController>(() => LikesController(), fenix: true);
+    }
+
     Get.lazyPut<VisitsController>(() => VisitsController());
   }
-} 
+}

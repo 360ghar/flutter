@@ -6,7 +6,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/utils/webview_helper.dart';
 import 'core/routes/app_pages.dart';
-import 'core/routes/app_routes.dart';
 import 'core/utils/theme.dart';
 import 'core/bindings/initial_binding.dart';
 import 'core/controllers/theme_controller.dart';
@@ -14,6 +13,7 @@ import 'core/controllers/localization_controller.dart';
 import 'core/translations/app_translations.dart';
 import 'core/utils/debug_logger.dart';
 import 'features/dashboard/controllers/dashboard_controller.dart';
+import 'root.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +37,9 @@ void main() async {
   // Log environment status after DebugLogger is ready
   try {
     DebugLogger.success('Environment variables loaded successfully');
-    DebugLogger.info('API Base URL: ${dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000'}');
+    DebugLogger.info(
+      'API Base URL: ${dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000'}',
+    );
   } catch (e) {
     DebugLogger.warning('Failed to load .env.development', e);
     DebugLogger.info('Using default configuration');
@@ -54,6 +56,22 @@ void main() async {
     DebugLogger.warning('Failed to initialize Supabase', e);
     DebugLogger.info('Continuing without Supabase');
   }
+
+  // Set up global error handlers
+  FlutterError.onError = (FlutterErrorDetails details) {
+    DebugLogger.error('🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}');
+    DebugLogger.error('🚨 [GLOBAL_ERROR] Stack trace: ${details.stack}');
+    
+    // Special handling for null check operator errors
+    if (details.exception.toString().contains('Null check operator used on a null value')) {
+      DebugLogger.error('🚨 [GLOBAL_ERROR] NULL CHECK OPERATOR ERROR DETECTED!');
+      DebugLogger.error('🚨 [GLOBAL_ERROR] Library: ${details.library}');
+      DebugLogger.error('🚨 [GLOBAL_ERROR] Context: ${details.context}');
+    }
+    
+    // Still show the error in debug mode
+    FlutterError.presentError(details);
+  };
 
   runApp(const MyApp());
 }
@@ -84,7 +102,7 @@ class MyApp extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              initialRoute: AppRoutes.splash,
+              home: const Root(),
               getPages: AppPages.routes,
               initialBinding: InitialBinding(), // Correctly use bindings
               debugShowCheckedModeBanner: false,
@@ -94,7 +112,9 @@ class MyApp extends StatelessWidget {
                 // Update dashboard tab when DashboardController is registered
                 if (Get.isRegistered<DashboardController>()) {
                   final currentRoute = routing?.current ?? '';
-                  Get.find<DashboardController>().syncTabWithRoute(currentRoute);
+                  Get.find<DashboardController>().syncTabWithRoute(
+                    currentRoute,
+                  );
                 }
               },
             );
@@ -103,4 +123,4 @@ class MyApp extends StatelessWidget {
       },
     );
   }
-} 
+}

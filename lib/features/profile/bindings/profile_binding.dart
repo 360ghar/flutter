@@ -7,4 +7,4 @@ class ProfileBinding extends Bindings {
     // AuthController (which replaces UserController) is already registered in InitialBinding
     Get.lazyPut<EditProfileController>(() => EditProfileController());
   }
-} 
+}

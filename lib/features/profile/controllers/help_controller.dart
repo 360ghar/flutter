@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class HelpController extends GetxController {
-  
   void contactSupport() {
     Get.bottomSheet(
       Container(
@@ -17,10 +16,7 @@ class HelpController extends GetxController {
           children: [
             const Text(
               'Contact Support',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -53,7 +49,12 @@ class HelpController extends GetxController {
     );
   }
 
-  Widget _buildContactOption(String title, String subtitle, IconData icon, VoidCallback onTap) {
+  Widget _buildContactOption(
+    String title,
+    String subtitle,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return ListTile(
       leading: Icon(icon, color: Get.theme.primaryColor),
       title: Text(title),
@@ -73,10 +74,7 @@ class HelpController extends GetxController {
           'Live chat is currently unavailable. Please contact us via email or phone for immediate assistance.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('OK'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('OK')),
           TextButton(
             onPressed: () {
               Get.back();
@@ -114,10 +112,7 @@ class HelpController extends GetxController {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               Get.back();
@@ -166,7 +161,9 @@ class HelpController extends GetxController {
                 '1. Search Properties',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              Text('Use the search bar to find properties by location, price, and other filters.'),
+              Text(
+                'Use the search bar to find properties by location, price, and other filters.',
+              ),
               SizedBox(height: 12),
               Text(
                 '2. Save Favorites',
@@ -189,10 +186,7 @@ class HelpController extends GetxController {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Got it'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Got it')),
         ],
       ),
     );
@@ -206,11 +200,10 @@ class HelpController extends GetxController {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('• Use specific locations', style: TextStyle(fontSize: 14)),
               Text(
-                '• Use specific locations',
-                style: TextStyle(fontSize: 14),
+                'Search for specific neighborhoods or areas for better results.',
               ),
-              Text('Search for specific neighborhoods or areas for better results.'),
               SizedBox(height: 8),
               Text(
                 '• Set realistic price ranges',
@@ -218,25 +211,18 @@ class HelpController extends GetxController {
               ),
               Text('Use the price filter to narrow down to your budget.'),
               SizedBox(height: 8),
-              Text(
-                '• Use multiple filters',
-                style: TextStyle(fontSize: 14),
-              ),
+              Text('• Use multiple filters', style: TextStyle(fontSize: 14)),
               Text('Combine location, price, size, and amenity filters.'),
               SizedBox(height: 8),
+              Text('• Save your searches', style: TextStyle(fontSize: 14)),
               Text(
-                '• Save your searches',
-                style: TextStyle(fontSize: 14),
+                'Get notifications when new properties match your criteria.',
               ),
-              Text('Get notifications when new properties match your criteria.'),
             ],
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
         ],
       ),
     );
@@ -277,10 +263,7 @@ class HelpController extends GetxController {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
         ],
       ),
     );
@@ -316,15 +299,14 @@ class HelpController extends GetxController {
                 'Data Rights',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              Text('You can download, modify, or delete your data at any time.'),
+              Text(
+                'You can download, modify, or delete your data at any time.',
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Close')),
         ],
       ),
     );

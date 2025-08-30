@@ -51,7 +51,7 @@ class _PaginatedGridViewState<T> extends State<PaginatedGridView<T>> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= 
+    if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       // Load more when user scrolls within 200 pixels of the bottom
       if (widget.hasMore && !widget.isLoadingMore) {
@@ -64,9 +64,7 @@ class _PaginatedGridViewState<T> extends State<PaginatedGridView<T>> {
   Widget build(BuildContext context) {
     if (widget.isLoading) {
       return Center(
-        child: CircularProgressIndicator(
-          color: AppColors.loadingIndicator,
-        ),
+        child: CircularProgressIndicator(color: AppColors.loadingIndicator),
       );
     }
 
@@ -113,7 +111,7 @@ class _PaginatedGridViewState<T> extends State<PaginatedGridView<T>> {
               ),
             );
           }
-          
+
           return widget.itemBuilder(context, widget.items[index], index);
         },
       ),

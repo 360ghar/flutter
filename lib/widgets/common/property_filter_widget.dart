@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/utils/app_colors.dart';
-import '../../core/controllers/filter_service.dart';
+import '../../core/controllers/page_state_service.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'
@@ -38,18 +38,15 @@ class _FilterBottomSheet extends StatefulWidget {
   final String pageType;
   final VoidCallback? onFiltersApplied;
 
-  const _FilterBottomSheet({
-    required this.pageType,
-    this.onFiltersApplied,
-  });
+  const _FilterBottomSheet({required this.pageType, this.onFiltersApplied});
 
   @override
   State<_FilterBottomSheet> createState() => _FilterBottomSheetState();
 }
 
 class _FilterBottomSheetState extends State<_FilterBottomSheet> {
-  late final FilterService filterService;
-  
+  late final PageStateService pageStateService;
+
   late String _selectedPurpose;
   late double _minPrice;
   late double _maxPrice;
@@ -59,7 +56,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   late List<String> _selectedAmenities;
 
   final List<String> purposes = ['Buy', 'Rent'];
-  
+
   final List<String> propertyTypes = [
     'All',
     'Apartment',
@@ -92,20 +89,28 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   void initState() {
     super.initState();
     // Ensure controllers are available
-    filterService = Get.find<FilterService>();
+    pageStateService = Get.find<PageStateService>();
     _initializeFilters();
   }
 
   void _initializeFilters() {
-    final currentFilter = filterService.currentFilter;
+    final currentFilter = pageStateService.getCurrentPageState().filters;
     _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'all');
     // Clamp values to ensure they're within the slider range
-    final maxRange = filterService.getPriceMax();
-    _minPrice = (currentFilter.priceMin ?? filterService.getPriceMin()).clamp(0.0, maxRange);
-    _maxPrice = (currentFilter.priceMax ?? filterService.getPriceMax()).clamp(0.0, maxRange);
+    final maxRange = _getPriceMax(currentFilter.purpose ?? 'buy');
+    _minPrice = (currentFilter.priceMin ?? _getPriceMin(currentFilter.purpose ?? 'buy')).clamp(
+      0.0,
+      maxRange,
+    );
+    _maxPrice = (currentFilter.priceMax ?? _getPriceMax(currentFilter.purpose ?? 'buy')).clamp(
+      0.0,
+      maxRange,
+    );
     _minBedrooms = (currentFilter.bedroomsMin ?? 0).clamp(0, 10);
     _maxBedrooms = (currentFilter.bedroomsMax ?? 10).clamp(0, 10);
-    _propertyType = (currentFilter.propertyType?.isNotEmpty == true) ? currentFilter.propertyType!.first : 'All';
+    _propertyType = (currentFilter.propertyType?.isNotEmpty == true)
+        ? currentFilter.propertyType!.first
+        : 'All';
     _selectedAmenities = List<String>.from(currentFilter.amenities ?? []);
   }
 
@@ -216,22 +221,27 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               onTap: () {
                 setState(() {
                   _selectedPurpose = purpose;
-                  // Update filter controller purpose
-                  filterService.updatePurpose(_mapPurposeToApi(purpose));
                   // Update price range based on new purpose
-                  _minPrice = filterService.getPriceMin();
-                  _maxPrice = filterService.getPriceMax();
+                  _minPrice = _getPriceMin(_mapPurposeToApi(purpose));
+                  _maxPrice = _getPriceMax(_mapPurposeToApi(purpose));
                   // Reset property type
                   _propertyType = 'All';
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
+                  color: isSelected
+                      ? AppColors.primaryYellow
+                      : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
+                    color: isSelected
+                        ? AppColors.primaryYellow
+                        : AppColors.border,
                     width: 2,
                   ),
                 ),
@@ -239,7 +249,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   purpose,
                   style: TextStyle(
                     fontSize: 16,
-                    color: isSelected ? AppColors.surface : AppColors.textPrimary,
+                    color: isSelected
+                        ? AppColors.surface
+                        : AppColors.textPrimary,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
@@ -252,10 +264,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   Widget _buildPriceFilter() {
-    final priceLabel = _selectedPurpose == 'Rent' 
-            ? 'Price per month' 
-            : 'Property price';
-    
+    final priceLabel = _selectedPurpose == 'Rent'
+        ? 'Price per month'
+        : 'Property price';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -355,13 +367,18 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: AppColors.border),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                     items: List.generate(6, (index) => index)
-                        .map((bedroom) => DropdownMenuItem(
-                              value: bedroom,
-                              child: Text(bedroom == 0 ? 'Any' : '$bedroom+'),
-                            ))
+                        .map(
+                          (bedroom) => DropdownMenuItem(
+                            value: bedroom,
+                            child: Text(bedroom == 0 ? 'Any' : '$bedroom+'),
+                          ),
+                        )
                         .toList(),
                     onChanged: (value) {
                       setState(() {
@@ -396,14 +413,19 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: AppColors.border),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
                     items: List.generate(11, (index) => index)
                         .where((bedroom) => bedroom >= _minBedrooms)
-                        .map((bedroom) => DropdownMenuItem(
-                              value: bedroom,
-                              child: Text(bedroom == 10 ? '10+' : '$bedroom'),
-                            ))
+                        .map(
+                          (bedroom) => DropdownMenuItem(
+                            value: bedroom,
+                            child: Text(bedroom == 10 ? '10+' : '$bedroom'),
+                          ),
+                        )
                         .toList(),
                     onChanged: (value) {
                       setState(() {
@@ -423,7 +445,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   Widget _buildPropertyTypeFilter() {
     // Single property type set for buy/rent
     final typesToShow = propertyTypes;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -448,20 +470,31 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
+                  color: isSelected
+                      ? AppColors.primaryYellow
+                      : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
+                    color: isSelected
+                        ? AppColors.primaryYellow
+                        : AppColors.border,
                   ),
                 ),
                 child: Text(
                   type,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isSelected ? AppColors.surface : AppColors.textPrimary,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected
+                        ? AppColors.surface
+                        : AppColors.textPrimary,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ),
@@ -501,12 +534,19 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryYellow.withValues(alpha: 0.1) : AppColors.inputBackground,
+                  color: isSelected
+                      ? AppColors.primaryYellow.withValues(alpha: 0.1)
+                      : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
+                    color: isSelected
+                        ? AppColors.primaryYellow
+                        : AppColors.border,
                   ),
                 ),
                 child: Row(
@@ -523,8 +563,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                       amenity,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isSelected ? AppColors.primaryYellow : AppColors.textPrimary,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        color: isSelected
+                            ? AppColors.primaryYellow
+                            : AppColors.textPrimary,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -606,21 +650,24 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
   void _applyFilters() {
     // Apply filters to FilterController
-    filterService.updatePurpose(_mapPurposeToApi(_selectedPurpose));
-    filterService.updatePriceRange(_minPrice, _maxPrice);
-    filterService.updateBedrooms(_minBedrooms, _maxBedrooms);
+    // Apply all filters to PageStateService
+    final currentPageType = pageStateService.currentPageType.value;
+    final currentFilters = pageStateService.getCurrentPageState().filters;
     
-    // Handle property type
-    if (_propertyType != 'All') {
-      filterService.updatePropertyTypes([_propertyType]);
-    } else {
-      filterService.updatePropertyTypes([]);
-    }
+    final updatedFilters = currentFilters.copyWith(
+      purpose: _mapPurposeToApi(_selectedPurpose),
+      priceMin: _minPrice,
+      priceMax: _maxPrice,
+      bedroomsMin: _minBedrooms,
+      bedroomsMax: _maxBedrooms,
+      propertyType: _propertyType != 'All' ? [_propertyType] : [],
+      amenities: _selectedAmenities,
+    );
     
-    filterService.updateAmenities(_selectedAmenities);
+    pageStateService.updatePageFilters(currentPageType, updatedFilters);
 
     Navigator.pop(context);
-    
+
     if (widget.onFiltersApplied != null) {
       widget.onFiltersApplied!();
     }
@@ -634,6 +681,27 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       colorText: AppColors.surface,
       duration: const Duration(seconds: 2),
     );
+  }
+
+  // Helper methods for price ranges based on purpose
+  double _getPriceMin(String purpose) {
+    switch (purpose) {
+      case 'rent':
+        return 5000.0; // ₹5K per month
+      case 'buy':
+      default:
+        return 500000.0; // ₹5L
+    }
+  }
+
+  double _getPriceMax(String purpose) {
+    switch (purpose) {
+      case 'rent':
+        return 500000.0; // ₹5L per month
+      case 'buy':
+      default:
+        return 150000000.0; // ₹15Cr
+    }
   }
 
   String _formatPrice(double price) {

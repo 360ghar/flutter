@@ -16,7 +16,6 @@ enum VisitStatus {
   rescheduled,
 }
 
-
 @JsonSerializable()
 class VisitAgentInfo {
   final int id;
@@ -32,7 +31,8 @@ class VisitAgentInfo {
     required this.phone,
   });
 
-  factory VisitAgentInfo.fromJson(Map<String, dynamic> json) => _$VisitAgentInfoFromJson(json);
+  factory VisitAgentInfo.fromJson(Map<String, dynamic> json) =>
+      _$VisitAgentInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$VisitAgentInfoToJson(this);
 }
@@ -75,6 +75,12 @@ class VisitModel {
   final PropertyModel? property;
   final VisitAgentInfo? agents;
 
+  // API response fields for date and time parsing
+  @JsonKey(name: 'property_title')
+  final String? propertyTitleApi;
+  @JsonKey(name: 'agent_name')
+  final String? agentNameApi;
+
   VisitModel({
     required this.id,
     required this.propertyId,
@@ -95,22 +101,61 @@ class VisitModel {
     this.updatedAt,
     this.property,
     this.agents,
+    this.propertyTitleApi,
+    this.agentNameApi,
   });
 
-  factory VisitModel.fromJson(Map<String, dynamic> json) => _$VisitModelFromJson(json);
+  factory VisitModel.fromJson(Map<String, dynamic> json) {
+    // Combine date and time into a single DateTime object
+    final dateStr = json['visit_date'] as String?;
+    final timeStr = json['visit_time'] as String?;
+    DateTime? scheduledDateTime;
+    
+    if (dateStr != null && timeStr != null) {
+      try {
+        scheduledDateTime = DateTime.parse('$dateStr $timeStr');
+      } catch (e) {
+        // Handle potential format errors - fall back to just date
+        try {
+          scheduledDateTime = DateTime.parse(dateStr);
+        } catch (e2) {
+          // If all parsing fails, use current time as fallback
+          scheduledDateTime = DateTime.now();
+        }
+      }
+    } else if (json['scheduled_date'] != null) {
+      // Fall back to the standard scheduled_date field if available
+      try {
+        scheduledDateTime = DateTime.parse(json['scheduled_date']);
+      } catch (e) {
+        scheduledDateTime = DateTime.now();
+      }
+    } else {
+      scheduledDateTime = DateTime.now();
+    }
+
+    // Create a modified JSON with the combined scheduled_date
+    final modifiedJson = Map<String, dynamic>.from(json);
+    modifiedJson['scheduled_date'] = scheduledDateTime.toIso8601String();
+
+    // Call the generated fromJson with the modified data
+    return _$VisitModelFromJson(modifiedJson);
+  }
 
   Map<String, dynamic> toJson() => _$VisitModelToJson(this);
 
-  // Convenience getters  
-  String get propertyTitle => property?.title ?? 'Property #$propertyId';
-  String get agentName => agents?.name ?? 'Unknown Agent';
+  // Convenience getters
+  String get propertyTitle => property?.title ?? propertyTitleApi ?? 'Property #$propertyId';
+  String get agentName => agents?.name ?? agentNameApi ?? 'Unknown Agent';
   String get agentPhone => agents?.phone ?? '';
   String get notes => visitNotes ?? '';
-  
-  bool get isUpcoming => DateTime.now().isBefore(scheduledDate) && (status == VisitStatus.scheduled || status == VisitStatus.confirmed);
+
+  bool get isUpcoming =>
+      DateTime.now().isBefore(scheduledDate) &&
+      (status == VisitStatus.scheduled || status == VisitStatus.confirmed);
   bool get isCompleted => status == VisitStatus.completed;
   bool get isCancelled => status == VisitStatus.cancelled;
-  
+
   // Helper methods for status
   String get statusString {
     switch (status) {
@@ -126,10 +171,12 @@ class VisitModel {
         return 'Rescheduled';
     }
   }
-  
-  bool get canReschedule => status == VisitStatus.scheduled || status == VisitStatus.confirmed;
-  bool get canCancel => status == VisitStatus.scheduled || status == VisitStatus.confirmed;
-  
+
+  bool get canReschedule =>
+      status == VisitStatus.scheduled || status == VisitStatus.confirmed;
+  bool get canCancel =>
+      status == VisitStatus.scheduled || status == VisitStatus.confirmed;
+
   VisitModel copyWith({
     int? id,
     int? propertyId,
@@ -150,6 +197,8 @@ class VisitModel {
     DateTime? updatedAt,
     PropertyModel? property,
     VisitAgentInfo? agents,
+    String? propertyTitleApi,
+    String? agentNameApi,
   }) {
     return VisitModel(
       id: id ?? this.id,
@@ -171,6 +220,8 @@ class VisitModel {
       updatedAt: updatedAt ?? this.updatedAt,
       property: property ?? this.property,
       agents: agents ?? this.agents,
+      propertyTitleApi: propertyTitleApi ?? this.propertyTitleApi,
+      agentNameApi: agentNameApi ?? this.agentNameApi,
     );
   }
 }

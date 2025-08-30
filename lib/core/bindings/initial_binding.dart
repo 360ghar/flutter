@@ -1,23 +1,29 @@
 import 'package:get/get.dart';
+import 'package:ghar360/features/auth/data/auth_repository.dart';
 import '../data/providers/api_service.dart';
-import '../data/repositories/properties_repository.dart';
-import '../data/repositories/swipes_repository.dart';
+import '../data/repositories/profile_repository.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/location_controller.dart';
 import '../controllers/localization_controller.dart';
 import '../controllers/theme_controller.dart';
-import '../controllers/page_state_service.dart';
-import '../controllers/filter_service.dart';
 import '../utils/debug_logger.dart';
 
 class InitialBinding extends Bindings {
   @override
   void dependencies() {
     DebugLogger.info('🔧 InitialBinding: Starting dependency injection...');
-    
+
     // Register API Service first
-    Get.put<ApiService>(ApiService(), permanent: true);
+    Get.put<ApiService>(ApiService());
     DebugLogger.success('✅ ApiService registered');
+
+    // NEW: Register AuthRepository
+    Get.put<AuthRepository>(AuthRepository());
+    DebugLogger.success('✅ AuthRepository registered');
+
+    // Register ProfileRepository for AuthController
+    Get.put<ProfileRepository>(ProfileRepository());
+    DebugLogger.success('✅ ProfileRepository registered');
 
     // Test API connection
     _initializeApiService();
@@ -28,7 +34,9 @@ class InitialBinding extends Bindings {
     // Note: Repositories and feature controllers will be initialized
     // in route-specific bindings to prevent unauthorized API calls
 
-    DebugLogger.success('✅ InitialBinding: Core dependencies registered successfully');
+    DebugLogger.success(
+      '✅ InitialBinding: Core dependencies registered successfully',
+    );
   }
 
   void _initializeApiService() {
@@ -48,34 +56,28 @@ class InitialBinding extends Bindings {
     try {
       Get.put<AuthController>(AuthController(), permanent: true);
       DebugLogger.success('✅ AuthController registered');
-      
+
       Get.put<LocationController>(LocationController(), permanent: true);
       DebugLogger.success('✅ LocationController registered');
-      
-      Get.put<LocalizationController>(LocalizationController(), permanent: true);
+
+      Get.put<LocalizationController>(
+        LocalizationController(),
+        permanent: true,
+      );
       DebugLogger.success('✅ LocalizationController registered');
-      
+
       Get.put<ThemeController>(ThemeController(), permanent: true);
       DebugLogger.success('✅ ThemeController registered');
-      
-      // Register repositories before services that depend on them
-      Get.put<PropertiesRepository>(PropertiesRepository(), permanent: true);
-      DebugLogger.success('✅ PropertiesRepository registered');
-      
-      Get.put<SwipesRepository>(SwipesRepository(), permanent: true);
-      DebugLogger.success('✅ SwipesRepository registered');
-      
-      Get.put<PageStateService>(PageStateService(), permanent: true);
-      DebugLogger.success('✅ PageStateService registered');
-      
-      Get.put<FilterService>(FilterService(), permanent: true);
-      DebugLogger.success('✅ FilterService registered');
+
+      // Note: PageStateService and repositories (PropertiesRepository, SwipesRepository)
+      // are now registered in DashboardBinding to prevent unauthorized API calls
+      // and ensure proper lifecycle management
+
     } catch (e) {
       DebugLogger.error('💥 Error initializing core controllers: $e');
       rethrow;
     }
   }
-
 
   void _testBackendConnection() async {
     try {
@@ -93,4 +95,4 @@ class InitialBinding extends Bindings {
       DebugLogger.error('💥 Backend connection test error: $e');
     }
   }
-} 
+}

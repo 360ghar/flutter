@@ -5,4 +5,4 @@ class TourBinding extends Bindings {
   void dependencies() {
     // No dependencies needed for tour view
   }
-} 
+}

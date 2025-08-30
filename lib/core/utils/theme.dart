@@ -3,14 +3,22 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Primary Colors
-  static const Color primaryYellow = Color(0xFFFFBC05);    // Bumble's signature yellow
-  static const Color primaryYellowDark = Color(0xFFE3AA04); // Darker yellow variant
-  static const Color primaryYellowLight = Color(0xFFFCC937); // Lighter yellow variant
+  static const Color primaryYellow = Color(
+    0xFFFFBC05,
+  ); // Bumble's signature yellow
+  static const Color primaryYellowDark = Color(
+    0xFFE3AA04,
+  ); // Darker yellow variant
+  static const Color primaryYellowLight = Color(
+    0xFFFCC937,
+  ); // Lighter yellow variant
 
   // Secondary Colors
-  static const Color accentOrange = Color(0xFFFF6B35);     // Real estate accent
-  static const Color accentBlue = Color(0xFF4A90E2);       // Trust and reliability
-  static const Color accentGreen = Color(0xFF50C878);      // Success/available properties
+  static const Color accentOrange = Color(0xFFFF6B35); // Real estate accent
+  static const Color accentBlue = Color(0xFF4A90E2); // Trust and reliability
+  static const Color accentGreen = Color(
+    0xFF50C878,
+  ); // Success/available properties
 
   // Light Theme Colors
   static const Color backgroundWhite = Color(0xFFFFFFFF);
@@ -110,7 +118,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
-      
+
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryYellow,
@@ -124,9 +132,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: backgroundWhite,
         shadowColor: cardShadow,
       ),
@@ -231,7 +237,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
-             
+
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryYellow,
@@ -245,9 +251,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: darkSurface,
         shadowColor: darkShadow,
       ),
@@ -277,10 +281,7 @@ class AppTheme {
           return darkTextTertiary.withValues(alpha: 0.3);
         }),
       ),
-      dividerTheme: const DividerThemeData(
-        color: darkBorder,
-        thickness: 1,
-      ),
+      dividerTheme: const DividerThemeData(color: darkBorder, thickness: 1),
     );
   }
-} 
+}
