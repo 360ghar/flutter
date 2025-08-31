@@ -1243,11 +1243,8 @@ class ApiService extends getx.GetConnect {
       operationName: 'Get My Visits',
     );
 
-    // Parse the response structure with upcoming_visits and past_visits
-    final List<dynamic> upcoming = response['upcoming_visits'] ?? [];
-    final List<dynamic> past = response['past_visits'] ?? [];
-
-    final allVisitsData = [...upcoming, ...past];
+    // Parse the response structure - API returns {visits: [...]}
+    final List<dynamic> allVisitsData = response['visits'] ?? [];
 
     // Convert the list to VisitModel objects
     return allVisitsData.map((item) => VisitModel.fromJson(item as Map<String, dynamic>)).toList();

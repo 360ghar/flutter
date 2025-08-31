@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:flutter/widgets.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/visit_model.dart';
 import '../../../core/data/models/agent_model.dart';
@@ -20,10 +19,6 @@ class VisitsController extends GetxController {
   final RxString error = ''.obs;
   final Rxn<AgentModel> relationshipManager = Rxn<AgentModel>();
 
-  // Track if data has been loaded to prevent infinite loops
-  final RxBool hasLoadedVisits = false.obs;
-  final RxBool hasLoadedAgent = false.obs;
-
   @override
   void onInit() {
     super.onInit();
@@ -33,17 +28,19 @@ class VisitsController extends GetxController {
     // Listen to authentication state changes
     ever(_authController.authStatus, (authStatus) {
       if (_authController.isAuthenticated) {
-        // User is authenticated, safe to fetch data
-        _initializeController();
+        // User is authenticated, load data immediately
+        loadVisits();
+        loadRelationshipManager();
       } else {
         // User logged out, clear all data
         _clearAllData();
       }
     });
 
-    // If already authenticated, initialize immediately
+    // If already authenticated, load data immediately
     if (_authController.isAuthenticated) {
-      _initializeController();
+      loadVisits();
+      loadRelationshipManager();
     }
 
     // Observe dashboard tab switches to refresh when Visits tab is active
@@ -65,22 +62,7 @@ class VisitsController extends GetxController {
           }
         }
       });
-
-      // If app starts on Visits tab, ensure data loads quickly
-      if (dash.currentIndex.value == 4) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!hasLoadedVisits.value && !isLoading.value) {
-            loadVisitsLazy();
-          }
-        });
-      }
     }
-  }
-
-  Future<void> _initializeController() async {
-    // Don't eagerly load data - let views request it when needed
-    // await loadVisits();
-    // await loadRelationshipManager();
   }
 
   void _clearAllData() {
@@ -88,30 +70,21 @@ class VisitsController extends GetxController {
     upcomingVisitsList.clear();
     relationshipManager.value = null;
     error.value = '';
-    hasLoadedVisits.value = false;
-    hasLoadedAgent.value = false;
   }
 
-  // Lazy loading methods - only fetch when actually needed
-  Future<void> loadVisitsLazy() async {
-    if (hasLoadedVisits.value || isLoading.value) {
-      return; // Prevent infinite loop
-    }
-    hasLoadedVisits.value = true;
-    await loadVisits();
+  // Force refresh method - used when new visit is added
+  Future<void> forceRefreshVisits() async {
+    await loadVisits(isRefresh: true);
   }
 
-  Future<void> loadRelationshipManagerLazy() async {
-    if (hasLoadedAgent.value || isLoadingAgent.value) {
-      return; // Prevent infinite loop
-    }
-    hasLoadedAgent.value = true;
-    await loadRelationshipManager();
-  }
+
 
   Future<void> loadVisits({bool isRefresh = false}) async {
+    DebugLogger.info('🔄 Starting loadVisits - isRefresh: $isRefresh, authenticated: ${_authController.isAuthenticated}');
+    
     if (!_authController.isAuthenticated) {
       error.value = 'User not authenticated';
+      DebugLogger.warning('⚠️ User not authenticated, cannot load visits');
       return;
     }
 
@@ -120,37 +93,50 @@ class VisitsController extends GetxController {
         // For pull-to-refresh, clear existing data
         visits.clear();
         upcomingVisitsList.clear();
+        DebugLogger.info('🧹 Cleared existing visits for refresh');
       }
 
       isLoading.value = true;
       error.value = '';
 
+      DebugLogger.info('📡 Making API call to getMyVisits()');
       // Load all visits using single endpoint
       final allVisits = await _apiService.getMyVisits();
+      DebugLogger.info('📊 API returned ${allVisits.length} visits');
 
-      // Separate upcoming and past visits locally
-      final upcomingVisits = allVisits
-          .where((visit) => visit.isUpcoming)
-          .toList();
-      final pastVisits = allVisits
-          .where((visit) => visit.isCompleted || visit.isCancelled)
-          .toList();
+      if (allVisits.isNotEmpty) {
+        DebugLogger.info('📋 First visit details: ${allVisits.first.toString()}');
+      }
 
-      // Update reactive variables
-      visits.assignAll(allVisits);
-      upcomingVisitsList.assignAll(upcomingVisits);
+      // Process data off the main thread for large datasets
+      await Future.microtask(() {
+        // Separate upcoming and past visits locally
+        final upcomingVisits = allVisits
+            .where((visit) => visit.isUpcoming)
+            .toList();
 
-      // Sort visits by date
-      _sortVisits();
+        DebugLogger.info('📅 Separated visits - ${upcomingVisits.length} upcoming, ${allVisits.length - upcomingVisits.length} past');
+
+        // Update reactive variables
+        visits.assignAll(allVisits);
+        upcomingVisitsList.assignAll(upcomingVisits);
+
+        DebugLogger.info('📝 Updated reactive lists - visits: ${visits.length}, upcomingVisitsList: ${upcomingVisitsList.length}');
+
+        // Sort visits by date
+        _sortVisits();
+      });
 
       DebugLogger.success(
         '✅ Visits loaded successfully: ${allVisits.length} total, ${upcomingVisits.length} upcoming, ${pastVisits.length} past',
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       error.value = 'Failed to load visits: ${e.toString()}';
       DebugLogger.error('❌ Error loading visits: $e');
+      DebugLogger.error('Stack trace: $stackTrace');
     } finally {
       isLoading.value = false;
+      DebugLogger.info('✋ loadVisits completed - final state: visits=${visits.length}, isLoading=${isLoading.value}');
     }
   }
 
@@ -201,7 +187,10 @@ class VisitsController extends GetxController {
     String contactPreference = 'phone',
     int guestsCount = 1,
   }) async {
+    DebugLogger.info('🏠 Starting bookVisit - property: ${property.runtimeType}, authenticated: ${_authController.isAuthenticated}');
+    
     if (!_authController.isAuthenticated) {
+      DebugLogger.warning('⚠️ User not authenticated, cannot book visit');
       Get.snackbar(
         'Authentication Required',
         'Please login to book property visits',
@@ -222,6 +211,8 @@ class VisitsController extends GetxController {
           ? property.title
           : property.title as String;
 
+      DebugLogger.info('📋 Booking details - propertyId: $propertyId, title: $propertyTitle, date: $visitDateTime');
+
       final visitResponse = await _apiService.scheduleVisit(
         propertyId: propertyId,
         scheduledDate: visitDateTime.toIso8601String(),
@@ -232,10 +223,19 @@ class VisitsController extends GetxController {
       DebugLogger.success(
         '✅ Visit scheduled successfully: ${visitResponse['id']}',
       );
+      DebugLogger.info('📄 Full API response: $visitResponse');
 
       // The API returns the complete visit model, no need to reconstruct
-      // Just reload visits to get the updated list
-      await loadVisits();
+      // Force refresh the visits list to ensure new visit appears
+      DebugLogger.info('🔄 Calling forceRefreshVisits to update state');
+      await forceRefreshVisits();
+
+      // Also notify dashboard controller if registered
+      if (Get.isRegistered<DashboardController>()) {
+        // If already on visits tab, the refresh above will handle it
+        // If on another tab, the changeTab method will handle refresh when switching
+        DebugLogger.info('📱 Dashboard controller notified of new visit');
+      }
 
       Get.snackbar(
         'Visit Scheduled',

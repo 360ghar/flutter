@@ -7,278 +7,268 @@ import '../widgets/visits_skeleton_loaders.dart';
 import '../widgets/visit_card.dart';
 import '../widgets/agent_card.dart';
 
-class VisitsView extends GetView<VisitsController> {
+class VisitsView extends StatefulWidget {
   const VisitsView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Initialize data loading once on widget build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!controller.hasLoadedVisits.value && !controller.isLoading.value) {
-        controller.loadVisitsLazy();
+  State<VisitsView> createState() => _VisitsViewState();
+}
+
+class _VisitsViewState extends State<VisitsView> 
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  late final VisitsController controller;
+  late TabController _tabController;
+  bool _isInitialized = false;
+  int _currentTab = 0;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<VisitsController>();
+    _tabController = TabController(length: 2, vsync: this);
+    
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {
+          _currentTab = _tabController.index;
+        });
       }
     });
-
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackground,
-        body: SafeArea(
-          child: Obx(() {
-            if (controller.isLoading.value) {
-              return _buildLoadingState();
-            }
-
-            return Column(
-              children: [
-                // TabBar at the top
-                Container(
-                  color: AppColors.scaffoldBackground,
-                  child: TabBar(
-                    indicatorColor: AppColors.primaryYellow,
-                    indicatorWeight: 3,
-                    labelColor: AppColors.primaryYellow,
-                    unselectedLabelColor: AppColors.tabUnselected,
-                    labelStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    unselectedLabelStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                    ),
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('scheduled_visits'.tr),
-                            const SizedBox(width: 8),
-                            Obx(
-                              () => controller.upcomingVisits.isNotEmpty
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primaryYellow,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        '${controller.upcomingVisits.length}',
-                                        style: TextStyle(
-                                          color: AppColors.buttonText,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('past_visits'.tr),
-                            const SizedBox(width: 8),
-                            Obx(
-                              () => controller.pastVisits.isNotEmpty
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.inputBackground,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        '${controller.pastVisits.length}',
-                                        style: TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Relationship Manager Section - Always visible
-                Container(
-                  color: AppColors.scaffoldBackground,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: _buildRelationshipManagerCard(),
-                  ),
-                ),
-
-                // Tab Views
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      // Upcoming Visits Tab
-                      _buildUpcomingVisitsTab(),
-
-                      // Past Visits Tab
-                      _buildPastVisitsTab(),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }),
-        ),
-      ),
-    );
+    
+    setState(() {
+      _isInitialized = true;
+    });
   }
 
-  Widget _buildLoadingState() {
-    return Column(
-      children: [
-        // TabBar skeleton
-        Container(height: 48, color: AppColors.scaffoldBackground),
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
-        // Agent skeleton loader
-        Container(
-          color: AppColors.scaffoldBackground,
-          child: const Padding(
-            padding: EdgeInsets.all(20),
-            child: RelationshipManagerSkeleton(),
-          ),
-        ),
-
-        // Tab content skeleton loaders
-        Expanded(
-          child: TabBarView(
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    
+    // Show minimal loading state during initialization
+    if (!_isInitialized) {
+      return Scaffold(
+        backgroundColor: AppColors.scaffoldBackground,
+        body: SafeArea(
+          child: Column(
             children: [
-              // Upcoming visits skeleton
-              _buildSkeletonList(),
-              // Past visits skeleton
-              _buildSkeletonList(),
+              Container(height: 48, color: AppColors.scaffoldBackground),
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
             ],
           ),
         ),
-      ],
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom TabBar without heavy DefaultTabController
+            _buildCustomTabBar(),
+            
+            // Relationship Manager Card
+            RepaintBoundary(
+              child: Container(
+                color: AppColors.scaffoldBackground,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: _buildRelationshipManagerCard(),
+                ),
+              ),
+            ),
+            
+            // Content Area - Simple conditional rendering instead of TabBarView
+            Expanded(
+              child: _currentTab == 0
+                  ? _buildUpcomingVisitsContent()
+                  : _buildPastVisitsContent(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildSkeletonList() {
-    return SingleChildScrollView(
+  Widget _buildCustomTabBar() {
+    return Container(
+      color: AppColors.scaffoldBackground,
+      child: TabBar(
+        controller: _tabController,
+        indicatorColor: AppColors.primaryYellow,
+        indicatorWeight: 3,
+        labelColor: AppColors.primaryYellow,
+        unselectedLabelColor: AppColors.tabUnselected,
+        labelStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
+        ),
+        tabs: [
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('scheduled_visits'.tr),
+                const SizedBox(width: 8),
+                Obx(() {
+                  final count = controller.upcomingVisits.length;
+                  if (count == 0) return const SizedBox.shrink();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryYellow,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        color: AppColors.buttonText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+          Tab(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('past_visits'.tr),
+                const SizedBox(width: 8),
+                Obx(() {
+                  final count = controller.pastVisits.length;
+                  if (count == 0) return const SizedBox.shrink();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.inputBackground,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpcomingVisitsContent() {
+    return RefreshIndicator(
+      onRefresh: controller.refreshVisits,
+      child: Obx(() {
+        if (controller.isLoading.value) {
+          return _buildLoadingList();
+        }
+
+        if (controller.upcomingVisits.isEmpty) {
+          return _buildEmptyState(
+            'no_visits'.tr,
+            'Book a property visit to see it here',
+            Icons.calendar_today_outlined,
+            AppColors.primaryYellow,
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: controller.upcomingVisits.length,
+          itemBuilder: (context, index) {
+            final visit = controller.upcomingVisits[index];
+            return VisitCard(
+              visit: visit,
+              isUpcoming: true,
+              dateText: controller.formatVisitDate(visit.scheduledDate),
+              timeText: controller.formatVisitTime(visit.scheduledDate),
+              onReschedule: () => _showRescheduleDialog(visit),
+              onCancel: () => _showCancelDialog(visit),
+            );
+          },
+        );
+      }),
+    );
+  }
+
+  Widget _buildPastVisitsContent() {
+    return RefreshIndicator(
+      onRefresh: controller.refreshVisits,
+      child: Obx(() {
+        if (controller.isLoading.value) {
+          return _buildLoadingList();
+        }
+
+        if (controller.pastVisits.isEmpty) {
+          return _buildEmptyState(
+            'no_visits'.tr,
+            'Your completed visits will appear here',
+            Icons.history,
+            AppColors.iconColor,
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: controller.pastVisits.length,
+          itemBuilder: (context, index) {
+            final visit = controller.pastVisits[index];
+            return VisitCard(
+              visit: visit,
+              isUpcoming: false,
+              dateText: controller.formatVisitDate(visit.scheduledDate),
+              timeText: controller.formatVisitTime(visit.scheduledDate),
+              onReschedule: () => _showRescheduleDialog(visit),
+              onCancel: () => _showCancelDialog(visit),
+            );
+          },
+        );
+      }),
+    );
+  }
+
+  Widget _buildLoadingList() {
+    return ListView.builder(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        children: List.generate(3, (index) => const VisitCardSkeleton()),
-      ),
-    );
-  }
-
-  Widget _buildUpcomingVisitsTab() {
-    return RefreshIndicator(
-      onRefresh: controller.refreshVisits,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Obx(() {
-              if (controller.upcomingVisits.isEmpty) {
-                return _buildEmptyState(
-                  'no_visits'.tr,
-                  'Book a property visit to see it here',
-                  Icons.calendar_today_outlined,
-                  AppColors.primaryYellow,
-                );
-              }
-
-              return Column(
-                children: controller.upcomingVisits
-                    .map(
-                      (visit) => VisitCard(
-                        visit: visit,
-                        isUpcoming: true,
-                        dateText: controller.formatVisitDate(
-                          visit.scheduledDate,
-                        ),
-                        timeText: controller.formatVisitTime(
-                          visit.scheduledDate,
-                        ),
-                        onReschedule: () => _showRescheduleDialog(visit),
-                        onCancel: () => _showCancelDialog(visit),
-                      ),
-                    )
-                    .toList(),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPastVisitsTab() {
-    return RefreshIndicator(
-      onRefresh: controller.refreshVisits,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Obx(() {
-              if (controller.pastVisits.isEmpty) {
-                return _buildEmptyState(
-                  'no_visits'.tr,
-                  'Your completed visits will appear here',
-                  Icons.history,
-                  AppColors.iconColor,
-                );
-              }
-
-              return Column(
-                children: controller.pastVisits
-                    .map(
-                      (visit) => VisitCard(
-                        visit: visit,
-                        isUpcoming: false,
-                        dateText: controller.formatVisitDate(
-                          visit.scheduledDate,
-                        ),
-                        timeText: controller.formatVisitTime(
-                          visit.scheduledDate,
-                        ),
-                        onReschedule: () => _showRescheduleDialog(visit),
-                        onCancel: () => _showCancelDialog(visit),
-                      ),
-                    )
-                    .toList(),
-              );
-            }),
-          ],
-        ),
-      ),
+      itemCount: 3,
+      itemBuilder: (context, index) => const VisitCardSkeleton(),
     );
   }
 
   Widget _buildRelationshipManagerCard() {
-    // Initialize agent data loading once on card build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!controller.hasLoadedAgent.value &&
-          !controller.isLoadingAgent.value) {
-        controller.loadRelationshipManagerLazy();
-      }
-    });
-
     return Obx(() {
       if (controller.isLoadingAgent.value) {
         return const RelationshipManagerSkeleton();
@@ -307,34 +297,39 @@ class VisitsView extends GetView<VisitsController> {
     IconData icon,
     Color color,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        children: [
-          Icon(icon, size: 64, color: color),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
+    return Center(
+      child: SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 64, color: color),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }
 
   void _showRescheduleDialog(VisitModel visit) {
     DateTime selectedDate = visit.scheduledDate;
-    const defaultHour = 10; // Use default time (10:00 AM)
+    const defaultHour = 10;
     const defaultMinute = 0;
 
     Get.dialog(
@@ -350,8 +345,6 @@ class VisitsView extends GetView<VisitsController> {
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 20),
-
-                // Date Selection
                 ListTile(
                   leading: Icon(
                     Icons.calendar_today,
@@ -375,8 +368,6 @@ class VisitsView extends GetView<VisitsController> {
                     }
                   },
                 ),
-
-                // Time selection removed; default time will be applied
               ],
             );
           },
@@ -392,7 +383,6 @@ class VisitsView extends GetView<VisitsController> {
                 defaultHour,
                 defaultMinute,
               );
-
               controller.rescheduleVisit(visit.id.toString(), newDateTime);
               Get.back();
             },

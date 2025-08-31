@@ -60,13 +60,7 @@ class PropertyDetailsView extends StatelessWidget {
     // Add null check to ensure property is not null
     final PropertyModel safeProperty = property;
 
-    // Ensure visits are loaded to reflect scheduled state in UI
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!visitsController.hasLoadedVisits.value &&
-          !visitsController.isLoading.value) {
-        visitsController.loadVisitsLazy();
-      }
-    });
+    // Visits are automatically loaded by the controller, no need for manual loading
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,

@@ -11,12 +11,19 @@ class TourView extends StatefulWidget {
 }
 
 class _TourViewState extends State<TourView> {
-  late final WebViewController controller;
+  WebViewController? controller;
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    // Defer WebView initialization to avoid blocking the main thread
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeWebView();
+    });
+  }
+
+  void _initializeWebView() {
     final String tourUrl = Get.arguments as String;
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -24,37 +31,43 @@ class _TourViewState extends State<TourView> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            setState(() {
-              isLoading = true;
-            });
+            if (mounted) {
+              setState(() {
+                isLoading = true;
+              });
+            }
           },
           onPageFinished: (String url) {
-            setState(() {
-              isLoading = false;
-            });
-            // Inject CSS to enhance iframe display
-            controller.runJavaScript('''
-              document.body.style.margin = '0';
-              document.body.style.padding = '0';
-              var iframes = document.getElementsByTagName('iframe');
-              for (var i = 0; i < iframes.length; i++) {
-                iframes[i].style.width = '100%';
-                iframes[i].style.height = '100vh';
-                iframes[i].style.border = 'none';
-              }
-            ''');
+            if (mounted) {
+              setState(() {
+                isLoading = false;
+              });
+              // Inject CSS to enhance iframe display
+              controller?.runJavaScript('''
+                document.body.style.margin = '0';
+                document.body.style.padding = '0';
+                var iframes = document.getElementsByTagName('iframe');
+                for (var i = 0; i < iframes.length; i++) {
+                  iframes[i].style.width = '100%';
+                  iframes[i].style.height = '100vh';
+                  iframes[i].style.border = 'none';
+                }
+              ''');
+            }
           },
           onWebResourceError: (WebResourceError error) {
-            setState(() {
-              isLoading = false;
-            });
-            Get.snackbar(
-              'Error Loading Tour',
-              'Please check your internet connection',
-              snackPosition: SnackPosition.TOP,
-              backgroundColor: AppColors.errorRed,
-              colorText: Colors.white,
-            );
+            if (mounted) {
+              setState(() {
+                isLoading = false;
+              });
+              Get.snackbar(
+                'Error Loading Tour',
+                'Please check your internet connection',
+                snackPosition: SnackPosition.TOP,
+                backgroundColor: AppColors.errorRed,
+                colorText: Colors.white,
+              );
+            }
           },
         ),
       );
@@ -81,9 +94,9 @@ class _TourViewState extends State<TourView> {
         </body>
         </html>
       ''';
-      controller.loadHtmlString(htmlContent);
+      controller?.loadHtmlString(htmlContent);
     } else {
-      controller.loadRequest(Uri.parse(tourUrl));
+      controller?.loadRequest(Uri.parse(tourUrl));
     }
   }
 
@@ -145,7 +158,9 @@ class _TourViewState extends State<TourView> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: WebViewWidget(controller: controller),
+                child: controller != null 
+                    ? WebViewWidget(controller: controller!)
+                    : const SizedBox.shrink(),
               ),
             ),
             // Loading indicator

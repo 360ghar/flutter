@@ -5,6 +5,7 @@ import '../../../core/controllers/page_state_service.dart';
 import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/app_exceptions.dart';
 import '../../../core/utils/debug_logger.dart';
+import '../../visits/controllers/visits_controller.dart';
 
 class DashboardController extends GetxController {
   late final AuthController _authController;
@@ -276,6 +277,13 @@ class DashboardController extends GetxController {
   void changeTab(int index) {
     if (currentIndex.value == index) return; // Prevent redundant updates
     currentIndex.value = index;
+    
+    // Trigger visits refresh when switching to visits tab to ensure latest data
+    if (index == 4 && Get.isRegistered<VisitsController>()) {
+      final visitsController = Get.find<VisitsController>();
+      // Force refresh visits to ensure any newly scheduled visits appear
+      Future.microtask(() => visitsController.forceRefreshVisits());
+    }
 
     // Update PageStateService with the corresponding page type
     PageType? pageType;

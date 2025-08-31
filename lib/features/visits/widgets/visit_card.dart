@@ -38,20 +38,22 @@ class VisitCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              RobustNetworkImage(
-                imageUrl:
-                    visit.property?.mainImage ??
-                    visit.property?.mainImageUrl ??
-                    '',
-                width: 64,
-                height: 64,
-                fit: BoxFit.cover,
-                borderRadius: BorderRadius.circular(8),
-                errorWidget: Container(
+              RepaintBoundary(
+                child: RobustNetworkImage(
+                  imageUrl:
+                      visit.property?.mainImage ??
+                      visit.property?.mainImageUrl ??
+                      '',
                   width: 64,
                   height: 64,
-                  color: AppColors.inputBackground,
-                  child: Icon(Icons.image, color: AppColors.iconColor),
+                  fit: BoxFit.cover,
+                  borderRadius: BorderRadius.circular(8),
+                  errorWidget: Container(
+                    width: 64,
+                    height: 64,
+                    color: AppColors.inputBackground,
+                    child: Icon(Icons.image, color: AppColors.iconColor),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
