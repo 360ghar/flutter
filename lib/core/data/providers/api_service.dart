@@ -4,7 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../utils/debug_logger.dart';
-import '../../utils/error_handler.dart';
+import '../../utils/error_mapper.dart';
+import '../../utils/app_exceptions.dart';
 import '../models/agent_model.dart';
 import '../models/amenity_model.dart';
 import '../models/api_response_models.dart';
@@ -275,13 +276,14 @@ class ApiService extends getx.GetConnect {
     String method = 'GET',
     Map<String, dynamic>? body,
     Map<String, String>? queryParams,
-    int retries = 1,
+    int retries = 2,
     String? operationName,
   }) async {
-    Exception? lastException;
+    AppException? lastAppException;
     final operation = operationName ?? '$method $endpoint';
+    final int maxAttempts = retries + 1; // attempts = initial + retries
 
-    for (int attempt = 0; attempt <= retries; attempt++) {
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         // Prepend /api/v1 to all endpoints
         final fullEndpoint = '/api/v1$endpoint';
@@ -372,11 +374,12 @@ class ApiService extends getx.GetConnect {
           DebugLogger.auth('🚫 Access forbidden for $operation');
           throw ApiAuthException('Access forbidden for $operation', statusCode: 403);
         } else if (((response.statusCode) ?? 0) >= 500 && attempt < retries) {
-          // Server error - retry
+          // Server error - retry with exponential backoff + jitter
+          final delayMs = _computeBackoffDelayMs(attempt);
           DebugLogger.warning(
-            '🔄 Server error (${response.statusCode}) for $operation, retrying... (${attempt + 1}/$retries)',
+            '🔄 Server error (${response.statusCode}) for $operation, retrying in ${delayMs}ms... (${attempt + 1}/$retries)',
           );
-          await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+          await Future.delayed(Duration(milliseconds: delayMs));
           continue;
         } else {
           // Enhanced error logging for 422 errors
@@ -398,58 +401,79 @@ class ApiService extends getx.GetConnect {
             DebugLogger.error('⚡ Response Body: ${response.bodyString}');
           }
 
-          // Use ErrorHandler for comprehensive error handling
+          // Create an ApiException to be mapped to AppException below
           final errorMessage =
               'HTTP ${response.statusCode}: ${response.statusText ?? 'Unknown error'}';
           DebugLogger.error('❌ API Error for $operation: $errorMessage');
-          ErrorHandler.handleNetworkError(response.bodyString ?? errorMessage);
-
-          throw ApiException(
+          final apiEx = ApiException(
             response.statusText ?? 'API Error',
             statusCode: response.statusCode,
             response: response.bodyString,
           );
-        }
-      } catch (e) {
-        lastException = e is Exception ? e : Exception(e.toString());
 
-        // If it's an auth exception, don't retry
-        if (e is ApiAuthException) {
-          DebugLogger.auth('🔒 Authentication error for $operation: $e');
-          rethrow;
+          // Map to AppException for consistent handling
+          final appEx = ErrorMapper.mapApiError(apiEx);
+          if (attempt < retries && ErrorMapper.isRetryable(appEx)) {
+            final delayMs = _computeBackoffDelayMs(attempt);
+            DebugLogger.warning(
+              '🔄 Retryable API error for $operation, retrying in ${delayMs}ms... (${attempt + 1}/$retries)',
+            );
+            await Future.delayed(Duration(milliseconds: delayMs));
+            continue;
+          }
+          throw appEx;
+        }
+      } catch (e, st) {
+        // Convert to AppException immediately
+        final appEx = ErrorMapper.mapApiError(e, st);
+
+        // Auth errors should bubble immediately
+        if (appEx is AuthenticationException) {
+          DebugLogger.auth('🔒 Authentication error for $operation: ${appEx.message}');
+          throw appEx;
         }
 
-        // If this is the last attempt, handle with ErrorHandler
-        if (attempt == retries) {
-          // Enhanced error reporting with stack trace preservation
-          DebugLogger.reportError(
-            context: 'API Request Failed',
-            error: e,
-            stackTrace: StackTrace.current,
-            metadata: {
-              'operation': operation,
-              'attempts': attempt + 1,
-              'endpoint': endpoint,
-              'method': method,
-              'hasBody': body != null,
-              'hasQuery': queryParams != null && queryParams.isNotEmpty,
-            },
+        // If retryable and we have attempts remaining, retry with backoff
+        if (attempt < retries && ErrorMapper.isRetryable(appEx)) {
+          final delayMs = _computeBackoffDelayMs(attempt);
+          DebugLogger.warning(
+            '🔄 Request failed for $operation (${appEx.code ?? appEx.runtimeType}), retrying in ${delayMs}ms... (${attempt + 1}/$retries)',
           );
-
-          // Use ErrorHandler for comprehensive error categorization
-          ErrorHandler.handleNetworkError(e, stackTrace: StackTrace.current);
-          rethrow;
+          await Future.delayed(Duration(milliseconds: delayMs));
+          continue;
         }
 
-        // Wait before retry
-        DebugLogger.warning(
-          '🔄 Request failed for $operation, retrying... (${attempt + 1}/$retries)',
+        // No retries left or non-retryable → record and rethrow
+        lastAppException = appEx;
+
+        DebugLogger.reportError(
+          context: 'API Request Failed',
+          error: appEx,
+          stackTrace: st,
+          metadata: {
+            'operation': operation,
+            'attempts': attempt + 1,
+            'endpoint': endpoint,
+            'method': method,
+            'hasBody': body != null,
+            'hasQuery': queryParams != null && (queryParams?.isNotEmpty ?? false),
+          },
         );
-        await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+
+        throw appEx;
       }
     }
+    throw lastAppException ?? NetworkException('Unknown error occurred for $operation');
+  }
 
-    throw lastException ?? Exception('Unknown error occurred for $operation');
+  // Exponential backoff with jitter (ms)
+  int _computeBackoffDelayMs(int attempt) {
+    // attempt: 0,1,2 → 300, 600, 1200 (+ jitter)
+    final base = 300 * (1 << attempt);
+    final jitter = (DateTime.now().microsecondsSinceEpoch % 200);
+    final delay = base + jitter;
+    // Cap delay to reasonable upper bound
+    return delay > 4000 ? 4000 : delay;
   }
 
   // Helper method for safer user model parsing

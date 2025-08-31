@@ -1,4 +1,5 @@
-import 'package:dio/dio.dart';
+import 'dart:async';
+import 'dart:io';
 import 'package:get/get.dart';
 import '../data/providers/api_service.dart';
 import 'null_check_trap.dart';
@@ -125,9 +126,32 @@ class ErrorMapper {
       return NetworkException(error, details: error);
     }
 
-    if (error is DioException) {
-      return _mapDioException(error);
+    // Map common platform/network exceptions
+    if (error is SocketException) {
+      return NetworkException(
+        'Unable to connect to server. Please check your internet connection.',
+        code: 'CONNECTION_ERROR',
+        details: error.message,
+      );
     }
+
+    if (error is TimeoutException) {
+      return NetworkException(
+        'Connection timeout. Please check your internet connection and try again.',
+        code: 'TIMEOUT',
+        details: error.message,
+      );
+    }
+
+    if (error is HttpException) {
+      return NetworkException(
+        'Network error occurred. Please try again.',
+        code: 'HTTP_EXCEPTION',
+        details: error.message,
+      );
+    }
+
+    // Note: Avoid referencing GetX-internal exception types directly to keep mapping portable.
 
     if (error is ApiException) {
       return _mapApiException(error);
@@ -179,45 +203,8 @@ class ErrorMapper {
     );
   }
 
-  static AppException _mapDioException(DioException error) {
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.sendTimeout:
-        return NetworkException(
-          'Connection timeout. Please check your internet connection and try again.',
-          code: 'TIMEOUT',
-          details: error.message,
-        );
-
-      case DioExceptionType.connectionError:
-        return NetworkException(
-          'Unable to connect to server. Please check your internet connection.',
-          code: 'CONNECTION_ERROR',
-          details: error.message,
-        );
-
-      case DioExceptionType.badResponse:
-        return _mapHttpStatusCode(
-          error.response?.statusCode,
-          error.response?.data,
-        );
-
-      case DioExceptionType.cancel:
-        return NetworkException(
-          'Request was cancelled.',
-          code: 'CANCELLED',
-          details: error.message,
-        );
-
-      default:
-        return NetworkException(
-          'Network error occurred. Please try again.',
-          code: 'NETWORK_ERROR',
-          details: error.message,
-        );
-    }
-  }
+  // Note: Previously mapped DioException. Since Dio is not used,
+  // we rely on platform and GetConnect exceptions above.
 
   static AppException _mapApiException(ApiException error) {
     if (error.statusCode != null) {

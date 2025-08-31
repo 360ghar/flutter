@@ -4,6 +4,7 @@ import '../models/unified_filter_model.dart';
 import '../models/unified_property_response.dart';
 import '../providers/api_service.dart';
 import '../../utils/debug_logger.dart';
+import '../../utils/app_exceptions.dart';
 
 class SwipesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
@@ -22,8 +23,8 @@ class SwipesRepository extends GetxService {
       await _apiService.swipeProperty(propertyId, isLiked);
 
       DebugLogger.success('✅ Swipe recorded successfully');
-    } catch (e) {
-      DebugLogger.error('❌ Failed to record swipe: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to record swipe: ${e.message}');
       rethrow;
     }
   }
@@ -144,8 +145,8 @@ class SwipesRepository extends GetxService {
         '✅ Loaded ${response.properties.length} properties from swipe history (page ${response.page}/${response.totalPages})',
       );
       return response;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch swipe history properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch swipe history properties: ${e.message}');
       rethrow;
     }
   }
@@ -171,8 +172,8 @@ class SwipesRepository extends GetxService {
         isLiked: true,
       );
       return response.properties;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch liked properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch liked properties: ${e.message}');
       rethrow;
     }
   }
@@ -198,8 +199,8 @@ class SwipesRepository extends GetxService {
         isLiked: false,
       );
       return response.properties;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch passed properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch passed properties: ${e.message}');
       rethrow;
     }
   }
@@ -228,8 +229,8 @@ class SwipesRepository extends GetxService {
         '✅ Loaded ${response.properties.length} liked properties',
       );
       return response.properties;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch liked properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch liked properties: ${e.message}');
       rethrow;
     }
   }

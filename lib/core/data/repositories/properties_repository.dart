@@ -4,6 +4,7 @@ import '../models/unified_property_response.dart';
 import '../models/unified_filter_model.dart';
 import '../providers/api_service.dart';
 import '../../utils/debug_logger.dart';
+import '../../utils/app_exceptions.dart';
 
 class PropertiesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
@@ -38,8 +39,8 @@ class PropertiesRepository extends GetxService {
         '✅ Fetched ${response.properties.length} properties (page $page/${response.totalPages})',
       );
       return response;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch properties: ${e.message}');
       rethrow;
     }
   }
@@ -53,8 +54,8 @@ class PropertiesRepository extends GetxService {
 
       DebugLogger.success('✅ Property details fetched: ${property.title}');
       return property;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch property $propertyId: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch property $propertyId: ${e.message}');
       rethrow;
     }
   }
@@ -87,8 +88,8 @@ class PropertiesRepository extends GetxService {
         '✅ Loaded ${allProperties.length}/${propertyIds.length} properties',
       );
       return allProperties;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch properties by IDs: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch properties by IDs: ${e.message}');
       rethrow;
     }
   }
@@ -186,8 +187,8 @@ class PropertiesRepository extends GetxService {
       );
 
       return allProperties;
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to load all properties for map: $e');
+    } on AppException catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to load all properties for map: ${e.message}');
       DebugLogger.error('Stack trace: $stackTrace');
       rethrow;
     }

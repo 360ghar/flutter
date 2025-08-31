@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../models/user_model.dart';
 import '../providers/api_service.dart';
 import '../../utils/debug_logger.dart';
+import '../../utils/app_exceptions.dart';
 
 /// Repository for managing user profile operations
 /// Handles all profile-related API calls and data management
@@ -17,8 +18,8 @@ class ProfileRepository extends GetxService {
       final updatedUser = await _apiService.updateUserProfile(profileData);
       DebugLogger.success('✅ Profile updated successfully');
       return updatedUser;
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to update user profile', e, stackTrace);
+    } on AppException catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to update user profile: ${e.message}', e, stackTrace);
       rethrow;
     }
   }
@@ -38,8 +39,8 @@ class ProfileRepository extends GetxService {
       }
       // If lat/lon are missing, just return the current profile
       return await getCurrentUserProfile();
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to update user location', e, stackTrace);
+    } on AppException catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to update user location: ${e.message}', e, stackTrace);
       rethrow;
     }
   }
@@ -53,8 +54,8 @@ class ProfileRepository extends GetxService {
       await _apiService.updateUserPreferences(preferences);
       // Refetch profile to get the most up-to-date user model
       return await getCurrentUserProfile();
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to update user preferences', e, stackTrace);
+    } on AppException catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to update user preferences: ${e.message}', e, stackTrace);
       rethrow;
     }
   }
@@ -66,8 +67,8 @@ class ProfileRepository extends GetxService {
       final user = await _apiService.getCurrentUser();
       DebugLogger.success('✅ User profile fetched successfully');
       return user;
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to fetch user profile', e, stackTrace);
+    } on AppException catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to fetch user profile: ${e.message}', e, stackTrace);
       rethrow;
     }
   }
@@ -114,8 +115,8 @@ class ProfileRepository extends GetxService {
       });
       DebugLogger.success('✅ Profile image updated successfully');
       return updatedUser;
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to update profile image', e, stackTrace);
+    } on AppException catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to update profile image: ${e.message}', e, stackTrace);
       rethrow;
     }
   }
