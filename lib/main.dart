@@ -43,7 +43,7 @@ void main() async {
       try {
         DebugLogger.success('Environment variables loaded successfully');
         DebugLogger.info(
-          'API Base URL: ${dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000'}',
+          'API Base URL: ${dotenv.env['API_BASE_URL'] ?? 'https://360ghar.up.railway.app'}',
         );
       } catch (e) {
         DebugLogger.warning('Failed to load .env.development', e);
@@ -65,9 +65,7 @@ void main() async {
 
       // Set up global error handlers
       FlutterError.onError = (FlutterErrorDetails details) {
-        DebugLogger.error(
-          '🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}',
-        );
+        DebugLogger.error('🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}');
         DebugLogger.error('🚨 [GLOBAL_ERROR] Stack trace: ${details.stack}');
 
         // One-time first null-check trap capture
@@ -81,9 +79,7 @@ void main() async {
     },
     (error, stack) {
       // One-time first null-check trap capture for unhandled async errors
-      if (error.toString().contains(
-        'Null check operator used on a null value',
-      )) {
+      if (error.toString().contains('Null check operator used on a null value')) {
         NullCheckTrap.capture(error, stack, source: 'zone');
       }
       DebugLogger.error('🚨 [GLOBAL_ERROR] Unhandled zone error', error, stack);

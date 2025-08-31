@@ -36,9 +36,12 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _initialize();
-    // Set up navigation worker to handle route changes based on auth status
+    // Set up navigation worker BEFORE initializing so initial state changes trigger navigation
     _setupNavigationWorker();
+    _initialize();
+
+    // Ensure we handle the current state once (in case no change occurs after setup)
+    _handleAuthNavigation(authStatus.value);
   }
 
   /// Initialize the controller and listen to auth state changes.
