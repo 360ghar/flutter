@@ -151,6 +151,8 @@ class ApiService extends getx.GetConnect {
 
   late final String _baseUrl;
   late final SupabaseClient _supabase;
+  // Track in-flight profile fetch to avoid duplicate concurrent calls
+  Future<UserModel>? _getCurrentUserInFlight;
   // Removed token cache - trust Supabase session management
 
   @override
@@ -158,6 +160,13 @@ class ApiService extends getx.GetConnect {
     super.onInit();
     await _initializeService();
     httpClient.baseUrl = _baseUrl;
+    // Configure a sensible default timeout, overridable via env
+    final timeoutSeconds =
+        int.tryParse(dotenv.env['API_TIMEOUT_SECONDS'] ?? '') ?? 15;
+    httpClient.timeout = Duration(seconds: timeoutSeconds);
+    DebugLogger.startup(
+      'HTTP client timeout set to ${httpClient.timeout.inSeconds}s',
+    );
 
     // Request modifier to add authentication token
     httpClient.addRequestModifier<Object?>((request) async {
@@ -735,11 +744,22 @@ class ApiService extends getx.GetConnect {
   }
 
   Future<UserModel> getCurrentUser() async {
-    return await _makeRequest('/users/profile', (json) {
+    // De-dupe concurrent calls to avoid unnecessary load and race conditions
+    if (_getCurrentUserInFlight != null) {
+      return await _getCurrentUserInFlight!;
+    }
+
+    _getCurrentUserInFlight = _makeRequest('/users/profile', (json) {
       // Handle both direct user object and wrapped response
       final userData = json['data'] ?? json;
       return _parseUserModel(userData);
-    }, operationName: 'Get Current User');
+    }, operationName: 'Get Current User', retries: 2); // small extra retry for robustness
+
+    try {
+      return await _getCurrentUserInFlight!;
+    } finally {
+      _getCurrentUserInFlight = null;
+    }
   }
 
   // User Management

@@ -2,12 +2,6 @@
   "dart.flutterSdkPath": null,
   "dart.sdkPath": null,
   "dart.lineLength": 100,
-  "editor.formatOnSave": true,
-  "editor.formatOnType": true,
-  "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit",
-    "source.organizeImports": "explicit"
-  },
   "dart.analysisExcludedFolders": [
     "build/",
     ".dart_tool/",
@@ -54,7 +48,9 @@
     "editor.defaultFormatter": "Dart-Code.dart-code",
     "editor.formatOnSave": true,
     "editor.formatOnType": true,
-    "editor.rulers": [100],
+    "editor.rulers": [
+      100
+    ],
     "editor.codeActionsOnSave": {
       "source.fixAll": "explicit",
       "source.organizeImports": "explicit"

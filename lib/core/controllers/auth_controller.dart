@@ -166,16 +166,25 @@ class AuthController extends GetxController {
   }
 
   /// Fetches the user profile from our backend and updates the app's auth status.
-  Future<void> _loadUserProfile() async {
+  /// Adds a bounded retry when `ProfileRepository` is not yet registered to avoid infinite loops.
+  Future<void> _loadUserProfile({int retryCount = 0}) async {
     try {
       // Check if ProfileRepository is available
       final profileRepo = _profileRepository;
       if (profileRepo == null) {
+        if (retryCount >= 5) {
+          DebugLogger.error(
+            'Failed to load user profile after 5 retries. Setting state to error.',
+          );
+          authStatus.value = AuthStatus.error;
+          return;
+        }
+
         DebugLogger.warning(
-          'ProfileRepository not available, retrying in 1 second...',
+          'ProfileRepository not available, retrying in 1 second... (Attempt ${retryCount + 1})',
         );
         await Future.delayed(const Duration(seconds: 1));
-        return _loadUserProfile(); // Retry
+        return _loadUserProfile(retryCount: retryCount + 1); // Retry with limit
       }
 
       // Use ProfileRepository to fetch user data from your backend
@@ -217,20 +226,32 @@ class AuthController extends GetxController {
         e,
         stackTrace,
       );
-      // This is a critical error. The user is logged into Supabase but we can't get their profile.
-      // Set an error state to allow the user to retry or sign out.
+
+      // If we already have a user and were authenticated, treat this as a transient refresh failure.
+      // Do not knock the app into an error state; keep current auth status.
+      if (currentUser.value != null &&
+          authStatus.value == AuthStatus.authenticated) {
+        DebugLogger.warning(
+          'Transient profile refresh failure; preserving authenticated state.',
+        );
+        try {
+          if (Get.context != null) {
+            ErrorHandler.showInfo('Could not refresh profile. Will retry later.');
+          }
+        } catch (_) {}
+        return;
+      }
+
+      // Otherwise, this is initial load failure; set error state so user can retry or sign out.
       authStatus.value = AuthStatus.error;
 
-      // Safely show error message only if Get context is available
       try {
         if (Get.context != null) {
           ErrorHandler.showInfo(
             'Could not retrieve your profile. Please try again.',
           );
         } else {
-          DebugLogger.warning(
-            'Cannot show snackbar: GetX context not available',
-          );
+          DebugLogger.warning('Cannot show snackbar: GetX context not available');
         }
       } catch (snackbarError) {
         DebugLogger.error('Failed to show error snackbar', snackbarError);

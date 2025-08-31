@@ -1,10 +1,11 @@
 // lib/features/auth/controllers/profile_completion_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../core/controllers/auth_controller.dart';
+import '../../../core/controllers/page_state_service.dart';
 import '../../../core/models/auth_status.dart';
 import '../../../core/utils/error_handler.dart';
-import '../../../core/controllers/page_state_service.dart';
 
 class ProfileCompletionController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -15,6 +16,9 @@ class ProfileCompletionController extends GetxController {
   final RxInt currentStep = 0.obs;
   final RxString selectedPropertyPurpose = 'buy'.obs;
   final List<String> propertyPurposes = ['Buy', 'Rent', 'Investment'];
+
+  // Store the selected DateTime object
+  DateTime? selectedDateOfBirth;
 
   late final AuthController authController;
   PageStateService? pageStateService;
@@ -39,7 +43,11 @@ class ProfileCompletionController extends GetxController {
       final profileData = {
         'full_name': fullNameController.text.trim(),
         'email': emailController.text.trim(),
-        'date_of_birth': dateOfBirthController.text.trim(),
+        'date_of_birth': selectedDateOfBirth != null
+            ? '${selectedDateOfBirth!.year.toString().padLeft(4, '0')}-'
+                  '${selectedDateOfBirth!.month.toString().padLeft(2, '0')}-'
+                  '${selectedDateOfBirth!.day.toString().padLeft(2, '0')}'
+            : null,
         'property_purpose': selectedPropertyPurpose.value,
       };
 
@@ -53,8 +61,9 @@ class ProfileCompletionController extends GetxController {
         // If not yet registered (will be by DashboardBinding), the user preference
         // has already been persisted via updateUserProfile -> updateUserPreferences.
         if (Get.isRegistered<PageStateService>()) {
-          (pageStateService ?? Get.find<PageStateService>())
-              .setPurposeForAllPages(selectedPropertyPurpose.value);
+          (pageStateService ?? Get.find<PageStateService>()).setPurposeForAllPages(
+            selectedPropertyPurpose.value,
+          );
         }
       } else {
         // The error is already shown by the AuthController, but you can add specific logic here if needed.
@@ -90,14 +99,22 @@ class ProfileCompletionController extends GetxController {
   Future<void> selectDateOfBirth() async {
     final DateTime? pickedDate = await showDatePicker(
       context: Get.context!,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      initialDate: selectedDateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 18)),
       firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
       lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
     );
 
     if (pickedDate != null) {
-      dateOfBirthController.text =
-          '${pickedDate.day}/${pickedDate.month}/${pickedDate.year}';
+      // Store the DateTime object
+      selectedDateOfBirth = pickedDate;
+
+      // Format for UI display (dd/MM/yyyy)
+      final formattedDate =
+          '${pickedDate.day.toString().padLeft(2, '0')}/'
+          '${pickedDate.month.toString().padLeft(2, '0')}/'
+          '${pickedDate.year}';
+      dateOfBirthController.text = formattedDate;
+
       update(); // Trigger UI rebuild for GetBuilder
     }
   }

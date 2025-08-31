@@ -7,13 +7,14 @@ import 'core/models/auth_status.dart';
 import 'core/utils/debug_logger.dart';
 import 'widgets/common/error_states.dart';
 
-class Root extends GetView<AuthController> {
+class Root extends StatelessWidget {
   const Root({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
     return Obx(() {
-      final currentStatus = controller.authStatus.value;
+      final currentStatus = authController.authStatus.value;
       DebugLogger.info(
         '🏠 Root widget rebuilding with authStatus: $currentStatus',
       );
@@ -36,8 +37,8 @@ class Root extends GetView<AuthController> {
           DebugLogger.debug('📱 Root: Showing error state');
           // User authentication error - show retry/logout options
           return ErrorStates.profileLoadError(
-            onRetry: () => controller.retryProfileLoad(),
-            onSignOut: () => controller.signOut(),
+            onRetry: () => authController.retryProfileLoad(),
+            onSignOut: () => authController.signOut(),
           );
       }
     });

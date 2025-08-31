@@ -24,15 +24,9 @@ class PageStateService extends GetxController {
   final _authController = Get.find<AuthController>();
 
   // Page states
-  final Rx<PageStateModel> exploreState = PageStateModel.initial(
-    PageType.explore,
-  ).obs;
-  final Rx<PageStateModel> discoverState = PageStateModel.initial(
-    PageType.discover,
-  ).obs;
-  final Rx<PageStateModel> likesState = PageStateModel.initial(
-    PageType.likes,
-  ).obs;
+  final Rx<PageStateModel> exploreState = PageStateModel.initial(PageType.explore).obs;
+  final Rx<PageStateModel> discoverState = PageStateModel.initial(PageType.discover).obs;
+  final Rx<PageStateModel> likesState = PageStateModel.initial(PageType.likes).obs;
 
   // Current active page
   final Rx<PageType> currentPageType = PageType.discover.obs;
@@ -144,9 +138,7 @@ class PageStateService extends GetxController {
     if (exploreState.value.hasLocation &&
         discoverState.value.hasLocation &&
         likesState.value.hasLocation) {
-      DebugLogger.success(
-        '✅ All page states already have a location. Bootstrap complete.',
-      );
+      DebugLogger.success('✅ All page states already have a location. Bootstrap complete.');
       // Still normalize saved names if placeholders slipped in
       await _normalizeSavedLocations();
       return;
@@ -157,31 +149,17 @@ class PageStateService extends GetxController {
 
       // Update each page state if it doesn't have a location
       if (!exploreState.value.hasLocation) {
-        await updateLocationForPage(
-          PageType.explore,
-          initialLocation,
-          source: 'initial',
-        );
+        await updateLocationForPage(PageType.explore, initialLocation, source: 'initial');
       }
       if (!discoverState.value.hasLocation) {
-        await updateLocationForPage(
-          PageType.discover,
-          initialLocation,
-          source: 'initial',
-        );
+        await updateLocationForPage(PageType.discover, initialLocation, source: 'initial');
       }
       if (!likesState.value.hasLocation) {
-        await updateLocationForPage(
-          PageType.likes,
-          initialLocation,
-          source: 'initial',
-        );
+        await updateLocationForPage(PageType.likes, initialLocation, source: 'initial');
       }
       // After bootstrapping, ensure names are user-friendly
       await _normalizeSavedLocations();
-      DebugLogger.success(
-        '✅ Successfully bootstrapped initial location for all pages.',
-      );
+      DebugLogger.success('✅ Successfully bootstrapped initial location for all pages.');
     } catch (e, st) {
       DebugLogger.error('❌ Failed to bootstrap initial location', e, st);
       // You can show a global error snackbar here if needed
@@ -212,8 +190,10 @@ class PageStateService extends GetxController {
     _locationController.currentPosition.listen((position) async {
       if (position != null) {
         // Get real address from coordinates
-        final locationName = await _locationController
-            .getAddressFromCoordinates(position.latitude, position.longitude);
+        final locationName = await _locationController.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
         final loc = LocationData(
           name: locationName,
           latitude: position.latitude,
@@ -238,8 +218,10 @@ class PageStateService extends GetxController {
     LocationData finalLocation = location;
     if (_isPlaceholderLocationName(location.name)) {
       try {
-        final resolvedName = await _locationController
-            .getAddressFromCoordinates(location.latitude, location.longitude);
+        final resolvedName = await _locationController.getAddressFromCoordinates(
+          location.latitude,
+          location.longitude,
+        );
         finalLocation = LocationData(
           name: resolvedName,
           latitude: location.latitude,
@@ -247,31 +229,22 @@ class PageStateService extends GetxController {
         );
         DebugLogger.info('🧭 Resolved location name to "$resolvedName"');
       } catch (e, st) {
-        DebugLogger.warning(
-          'Reverse geocoding failed, keeping provided name. $e',
-        );
+        DebugLogger.warning('Reverse geocoding failed, keeping provided name. $e');
         DebugLogger.warning(st.toString());
       }
     }
 
     final current = _getStateForPage(pageType);
     // Only update the selectedLocation. The filters object no longer holds lat/lng.
-    final updated = current.copyWith(
-      selectedLocation: finalLocation,
-      locationSource: source,
-    );
+    final updated = current.copyWith(selectedLocation: finalLocation, locationSource: source);
     _updatePageState(pageType, updated);
 
     // Only trigger a data refresh if the source is not 'initial' or 'hydrate'
     if (source != 'initial' && source != 'hydrate') {
-      DebugLogger.info(
-        '🔄 Debouncing refresh for ${pageType.name} after location update',
-      );
+      DebugLogger.info('🔄 Debouncing refresh for ${pageType.name} after location update');
       _debounceRefresh(pageType);
     } else {
-      DebugLogger.info(
-        '⏭️ Skipping refresh for initial/hydrate location update.',
-      );
+      DebugLogger.info('⏭️ Skipping refresh for initial/hydrate location update.');
     }
   }
 
@@ -290,9 +263,7 @@ class PageStateService extends GetxController {
   void setCurrentPage(PageType pageType) {
     final oldPageType = currentPageType.value;
     currentPageType.value = pageType;
-    DebugLogger.info(
-      '📱 Switched from ${oldPageType.name} to ${pageType.name} page',
-    );
+    DebugLogger.info('📱 Switched from ${oldPageType.name} to ${pageType.name} page');
 
     if (pageType == PageType.explore) {
       DebugLogger.info(
@@ -310,9 +281,7 @@ class PageStateService extends GetxController {
     );
 
     if (!state.isLoading && state.isDataStale) {
-      DebugLogger.info(
-        '🔄 Data is stale for ${pageType.name}, loading page data in background',
-      );
+      DebugLogger.info('🔄 Data is stale for ${pageType.name}, loading page data in background');
       loadPageData(pageType, backgroundRefresh: true);
     } else {
       DebugLogger.info(
@@ -322,10 +291,7 @@ class PageStateService extends GetxController {
   }
 
   // Location management
-  Future<void> updateLocation(
-    LocationData location, {
-    String source = 'manual',
-  }) async {
+  Future<void> updateLocation(LocationData location, {String source = 'manual'}) async {
     try {
       // Update backend if authenticated
       if (_authController.isAuthenticated) {
@@ -335,11 +301,7 @@ class PageStateService extends GetxController {
         });
       }
       // Update only current page to keep independent state per page
-      await updateLocationForPage(
-        currentPageType.value,
-        location,
-        source: source,
-      );
+      await updateLocationForPage(currentPageType.value, location, source: source);
 
       DebugLogger.success('✅ Location updated: ${location.name}');
 
@@ -356,8 +318,10 @@ class PageStateService extends GetxController {
       final position = _locationController.currentPosition.value;
       if (position != null) {
         // Get real address from coordinates
-        final locationName = await _locationController
-            .getAddressFromCoordinates(position.latitude, position.longitude);
+        final locationName = await _locationController.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
         final location = LocationData(
           name: locationName,
           latitude: position.latitude,
@@ -382,8 +346,10 @@ class PageStateService extends GetxController {
       final position = _locationController.currentPosition.value;
       if (position != null) {
         // Get real address from coordinates
-        final locationName = await _locationController
-            .getAddressFromCoordinates(position.latitude, position.longitude);
+        final locationName = await _locationController.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
         final loc = LocationData(
           name: locationName,
           latitude: position.latitude,
@@ -408,21 +374,15 @@ class PageStateService extends GetxController {
   void updatePageFilters(PageType pageType, UnifiedFilterModel filters) {
     switch (pageType) {
       case PageType.explore:
-        exploreState.value = exploreState.value
-            .copyWith(filters: filters)
-            .resetData();
+        exploreState.value = exploreState.value.copyWith(filters: filters);
         _debounceRefresh(pageType);
         break;
       case PageType.discover:
-        discoverState.value = discoverState.value
-            .copyWith(filters: filters)
-            .resetData();
+        discoverState.value = discoverState.value.copyWith(filters: filters);
         _debounceRefresh(pageType);
         break;
       case PageType.likes:
-        likesState.value = likesState.value
-            .copyWith(filters: filters)
-            .resetData();
+        likesState.value = likesState.value.copyWith(filters: filters);
         _debounceRefresh(pageType);
         break;
     }
@@ -435,15 +395,11 @@ class PageStateService extends GetxController {
 
     switch (pageType) {
       case PageType.explore:
-        exploreState.value = exploreState.value
-            .copyWith(searchQuery: query)
-            .resetData();
+        exploreState.value = exploreState.value.copyWith(searchQuery: query);
         _debounceRefresh(pageType);
         break;
       case PageType.likes:
-        likesState.value = likesState.value
-            .copyWith(searchQuery: query)
-            .resetData();
+        likesState.value = likesState.value.copyWith(searchQuery: query);
         _debounceRefresh(pageType);
         break;
       default:
@@ -474,44 +430,29 @@ class PageStateService extends GetxController {
       }
 
       if (!backgroundRefresh) {
-        _updatePageState(
-          pageType,
-          state.copyWith(isLoading: true, error: null),
-        );
+        _updatePageState(pageType, state.copyWith(isLoading: true, error: null));
       } else {
         notifyPageRefreshing(pageType, true);
-        _updatePageState(
-          pageType,
-          state.copyWith(isRefreshing: true, error: null),
-        );
+        _updatePageState(pageType, state.copyWith(isRefreshing: true, error: null));
       }
 
       // --- ROBUST LOCATION HANDLING ---
       LocationData? locationToUse = state.selectedLocation;
       if (locationToUse == null) {
-        DebugLogger.warning(
-          '⚠️ No location set for ${pageType.name}. Bootstrapping location...',
-        );
+        DebugLogger.warning('⚠️ No location set for ${pageType.name}. Bootstrapping location...');
         try {
           locationToUse = await _locationController.getInitialLocation();
         } catch (e) {
-          final friendlyError =
-              'Location not available. Please enable location or choose a place.';
+          final friendlyError = 'Location not available. Please enable location or choose a place.';
           _updatePageState(
             pageType,
             state.copyWith(
               isLoading: false,
               isRefreshing: false,
-              error: AppError(
-                error: friendlyError,
-                stackTrace: StackTrace.current,
-              ),
+              error: AppError(error: friendlyError, stackTrace: StackTrace.current),
             ),
           );
-          DebugLogger.error(
-            '❌ Failed to load ${pageType.name}: $friendlyError',
-            e,
-          );
+          DebugLogger.error('❌ Failed to load ${pageType.name}: $friendlyError', e);
           notifyPageRefreshing(pageType, false);
           return;
         }
@@ -520,21 +461,16 @@ class PageStateService extends GetxController {
 
       if (pageType == PageType.likes) {
         final isLikedSegment =
-            (state.getAdditionalData<String>('currentSegment') ?? 'liked') ==
-            'liked';
+            (state.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
 
         DebugLogger.api(
           '📊 [PAGE_STATE_SERVICE] About to call getSwipeHistoryProperties for likes',
         );
-        DebugLogger.api(
-          '📊 [PAGE_STATE_SERVICE] isLikedSegment: $isLikedSegment',
-        );
+        DebugLogger.api('📊 [PAGE_STATE_SERVICE] isLikedSegment: $isLikedSegment');
         DebugLogger.api(
           '📊 [PAGE_STATE_SERVICE] Location: (${locationToUse.latitude}, ${locationToUse.longitude})',
         );
-        DebugLogger.api(
-          '📊 [PAGE_STATE_SERVICE] Filters: ${state.filters.toJson()}',
-        );
+        DebugLogger.api('📊 [PAGE_STATE_SERVICE] Filters: ${state.filters.toJson()}');
 
         final response = await _swipesRepository.getSwipeHistoryProperties(
           filters: state.filters.copyWith(searchQuery: state.searchQuery),
@@ -544,9 +480,7 @@ class PageStateService extends GetxController {
           limit: 50,
           isLiked: isLikedSegment,
         );
-        DebugLogger.api(
-          '📊 [PAGE_STATE_SERVICE] getSwipeHistoryProperties completed successfully',
-        );
+        DebugLogger.api('📊 [PAGE_STATE_SERVICE] getSwipeHistoryProperties completed successfully');
 
         _updatePageState(
           pageType,
@@ -590,16 +524,10 @@ class PageStateService extends GetxController {
       }
 
       final updatedCount = _getStateForPage(pageType).properties.length;
-      DebugLogger.success(
-        '✅ Loaded $updatedCount properties for ${pageType.name}',
-      );
+      DebugLogger.success('✅ Loaded $updatedCount properties for ${pageType.name}');
     } catch (e, stackTrace) {
       // Now we log with the full context
-      DebugLogger.error(
-        '❌ Failed to load ${pageType.name} data',
-        e,
-        stackTrace,
-      );
+      DebugLogger.error('❌ Failed to load ${pageType.name} data', e, stackTrace);
 
       if (e.toString().contains('Null check operator used on a null value')) {
         DebugLogger.error(
@@ -632,7 +560,7 @@ class PageStateService extends GetxController {
   Future<void> loadMorePageData(PageType pageType) async {
     try {
       final state = _getStateForPage(pageType);
-      if (state.isLoadingMore || !state.hasMore) return;
+      if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
 
       _updatePageState(pageType, state.copyWith(isLoadingMore: true));
 
@@ -647,8 +575,7 @@ class PageStateService extends GetxController {
 
       if (pageType == PageType.likes) {
         final isLikedSegment =
-            (state.getAdditionalData<String>('currentSegment') ?? 'liked') ==
-            'liked';
+            (state.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
         final response = await _swipesRepository.getSwipeHistoryProperties(
           filters: state.filters.copyWith(searchQuery: state.searchQuery),
           latitude: loc.latitude,
@@ -694,9 +621,7 @@ class PageStateService extends GetxController {
       }
 
       final totalCount = _getStateForPage(pageType).properties.length;
-      DebugLogger.success(
-        '✅ Loaded more properties for ${pageType.name} (total: $totalCount)',
-      );
+      DebugLogger.success('✅ Loaded more properties for ${pageType.name} (total: $totalCount)');
     } catch (e) {
       DebugLogger.error('❌ Failed to load more ${pageType.name} data: $e');
       final state = _getStateForPage(pageType);
@@ -735,18 +660,13 @@ class PageStateService extends GetxController {
       final state = _getStateForPage(page);
       if (onlyIfUnset && state.filters.purpose != null) return;
       final updatedFilters = state.filters.copyWith(purpose: purpose);
-      _updatePageState(
-        page,
-        state.copyWith(filters: updatedFilters).resetData(),
-      );
+      _updatePageState(page, state.copyWith(filters: updatedFilters).resetData());
     }
 
     setFor(PageType.explore);
     setFor(PageType.discover);
     setFor(PageType.likes);
-    DebugLogger.info(
-      '🎯 Set default purpose="$purpose" for all pages (onlyIfUnset=$onlyIfUnset)',
-    );
+    DebugLogger.info('🎯 Set default purpose="$purpose" for all pages (onlyIfUnset=$onlyIfUnset)');
   }
 
   // Helper methods
@@ -807,9 +727,7 @@ class PageStateService extends GetxController {
   // Additional utility methods for specific pages
   void updateLikesSegment(String segment) {
     // Store current segment in additional data and reset the list for fresh load
-    likesState.value = likesState.value
-        .updateAdditionalData('currentSegment', segment)
-        .resetData();
+    likesState.value = likesState.value.updateAdditionalData('currentSegment', segment).resetData();
     // Immediately load new segment data
     loadPageData(PageType.likes, forceRefresh: true);
   }
@@ -820,9 +738,7 @@ class PageStateService extends GetxController {
   // Mutations for likes page (optimistic UI updates)
   void removePropertyFromLikes(int propertyId) {
     final state = likesState.value;
-    final updatedList = state.properties
-        .where((p) => p.id != propertyId)
-        .toList();
+    final updatedList = state.properties.where((p) => p.id != propertyId).toList();
     _updatePageState(PageType.likes, state.copyWith(properties: updatedList));
   }
 
@@ -853,13 +769,8 @@ class PageStateService extends GetxController {
   // Optimistically remove a property from Discover list
   void removePropertyFromDiscover(int propertyId) {
     final state = discoverState.value;
-    final updatedList = state.properties
-        .where((p) => p.id != propertyId)
-        .toList();
-    _updatePageState(
-      PageType.discover,
-      state.copyWith(properties: updatedList),
-    );
+    final updatedList = state.properties.where((p) => p.id != propertyId).toList();
+    _updatePageState(PageType.discover, state.copyWith(properties: updatedList));
   }
 
   // Sync preferences to backend
