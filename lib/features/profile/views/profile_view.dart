@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/utils/app_colors.dart';
-import '../../../widgets/common/theme_toggle_button.dart';
 import '../../../widgets/common/robust_network_image.dart';
+import '../../../widgets/common/theme_toggle_button.dart';
 
 class ProfileView extends GetView<AuthController> {
   const ProfileView({super.key});
@@ -75,12 +76,6 @@ class ProfileView extends GetView<AuthController> {
                   title: 'my_preferences'.tr,
                   subtitle: 'Property preferences and filters',
                   onTap: () => Get.toNamed('/preferences'),
-                ),
-                _buildMenuItem(
-                  icon: Icons.history,
-                  title: 'Search History',
-                  subtitle: 'Your recent property searches',
-                  onTap: () => Get.toNamed('/search-history'),
                 ),
                 _buildMenuItem(
                   icon: Icons.notifications,

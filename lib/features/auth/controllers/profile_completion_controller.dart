@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/models/auth_status.dart';
 import '../../../core/utils/error_handler.dart';
+import '../../../core/controllers/page_state_service.dart';
 
 class ProfileCompletionController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -12,15 +13,19 @@ class ProfileCompletionController extends GetxController {
   final dateOfBirthController = TextEditingController();
   final isLoading = false.obs;
   final RxInt currentStep = 0.obs;
-  final RxString selectedPropertyPurpose = ''.obs;
+  final RxString selectedPropertyPurpose = 'buy'.obs;
   final List<String> propertyPurposes = ['Buy', 'Rent', 'Investment'];
 
   late final AuthController authController;
+  PageStateService? pageStateService;
 
   @override
   void onInit() {
     super.onInit();
     authController = Get.find<AuthController>();
+    if (Get.isRegistered<PageStateService>()) {
+      pageStateService = Get.find<PageStateService>();
+    }
     emailController.text = authController.userEmail ?? '';
   }
 
@@ -30,7 +35,7 @@ class ProfileCompletionController extends GetxController {
     try {
       isLoading.value = true;
       update(); // Trigger UI rebuild to show loading state
-      
+
       final profileData = {
         'full_name': fullNameController.text.trim(),
         'email': emailController.text.trim(),
@@ -43,10 +48,17 @@ class ProfileCompletionController extends GetxController {
       // automatically navigate to the Dashboard.
       final success = await authController.updateUserProfile(profileData);
 
-      if (!success) {
+      if (success) {
+        // Sync chosen purpose to PageStateService if available.
+        // If not yet registered (will be by DashboardBinding), the user preference
+        // has already been persisted via updateUserProfile -> updateUserPreferences.
+        if (Get.isRegistered<PageStateService>()) {
+          (pageStateService ?? Get.find<PageStateService>())
+              .setPurposeForAllPages(selectedPropertyPurpose.value);
+        }
+      } else {
         // The error is already shown by the AuthController, but you can add specific logic here if needed.
       }
-
     } catch (e) {
       ErrorHandler.handleNetworkError(e);
     } finally {
@@ -82,9 +94,10 @@ class ProfileCompletionController extends GetxController {
       firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
       lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
     );
-    
+
     if (pickedDate != null) {
-      dateOfBirthController.text = '${pickedDate.day}/${pickedDate.month}/${pickedDate.year}';
+      dateOfBirthController.text =
+          '${pickedDate.day}/${pickedDate.month}/${pickedDate.year}';
       update(); // Trigger UI rebuild for GetBuilder
     }
   }

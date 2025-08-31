@@ -43,7 +43,9 @@ enum PropertyStatus {
 
 @JsonSerializable()
 class PropertyAmenity {
+  @JsonKey(defaultValue: -1)
   final int id;
+  @JsonKey(defaultValue: 'Unknown')
   final String title;
   final String? icon;
   final String? category;
@@ -62,6 +64,7 @@ class PropertyAmenity {
 
 @JsonSerializable(explicitToJson: true)
 class PropertyModel {
+  @JsonKey(defaultValue: -1)
   final int id;
   @JsonKey(defaultValue: 'Unknown Property')
   final String title;

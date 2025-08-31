@@ -1,10 +1,12 @@
 import 'dart:async';
+
 import 'package:get/get.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/data/models/page_state_model.dart';
-import '../../../core/data/repositories/swipes_repository.dart';
 
 import '../../../core/controllers/page_state_service.dart';
+import '../../../core/data/models/page_state_model.dart';
+import '../../../core/data/models/property_model.dart';
+import '../../../core/data/repositories/swipes_repository.dart';
+import '../../../core/utils/app_exceptions.dart';
 import '../../../core/utils/debug_logger.dart';
 
 enum LikesSegment { liked, passed }
@@ -35,11 +37,9 @@ class LikesController extends GetxController {
   Timer? _searchDebouncer;
 
   // Error handling
-  final RxnString likedError = RxnString();
-  final RxnString passedError = RxnString();
+  final Rxn<AppError> error = Rxn<AppError>();
 
   // Pagination totals tracked via server pages; counts not required per spec
-
 
   // Page activation listener
   Worker? _pageActivationWorker;
@@ -75,47 +75,67 @@ class LikesController extends GetxController {
     try {
       DebugLogger.debug('💖 [LIKES_CONTROLLER] activatePage() called');
       final ps = _pageStateService.likesState.value;
-      DebugLogger.debug('💖 [LIKES_CONTROLLER] Page state: hasLocation=${ps.hasLocation}, isLoading=${ps.isLoading}, propertiesCount=${ps.properties.length}');
-      
+      DebugLogger.debug(
+        '💖 [LIKES_CONTROLLER] Page state: hasLocation=${ps.hasLocation}, isLoading=${ps.isLoading}, propertiesCount=${ps.properties.length}',
+      );
+
       // Keep controller's segment in sync with PageStateService
       final segStr = _pageStateService.currentLikesSegment;
-      DebugLogger.debug('💖 [LIKES_CONTROLLER] Current segment string: $segStr');
-      
+      DebugLogger.debug(
+        '💖 [LIKES_CONTROLLER] Current segment string: $segStr',
+      );
+
       currentSegment.value = segStr == 'liked'
           ? LikesSegment.liked
           : LikesSegment.passed;
-      DebugLogger.debug('💖 [LIKES_CONTROLLER] Segment updated to: ${currentSegment.value}');
+      DebugLogger.debug(
+        '💖 [LIKES_CONTROLLER] Segment updated to: ${currentSegment.value}',
+      );
 
       // Ensure we have a location, then load current segment via PageStateService
       if (!ps.hasLocation) {
-        DebugLogger.debug('💖 [LIKES_CONTROLLER] No location available, requesting location');
-        _pageStateService.useCurrentLocationForPage(PageType.likes).whenComplete(
-          () {
-            DebugLogger.debug('💖 [LIKES_CONTROLLER] Location obtained, loading data');
-            _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
-          },
+        DebugLogger.debug(
+          '💖 [LIKES_CONTROLLER] No location available, requesting location',
         );
+        _pageStateService
+            .useCurrentLocationForPage(PageType.likes)
+            .whenComplete(() {
+              DebugLogger.debug(
+                '💖 [LIKES_CONTROLLER] Location obtained, loading data',
+              );
+              _pageStateService.loadPageData(
+                PageType.likes,
+                forceRefresh: true,
+              );
+            });
         return;
       }
 
       if (ps.properties.isEmpty && !ps.isLoading) {
-        DebugLogger.debug('💖 [LIKES_CONTROLLER] No properties and not loading, requesting data');
+        DebugLogger.debug(
+          '💖 [LIKES_CONTROLLER] No properties and not loading, requesting data',
+        );
         _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       } else if (ps.isDataStale) {
-        DebugLogger.debug('💖 [LIKES_CONTROLLER] Data is stale, refreshing in background');
+        DebugLogger.debug(
+          '💖 [LIKES_CONTROLLER] Data is stale, refreshing in background',
+        );
         _pageStateService.loadPageData(PageType.likes, backgroundRefresh: true);
       } else {
-        DebugLogger.debug('💖 [LIKES_CONTROLLER] Data is current, no action needed');
+        DebugLogger.debug(
+          '💖 [LIKES_CONTROLLER] Data is current, no action needed',
+        );
       }
     } catch (e, stackTrace) {
       DebugLogger.error('❌ [LIKES_CONTROLLER] Error in activatePage: $e');
       DebugLogger.error('❌ [LIKES_CONTROLLER] Stack trace: $stackTrace');
       if (e.toString().contains('Null check operator used on a null value')) {
-        DebugLogger.error('🚨 [LIKES_CONTROLLER] NULL CHECK OPERATOR ERROR in activatePage!');
+        DebugLogger.error(
+          '🚨 [LIKES_CONTROLLER] NULL CHECK OPERATOR ERROR in activatePage!',
+        );
       }
     }
   }
-
 
   @override
   void onClose() {
@@ -131,7 +151,6 @@ class LikesController extends GetxController {
       _pageStateService.updatePageSearch(PageType.likes, searchQuery.value);
     }, time: const Duration(milliseconds: 300));
   }
-
 
   // Segment switching
   void switchToSegment(LikesSegment segment) {
@@ -162,24 +181,34 @@ class LikesController extends GetxController {
   Future<void> addToFavourites(dynamic propertyId) async {
     try {
       DebugLogger.info('💖 Adding property $propertyId to favorites');
-      await _swipesRepository.recordSwipe(propertyId: int.parse(propertyId.toString()), isLiked: true);
+      await _swipesRepository.recordSwipe(
+        propertyId: int.parse(propertyId.toString()),
+        isLiked: true,
+      );
       // Refresh the liked properties to reflect the change
       await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       DebugLogger.success('✅ Property $propertyId added to favorites');
     } catch (e) {
-      DebugLogger.error('❌ Failed to add property $propertyId to favorites: $e');
+      DebugLogger.error(
+        '❌ Failed to add property $propertyId to favorites: $e',
+      );
     }
   }
 
   Future<void> removeFromFavourites(dynamic propertyId) async {
     try {
       DebugLogger.info('💔 Removing property $propertyId from favorites');
-      await _swipesRepository.recordSwipe(propertyId: int.parse(propertyId.toString()), isLiked: false);
+      await _swipesRepository.recordSwipe(
+        propertyId: int.parse(propertyId.toString()),
+        isLiked: false,
+      );
       // Refresh the liked properties to reflect the change
       await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       DebugLogger.success('✅ Property $propertyId removed from favorites');
     } catch (e) {
-      DebugLogger.error('❌ Failed to remove property $propertyId from favorites: $e');
+      DebugLogger.error(
+        '❌ Failed to remove property $propertyId from favorites: $e',
+      );
     }
   }
 
@@ -295,7 +324,7 @@ class LikesController extends GetxController {
   }
 
   String? get currentError {
-    return _pageStateService.likesState.value.error;
+    return _pageStateService.likesState.value.error?.toString();
   }
 
   bool get currentHasMore {

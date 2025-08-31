@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/likes_controller.dart';
+
 import '../../../core/controllers/page_state_service.dart';
 import '../../../core/data/models/page_state_model.dart';
+import '../../../core/data/models/property_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/error_mapper.dart';
-import '../../../widgets/common/loading_states.dart';
 import '../../../widgets/common/error_states.dart';
-import '../widgets/likes_property_card.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../widgets/common/unified_top_bar.dart';
+import '../../../widgets/common/loading_states.dart';
 import '../../../widgets/common/property_filter_widget.dart';
+import '../../../widgets/common/unified_top_bar.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
+import '../controllers/likes_controller.dart';
+import '../widgets/likes_property_card.dart';
 
 class LikesView extends GetView<LikesController> {
   const LikesView({super.key});
@@ -324,7 +326,8 @@ class LikesView extends GetView<LikesController> {
       title: isLiked ? 'No Liked Properties' : 'No Passed Properties',
       message: controller.emptyStateMessage,
       icon: isLiked ? Icons.favorite_border : Icons.not_interested,
-      onAction: () => Get.offNamed('/discover'),
+      onAction: () =>
+          Get.find<DashboardController>().changeTab(2), // 2 = Discover tab
       actionText: 'Explore Properties',
     );
   }

@@ -84,7 +84,6 @@ PrivacySettings _$PrivacySettingsFromJson(Map<String, dynamic> json) =>
       profileVisibility: json['profile_visibility'] as String? ?? 'public',
       locationSharing: json['location_sharing'] as bool? ?? true,
       contactSharing: json['contact_sharing'] as bool? ?? true,
-      searchHistoryTracking: json['search_history_tracking'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$PrivacySettingsToJson(PrivacySettings instance) =>
@@ -92,7 +91,6 @@ Map<String, dynamic> _$PrivacySettingsToJson(PrivacySettings instance) =>
       'profile_visibility': instance.profileVisibility,
       'location_sharing': instance.locationSharing,
       'contact_sharing': instance.contactSharing,
-      'search_history_tracking': instance.searchHistoryTracking,
     };
 
 LocationUpdate _$LocationUpdateFromJson(Map<String, dynamic> json) =>

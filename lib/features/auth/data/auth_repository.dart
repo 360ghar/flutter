@@ -44,10 +44,13 @@ class AuthRepository extends GetxService {
     required String token,
   }) {
     DebugLogger.auth('Verifying OTP for phone: $phone');
-    return _supabase.auth
-        .verifyOTP(phone: phone, token: token, type: OtpType.sms);
+    return _supabase.auth.verifyOTP(
+      phone: phone,
+      token: token,
+      type: OtpType.sms,
+    );
   }
-  
+
   /// Sends a one-time password (OTP) to a phone for password reset or login.
   Future<void> sendPhoneOtp(String phone) {
     DebugLogger.auth('Sending password reset OTP to phone: $phone');

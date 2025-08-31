@@ -301,7 +301,6 @@ class VisitsView extends GetView<VisitsController> {
     });
   }
 
-
   Widget _buildEmptyState(
     String title,
     String subtitle,

@@ -1,0 +1,71 @@
+{
+  "dart.flutterSdkPath": null,
+  "dart.sdkPath": null,
+  "dart.lineLength": 100,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "dart.analysisExcludedFolders": [
+    "build/",
+    ".dart_tool/",
+    "android/",
+    "ios/",
+    "macos/",
+    "web/",
+    "windows/",
+    "linux/"
+  ],
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.dart_tool": true,
+    "**/build": true,
+    "**/.flutter-plugins": true,
+    "**/.flutter-plugins-dependencies": true,
+    "**/.packages": true,
+    "**/pubspec.lock": true,
+    "**/.metadata": true,
+    "**/ios/Flutter/App.framework": true,
+    "**/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/build": true,
+    "**/.dart_tool": true,
+    "**/android/app/build": true,
+    "**/ios/Flutter/App.framework": true,
+    "**/pubspec.lock": true,
+    "**/.metadata": true
+  },
+  "emmet.includeLanguages": {
+    "dart": "html"
+  },
+  "emmet.triggerExpansionOnTab": true,
+  "dart.debugExternalLibraries": false,
+  "dart.debugSdkLibraries": false,
+  "[dart]": {
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.rulers": [100],
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.formatOnSave": true
+  },
+  "dart.previewFlutterUiGuides": true,
+  "dart.previewFlutterUiGuidesCustomTracking": true,
+  "dart.hotReloadOnSave": "all",
+  "dart.devToolsTheme": "dark"
+}

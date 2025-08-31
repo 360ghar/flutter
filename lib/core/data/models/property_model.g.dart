@@ -8,8 +8,8 @@ part of 'property_model.dart';
 
 PropertyAmenity _$PropertyAmenityFromJson(Map<String, dynamic> json) =>
     PropertyAmenity(
-      id: (json['id'] as num).toInt(),
-      title: json['title'] as String,
+      id: (json['id'] as num?)?.toInt() ?? -1,
+      title: json['title'] as String? ?? 'Unknown',
       icon: json['icon'] as String?,
       category: json['category'] as String?,
     );
@@ -24,7 +24,7 @@ Map<String, dynamic> _$PropertyAmenityToJson(PropertyAmenity instance) =>
 
 PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) =>
     PropertyModel(
-      id: (json['id'] as num).toInt(),
+      id: (json['id'] as num?)?.toInt() ?? -1,
       title: json['title'] as String? ?? 'Unknown Property',
       description: json['description'] as String?,
       propertyType: $enumDecodeNullable(

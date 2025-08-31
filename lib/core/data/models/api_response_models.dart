@@ -191,14 +191,11 @@ class PrivacySettings {
   final bool locationSharing;
   @JsonKey(name: 'contact_sharing')
   final bool contactSharing;
-  @JsonKey(name: 'search_history_tracking')
-  final bool searchHistoryTracking;
 
   PrivacySettings({
     this.profileVisibility = 'public',
     this.locationSharing = true,
     this.contactSharing = true,
-    this.searchHistoryTracking = true,
   });
 
   factory PrivacySettings.fromJson(Map<String, dynamic> json) =>
@@ -210,14 +207,11 @@ class PrivacySettings {
     String? profileVisibility,
     bool? locationSharing,
     bool? contactSharing,
-    bool? searchHistoryTracking,
   }) {
     return PrivacySettings(
       profileVisibility: profileVisibility ?? this.profileVisibility,
       locationSharing: locationSharing ?? this.locationSharing,
       contactSharing: contactSharing ?? this.contactSharing,
-      searchHistoryTracking:
-          searchHistoryTracking ?? this.searchHistoryTracking,
     );
   }
 

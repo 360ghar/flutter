@@ -258,30 +258,6 @@ class PrivacyController extends GetxController {
     Get.snackbar('Info', 'Block list management will be available soon');
   }
 
-  void clearSearchHistory() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Clear Search History'),
-        content: const Text(
-          'Are you sure you want to clear all your search history? '
-          'This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              _storage.remove('searchHistory');
-              Get.back();
-              Get.snackbar('Success', 'Search history cleared');
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void resetPreferences() {
     Get.dialog(
       AlertDialog(

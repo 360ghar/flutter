@@ -40,7 +40,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 24),
-            
+
             // Header
             Text(
               'reset_password'.tr,
@@ -50,9 +50,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
             const SizedBox(height: 8),
             Text(
               'reset_password_subtitle'.tr,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -103,33 +103,37 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
             }),
 
             // Send OTP Button
-            Obx(() => ElevatedButton(
-              onPressed: controller.isLoading.value ? null : controller.sendResetOtp,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: AppTheme.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            Obx(
+              () => ElevatedButton(
+                onPressed: controller.isLoading.value
+                    ? null
+                    : controller.sendResetOtp,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: AppTheme.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
+                child: controller.isLoading.value
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        'send_otp'.tr,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
-              child: controller.isLoading.value
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      'send_otp'.tr,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-            )),
+            ),
             const SizedBox(height: 16),
 
             // Back to Login Link
@@ -149,7 +153,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 24),
-          
+
           // Back Button and Header
           Row(
             children: [
@@ -170,9 +174,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           const SizedBox(height: 8),
           Text(
             'enter_otp_subtitle'.tr,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.grey,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -209,46 +213,52 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           }),
 
           // Verify OTP Button
-          Obx(() => ElevatedButton(
-            onPressed: controller.isLoading.value ? null : controller.verifyResetOtp,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppTheme.primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          Obx(
+            () => ElevatedButton(
+              onPressed: controller.isLoading.value
+                  ? null
+                  : controller.verifyResetOtp,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: AppTheme.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
+              child: controller.isLoading.value
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'verify_otp'.tr,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
-            child: controller.isLoading.value
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Text(
-                    'verify_otp'.tr,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-          )),
+          ),
           const SizedBox(height: 16),
 
           // Resend OTP Button
-          Obx(() => TextButton(
-            onPressed: controller.canResendOtp.value
-                ? controller.resendOtp
-                : null,
-            child: Text(
-              controller.canResendOtp.value
-                  ? 'resend_code'.tr
-                  : '${'resend_in'.tr} ${controller.otpCountdown.value}s',
+          Obx(
+            () => TextButton(
+              onPressed: controller.canResendOtp.value
+                  ? controller.resendOtp
+                  : null,
+              child: Text(
+                controller.canResendOtp.value
+                    ? 'resend_code'.tr
+                    : '${'resend_in'.tr} ${controller.otpCountdown.value}s',
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -260,7 +270,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 24),
-          
+
           // Back Button and Header
           Row(
             children: [
@@ -281,51 +291,55 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           const SizedBox(height: 8),
           Text(
             'choose_new_password'.tr,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.grey,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
 
           // New Password Field
-          Obx(() => TextFormField(
-            controller: controller.newPasswordController,
-            decoration: InputDecoration(
-              labelText: 'new_password'.tr,
-              prefixIcon: const Icon(Icons.lock_outline),
-              border: const OutlineInputBorder(),
-              suffixIcon: IconButton(
-                onPressed: controller.togglePasswordVisibility,
-                icon: Icon(
-                  controller.isPasswordVisible.value
-                      ? Icons.visibility_off
-                      : Icons.visibility,
+          Obx(
+            () => TextFormField(
+              controller: controller.newPasswordController,
+              decoration: InputDecoration(
+                labelText: 'new_password'.tr,
+                prefixIcon: const Icon(Icons.lock_outline),
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  onPressed: controller.togglePasswordVisibility,
+                  icon: Icon(
+                    controller.isPasswordVisible.value
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                  ),
                 ),
               ),
+              obscureText: !controller.isPasswordVisible.value,
             ),
-            obscureText: !controller.isPasswordVisible.value,
-          )),
+          ),
           const SizedBox(height: 16),
 
           // Confirm Password Field
-          Obx(() => TextFormField(
-            controller: controller.confirmPasswordController,
-            decoration: InputDecoration(
-              labelText: 'confirm_password'.tr,
-              prefixIcon: const Icon(Icons.lock_outline),
-              border: const OutlineInputBorder(),
-              suffixIcon: IconButton(
-                onPressed: controller.toggleConfirmPasswordVisibility,
-                icon: Icon(
-                  controller.isConfirmPasswordVisible.value
-                      ? Icons.visibility_off
-                      : Icons.visibility,
+          Obx(
+            () => TextFormField(
+              controller: controller.confirmPasswordController,
+              decoration: InputDecoration(
+                labelText: 'confirm_password'.tr,
+                prefixIcon: const Icon(Icons.lock_outline),
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  onPressed: controller.toggleConfirmPasswordVisibility,
+                  icon: Icon(
+                    controller.isConfirmPasswordVisible.value
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                  ),
                 ),
               ),
+              obscureText: !controller.isConfirmPasswordVisible.value,
             ),
-            obscureText: !controller.isConfirmPasswordVisible.value,
-          )),
+          ),
           const SizedBox(height: 24),
 
           // Error Message
@@ -344,33 +358,37 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           }),
 
           // Update Password Button
-          Obx(() => ElevatedButton(
-            onPressed: controller.isLoading.value ? null : controller.updatePassword,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppTheme.primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          Obx(
+            () => ElevatedButton(
+              onPressed: controller.isLoading.value
+                  ? null
+                  : controller.updatePassword,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: AppTheme.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
+              child: controller.isLoading.value
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'update_password'.tr,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
-            child: controller.isLoading.value
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Text(
-                    'update_password'.tr,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-          )),
+          ),
         ],
       ),
     );

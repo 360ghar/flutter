@@ -4,7 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'debug_logger.dart';
 
 class ErrorHandler {
-  static void handleAuthError(dynamic error, {VoidCallback? onRetry, StackTrace? stackTrace}) {
+  static void handleAuthError(
+    dynamic error, {
+    VoidCallback? onRetry,
+    StackTrace? stackTrace,
+  }) {
     // Enhanced error logging with stack trace preservation
     DebugLogger.logDetailedError(
       operation: 'handleAuthError',
@@ -58,7 +62,8 @@ class ErrorHandler {
           break;
         case 'Wrong password':
         case 'Incorrect password':
-          message = 'Password is incorrect. Please try again or reset your password.';
+          message =
+              'Password is incorrect. Please try again or reset your password.';
           break;
         case 'Email rate limit exceeded':
         case 'SMS rate limit exceeded':
@@ -103,7 +108,11 @@ class ErrorHandler {
     );
   }
 
-  static void handleNetworkError(dynamic error, {VoidCallback? onRetry, StackTrace? stackTrace}) {
+  static void handleNetworkError(
+    dynamic error, {
+    VoidCallback? onRetry,
+    StackTrace? stackTrace,
+  }) {
     // Enhanced error logging with stack trace preservation
     DebugLogger.logDetailedError(
       operation: 'handleNetworkError',

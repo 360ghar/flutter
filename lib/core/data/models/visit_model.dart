@@ -110,7 +110,7 @@ class VisitModel {
     final dateStr = json['visit_date'] as String?;
     final timeStr = json['visit_time'] as String?;
     DateTime? scheduledDateTime;
-    
+
     if (dateStr != null && timeStr != null) {
       try {
         scheduledDateTime = DateTime.parse('$dateStr $timeStr');
@@ -145,7 +145,8 @@ class VisitModel {
   Map<String, dynamic> toJson() => _$VisitModelToJson(this);
 
   // Convenience getters
-  String get propertyTitle => property?.title ?? propertyTitleApi ?? 'Property #$propertyId';
+  String get propertyTitle =>
+      property?.title ?? propertyTitleApi ?? 'Property #$propertyId';
   String get agentName => agents?.name ?? agentNameApi ?? 'Unknown Agent';
   String get agentPhone => agents?.phone ?? '';
   String get notes => visitNotes ?? '';

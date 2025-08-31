@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/utils/app_colors.dart';
+
 import '../../../core/mixins/theme_mixin.dart';
+import '../../../core/utils/app_colors.dart';
 
 class PrivacyView extends StatelessWidget with ThemeMixin {
   const PrivacyView({super.key});
@@ -94,13 +95,6 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                     value: 'Enabled',
                     onTap: () => _toggleDataAnalytics(),
                   ),
-                  _buildPrivacyItem(
-                    icon: Icons.auto_delete,
-                    title: 'Auto-Delete Search History',
-                    subtitle: 'Automatically delete after 30 days',
-                    value: 'Enabled',
-                    onTap: () => _configureAutoDelete(),
-                  ),
                 ],
               ),
             ),
@@ -153,12 +147,6 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                     title: 'Download Your Data',
                     subtitle: 'Get a copy of your data',
                     onTap: () => _downloadData(),
-                  ),
-                  _buildDataItem(
-                    icon: Icons.history,
-                    title: 'Clear Search History',
-                    subtitle: 'Remove all your search records',
-                    onTap: () => _clearSearchHistory(),
                   ),
                   _buildDataItem(
                     icon: Icons.delete_forever,
@@ -423,15 +411,6 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
     );
   }
 
-  void _configureAutoDelete() {
-    Get.snackbar(
-      'Auto-Delete',
-      'Auto-delete settings would be configured here',
-      backgroundColor: AppColors.snackbarBackground,
-      colorText: AppColors.snackbarText,
-    );
-  }
-
   void _changeEmailVisibility() {
     Get.snackbar(
       'Email Visibility',
@@ -465,43 +444,6 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
       'Data download process would be initiated here',
       backgroundColor: AppColors.snackbarBackground,
       colorText: AppColors.snackbarText,
-    );
-  }
-
-  void _clearSearchHistory() {
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: Text(
-          'Clear Search History',
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
-        content: Text(
-          'Are you sure you want to clear all your search history? This action cannot be undone.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back();
-              Get.snackbar(
-                'Search History Cleared',
-                'Your search history has been cleared',
-                backgroundColor: AppColors.snackbarBackground,
-                colorText: AppColors.snackbarText,
-              );
-            },
-            child: Text('Clear', style: TextStyle(color: AppColors.errorRed)),
-          ),
-        ],
-      ),
     );
   }
 

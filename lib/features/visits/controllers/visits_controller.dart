@@ -56,8 +56,7 @@ class VisitsController extends GetxController {
         if (idx == 4) {
           final now = DateTime.now();
           // Throttle to avoid spamming refresh
-          if (lastRefresh == null ||
-              now.difference(lastRefresh!) > cooldown) {
+          if (lastRefresh == null || now.difference(lastRefresh!) > cooldown) {
             DebugLogger.info('🔄 Visits tab activated — refreshing visits');
             await loadVisits(isRefresh: true);
             lastRefresh = now;

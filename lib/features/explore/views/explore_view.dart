@@ -1,18 +1,20 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
-import '../controllers/explore_controller.dart';
+
 import '../../../core/controllers/page_state_service.dart';
 import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/error_mapper.dart';
 import '../../../core/utils/debug_logger.dart';
-import '../../../widgets/common/loading_states.dart';
+import '../../../core/utils/error_mapper.dart';
 import '../../../widgets/common/error_states.dart';
-import '../../../widgets/common/unified_top_bar.dart';
+import '../../../widgets/common/loading_states.dart';
 import '../../../widgets/common/property_filter_widget.dart';
+import '../../../widgets/common/unified_top_bar.dart';
+import '../controllers/explore_controller.dart';
 import '../widgets/property_horizontal_list.dart';
 
 class ExploreView extends GetView<ExploreController> {
@@ -151,12 +153,15 @@ class ExploreView extends GetView<ExploreController> {
 
   Widget _buildErrorState() {
     return Obx(() {
-      final errorMessage = controller.error.value;
-      if (errorMessage == null) return const SizedBox();
+      final appError = controller.error.value;
+      if (appError == null) return const SizedBox();
 
       try {
-        // Don't wrap in Exception() - pass the original error message directly
-        final exception = ErrorMapper.mapApiError(errorMessage);
+        // Pass the actual error object and its stack trace
+        final exception = ErrorMapper.mapApiError(
+          appError.error,
+          appError.stackTrace,
+        );
         return ErrorStates.genericError(
           error: exception,
           onRetry: controller.retryLoading,
@@ -164,7 +169,7 @@ class ExploreView extends GetView<ExploreController> {
       } catch (e) {
         return ErrorStates.networkError(
           onRetry: controller.retryLoading,
-          customMessage: errorMessage,
+          customMessage: appError.error.toString(),
         );
       }
     });
@@ -230,8 +235,7 @@ class ExploreView extends GetView<ExploreController> {
                   children: [
                     TileLayer(
                       urlTemplate:
-                          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      subdomains: const ['a', 'b', 'c'],
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.ghar360.app',
                       maxZoom: 18,
                     ),

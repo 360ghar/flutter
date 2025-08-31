@@ -13,12 +13,12 @@ class AuthMiddleware extends GetMiddleware {
   @override
   RouteSettings? redirect(String? route) {
     final authController = Get.find<AuthController>();
-    
+
     // If the user is authenticated, allow access.
     if (authController.authStatus.value == AuthStatus.authenticated) {
       return null;
     }
-    
+
     // Otherwise, redirect to the login page.
     return const RouteSettings(name: AppRoutes.login);
   }
@@ -36,7 +36,7 @@ class GuestMiddleware extends GetMiddleware {
     if (authController.isAuthenticated) {
       return const RouteSettings(name: AppRoutes.dashboard);
     }
-    
+
     // Otherwise, allow access.
     return null;
   }

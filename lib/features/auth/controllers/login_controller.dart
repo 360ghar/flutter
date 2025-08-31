@@ -38,19 +38,18 @@ class LoginController extends GetxController {
 
   Future<void> signIn() async {
     if (!formKey.currentState!.validate()) return;
-    
+
     isLoading.value = true;
     errorMessage.value = '';
-    
+
     try {
       final phone = _normalizeIndianPhone(phoneController.text.trim());
       final password = passwordController.text;
-      
+
       await _authRepository.signInWithPhonePassword(phone, password);
-      
+
       // Success! The AuthController listener will handle navigation
       DebugLogger.success('Sign in successful for $phone');
-      
     } on AuthException catch (e) {
       // Handle authentication errors
       if (e.message.toLowerCase().contains('invalid login credentials')) {
@@ -60,13 +59,11 @@ class LoginController extends GetxController {
       }
       ErrorHandler.handleAuthError(e);
       DebugLogger.error('Sign in failed', e);
-      
     } catch (e) {
       // Handle other errors like network issues
       errorMessage.value = 'login_error'.tr;
       ErrorHandler.handleNetworkError(e);
       DebugLogger.error('Unexpected login error', e);
-      
     } finally {
       isLoading.value = false;
     }

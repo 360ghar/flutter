@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/utils/theme.dart';
-import '../../../core/mixins/theme_mixin.dart';
+
 import '../../../core/controllers/theme_controller.dart';
+import '../../../core/mixins/theme_mixin.dart';
+import '../../../core/utils/theme.dart';
 import '../controllers/preferences_controller.dart';
 
 class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
@@ -46,12 +47,6 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
               ]),
               const SizedBox(height: 24),
               _buildSection('search_preferences'.tr, [
-                _buildSwitchTile(
-                  'save_search_history'.tr,
-                  'save_search_history_desc'.tr,
-                  controller.saveSearchHistory.value,
-                  (value) => controller.saveSearchHistory.value = value,
-                ),
                 _buildSwitchTile(
                   'location_services'.tr,
                   'location_services_desc'.tr,

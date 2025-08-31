@@ -5,11 +5,30 @@ import '../../core/utils/error_mapper.dart';
 class ErrorStates {
   // Generic error widget with retry functionality
   static Widget genericError({
-    required AppException error,
+    required dynamic error,
     VoidCallback? onRetry,
     String? customMessage,
     String? customRetryText,
   }) {
+    // Derive title, message, and icon safely for both String and AppException
+    String title;
+    String message;
+    String icon;
+
+    if (error is AppException) {
+      title = _getErrorTitle(error);
+      message = error.message;
+      icon = ErrorMapper.getErrorIcon(error);
+    } else if (error is String) {
+      title = 'Error';
+      message = error;
+      icon = '❌';
+    } else {
+      title = 'Error';
+      message = 'An unexpected error occurred. Please try again.';
+      icon = '❌';
+    }
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -17,15 +36,12 @@ class ErrorStates {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Error icon
-            Text(
-              ErrorMapper.getErrorIcon(error),
-              style: const TextStyle(fontSize: 64),
-            ),
+            Text(icon, style: const TextStyle(fontSize: 64)),
             const SizedBox(height: 16),
 
             // Error title
             Text(
-              _getErrorTitle(error),
+              title,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
@@ -33,18 +49,23 @@ class ErrorStates {
 
             // Error message
             Text(
-              customMessage ?? error.message,
+              customMessage ?? message,
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
 
-            if (onRetry != null && ErrorMapper.isRetryable(error)) ...[
+            if (onRetry != null &&
+                ((error is AppException && ErrorMapper.isRetryable(error)) ||
+                    error is! AppException)) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
                 label: Text(
-                  customRetryText ?? ErrorMapper.getRetryActionText(error),
+                  customRetryText ??
+                      ((error is AppException)
+                          ? ErrorMapper.getRetryActionText(error)
+                          : 'Retry'),
                 ),
               ),
             ],
@@ -389,7 +410,11 @@ class ErrorStates {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Error icon
-            Icon(Icons.account_circle_outlined, size: 64, color: Colors.grey[400]),
+            Icon(
+              Icons.account_circle_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
             const SizedBox(height: 16),
 
             // Error title
@@ -402,7 +427,8 @@ class ErrorStates {
 
             // Error message
             Text(
-              customMessage ?? 'Unable to load your profile. Please try again or sign out to start fresh.',
+              customMessage ??
+                  'Unable to load your profile. Please try again or sign out to start fresh.',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),

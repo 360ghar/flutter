@@ -22,7 +22,7 @@ class LoginView extends GetView<LoginController> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 60),
-                  
+
                   // Header
                   Text(
                     'welcome_back'.tr,
@@ -32,9 +32,9 @@ class LoginView extends GetView<LoginController> {
                   const SizedBox(height: 8),
                   Text(
                     'sign_in_subtitle'.tr,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 48),
@@ -70,47 +70,51 @@ class LoginView extends GetView<LoginController> {
                   const SizedBox(height: 16),
 
                   // Password Field
-                  Obx(() => TextFormField(
-                    controller: controller.passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'password'.tr,
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        onPressed: controller.togglePasswordVisibility,
-                        icon: Icon(
-                          controller.isPasswordVisible.value
-                              ? Icons.visibility_off
-                              : Icons.visibility,
+                  Obx(
+                    () => TextFormField(
+                      controller: controller.passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'password'.tr,
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          onPressed: controller.togglePasswordVisibility,
+                          icon: Icon(
+                            controller.isPasswordVisible.value
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                         ),
                       ),
+                      obscureText: !controller.isPasswordVisible.value,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'password_required'.tr;
+                        }
+                        if (value.length < 6) {
+                          return 'password_min_length'.tr;
+                        }
+                        return null;
+                      },
                     ),
-                    obscureText: !controller.isPasswordVisible.value,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'password_required'.tr;
-                      }
-                      if (value.length < 6) {
-                        return 'password_min_length'.tr;
-                      }
-                      return null;
-                    },
-                  )),
+                  ),
                   const SizedBox(height: 8),
 
                   // Remember Me and Forgot Password
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Obx(() => Row(
-                        children: [
-                          Checkbox(
-                            value: controller.rememberMe.value,
-                            onChanged: (_) => controller.toggleRememberMe(),
-                          ),
-                          Text('remember_me'.tr),
-                        ],
-                      )),
+                      Obx(
+                        () => Row(
+                          children: [
+                            Checkbox(
+                              value: controller.rememberMe.value,
+                              onChanged: (_) => controller.toggleRememberMe(),
+                            ),
+                            Text('remember_me'.tr),
+                          ],
+                        ),
+                      ),
                       TextButton(
                         onPressed: () => Get.toNamed(AppRoutes.forgotPassword),
                         child: Text('forgot_password'.tr),
@@ -135,33 +139,37 @@ class LoginView extends GetView<LoginController> {
                   }),
 
                   // Sign In Button
-                  Obx(() => ElevatedButton(
-                    onPressed: controller.isLoading.value ? null : controller.signIn,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: AppTheme.primaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  Obx(
+                    () => ElevatedButton(
+                      onPressed: controller.isLoading.value
+                          ? null
+                          : controller.signIn,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: AppTheme.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      child: controller.isLoading.value
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              'sign_in'.tr,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
-                    child: controller.isLoading.value
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Text(
-                            'sign_in'.tr,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                  )),
+                  ),
                   const SizedBox(height: 32),
 
                   // Sign Up Link

@@ -1,41 +1,42 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `lib/`: Flutter source. Feature-first using GetX layers:
-  - `features/<feature>/{views,controllers,bindings}` (e.g., `discover`, `profile`).
-  - Shared code in `lib/core/` (`core/data/models`, providers, routing, widgets).
-- `assets/`: images and static assets (declare in `pubspec.yaml`).
-- `android/`, `ios/`, `web/`: platform code and configs.
-- `analysis_options.yaml`: Dart/Flutter lint rules.
-- `.env.development`, `.env.production`: environment variables; do not commit secrets.
+- `lib/`: Flutter source using feature-first GetX layers.
+  - Features: `lib/features/<feature>/{views,controllers,bindings}` (e.g., `discover`, `profile`).
+  - Shared: `lib/core/` (`core/data/models`, providers, routing, `core/widgets`).
+- `assets/`: images and static files (declare in `pubspec.yaml`).
+- Platforms: `android/`, `ios/`, `web/` for configs and builds.
+- Config: `.env.development`, `.env.production` (do not commit secrets).
+- Lint: `analysis_options.yaml` defines rules used by CI/local.
 
 ## Build, Test, and Development Commands
 - Install deps: `flutter pub get` — fetches packages.
-- Run app: `flutter run -d <device_id>` — starts on a device/emulator.
-- Analyze: `flutter analyze` — static checks; fix warnings.
-- Format: `dart format .` — applies standard formatting.
+- Run app: `flutter run -d <device_id>` — launches on simulator/device.
+- Analyze: `flutter analyze` — static checks; fix all warnings.
+- Format: `dart format .` — apply standard Dart formatting.
 - Codegen: `flutter pub run build_runner build --delete-conflicting-outputs` — generates `*.g.dart`.
-- Build releases: `flutter build apk` / `flutter build ios` — platform builds.
-- Tests: `flutter test` — runs unit/widget tests.
+- Tests: `flutter test` — run unit/widget tests locally.
+- Releases: `flutter build apk` / `flutter build ios` — production builds.
 
 ## Coding Style & Naming Conventions
 - Indentation: 2 spaces; follow `analysis_options.yaml`.
-- Filenames: `snake_case.dart` (e.g., `property_details_view.dart`).
-- Classes: `UpperCamelCase`; members: `lowerCamelCase`.
-- Suffixes: `*_view.dart`, `*_controller.dart`, `*_binding.dart`; reusable UI in `lib/widgets/`.
-- Organize new screens under `lib/features/<feature>/...`; put shared utilities in `lib/core/`.
+- Files: `snake_case.dart` (e.g., `property_details_view.dart`).
+- Classes: `UpperCamelCase`; variables/methods: `lowerCamelCase`.
+- Suffixes: `*_view.dart`, `*_controller.dart`, `*_binding.dart`.
+- Placement: new screens under `lib/features/<feature>/...`; shared utilities in `lib/core/`.
 
 ## Testing Guidelines
 - Framework: Flutter/Dart tests.
 - Location: `test/` mirrors `lib/` paths; name files `*_test.dart`.
-- Write widget tests for views; unit tests for controllers/services and business logic.
-- Run locally: `flutter test` (add focused tests with `-r json` or `--plain-name` as needed).
+- Types: widget tests for views; unit tests for controllers/services and business logic.
+- Run: `flutter test` (use `--plain-name` to filter when needed).
 
 ## Commit & Pull Request Guidelines
-- Commits: imperative, scope-first (e.g., "Refactor filters: unify models"). Keep changes focused.
-- Before PR: run `flutter analyze`, `dart format .`, `flutter test`. Include regenerated `*.g.dart` when codegen changes.
-- PRs: include summary, linked issues, test plan, and screenshots for UI changes. Note any env/config updates and docs touched.
+- Commits: imperative, scope-first (e.g., "Refactor filters: unify models"). Keep them focused.
+- Before PR: run `flutter analyze`, `dart format .`, `flutter test`, and regenerate code (`build_runner`).
+- PRs: include summary, linked issues, test plan, and screenshots for UI changes. Note any env/config or docs updates.
 
 ## Security & Configuration
-- Never hardcode secrets; use `.env.*` or secure stores.
+- Never hardcode secrets; load via `.env.*` or secure stores.
 - When adding assets, update `pubspec.yaml` and verify both dev/prod configs.
+

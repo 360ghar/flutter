@@ -1,14 +1,17 @@
 import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+
 import '../data/models/page_state_model.dart';
+import '../data/models/property_model.dart';
 import '../data/models/unified_filter_model.dart';
 import '../data/repositories/properties_repository.dart';
-import '../data/models/property_model.dart';
 import '../data/repositories/swipes_repository.dart';
+import '../utils/app_exceptions.dart';
 import '../utils/debug_logger.dart';
-import 'location_controller.dart';
 import 'auth_controller.dart';
+import 'location_controller.dart';
 
 class PageStateService extends GetxController {
   static PageStateService get instance => Get.find<PageStateService>();
@@ -492,12 +495,23 @@ class PageStateService extends GetxController {
         try {
           locationToUse = await _locationController.getInitialLocation();
         } catch (e) {
-          final friendlyError = 'Location not available. Please enable location or choose a place.';
+          final friendlyError =
+              'Location not available. Please enable location or choose a place.';
           _updatePageState(
             pageType,
-            state.copyWith(isLoading: false, isRefreshing: false, error: friendlyError),
+            state.copyWith(
+              isLoading: false,
+              isRefreshing: false,
+              error: AppError(
+                error: friendlyError,
+                stackTrace: StackTrace.current,
+              ),
+            ),
           );
-          DebugLogger.error('❌ Failed to load ${pageType.name}: $friendlyError', e);
+          DebugLogger.error(
+            '❌ Failed to load ${pageType.name}: $friendlyError',
+            e,
+          );
           notifyPageRefreshing(pageType, false);
           return;
         }
@@ -506,13 +520,22 @@ class PageStateService extends GetxController {
 
       if (pageType == PageType.likes) {
         final isLikedSegment =
-            (state.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
-        
-        DebugLogger.api('📊 [PAGE_STATE_SERVICE] About to call getSwipeHistoryProperties for likes');
-        DebugLogger.api('📊 [PAGE_STATE_SERVICE] isLikedSegment: $isLikedSegment');
-        DebugLogger.api('📊 [PAGE_STATE_SERVICE] Location: (${locationToUse.latitude}, ${locationToUse.longitude})');
-        DebugLogger.api('📊 [PAGE_STATE_SERVICE] Filters: ${state.filters.toJson()}');
-        
+            (state.getAdditionalData<String>('currentSegment') ?? 'liked') ==
+            'liked';
+
+        DebugLogger.api(
+          '📊 [PAGE_STATE_SERVICE] About to call getSwipeHistoryProperties for likes',
+        );
+        DebugLogger.api(
+          '📊 [PAGE_STATE_SERVICE] isLikedSegment: $isLikedSegment',
+        );
+        DebugLogger.api(
+          '📊 [PAGE_STATE_SERVICE] Location: (${locationToUse.latitude}, ${locationToUse.longitude})',
+        );
+        DebugLogger.api(
+          '📊 [PAGE_STATE_SERVICE] Filters: ${state.filters.toJson()}',
+        );
+
         final response = await _swipesRepository.getSwipeHistoryProperties(
           filters: state.filters.copyWith(searchQuery: state.searchQuery),
           latitude: locationToUse.latitude,
@@ -521,7 +544,9 @@ class PageStateService extends GetxController {
           limit: 50,
           isLiked: isLikedSegment,
         );
-        DebugLogger.api('📊 [PAGE_STATE_SERVICE] getSwipeHistoryProperties completed successfully');
+        DebugLogger.api(
+          '📊 [PAGE_STATE_SERVICE] getSwipeHistoryProperties completed successfully',
+        );
 
         _updatePageState(
           pageType,
@@ -534,6 +559,7 @@ class PageStateService extends GetxController {
             isLoading: false,
             isRefreshing: false,
             lastFetched: DateTime.now(),
+            error: null, // clear any previous error on success
           ),
         );
       } else {
@@ -558,28 +584,45 @@ class PageStateService extends GetxController {
             isLoading: false,
             isRefreshing: false,
             lastFetched: DateTime.now(),
+            error: null, // clear any previous error on success
           ),
         );
       }
 
       final updatedCount = _getStateForPage(pageType).properties.length;
-      DebugLogger.success('✅ Loaded $updatedCount properties for ${pageType.name}');
+      DebugLogger.success(
+        '✅ Loaded $updatedCount properties for ${pageType.name}',
+      );
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to load ${pageType.name} data: $e');
-      DebugLogger.error('❌ [PAGE_STATE_SERVICE] Stack trace for ${pageType.name} load error: $stackTrace');
-      
+      // Now we log with the full context
+      DebugLogger.error(
+        '❌ Failed to load ${pageType.name} data',
+        e,
+        stackTrace,
+      );
+
       if (e.toString().contains('Null check operator used on a null value')) {
-        DebugLogger.error('🚨 [PAGE_STATE_SERVICE] NULL CHECK OPERATOR ERROR during ${pageType.name} data load!');
+        DebugLogger.error(
+          '🚨 [PAGE_STATE_SERVICE] NULL CHECK OPERATOR ERROR during ${pageType.name} data load!',
+        );
         if (pageType == PageType.likes) {
-          DebugLogger.error('🚨 [PAGE_STATE_SERVICE] This error occurred in SwipesRepository.getSwipeHistoryProperties()');
-          DebugLogger.error('🚨 [PAGE_STATE_SERVICE] Check the detailed API parsing logs above for the root cause');
+          DebugLogger.error(
+            '🚨 [PAGE_STATE_SERVICE] This error occurred in SwipesRepository.getSwipeHistoryProperties()',
+          );
+          DebugLogger.error(
+            '🚨 [PAGE_STATE_SERVICE] Check the detailed API parsing logs above for the root cause',
+          );
         }
       }
-      
+
       final state = _getStateForPage(pageType);
       _updatePageState(
         pageType,
-        state.copyWith(isLoading: false, isRefreshing: false, error: e.toString()),
+        state.copyWith(
+          isLoading: false,
+          isRefreshing: false,
+          error: AppError(error: e, stackTrace: stackTrace),
+        ),
       );
     } finally {
       notifyPageRefreshing(pageType, false);

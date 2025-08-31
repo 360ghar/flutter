@@ -1,16 +1,19 @@
 import 'dart:async';
-import 'package:get/get.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/data/models/page_state_model.dart';
-import '../../../core/data/repositories/swipes_repository.dart';
-import '../../../core/utils/debug_logger.dart';
+
 import '../../../core/controllers/location_controller.dart';
 import '../../../core/controllers/page_state_service.dart';
-import '../../../widgets/common/property_filter_widget.dart';
+import '../../../core/data/models/page_state_model.dart';
+import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/unified_filter_model.dart';
+import '../../../core/data/repositories/swipes_repository.dart';
+import '../../../core/utils/debug_logger.dart';
+import '../../../core/utils/app_exceptions.dart';
+import '../../../widgets/common/property_filter_widget.dart';
 
 enum ExploreState { initial, loading, loaded, empty, error, loadingMore }
 
@@ -27,7 +30,7 @@ class ExploreController extends GetxController {
   // Reactive state
   final Rx<ExploreState> state = ExploreState.initial.obs;
   final RxList<PropertyModel> properties = <PropertyModel>[].obs;
-  final RxnString error = RxnString();
+  final Rxn<AppError> error = Rxn<AppError>();
 
   // Local liked overrides to reflect immediate UI without mutating model
   final RxMap<int, bool> likedOverrides = <int, bool>{}.obs;
@@ -181,7 +184,6 @@ class ExploreController extends GetxController {
     });
   }
 
-
   void _setupFilterListener() {
     DebugLogger.info('🔧 Setting up filter listener');
     // React to page state changes by syncing local list/state
@@ -199,57 +201,83 @@ class ExploreController extends GetxController {
         DebugLogger.api(
           '📊 [EXPLORE_CONTROLLER] Page state isLoading: ${pageState.isLoading}',
         );
-        
+
         final isCurrentPage =
             _pageStateService.currentPageType.value == PageType.explore;
         if (!isCurrentPage) return;
 
-        DebugLogger.info('📊 [EXPLORE_CONTROLLER] Current page is explore, proceeding with sync');
+        DebugLogger.info(
+          '📊 [EXPLORE_CONTROLLER] Current page is explore, proceeding with sync',
+        );
 
         // Sync properties - this is where the null check operator error likely occurs
         DebugLogger.api(
           '📊 [EXPLORE_CONTROLLER] About to call properties.assignAll() with ${pageState.properties.length} properties',
         );
-        
+
         // Check each property individually before assigning to identify the problematic one
         final safeProperties = <PropertyModel>[];
         for (int i = 0; i < pageState.properties.length; i++) {
           try {
             final property = pageState.properties[i];
-            DebugLogger.debug('📊 [EXPLORE_CONTROLLER] Checking property $i: ${property.id} - ${property.title}');
-            
+            DebugLogger.debug(
+              '📊 [EXPLORE_CONTROLLER] Checking property $i: ${property.id} - ${property.title}',
+            );
+
             // Try accessing common getters that might cause null check errors
             property.mainImage; // This accesses images?.first.imageUrl
             property.formattedPrice; // This accesses pricing fields
             property.addressDisplay; // This accesses location fields
-            
-            DebugLogger.debug('📊 [EXPLORE_CONTROLLER] Property $i passed all getter checks');
+
+            DebugLogger.debug(
+              '📊 [EXPLORE_CONTROLLER] Property $i passed all getter checks',
+            );
             safeProperties.add(property);
           } catch (e, stackTrace) {
-            DebugLogger.error('🚨 [EXPLORE_CONTROLLER] FOUND THE PROBLEMATIC PROPERTY at index $i: $e');
-            DebugLogger.error('🚨 [EXPLORE_CONTROLLER] Property ID: ${pageState.properties[i].id}');
-            DebugLogger.error('🚨 [EXPLORE_CONTROLLER] Property title: ${pageState.properties[i].title}');
-            DebugLogger.error('🚨 [EXPLORE_CONTROLLER] Stack trace: $stackTrace');
-            
-            if (e.toString().contains('Null check operator used on a null value')) {
-              DebugLogger.error('🚨 [EXPLORE_CONTROLLER] NULL CHECK OPERATOR ERROR confirmed in property getter!');
-              DebugLogger.error('🚨 [EXPLORE_CONTROLLER] This is the root cause of the error!');
+            DebugLogger.error(
+              '🚨 [EXPLORE_CONTROLLER] FOUND THE PROBLEMATIC PROPERTY at index $i: $e',
+            );
+            DebugLogger.error(
+              '🚨 [EXPLORE_CONTROLLER] Property ID: ${pageState.properties[i].id}',
+            );
+            DebugLogger.error(
+              '🚨 [EXPLORE_CONTROLLER] Property title: ${pageState.properties[i].title}',
+            );
+            DebugLogger.error(
+              '🚨 [EXPLORE_CONTROLLER] Stack trace: $stackTrace',
+            );
+
+            if (e.toString().contains(
+              'Null check operator used on a null value',
+            )) {
+              DebugLogger.error(
+                '🚨 [EXPLORE_CONTROLLER] NULL CHECK OPERATOR ERROR confirmed in property getter!',
+              );
+              DebugLogger.error(
+                '🚨 [EXPLORE_CONTROLLER] This is the root cause of the error!',
+              );
             }
-            
+
             // Skip this problematic property and continue with others
           }
         }
-        
-        DebugLogger.api('📊 [EXPLORE_CONTROLLER] Assigning ${safeProperties.length} safe properties out of ${pageState.properties.length} total');
+
+        DebugLogger.api(
+          '📊 [EXPLORE_CONTROLLER] Assigning ${safeProperties.length} safe properties out of ${pageState.properties.length} total',
+        );
         properties.assignAll(safeProperties);
       } catch (e, stackTrace) {
-        DebugLogger.error('🚨 [EXPLORE_CONTROLLER] ERROR in debounce worker: $e');
+        DebugLogger.error(
+          '🚨 [EXPLORE_CONTROLLER] ERROR in debounce worker: $e',
+        );
         DebugLogger.error('🚨 [EXPLORE_CONTROLLER] Stack trace: $stackTrace');
-        
+
         if (e.toString().contains('Null check operator used on a null value')) {
-          DebugLogger.error('🚨 [EXPLORE_CONTROLLER] NULL CHECK OPERATOR ERROR in debounce worker!');
+          DebugLogger.error(
+            '🚨 [EXPLORE_CONTROLLER] NULL CHECK OPERATOR ERROR in debounce worker!',
+          );
         }
-        
+
         // Don't rethrow to prevent UI crashes, but log the error
         return;
       }
@@ -279,6 +307,10 @@ class ExploreController extends GetxController {
         state.value = ExploreState.error;
         error.value = pageState.error;
       } else {
+        // Clear any stale controller error when page state is healthy
+        if (error.value != null) {
+          error.value = null;
+        }
         state.value = properties.isEmpty
             ? ExploreState.empty
             : ExploreState.loaded;
@@ -403,11 +435,17 @@ class ExploreController extends GetxController {
           ? ExploreState.empty
           : ExploreState.loaded;
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ CRITICAL: Failed during initialization: $e');
-      DebugLogger.error('Stack trace: $stackTrace');
+      DebugLogger.error(
+        '❌ CRITICAL: Failed during initialization',
+        e,
+        stackTrace,
+      );
       state.value = ExploreState.error;
-      error.value =
-          "Failed to initialize the map. Please check location services and try again.";
+      error.value = AppError(
+        error:
+            "Failed to initialize the map. Please check location services and try again.",
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -431,7 +469,9 @@ class ExploreController extends GetxController {
         await _pageStateService.updateLocation(locationData, source: 'gps');
         // Update radius if needed
         final currentFilters = _pageStateService.getCurrentPageState().filters;
-        final updatedFilters = currentFilters.copyWith(radiusKm: currentRadius.value);
+        final updatedFilters = currentFilters.copyWith(
+          radiusKm: currentRadius.value,
+        );
         _pageStateService.updatePageFilters(PageType.explore, updatedFilters);
 
         // Sync Explore page state location for subsequent loads
@@ -459,7 +499,9 @@ class ExploreController extends GetxController {
         await _pageStateService.updateLocation(locationData, source: 'default');
         // Update radius if needed
         final currentFilters = _pageStateService.getCurrentPageState().filters;
-        final updatedFilters = currentFilters.copyWith(radiusKm: currentRadius.value);
+        final updatedFilters = currentFilters.copyWith(
+          radiusKm: currentRadius.value,
+        );
         _pageStateService.updatePageFilters(PageType.explore, updatedFilters);
 
         await _pageStateService.updateLocationForPage(
@@ -481,7 +523,9 @@ class ExploreController extends GetxController {
       await _pageStateService.updateLocation(locationData, source: 'default');
       // Update radius if needed
       final currentFilters = _pageStateService.getCurrentPageState().filters;
-      final updatedFilters = currentFilters.copyWith(radiusKm: currentRadius.value);
+      final updatedFilters = currentFilters.copyWith(
+        radiusKm: currentRadius.value,
+      );
       _pageStateService.updatePageFilters(PageType.explore, updatedFilters);
 
       await _pageStateService.updateLocationForPage(
@@ -578,7 +622,9 @@ class ExploreController extends GetxController {
       await _pageStateService.updateLocation(locationData, source: 'map');
       // Update radius if needed
       final currentFilters = _pageStateService.getCurrentPageState().filters;
-      final updatedFilters = currentFilters.copyWith(radiusKm: currentRadius.value);
+      final updatedFilters = currentFilters.copyWith(
+        radiusKm: currentRadius.value,
+      );
       _pageStateService.updatePageFilters(PageType.explore, updatedFilters);
       DebugLogger.success('✅ Filter location updated successfully');
 
@@ -596,8 +642,6 @@ class ExploreController extends GetxController {
       DebugLogger.error('❌ Failed to update filter location: $e');
     }
   }
-
-
 
   // Search functionality
   void updateSearchQuery(String query) {
@@ -692,7 +736,9 @@ class ExploreController extends GetxController {
 
   void quickFilterByType(PropertyType type) {
     final currentFilters = _pageStateService.getCurrentPageState().filters;
-    final updatedFilters = currentFilters.copyWith(propertyType: [type.toString()]);
+    final updatedFilters = currentFilters.copyWith(
+      propertyType: [type.toString()],
+    );
     _pageStateService.updatePageFilters(PageType.explore, updatedFilters);
   }
 
@@ -745,7 +791,9 @@ class ExploreController extends GetxController {
 
       // Ensure we have valid coordinates before proceeding
       if (lats.isEmpty || lngs.isEmpty) {
-        DebugLogger.warning('No valid coordinates found in propertiesWithLocation');
+        DebugLogger.warning(
+          'No valid coordinates found in propertiesWithLocation',
+        );
         return;
       }
 
@@ -801,7 +849,8 @@ class ExploreController extends GetxController {
   }
 
   // Statistics and info
-  String get locationDisplayText => _pageStateService.getCurrentPageState().locationDisplayText;
+  String get locationDisplayText =>
+      _pageStateService.getCurrentPageState().locationDisplayText;
 
   String get propertiesCountText {
     if (properties.isEmpty) return 'No properties found';
@@ -815,7 +864,6 @@ class ExploreController extends GetxController {
     }
     return '${currentRadius.value.toStringAsFixed(1)}km radius';
   }
-
 
   // Get properties for clustering (if implemented)
   List<PropertyModel> get propertiesWithLocation {

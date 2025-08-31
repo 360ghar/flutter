@@ -95,8 +95,6 @@ class AppTranslations extends Translations {
       'similar_properties': 'Similar Properties',
       'similar_properties_desc': 'Show similar properties in recommendations',
 
-      'save_search_history': 'Save Search History',
-      'save_search_history_desc': 'Keep track of your property searches',
       'location_services': 'Location Services',
       'location_services_desc': 'Use location for nearby properties',
       'location_services_disabled': 'Location services are disabled',
@@ -172,7 +170,6 @@ class AppTranslations extends Translations {
       'search_properties': 'Search Properties',
       'search_hint': 'Search by location, property type...',
       'recent_searches': 'Recent Searches',
-      'clear_search_history': 'Clear Search History',
 
       // Filters
       'price_range': 'Price Range',
@@ -204,7 +201,7 @@ class AppTranslations extends Translations {
       'enter_email_first': 'Please enter your email address first',
       'password_reset_email_sent':
           'Password reset email sent! Please check your inbox.',
-      
+
       // Authentication Form Fields
       'phone_number': 'Phone Number',
       'phone_hint': '10-digit mobile or +91XXXXXXXXXX',
@@ -215,7 +212,7 @@ class AppTranslations extends Translations {
       'confirm_password_required': 'Please confirm your password',
       'passwords_dont_match': 'Passwords do not match',
       'remember_me': 'Remember me',
-      
+
       // Authentication Messages
       'sign_in_subtitle': 'Sign in with your phone number',
       'signup_subtitle': 'Create your account',
@@ -223,12 +220,13 @@ class AppTranslations extends Translations {
       'login_error': 'An error occurred during login',
       'signup_error': 'An error occurred during signup',
       'create_account': 'Create Account',
-      
+
       // OTP Verification
       'verify_phone': 'Verify Phone',
       'verify_phone_number': 'Verify Phone Number',
       'otp_sent_message': 'A verification code has been sent to your phone',
-      'otp_verification_subtitle': 'We\'ve sent a verification code to your phone',
+      'otp_verification_subtitle':
+          'We\'ve sent a verification code to your phone',
       'enter_otp': 'Enter 6-digit code',
       'enter_otp_subtitle': 'Enter the 6-digit code you received',
       'verify_otp': 'Verify OTP',
@@ -238,7 +236,7 @@ class AppTranslations extends Translations {
       'otp_resent_message': 'A new OTP has been sent to your phone',
       'resend_code': 'Resend Code',
       'resend_in': 'Resend in',
-      
+
       // Password Reset
       'reset_password': 'Reset Password',
       'reset_password_subtitle': 'Reset via OTP sent to your phone',
@@ -252,7 +250,7 @@ class AppTranslations extends Translations {
       'failed_to_send_otp': 'Failed to send OTP',
       'password_updated_successfully': 'Password updated successfully',
       'failed_to_update_password': 'Failed to update password',
-      
+
       'passed': 'Passed',
       'my_location': 'My Location',
       'light': 'Light',
@@ -351,8 +349,6 @@ class AppTranslations extends Translations {
       'similar_properties': 'समान संपत्तियां',
       'similar_properties_desc': 'सुझावों में समान संपत्तियां दिखाएं',
 
-      'save_search_history': 'खोज इतिहास सेव करें',
-      'save_search_history_desc': 'अपनी संपत्ति खोजों का ट्रैक रखें',
       'location_services': 'स्थान सेवाएं',
       'location_services_desc':
           'आस-पास की संपत्तियों के लिए स्थान का उपयोग करें',
@@ -430,7 +426,6 @@ class AppTranslations extends Translations {
       'search_properties': 'संपत्ति खोजें',
       'search_hint': 'स्थान, संपत्ति प्रकार के द्वारा खोजें...',
       'recent_searches': 'हाल की खोजें',
-      'clear_search_history': 'खोज इतिहास साफ करें',
 
       // Filters
       'price_range': 'कीमत रेंज',
@@ -462,7 +457,7 @@ class AppTranslations extends Translations {
       'enter_email_first': 'कृपया पहले अपना ईमेल पता दर्ज करें',
       'password_reset_email_sent':
           'पासवर्ड रीसेट ईमेल भेजा गया है! कृपया अपना इनबॉक्स जांचें।',
-      
+
       // Authentication Form Fields
       'phone_number': 'फोन नंबर',
       'phone_hint': '10-अंकीय मोबाइल या +91XXXXXXXXXX',
@@ -473,7 +468,7 @@ class AppTranslations extends Translations {
       'confirm_password_required': 'कृपया अपने पासवर्ड की पुष्टि करें',
       'passwords_dont_match': 'पासवर्ड मेल नहीं खाते',
       'remember_me': 'मुझे याद रखें',
-      
+
       // Authentication Messages
       'sign_in_subtitle': 'अपने फोन नंबर से साइन इन करें',
       'signup_subtitle': 'अपना खाता बनाएं',
@@ -481,7 +476,7 @@ class AppTranslations extends Translations {
       'login_error': 'लॉगिन के दौरान एक त्रुटि हुई',
       'signup_error': 'साइन अप के दौरान एक त्रुटि हुई',
       'create_account': 'खाता बनाएं',
-      
+
       // OTP Verification
       'verify_phone': 'फोन सत्यापित करें',
       'verify_phone_number': 'फोन नंबर सत्यापित करें',
@@ -496,10 +491,11 @@ class AppTranslations extends Translations {
       'otp_resent_message': 'आपके फोन पर एक नया OTP भेजा गया है',
       'resend_code': 'कोड फिर से भेजें',
       'resend_in': 'फिर से भेजें',
-      
+
       // Password Reset
       'reset_password': 'पासवर्ड रीसेट करें',
-      'reset_password_subtitle': 'आपके फोन पर भेजे गए OTP के माध्यम से रीसेट करें',
+      'reset_password_subtitle':
+          'आपके फोन पर भेजे गए OTP के माध्यम से रीसेट करें',
       'send_otp': 'OTP भेजें',
       'back_to_login': 'लॉगिन पर वापस जाएं',
       'set_new_password': 'नया पासवर्ड सेट करें',
@@ -510,7 +506,7 @@ class AppTranslations extends Translations {
       'failed_to_send_otp': 'OTP भेजने में विफल',
       'password_updated_successfully': 'पासवर्ड सफलतापूर्वक अपडेट हो गया',
       'failed_to_update_password': 'पासवर्ड अपडेट करने में विफल',
-      
+
       'passed': 'पास',
       'my_location': 'मेरा स्थान',
       'light': 'हल्का',

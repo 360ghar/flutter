@@ -1,18 +1,18 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart' as getx;
-import '../models/property_model.dart';
-import '../models/user_model.dart';
-import '../models/visit_model.dart';
-import '../models/unified_property_response.dart';
-import '../models/unified_filter_model.dart';
-import '../models/agent_model.dart';
-import '../../controllers/auth_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/amenity_model.dart';
-import '../models/api_response_models.dart';
+import '../../controllers/auth_controller.dart';
 import '../../utils/debug_logger.dart';
 import '../../utils/error_handler.dart';
+import '../models/agent_model.dart';
+import '../models/amenity_model.dart';
+import '../models/api_response_models.dart';
+import '../models/property_model.dart';
+import '../models/unified_filter_model.dart';
+import '../models/unified_property_response.dart';
+import '../models/user_model.dart';
+import '../models/visit_model.dart';
 
 class ApiAuthException implements Exception {
   final String message;
@@ -176,7 +176,9 @@ class ApiService extends getx.GetConnect {
     // Simplified response interceptor - trust Supabase's automatic refresh
     httpClient.addResponseModifier((request, response) async {
       if (response.statusCode == 401) {
-        DebugLogger.warning('🔐 Received 401 response, clearing authentication');
+        DebugLogger.warning(
+          '🔐 Received 401 response, clearing authentication',
+        );
         _handleAuthenticationFailure();
         throw ApiAuthException('Authentication failed', statusCode: 401);
       }
@@ -191,8 +193,6 @@ class ApiService extends getx.GetConnect {
       // Extract base URL without /api/v1 for GetConnect
       _baseUrl = fullApiUrl.replaceAll('/api/v1', '');
       DebugLogger.startup('API Service initialized with base URL: $_baseUrl');
-
-      // SecureTokenManager removed - trusting Supabase session management
 
       // Check if Supabase is already initialized
       try {
@@ -257,7 +257,9 @@ class ApiService extends getx.GetConnect {
 
   /// Handles authentication failure by signing the user out and redirecting to login.
   void _handleAuthenticationFailure() {
-    DebugLogger.auth('Authentication failed. Signing out and redirecting to login.');
+    DebugLogger.auth(
+      'Authentication failed. Signing out and redirecting to login.',
+    );
 
     // Use AuthController to sign out, which will trigger a global state change.
     // This is safer than directly navigating.
@@ -336,42 +338,53 @@ class ApiService extends getx.GetConnect {
             response.statusCode! >= 200 &&
             response.statusCode! < 300) {
           final responseData = response.body;
-          DebugLogger.api('📊 [_makeRequest] Raw response data type: ${responseData?.runtimeType}');
+          DebugLogger.api(
+            '📊 [_makeRequest] Raw response data type: ${responseData?.runtimeType}',
+          );
           DebugLogger.api('📊 [_makeRequest] Raw response data: $responseData');
-          
+
           try {
             if (responseData is Map<String, dynamic>) {
-              DebugLogger.api('📊 [_makeRequest] Calling fromJson with Map<String, dynamic>: $responseData');
+              DebugLogger.api(
+                '📊 [_makeRequest] Calling fromJson with Map<String, dynamic>: $responseData',
+              );
               final result = fromJson(responseData);
-              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
+              DebugLogger.api(
+                '📊 [_makeRequest] fromJson completed successfully for $operation',
+              );
               return result;
             } else if (responseData is List) {
-              DebugLogger.api('📊 [_makeRequest] Normalizing List response to Map for $operation');
+              DebugLogger.api(
+                '📊 [_makeRequest] Normalizing List response to Map for $operation',
+              );
               final normalizedData = {'data': responseData};
-              DebugLogger.api('📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData');
+              DebugLogger.api(
+                '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
+              );
               final result = fromJson(normalizedData);
-              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
+              DebugLogger.api(
+                '📊 [_makeRequest] fromJson completed successfully for $operation',
+              );
               return result;
             } else {
-              DebugLogger.api('📊 [_makeRequest] Normalizing ${responseData?.runtimeType} response to Map for $operation');
+              DebugLogger.api(
+                '📊 [_makeRequest] Normalizing ${responseData?.runtimeType} response to Map for $operation',
+              );
               final normalizedData = {'data': responseData};
-              DebugLogger.api('📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData');
+              DebugLogger.api(
+                '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
+              );
               final result = fromJson(normalizedData);
-              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
+              DebugLogger.api(
+                '📊 [_makeRequest] fromJson completed successfully for $operation',
+              );
               return result;
             }
-          } catch (e, stackTrace) {
-            DebugLogger.error('🚨 [_makeRequest] ERROR in fromJson callback for $operation: $e');
-            DebugLogger.error('🚨 [_makeRequest] Response data that caused error: $responseData');
-            DebugLogger.error('🚨 [_makeRequest] Error type: ${e.runtimeType}');
-            DebugLogger.error('🚨 [_makeRequest] Stack trace: $stackTrace');
-            
-            if (e.toString().contains('Null check operator used on a null value')) {
-              DebugLogger.error('🚨 [_makeRequest] NULL CHECK OPERATOR ERROR in fromJson callback!');
-              DebugLogger.error('🚨 [_makeRequest] This error is coming from the parsing logic');
-              DebugLogger.error('🚨 [_makeRequest] Operation: $operation');
-            }
-            
+          } catch (e) {
+            DebugLogger.error(
+              '🚨 [_makeRequest] ERROR in fromJson callback for $operation: $e',
+            );
+            DebugLogger.error('🚨 [_makeRequest] Response data: $responseData');
             rethrow;
           }
         } else if (response.statusCode == 401) {
@@ -387,7 +400,7 @@ class ApiService extends getx.GetConnect {
             'Access forbidden for $operation',
             statusCode: 403,
           );
-        } else if (response.statusCode! >= 500 && attempt < retries) {
+        } else if (((response.statusCode) ?? 0) >= 500 && attempt < retries) {
           // Server error - retry
           DebugLogger.warning(
             '🔄 Server error (${response.statusCode}) for $operation, retrying... (${attempt + 1}/$retries)',
@@ -493,51 +506,12 @@ class ApiService extends getx.GetConnect {
   // Helper method for safer property model parsing
   static PropertyModel _parsePropertyModel(Map<String, dynamic> json) {
     try {
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] Starting property parsing for ID: ${json['id']}');
-      DebugLogger.api('📊 [PROPERTY_PARSER] RAW JSON RECEIVED: $json');
-      
       // Normalize fields that may vary in type from different backends
       final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
 
-      // Features should remain as List, no conversion needed
+      // Convert List calendar_data to Map if needed
       if (safeJson['calendar_data'] is List) {
         safeJson['calendar_data'] = <String, dynamic>{};
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] Converted calendar_data from List to Map');
-      }
-
-      // Log critical fields for debugging
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] Critical fields - id: ${safeJson['id']}, title: ${safeJson['title']}, property_type: ${safeJson['property_type']}, purpose: ${safeJson['purpose']}');
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] Timestamp fields - created_at: ${safeJson['created_at']}, updated_at: ${safeJson['updated_at']}');
-
-      // Log all fields to understand what's being parsed
-      safeJson.forEach((key, value) {
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] Field "$key": ${value?.runtimeType} = $value');
-      });
-
-      // Log specific problematic fields
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] REQUIRED FIELD CHECK - id: ${safeJson['id']} (${safeJson['id']?.runtimeType})');
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] REQUIRED FIELD CHECK - title: ${safeJson['title']} (${safeJson['title']?.runtimeType})');
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] BASE PRICE CHECK - base_price: ${safeJson['base_price']} (${safeJson['base_price']?.runtimeType})');
-      
-      // Check for nested objects that could cause null pointer issues
-      if (safeJson['images'] != null) {
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] IMAGES FIELD: ${safeJson['images']} (${safeJson['images']?.runtimeType})');
-        if (safeJson['images'] is List) {
-          final images = safeJson['images'] as List;
-          for (int i = 0; i < images.length; i++) {
-            DebugLogger.debug('🏠 [PROPERTY_PARSER] IMAGE[$i]: ${images[i]} (${images[i]?.runtimeType})');
-          }
-        }
-      }
-      
-      if (safeJson['amenities'] != null) {
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] AMENITIES FIELD: ${safeJson['amenities']} (${safeJson['amenities']?.runtimeType})');
-        if (safeJson['amenities'] is List) {
-          final amenities = safeJson['amenities'] as List;
-          for (int i = 0; i < amenities.length; i++) {
-            DebugLogger.debug('🏠 [PROPERTY_PARSER] AMENITY[$i]: ${amenities[i]} (${amenities[i]?.runtimeType})');
-          }
-        }
       }
 
       // Ensure numeric fields are parsed as double when provided as int/strings
@@ -548,169 +522,27 @@ class ApiService extends getx.GetConnect {
         return null;
       }
 
-      if (safeJson.containsKey('base_price')) {
-        final originalValue = safeJson['base_price'];
-        safeJson['base_price'] = toDouble(safeJson['base_price']) ?? 0.0;
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - base_price: $originalValue -> ${safeJson['base_price']}');
-      }
-      if (safeJson.containsKey('price_per_sqft')) {
-        final originalValue = safeJson['price_per_sqft'];
-        safeJson['price_per_sqft'] = toDouble(safeJson['price_per_sqft']);
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - price_per_sqft: $originalValue -> ${safeJson['price_per_sqft']}');
-      }
-      if (safeJson.containsKey('monthly_rent')) {
-        final originalValue = safeJson['monthly_rent'];
-        safeJson['monthly_rent'] = toDouble(safeJson['monthly_rent']);
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - monthly_rent: $originalValue -> ${safeJson['monthly_rent']}');
-      }
-      if (safeJson.containsKey('daily_rate')) {
-        final originalValue = safeJson['daily_rate'];
-        safeJson['daily_rate'] = toDouble(safeJson['daily_rate']);
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - daily_rate: $originalValue -> ${safeJson['daily_rate']}');
-      }
-      if (safeJson.containsKey('security_deposit')) {
-        final originalValue = safeJson['security_deposit'];
-        safeJson['security_deposit'] = toDouble(safeJson['security_deposit']);
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - security_deposit: $originalValue -> ${safeJson['security_deposit']}');
-      }
-      if (safeJson.containsKey('maintenance_charges')) {
-        final originalValue = safeJson['maintenance_charges'];
-        safeJson['maintenance_charges'] = toDouble(
-          safeJson['maintenance_charges'],
-        );
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] Price conversion - maintenance_charges: $originalValue -> ${safeJson['maintenance_charges']}');
-      }
-
-      // Validate critical fields before parsing
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] About to validate property JSON');
-      _validatePropertyJson(json);
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] Validation passed, calling PropertyModel.fromJson');
-      DebugLogger.api('📊 [PROPERTY_PARSER] SAFE JSON TO BE PARSED: $safeJson');
-      
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] CALLING PropertyModel.fromJson() - this is where null check errors often occur');
-      
-      // Call PropertyModel.fromJson with detailed error context
-      PropertyModel property;
-      try {
-        property = PropertyModel.fromJson(safeJson);
-        DebugLogger.debug('🏠 [PROPERTY_PARSER] PropertyModel.fromJson() completed successfully');
-      } catch (e, stackTrace) {
-        DebugLogger.error('🚨 [PROPERTY_PARSER] PropertyModel.fromJson() FAILED: $e');
-        DebugLogger.error('🚨 [PROPERTY_PARSER] This is the exact point where the null check error occurs');
-        DebugLogger.error('🚨 [PROPERTY_PARSER] Generated code in property_model.g.dart is the culprit');
-        DebugLogger.api('📊 [PROPERTY_PARSER] JSON that failed PropertyModel.fromJson(): $safeJson');
-        
-        // Try to identify which generated method line is causing the issue
-        final stackString = stackTrace.toString();
-        if (stackString.contains('property_model.g.dart')) {
-          DebugLogger.error('🚨 [PROPERTY_PARSER] Error is in generated property_model.g.dart file');
-          // Extract line numbers from stack trace if possible
-          final lines = stackString.split('\n');
-          for (final line in lines) {
-            if (line.contains('property_model.g.dart')) {
-              DebugLogger.error('🚨 [PROPERTY_PARSER] Specific line: $line');
-            }
-          }
-        }
-        rethrow;
-      }
-      
-      DebugLogger.debug('🏠 [PROPERTY_PARSER] Successfully parsed property: ${property.id} - ${property.title}');
-      return property;
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ [PROPERTY_PARSER] CRITICAL ERROR parsing property model: $e');
-      DebugLogger.error('❌ [PROPERTY_PARSER] Stack trace: $stackTrace');
-      DebugLogger.api('📊 [PROPERTY_PARSER] Raw JSON that caused error: $json');
-
-      // Special handling for null check operator errors with detailed analysis
-      if (e.toString().contains('Null check operator used on a null value')) {
-        DebugLogger.error('🚨 [PROPERTY_PARSER] NULL CHECK OPERATOR ERROR DETECTED!');
-        DebugLogger.error('🚨 [PROPERTY_PARSER] This is likely in PropertyModel.fromJson or related code');
-        DebugLogger.error('🚨 [PROPERTY_PARSER] Check generated property_model.g.dart file');
-        
-        // Detailed analysis of which field might be causing the issue
-        DebugLogger.error('🔍 [PROPERTY_PARSER] FIELD ANALYSIS FOR NULL CHECK ERROR:');
-        
-        // Check required fields that have non-nullable conversions in generated code
-        final fieldsToCheck = [
-          'id', 'title', 'base_price', 'is_active', 'view_count', 
-          'like_count', 'interest_count', 'liked', 'country'
-        ];
-        
-        for (final field in fieldsToCheck) {
-          final value = json[field];
-          DebugLogger.error('🔍 [PROPERTY_PARSER] $field: $value (${value?.runtimeType}) - ${value == null ? "NULL!" : "OK"}');
-        }
-
-        // Check nested objects that could cause issues
-        if (json['images'] is List) {
-          final images = json['images'] as List;
-          for (int i = 0; i < images.length; i++) {
-            final image = images[i];
-            if (image is Map) {
-              final imageUrl = image['image_url'];
-              DebugLogger.error('🔍 [PROPERTY_PARSER] images[$i].image_url: $imageUrl - ${imageUrl == null ? "NULL!" : "OK"}');
-            }
-          }
-        }
-        
-        if (json['amenities'] is List) {
-          final amenities = json['amenities'] as List;
-          for (int i = 0; i < amenities.length; i++) {
-            final amenity = amenities[i];
-            if (amenity is Map) {
-              final id = amenity['id'];
-              final title = amenity['title'];
-              DebugLogger.error('🔍 [PROPERTY_PARSER] amenities[$i].id: $id - ${id == null ? "NULL!" : "OK"}');
-              DebugLogger.error('🔍 [PROPERTY_PARSER] amenities[$i].title: $title - ${title == null ? "NULL!" : "OK"}');
-            }
-          }
-        }
-        
-        // Check datetime fields
-        final dateFields = ['created_at', 'updated_at', 'available_from'];
-        for (final field in dateFields) {
-          final value = json[field];
-          if (value != null && value is! String) {
-            DebugLogger.error('🔍 [PROPERTY_PARSER] $field: $value (${value?.runtimeType}) - WRONG TYPE! Should be String or null');
-          }
+      // Convert numeric price fields
+      final priceFields = [
+        'base_price',
+        'price_per_sqft',
+        'monthly_rent',
+        'daily_rate',
+        'security_deposit',
+        'maintenance_charges',
+      ];
+      for (final field in priceFields) {
+        if (safeJson.containsKey(field)) {
+          safeJson[field] =
+              toDouble(safeJson[field]) ?? (field == 'base_price' ? 0.0 : null);
         }
       }
 
-      // Log specific field issues
-      if (json['id'] == null) {
-        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing required field: id');
-      }
-      if (json['title'] == null) {
-        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing required field: title (has default: "Unknown Property")');
-      }
-      if (json['property_type'] == null) {
-        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing field: property_type (should be nullable)');
-      }
-      if (json['purpose'] == null) {
-        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing field: purpose (should be nullable)');
-      }
-      if (json['created_at'] == null) {
-        DebugLogger.error('🚫 [PROPERTY_PARSER] Missing field: created_at (should be nullable)');
-      }
-
+      return PropertyModel.fromJson(safeJson);
+    } catch (e) {
+      DebugLogger.error('❌ Error parsing property model: $e');
+      DebugLogger.api('📊 Raw JSON: $json');
       rethrow;
-    }
-  }
-
-  // Validate property JSON before parsing
-  static void _validatePropertyJson(Map<String, dynamic> json) {
-    final requiredFields = ['id', 'title', 'property_type', 'purpose'];
-    final missingFields = <String>[];
-
-    for (final field in requiredFields) {
-      if (json[field] == null) {
-        missingFields.add(field);
-      }
-    }
-
-    if (missingFields.isNotEmpty) {
-      throw Exception('Missing required fields: ${missingFields.join(', ')}');
     }
   }
 
@@ -730,41 +562,63 @@ class ApiService extends getx.GetConnect {
           safeJson['items'];
       final List<dynamic> list = rawList is List ? rawList : <dynamic>[];
 
-      DebugLogger.api('📦 [UNIFIED_PARSER] Found ${list.length} properties to parse');
-      DebugLogger.debug('📦 [UNIFIED_PARSER] Property list type: ${list.runtimeType}');
+      DebugLogger.api(
+        '📦 [UNIFIED_PARSER] Found ${list.length} properties to parse',
+      );
+      DebugLogger.debug(
+        '📦 [UNIFIED_PARSER] Property list type: ${list.runtimeType}',
+      );
 
       final List<PropertyModel> parsed = <PropertyModel>[];
       int failedCount = 0;
       for (int i = 0; i < list.length; i++) {
         final item = list[i];
-        DebugLogger.debug('🏠 [UNIFIED_PARSER] Processing item $i: ${item?.runtimeType}');
-        
+        DebugLogger.debug(
+          '🏠 [UNIFIED_PARSER] Processing item $i: ${item?.runtimeType}',
+        );
+
         if (item is Map<String, dynamic>) {
           try {
-            DebugLogger.debug('🏠 [UNIFIED_PARSER] About to parse property $i: $item');
+            DebugLogger.debug(
+              '🏠 [UNIFIED_PARSER] About to parse property $i: $item',
+            );
             final property = _parsePropertyModel(item);
             parsed.add(property);
-            DebugLogger.debug('🏠 [UNIFIED_PARSER] Successfully parsed property $i: ${property.title}');
+            DebugLogger.debug(
+              '🏠 [UNIFIED_PARSER] Successfully parsed property $i: ${property.title}',
+            );
           } catch (e, stackTrace) {
-            DebugLogger.error('❌ [UNIFIED_PARSER] Failed to parse property $i: $e');
+            DebugLogger.error(
+              '❌ [UNIFIED_PARSER] Failed to parse property $i: $e',
+            );
             DebugLogger.error('❌ [UNIFIED_PARSER] Failed property data: $item');
             DebugLogger.error('❌ [UNIFIED_PARSER] Stack trace: $stackTrace');
-            
-            if (e.toString().contains('Null check operator used on a null value')) {
-              DebugLogger.error('🚨 [UNIFIED_PARSER] NULL CHECK OPERATOR ERROR at property index $i!');
-              DebugLogger.error('🚨 [UNIFIED_PARSER] This should provide more details from _parsePropertyModel');
+
+            if (e.toString().contains(
+              'Null check operator used on a null value',
+            )) {
+              DebugLogger.error(
+                '🚨 [UNIFIED_PARSER] NULL CHECK OPERATOR ERROR at property index $i!',
+              );
+              DebugLogger.error(
+                '🚨 [UNIFIED_PARSER] This should provide more details from _parsePropertyModel',
+              );
             }
-            
+
             failedCount++;
           }
         } else {
-          DebugLogger.warning('⚠️ [UNIFIED_PARSER] Invalid property at index $i: $item (${item?.runtimeType})');
+          DebugLogger.warning(
+            '⚠️ [UNIFIED_PARSER] Invalid property at index $i: $item (${item?.runtimeType})',
+          );
           failedCount++;
         }
       }
 
       if (failedCount > 0) {
-        DebugLogger.warning('⚠️ [UNIFIED_PARSER] Skipped $failedCount invalid properties out of ${list.length}');
+        DebugLogger.warning(
+          '⚠️ [UNIFIED_PARSER] Skipped $failedCount invalid properties out of ${list.length}',
+        );
       }
 
       // Metadata with safe fallbacks
@@ -892,24 +746,30 @@ class ApiService extends getx.GetConnect {
   Future<UserModel> updateUserProfile(Map<String, dynamic> profileData) async {
     // Create a copy to avoid modifying the original
     final filteredData = Map<String, dynamic>.from(profileData);
-    
+
     // Separate preference fields from profile fields
     final preferenceFields = <String, dynamic>{};
-    final preferenceKeys = ['property_purpose', 'budget_min', 'budget_max', 'preferred_locations', 'property_types'];
-    
+    final preferenceKeys = [
+      'property_purpose',
+      'budget_min',
+      'budget_max',
+      'preferred_locations',
+      'property_types',
+    ];
+
     for (final key in preferenceKeys) {
       if (filteredData.containsKey(key)) {
         preferenceFields[key] = filteredData.remove(key);
       }
     }
-    
+
     // Handle date_of_birth format conversion
     if (filteredData['date_of_birth'] != null) {
       final dobString = filteredData['date_of_birth'].toString();
       try {
         // Convert various date formats to ISO format
         DateTime? parsedDate;
-        
+
         // Try parsing common formats like "4/9/2007", "04/09/2007", "2007-04-09"
         if (dobString.contains('/')) {
           final parts = dobString.split('/');
@@ -932,35 +792,44 @@ class ApiService extends getx.GetConnect {
           // Try ISO format parsing
           parsedDate = DateTime.parse(dobString);
         }
-        
+
         if (parsedDate != null) {
           // Format as ISO date string (YYYY-MM-DD)
-          filteredData['date_of_birth'] = "${parsedDate.year.toString().padLeft(4, '0')}-${parsedDate.month.toString().padLeft(2, '0')}-${parsedDate.day.toString().padLeft(2, '0')}";
-          DebugLogger.info('📅 Converted date_of_birth from "$dobString" to "${filteredData['date_of_birth']}"');
+          filteredData['date_of_birth'] =
+              "${parsedDate.year.toString().padLeft(4, '0')}-${parsedDate.month.toString().padLeft(2, '0')}-${parsedDate.day.toString().padLeft(2, '0')}";
+          DebugLogger.info(
+            '📅 Converted date_of_birth from "$dobString" to "${filteredData['date_of_birth']}"',
+          );
         }
       } catch (e) {
-        DebugLogger.warning('⚠️ Failed to parse date_of_birth "$dobString": $e');
+        DebugLogger.warning(
+          '⚠️ Failed to parse date_of_birth "$dobString": $e',
+        );
         // Remove invalid date to prevent API error
         filteredData.remove('date_of_birth');
       }
     }
-    
+
     // Log what we're sending (without sensitive data)
     DebugLogger.info('📝 Profile update fields: ${filteredData.keys.toList()}');
     if (preferenceFields.isNotEmpty) {
-      DebugLogger.info('⚙️ Preference fields (will be sent separately): ${preferenceFields.keys.toList()}');
+      DebugLogger.info(
+        '⚙️ Preference fields (will be sent separately): ${preferenceFields.keys.toList()}',
+      );
     }
-    
+
     // Update preferences first if there are any
     if (preferenceFields.isNotEmpty) {
       try {
         await updateUserPreferences(preferenceFields);
         DebugLogger.success('✅ User preferences updated successfully');
       } catch (e) {
-        DebugLogger.warning('⚠️ Failed to update preferences, continuing with profile update: $e');
+        DebugLogger.warning(
+          '⚠️ Failed to update preferences, continuing with profile update: $e',
+        );
       }
     }
-    
+
     // Update profile (only if there are profile fields left)
     if (filteredData.isNotEmpty) {
       return await _makeRequest(
@@ -994,10 +863,7 @@ class ApiService extends getx.GetConnect {
       '/users/location',
       (json) => json,
       method: 'PUT',
-      body: {
-        'latitude': latitude,
-        'longitude': longitude,
-      },
+      body: {'latitude': latitude, 'longitude': longitude},
       operationName: 'Update User Location',
     );
   }
@@ -1503,37 +1369,6 @@ class ApiService extends getx.GetConnect {
         );
       }
     }, operationName: 'Get All Amenities');
-  }
-
-  // User Search History
-  Future<void> recordSearchHistory({
-    String? searchQuery,
-    Map<String, dynamic>? searchFilters,
-    String? searchLocation,
-    int? searchRadius,
-    int? resultsCount,
-    double? userLocationLat,
-    double? userLocationLng,
-    String? searchType,
-    String? sessionId,
-  }) async {
-    await _makeRequest(
-      '/users/search-history',
-      (json) => json,
-      method: 'POST',
-      body: {
-        'search_query': searchQuery,
-        'search_filters': searchFilters,
-        'search_location': searchLocation,
-        'search_radius': searchRadius,
-        'results_count': resultsCount,
-        'user_location_lat': userLocationLat,
-        'user_location_lng': userLocationLng,
-        'search_type': searchType,
-        'session_id': sessionId,
-      },
-      operationName: 'Record Search History',
-    );
   }
 
   // Enhanced user settings

@@ -69,7 +69,8 @@ class DebugLogger {
   static void error(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
     // Always capture stack trace if not provided for errors
-    final effectiveStackTrace = stackTrace ?? (error != null ? StackTrace.current : null);
+    final effectiveStackTrace =
+        stackTrace ?? (error != null ? StackTrace.current : null);
     _logger.e('❌ $message', error: error, stackTrace: effectiveStackTrace);
   }
 
@@ -242,7 +243,11 @@ class DebugLogger {
       });
     }
 
-    _logger.e(message.toString(), error: error, stackTrace: effectiveStackTrace);
+    _logger.e(
+      message.toString(),
+      error: error,
+      stackTrace: effectiveStackTrace,
+    );
   }
 
   /// Comprehensive error reporting method
@@ -297,17 +302,17 @@ class DebugLogger {
   static String _sanitizeForLogging(dynamic value) {
     if (value == null) return 'null';
     final str = value.toString();
-    
+
     // Check for potential sensitive data
     final sensitive = ['password', 'token', 'key', 'secret', 'auth'];
     final lowerStr = str.toLowerCase();
-    
+
     for (final keyword in sensitive) {
       if (lowerStr.contains(keyword)) {
         return '***SANITIZED***';
       }
     }
-    
+
     // Truncate very long strings
     return str.length > 200 ? '${str.substring(0, 200)}...' : str;
   }

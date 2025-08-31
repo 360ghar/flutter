@@ -1,7 +1,8 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import '../../../core/controllers/theme_controller.dart';
+
 import '../../../core/controllers/localization_controller.dart';
+import '../../../core/controllers/theme_controller.dart';
 
 class PreferencesController extends GetxController {
   final GetStorage _storage = GetStorage();
@@ -15,7 +16,6 @@ class PreferencesController extends GetxController {
   final RxBool similarProperties = true.obs;
 
   // Search Preferences
-  final RxBool saveSearchHistory = true.obs;
   final RxBool locationServices = true.obs;
   final RxBool autoCompleteSearch = true.obs;
 
@@ -44,7 +44,6 @@ class PreferencesController extends GetxController {
     similarProperties.value = _storage.read('similarProperties') ?? true;
 
     // Search Preferences
-    saveSearchHistory.value = _storage.read('saveSearchHistory') ?? true;
     locationServices.value = _storage.read('locationServices') ?? true;
     autoCompleteSearch.value = _storage.read('autoCompleteSearch') ?? true;
 
@@ -84,7 +83,6 @@ class PreferencesController extends GetxController {
       _storage.write('similarProperties', similarProperties.value);
 
       // Search Preferences
-      _storage.write('saveSearchHistory', saveSearchHistory.value);
       _storage.write('locationServices', locationServices.value);
       _storage.write('autoCompleteSearch', autoCompleteSearch.value);
 
@@ -120,7 +118,6 @@ class PreferencesController extends GetxController {
   bool get isEmailNotificationsEnabled => emailNotifications.value;
   bool get isPriceDropAlertsEnabled => priceDropAlerts.value;
   bool get isSimilarPropertiesEnabled => similarProperties.value;
-  bool get isSaveSearchHistoryEnabled => saveSearchHistory.value;
   bool get isLocationServicesEnabled => locationServices.value;
   bool get isAutoCompleteSearchEnabled => autoCompleteSearch.value;
   bool get isDarkThemeEnabled => themeMode.value == AppThemeMode.dark;

@@ -634,7 +634,6 @@ class PropertyDetailsView extends StatelessWidget {
     );
   }
 
-
   Widget _buildPropertyInfoSection(PropertyModel property) {
     return Container(
       padding: const EdgeInsets.all(16),

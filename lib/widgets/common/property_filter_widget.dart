@@ -98,14 +98,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'all');
     // Clamp values to ensure they're within the slider range
     final maxRange = _getPriceMax(currentFilter.purpose ?? 'buy');
-    _minPrice = (currentFilter.priceMin ?? _getPriceMin(currentFilter.purpose ?? 'buy')).clamp(
-      0.0,
-      maxRange,
-    );
-    _maxPrice = (currentFilter.priceMax ?? _getPriceMax(currentFilter.purpose ?? 'buy')).clamp(
-      0.0,
-      maxRange,
-    );
+    _minPrice =
+        (currentFilter.priceMin ?? _getPriceMin(currentFilter.purpose ?? 'buy'))
+            .clamp(0.0, maxRange);
+    _maxPrice =
+        (currentFilter.priceMax ?? _getPriceMax(currentFilter.purpose ?? 'buy'))
+            .clamp(0.0, maxRange);
     _minBedrooms = (currentFilter.bedroomsMin ?? 0).clamp(0, 10);
     _maxBedrooms = (currentFilter.bedroomsMax ?? 10).clamp(0, 10);
     _propertyType = (currentFilter.propertyType?.isNotEmpty == true)
@@ -653,7 +651,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     // Apply all filters to PageStateService
     final currentPageType = pageStateService.currentPageType.value;
     final currentFilters = pageStateService.getCurrentPageState().filters;
-    
+
     final updatedFilters = currentFilters.copyWith(
       purpose: _mapPurposeToApi(_selectedPurpose),
       priceMin: _minPrice,
@@ -663,7 +661,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       propertyType: _propertyType != 'All' ? [_propertyType] : [],
       amenities: _selectedAmenities,
     );
-    
+
     pageStateService.updatePageFilters(currentPageType, updatedFilters);
 
     Navigator.pop(context);

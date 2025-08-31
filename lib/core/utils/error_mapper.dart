@@ -1,61 +1,108 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import '../data/providers/api_service.dart';
+import 'null_check_trap.dart';
 import 'app_exceptions.dart';
 import 'debug_logger.dart';
 
 class ErrorMapper {
   // Map API errors to user-friendly messages
-  static AppException mapApiError(dynamic error) {
+  static AppException mapApiError(Object error, [StackTrace? stackTrace]) {
     // Log the incoming error being normalized to an AppException (informational, not a failure)
     DebugLogger.info(
       '🗺️ [ERROR_MAPPER] Mapping incoming error: type=${error.runtimeType}, error=$error',
+      error,
+      stackTrace,
     );
 
+    // ADD THIS BLOCK AT THE TOP
+    // ==========================================================
+    if (error is String) {
+      NullCheckTrap.captureStringOccurrence(
+        error,
+        source: 'ErrorMapper.mapApiError(String)',
+      );
+      // Return a generic exception for string errors.
+      return NetworkException(
+        'An unexpected error occurred. Please try again.',
+        details: error,
+      );
+    }
+    // ==========================================================
+
     // Special handling for null check operator errors
+    // Only emit deep stack analysis for non-String errors to reduce log noise
     if (error.toString().contains('Null check operator used on a null value')) {
-      DebugLogger.error('🚨 [ERROR_MAPPER] NULL CHECK OPERATOR ERROR DETECTED!');
-      DebugLogger.error('🚨 [ERROR_MAPPER] Error type: ${error.runtimeType}');
-      DebugLogger.error('🚨 [ERROR_MAPPER] Error string: ${error.toString()}');
-      
-      // CRITICAL: Get the current stack trace to see where this error is coming from
-      DebugLogger.error('🚨 [ERROR_MAPPER] CURRENT STACK TRACE (where ErrorMapper.map was called):');
-      final currentStackTrace = StackTrace.current;
-      DebugLogger.error('🚨 [ERROR_MAPPER] ${currentStackTrace.toString()}');
-      
-      // Try to get original stack trace if available
-      try {
-        if (error is Error) {
-          DebugLogger.error('🚨 [ERROR_MAPPER] ORIGINAL ERROR STACK TRACE:');
-          DebugLogger.error('🚨 [ERROR_MAPPER] ${error.stackTrace}');
+      if (error is String) {
+        // Capture a one-time stack to identify where this mapping is triggered
+        NullCheckTrap.captureStringOccurrence(
+          error,
+          source: 'ErrorMapper.mapApiError',
+        );
+      } else if (error is Error || error is Exception) {
+        DebugLogger.error(
+          '🚨 [ERROR_MAPPER] NULL CHECK OPERATOR ERROR DETECTED!',
+        );
+        DebugLogger.error('🚨 [ERROR_MAPPER] Error type: ${error.runtimeType}');
+        DebugLogger.error(
+          '🚨 [ERROR_MAPPER] Error string: ${error.toString()}',
+        );
+
+        // CRITICAL: Get the current stack trace to see where this error is coming from
+        DebugLogger.error(
+          '🚨 [ERROR_MAPPER] CURRENT STACK TRACE (where ErrorMapper.map was called):',
+        );
+        final currentStackTrace = StackTrace.current;
+        DebugLogger.error('🚨 [ERROR_MAPPER] ${currentStackTrace.toString()}');
+
+        // Try to get original stack trace if available
+        try {
+          if (error is Error) {
+            DebugLogger.error('🚨 [ERROR_MAPPER] ORIGINAL ERROR STACK TRACE:');
+            DebugLogger.error('🚨 [ERROR_MAPPER] ${error.stackTrace}');
+          }
+        } catch (e) {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] Could not get original stack trace: $e',
+          );
         }
-      } catch (e) {
-        DebugLogger.error('🚨 [ERROR_MAPPER] Could not get original stack trace: $e');
-      }
-      
-      // Log error source analysis
-      final stackString = currentStackTrace.toString();
-      if (stackString.contains('property_model.g.dart')) {
-        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_model.g.dart (generated code)');
-      } else if (stackString.contains('property_image_model.g.dart')) {
-        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_image_model.g.dart (generated code)');
-      } else if (stackString.contains('explore_controller.dart')) {
-        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: explore_controller.dart');
-      } else if (stackString.contains('likes_controller.dart')) {
-        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: likes_controller.dart');
-      } else if (stackString.contains('page_state_service.dart')) {
-        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: page_state_service.dart');
-      } else {
-        DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: Unknown location - check full stack trace above');
-      }
-      
-      // Extract and log the specific lines from the stack trace
-      final lines = stackString.split('\n');
-      DebugLogger.error('🚨 [ERROR_MAPPER] STACK TRACE ANALYSIS:');
-      for (int i = 0; i < lines.length && i < 10; i++) {
-        final line = lines[i].trim();
-        if (line.contains('.dart')) {
-          DebugLogger.error('🚨 [ERROR_MAPPER] [$i] $line');
+
+        // Log error source analysis
+        final stackString = currentStackTrace.toString();
+        if (stackString.contains('property_model.g.dart')) {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_model.g.dart (generated code)',
+          );
+        } else if (stackString.contains('property_image_model.g.dart')) {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_image_model.g.dart (generated code)',
+          );
+        } else if (stackString.contains('explore_controller.dart')) {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: explore_controller.dart',
+          );
+        } else if (stackString.contains('likes_controller.dart')) {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: likes_controller.dart',
+          );
+        } else if (stackString.contains('page_state_service.dart')) {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: page_state_service.dart',
+          );
+        } else {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: Unknown location - check full stack trace above',
+          );
+        }
+
+        // Extract and log the specific lines from the stack trace
+        final lines = stackString.split('\n');
+        DebugLogger.error('🚨 [ERROR_MAPPER] STACK TRACE ANALYSIS:');
+        for (int i = 0; i < lines.length && i < 10; i++) {
+          final line = lines[i].trim();
+          if (line.contains('.dart')) {
+            DebugLogger.error('🚨 [ERROR_MAPPER] [$i] $line');
+          }
         }
       }
     }
@@ -64,6 +111,11 @@ class ErrorMapper {
     if (error is String) {
       // Check if it's a specific error pattern
       if (error.contains('Null check operator used on a null value')) {
+        // Also ensure the one-time string trap captures the call site
+        NullCheckTrap.captureStringOccurrence(
+          error,
+          source: 'ErrorMapper.mapApiError(String)',
+        );
         return NetworkException(
           'A data processing error occurred. Please try again.',
           details: error,

@@ -33,7 +33,7 @@ class SignUpView extends GetView<SignUpController> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 24),
-            
+
             // Header
             Text(
               'create_account'.tr,
@@ -43,9 +43,9 @@ class SignUpView extends GetView<SignUpController> {
             const SizedBox(height: 8),
             Text(
               'signup_subtitle'.tr,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -81,61 +81,65 @@ class SignUpView extends GetView<SignUpController> {
             const SizedBox(height: 16),
 
             // Password Field
-            Obx(() => TextFormField(
-              controller: controller.passwordController,
-              decoration: InputDecoration(
-                labelText: 'password'.tr,
-                prefixIcon: const Icon(Icons.lock_outline),
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  onPressed: controller.togglePasswordVisibility,
-                  icon: Icon(
-                    controller.isPasswordVisible.value
-                        ? Icons.visibility_off
-                        : Icons.visibility,
+            Obx(
+              () => TextFormField(
+                controller: controller.passwordController,
+                decoration: InputDecoration(
+                  labelText: 'password'.tr,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    onPressed: controller.togglePasswordVisibility,
+                    icon: Icon(
+                      controller.isPasswordVisible.value
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
                   ),
                 ),
+                obscureText: !controller.isPasswordVisible.value,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'password_required'.tr;
+                  }
+                  if (value.length < 6) {
+                    return 'password_min_length'.tr;
+                  }
+                  return null;
+                },
               ),
-              obscureText: !controller.isPasswordVisible.value,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'password_required'.tr;
-                }
-                if (value.length < 6) {
-                  return 'password_min_length'.tr;
-                }
-                return null;
-              },
-            )),
+            ),
             const SizedBox(height: 16),
 
             // Confirm Password Field
-            Obx(() => TextFormField(
-              controller: controller.confirmPasswordController,
-              decoration: InputDecoration(
-                labelText: 'confirm_password'.tr,
-                prefixIcon: const Icon(Icons.lock_outline),
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  onPressed: controller.toggleConfirmPasswordVisibility,
-                  icon: Icon(
-                    controller.isConfirmPasswordVisible.value
-                        ? Icons.visibility_off
-                        : Icons.visibility,
+            Obx(
+              () => TextFormField(
+                controller: controller.confirmPasswordController,
+                decoration: InputDecoration(
+                  labelText: 'confirm_password'.tr,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    onPressed: controller.toggleConfirmPasswordVisibility,
+                    icon: Icon(
+                      controller.isConfirmPasswordVisible.value
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
                   ),
                 ),
+                obscureText: !controller.isConfirmPasswordVisible.value,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'confirm_password_required'.tr;
+                  }
+                  if (value != controller.passwordController.text) {
+                    return 'passwords_dont_match'.tr;
+                  }
+                  return null;
+                },
               ),
-              obscureText: !controller.isConfirmPasswordVisible.value,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'confirm_password_required'.tr;
-                }
-                if (value != controller.passwordController.text) {
-                  return 'passwords_dont_match'.tr;
-                }
-                return null;
-              },
-            )),
+            ),
             const SizedBox(height: 24),
 
             // Error Message
@@ -154,33 +158,37 @@ class SignUpView extends GetView<SignUpController> {
             }),
 
             // Sign Up Button
-            Obx(() => ElevatedButton(
-              onPressed: controller.isLoading.value ? null : controller.signUp,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: AppTheme.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            Obx(
+              () => ElevatedButton(
+                onPressed: controller.isLoading.value
+                    ? null
+                    : controller.signUp,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: AppTheme.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
+                child: controller.isLoading.value
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        'create_account'.tr,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
-              child: controller.isLoading.value
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      'create_account'.tr,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-            )),
+            ),
             const SizedBox(height: 16),
 
             // Login Link
@@ -200,7 +208,7 @@ class SignUpView extends GetView<SignUpController> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 24),
-          
+
           // Back Button and Header
           Row(
             children: [
@@ -221,9 +229,9 @@ class SignUpView extends GetView<SignUpController> {
           const SizedBox(height: 8),
           Text(
             'otp_verification_subtitle'.tr,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.grey,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -260,46 +268,52 @@ class SignUpView extends GetView<SignUpController> {
           }),
 
           // Verify Button
-          Obx(() => ElevatedButton(
-            onPressed: controller.isLoading.value ? null : controller.verifyOtp,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppTheme.primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          Obx(
+            () => ElevatedButton(
+              onPressed: controller.isLoading.value
+                  ? null
+                  : controller.verifyOtp,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: AppTheme.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
+              child: controller.isLoading.value
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'verify_otp'.tr,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
-            child: controller.isLoading.value
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Text(
-                    'verify_otp'.tr,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-          )),
+          ),
           const SizedBox(height: 16),
 
           // Resend OTP Button
-          Obx(() => TextButton(
-            onPressed: controller.canResendOtp.value
-                ? controller.resendOtp
-                : null,
-            child: Text(
-              controller.canResendOtp.value
-                  ? 'resend_code'.tr
-                  : '${'resend_in'.tr} ${controller.otpCountdown.value}s',
+          Obx(
+            () => TextButton(
+              onPressed: controller.canResendOtp.value
+                  ? controller.resendOtp
+                  : null,
+              child: Text(
+                controller.canResendOtp.value
+                    ? 'resend_code'.tr
+                    : '${'resend_in'.tr} ${controller.otpCountdown.value}s',
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );

@@ -20,27 +20,18 @@ class DashboardBinding extends Bindings {
         fenix: true,
       );
     }
-    
+
     if (!Get.isRegistered<SwipesRepository>()) {
-      Get.lazyPut<SwipesRepository>(
-        () => SwipesRepository(),
-        fenix: true,
-      );
+      Get.lazyPut<SwipesRepository>(() => SwipesRepository(), fenix: true);
     }
-    
+
     if (!Get.isRegistered<ProfileRepository>()) {
-      Get.lazyPut<ProfileRepository>(
-        () => ProfileRepository(),
-        fenix: true,
-      );
+      Get.lazyPut<ProfileRepository>(() => ProfileRepository(), fenix: true);
     }
-    
+
     // Register PageStateService if not already registered
     if (!Get.isRegistered<PageStateService>()) {
-      Get.lazyPut<PageStateService>(
-        () => PageStateService(),
-        fenix: true,
-      );
+      Get.lazyPut<PageStateService>(() => PageStateService(), fenix: true);
     }
 
     Get.lazyPut<DashboardController>(() => DashboardController());

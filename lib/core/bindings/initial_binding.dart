@@ -72,7 +72,6 @@ class InitialBinding extends Bindings {
       // Note: PageStateService and repositories (PropertiesRepository, SwipesRepository)
       // are now registered in DashboardBinding to prevent unauthorized API calls
       // and ensure proper lifecycle management
-
     } catch (e) {
       DebugLogger.error('💥 Error initializing core controllers: $e');
       rethrow;

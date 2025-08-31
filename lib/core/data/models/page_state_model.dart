@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'unified_filter_model.dart';
 import 'property_model.dart';
+import '../../utils/app_exceptions.dart';
 
 part 'page_state_model.g.dart';
 
@@ -29,7 +30,8 @@ class PageStateModel {
   final bool isLoading;
   final bool isLoadingMore;
   final bool isRefreshing;
-  final String? error;
+  @JsonKey(ignore: true) // We won't serialize the error object
+  final AppError? error;
   final DateTime? lastFetched;
 
   // Additional state for specific pages
@@ -82,7 +84,7 @@ class PageStateModel {
     bool? isLoading,
     bool? isLoadingMore,
     bool? isRefreshing,
-    String? error,
+    AppError? error,
     DateTime? lastFetched,
     Map<String, dynamic>? additionalData,
   }) {

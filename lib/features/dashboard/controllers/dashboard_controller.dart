@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/controllers/page_state_service.dart';
 import '../../../core/data/models/page_state_model.dart';
+import '../../../core/utils/app_exceptions.dart';
 import '../../../core/utils/debug_logger.dart';
 
 class DashboardController extends GetxController {
@@ -10,14 +11,12 @@ class DashboardController extends GetxController {
   late final PageStateService _pageStateService;
 
   final RxMap<String, dynamic> dashboardData = <String, dynamic>{}.obs;
-  final RxList<Map<String, dynamic>> searchHistory =
-      <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> recentActivity =
       <Map<String, dynamic>>[].obs;
   final RxMap<String, dynamic> userStats = <String, dynamic>{}.obs;
   final RxBool isLoading = false.obs;
   final RxBool isRefreshing = false.obs;
-  final RxString error = ''.obs;
+  final Rxn<AppError> error = Rxn<AppError>();
 
   // Bottom navigation state
   final RxInt currentIndex = 2.obs; // Default to Discover tab (index 2)
@@ -80,7 +79,7 @@ class DashboardController extends GetxController {
 
     try {
       isLoading.value = true;
-      error.value = '';
+      error.value = null;
 
       // Load dashboard data (analytics removed)
       final results = await Future.wait([
@@ -93,9 +92,11 @@ class DashboardController extends GetxController {
 
       // Clear analytics data that's no longer available
       dashboardData.value = {};
-      searchHistory.value = [];
     } catch (e, stackTrace) {
-      error.value = 'Failed to load dashboard data';
+      error.value = AppError(
+        error: 'Failed to load dashboard data',
+        stackTrace: stackTrace,
+      );
       DebugLogger.error('Error loading dashboard data', e, stackTrace);
 
       Get.snackbar(
@@ -174,10 +175,9 @@ class DashboardController extends GetxController {
 
   void _clearAllData() {
     dashboardData.clear();
-    searchHistory.clear();
     recentActivity.clear();
     userStats.clear();
-    error.value = '';
+    error.value = null;
   }
 
   // Analytics dashboard getters
@@ -206,35 +206,7 @@ class DashboardController extends GetxController {
   int get timeSpentMinutes => userStats['time_spent_minutes'] ?? 0;
   String get favoriteLocation => userStats['favorite_location'] ?? 'N/A';
 
-  // Search history methods (analytics removed)
-  Future<void> refreshSearchHistory() async {
-    searchHistory.clear();
-  }
-
-  void clearSearchHistory() {
-    searchHistory.clear();
-    // Also clear from backend if needed
-    // Note: clearSearchHistory method needs to be implemented in ApiService
-  }
-
   // Dashboard insights
-  String get topPerformingSearchTerm {
-    if (searchHistory.isEmpty) return 'No searches yet';
-
-    // Find most frequent search term
-    final searchTerms = <String, int>{};
-    for (final search in searchHistory) {
-      final term = search['query'] as String? ?? '';
-      searchTerms[term] = (searchTerms[term] ?? 0) + 1;
-    }
-
-    if (searchTerms.isEmpty) return 'No searches yet';
-
-    final topTerm = searchTerms.entries.reduce(
-      (a, b) => a.value > b.value ? a : b,
-    );
-    return topTerm.key;
-  }
 
   double get averagePropertyPrice {
     final summary = activitySummary;
@@ -283,7 +255,6 @@ class DashboardController extends GetxController {
   Map<String, dynamic> exportDashboardData() {
     return {
       'dashboard_data': dashboardData,
-      'search_history': searchHistory,
       'user_stats': userStats,
       'recent_activity': recentActivity,
       'export_timestamp': DateTime.now().toIso8601String(),
@@ -297,7 +268,6 @@ class DashboardController extends GetxController {
     'visits_scheduled': visitsScheduled,
     'engagement_level': userEngagementLevel,
     'time_spent': timeSpentFormatted,
-    'top_search_term': topPerformingSearchTerm,
     'favorite_location': favoriteLocation,
   };
 

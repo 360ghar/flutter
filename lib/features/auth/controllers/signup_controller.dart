@@ -21,7 +21,7 @@ class SignUpController extends GetxController {
   final isConfirmPasswordVisible = false.obs;
   final RxInt currentStep = 0.obs; // 0 for form, 1 for OTP
   final RxString errorMessage = ''.obs;
-  
+
   final canResendOtp = false.obs;
   final otpCountdown = 0.obs;
   Timer? _otpTimer;
@@ -46,24 +46,24 @@ class SignUpController extends GetxController {
 
   Future<void> signUp() async {
     if (!formKey.currentState!.validate()) return;
-    
+
     isLoading.value = true;
     errorMessage.value = '';
-    
+
     try {
       final phone = _normalizeIndianPhone(phoneController.text.trim());
       final password = passwordController.text;
       await _authRepository.signUpWithPhonePassword(phone, password);
-      
+
       currentStep.value = 1; // Move to OTP step
       _startOtpCountdown();
-      
+
       Get.snackbar(
         'verify_phone'.tr,
         'otp_sent_message'.tr,
         snackPosition: SnackPosition.TOP,
       );
-      
+
       DebugLogger.success('Sign up initiated for $phone');
     } on AuthException catch (e) {
       errorMessage.value = e.message;
@@ -86,14 +86,14 @@ class SignUpController extends GetxController {
 
     isLoading.value = true;
     errorMessage.value = '';
-    
+
     try {
       final phone = _normalizeIndianPhone(phoneController.text.trim());
       await _authRepository.verifyPhoneOtp(
-        phone: phone, 
+        phone: phone,
         token: otpController.text.trim(),
       );
-      
+
       // Success! The AuthController will now automatically navigate
       // the user to the profile completion screen.
       DebugLogger.success('OTP verification successful for $phone');
@@ -115,11 +115,14 @@ class SignUpController extends GetxController {
       try {
         isLoading.value = true;
         final phone = _normalizeIndianPhone(phoneController.text.trim());
-        await _authRepository.signUpWithPhonePassword(phone, passwordController.text);
-        
+        await _authRepository.signUpWithPhonePassword(
+          phone,
+          passwordController.text,
+        );
+
         _startOtpCountdown();
         Get.snackbar('otp_sent'.tr, 'otp_resent_message'.tr);
-        
+
         DebugLogger.info('OTP resent for signup to $phone');
       } catch (e) {
         ErrorHandler.handleAuthError(e);

@@ -92,45 +92,19 @@ class SwipesRepository extends GetxService {
       DebugLogger.api(
         '📦 [SWIPES_REPO] New API format: Found ${propertiesJson.length} properties in response',
       );
-      
-      // Log each property's raw data before parsing
-      for (int i = 0; i < propertiesJson.length; i++) {
-        DebugLogger.debug('📦 [SWIPES_REPO] RAW PROPERTY[$i]: ${propertiesJson[i]}');
-      }
-      
+
       final properties = <PropertyModel>[];
       for (int i = 0; i < propertiesJson.length; i++) {
         try {
-          DebugLogger.debug('🏠 [SWIPES_REPO] Parsing property ${i + 1}/${propertiesJson.length}');
-          final propertyJson = propertiesJson[i];
-          DebugLogger.api('📊 [SWIPES_REPO] About to parse property JSON: $propertyJson');
-          
-          final property = PropertyModel.fromJson(propertyJson);
-          DebugLogger.api(
-            '🏠 [SWIPES_REPO] Property: ${property.title} (liked: ${property.liked})',
-          );
+          final property = PropertyModel.fromJson(propertiesJson[i]);
           properties.add(property);
-        } catch (e, stackTrace) {
-          DebugLogger.error('❌ [SWIPES_REPO] Error parsing property ${i + 1}: $e');
-          DebugLogger.error('❌ [SWIPES_REPO] Property JSON that failed: ${propertiesJson[i]}');
-          DebugLogger.error('❌ [SWIPES_REPO] Error type: ${e.runtimeType}');
-          DebugLogger.error('❌ [SWIPES_REPO] Stack trace: $stackTrace');
-          
-          if (e.toString().contains('Null check operator used on a null value')) {
-            DebugLogger.error('🚨 [SWIPES_REPO] NULL CHECK OPERATOR ERROR in property parsing!');
-            DebugLogger.error('🚨 [SWIPES_REPO] This error occurred while parsing property index $i');
-            DebugLogger.error('🚨 [SWIPES_REPO] The PropertyModel.fromJson() call in _parsePropertyModel should provide more details');
-          }
-          
-          // Log the specific property data that's causing issues
-          if (propertiesJson[i] is Map<String, dynamic>) {
-            final failedProperty = propertiesJson[i] as Map<String, dynamic>;
-            DebugLogger.error('🚨 [SWIPES_REPO] FAILED PROPERTY FIELD ANALYSIS:');
-            failedProperty.forEach((key, value) {
-              DebugLogger.error('🚨 [SWIPES_REPO] $key: $value (${value?.runtimeType})');
-            });
-          }
-          
+        } catch (e) {
+          DebugLogger.error(
+            '❌ [SWIPES_REPO] Error parsing property ${i + 1}: $e',
+          );
+          DebugLogger.error(
+            '❌ [SWIPES_REPO] Property data: ${propertiesJson[i]}',
+          );
           // Continue with other properties instead of failing entirely
         }
       }
@@ -145,33 +119,22 @@ class SwipesRepository extends GetxService {
         filtersApplied: responseJson['filters_applied'] ?? filters.toJson(),
         searchCenter: () {
           try {
-            DebugLogger.debug('🗺️ [SWIPES_REPO] Processing search_center data');
             final searchCenterData = responseJson['search_center'];
-            DebugLogger.debug('🗺️ [SWIPES_REPO] search_center exists: ${searchCenterData != null}');
-            
             if (searchCenterData != null) {
               final lat = searchCenterData['latitude'];
               final lng = searchCenterData['longitude'];
-              DebugLogger.debug('🗺️ [SWIPES_REPO] Latitude: $lat, Longitude: $lng');
-              
               if (lat != null && lng != null) {
-                final searchCenter = SearchCenter(
+                return SearchCenter(
                   latitude: lat.toDouble(),
                   longitude: lng.toDouble(),
                 );
-                DebugLogger.debug('🗺️ [SWIPES_REPO] Created SearchCenter: ${searchCenter.latitude}, ${searchCenter.longitude}');
-                return searchCenter;
-              } else {
-                DebugLogger.debug('🗺️ [SWIPES_REPO] Latitude or longitude is null');
               }
             }
             return null;
-          } catch (e, stackTrace) {
-            DebugLogger.error('❌ [SWIPES_REPO] Error creating SearchCenter: $e');
-            DebugLogger.error('❌ [SWIPES_REPO] SearchCenter stack trace: $stackTrace');
-            if (e.toString().contains('Null check operator used on a null value')) {
-              DebugLogger.error('🚨 [SWIPES_REPO] NULL CHECK OPERATOR ERROR in SearchCenter creation!');
-            }
+          } catch (e) {
+            DebugLogger.error(
+              '❌ [SWIPES_REPO] Error creating SearchCenter: $e',
+            );
             return null;
           }
         }(),

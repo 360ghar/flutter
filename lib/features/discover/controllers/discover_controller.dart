@@ -5,6 +5,7 @@ import '../../../core/data/models/unified_property_response.dart';
 import '../../../core/data/repositories/properties_repository.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
 import '../../../core/utils/debug_logger.dart';
+import '../../../core/utils/app_exceptions.dart';
 import '../../../core/controllers/page_state_service.dart';
 
 enum DiscoverState { initial, loading, loaded, empty, error, prefetching }
@@ -19,7 +20,7 @@ class DiscoverController extends GetxController {
   final Rx<DiscoverState> state = DiscoverState.initial.obs;
   final RxList<PropertyModel> deck = <PropertyModel>[].obs;
   final RxInt currentIndex = 0.obs;
-  final RxnString error = RxnString();
+  final Rxn<AppError> error = Rxn<AppError>();
 
   // Pagination
   int _currentPage = 1;
@@ -198,10 +199,10 @@ class DiscoverController extends GetxController {
         state.value = DiscoverState.loaded;
         currentIndex.value = 0;
       }
-    } catch (e) {
-      DebugLogger.error('❌ Failed to load initial deck: $e');
+    } catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to load initial deck', e, stackTrace);
       state.value = DiscoverState.error;
-      error.value = e.toString();
+      error.value = AppError(error: e, stackTrace: stackTrace);
     } finally {
       _pageStateService.notifyPageRefreshing(PageType.discover, false);
       // If PageStateService has data, ensure hydration to avoid desync
@@ -239,7 +240,8 @@ class DiscoverController extends GetxController {
         limit: _limit,
         latitude: pageState.selectedLocation!.latitude,
         longitude: pageState.selectedLocation!.longitude,
-        radiusKm: _pageStateService.getCurrentPageState().filters.radiusKm ?? 10.0,
+        radiusKm:
+            _pageStateService.getCurrentPageState().filters.radiusKm ?? 10.0,
         excludeSwiped: true,
         useCache: true,
       );

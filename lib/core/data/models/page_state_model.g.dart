@@ -25,7 +25,6 @@ PageStateModel _$PageStateModelFromJson(
   isLoading: json['isLoading'] as bool? ?? false,
   isLoadingMore: json['isLoadingMore'] as bool? ?? false,
   isRefreshing: json['isRefreshing'] as bool? ?? false,
-  error: json['error'] as String?,
   lastFetched: json['lastFetched'] == null
       ? null
       : DateTime.parse(json['lastFetched'] as String),
@@ -46,7 +45,6 @@ Map<String, dynamic> _$PageStateModelToJson(PageStateModel instance) =>
       'isLoading': instance.isLoading,
       'isLoadingMore': instance.isLoadingMore,
       'isRefreshing': instance.isRefreshing,
-      'error': instance.error,
       'lastFetched': instance.lastFetched?.toIso8601String(),
       'additionalData': instance.additionalData,
     };
