@@ -664,7 +664,7 @@ class ApiService extends getx.GetConnect {
     }
 
     _getCurrentUserInFlight = _makeRequest(
-      '/users/profile',
+      '/users/profile/',
       (json) {
         // Handle both direct user object and wrapped response
         final userData = json['data'] ?? json;
@@ -768,7 +768,7 @@ class ApiService extends getx.GetConnect {
     // Update profile (only if there are profile fields left)
     if (filteredData.isNotEmpty) {
       return await _makeRequest(
-        '/users/profile',
+        '/users/profile/',
         (json) {
           final userData = json['data'] ?? json;
           return _parseUserModel(userData);
@@ -785,7 +785,7 @@ class ApiService extends getx.GetConnect {
 
   Future<void> updateUserPreferences(Map<String, dynamic> preferences) async {
     await _makeRequest(
-      '/users/preferences',
+      '/users/preferences/',
       (json) => json,
       method: 'PUT',
       body: preferences,
@@ -795,7 +795,7 @@ class ApiService extends getx.GetConnect {
 
   Future<void> updateUserLocation(double latitude, double longitude) async {
     await _makeRequest(
-      '/users/location',
+      '/users/location/',
       (json) => json,
       method: 'PUT',
       body: {'latitude': latitude, 'longitude': longitude},
@@ -1183,6 +1183,32 @@ class ApiService extends getx.GetConnect {
     );
   }
 
+  // Get swipe statistics
+  Future<Map<String, dynamic>> getSwipeStats() async {
+    return await _makeRequest(
+      '/swipes/stats/',
+      (json) => json,
+      operationName: 'Get Swipe Statistics',
+    );
+  }
+
+  // Toggle like/dislike status for properties
+  Future<Map<String, dynamic>> toggleSwipeStatus({
+    required int propertyId,
+    required bool isLiked,
+  }) async {
+    return await _makeRequest(
+      '/swipes/toggle/',
+      (json) => json,
+      method: 'POST',
+      body: {
+        'property_id': propertyId,
+        'is_liked': isLiked,
+      },
+      operationName: 'Toggle Swipe Status',
+    );
+  }
+
   // Location Services
 
   // Visit Scheduling
@@ -1238,18 +1264,30 @@ class ApiService extends getx.GetConnect {
     );
   }
 
-  // Convenience method for rescheduling
+  // Reschedule a visit
   Future<VisitModel> rescheduleVisit(int visitId, String newScheduledDate) async {
-    return await updateVisit(visitId, {'scheduled_date': newScheduledDate});
+    return await _makeRequest(
+      '/visits/$visitId/reschedule',
+      (json) => VisitModel.fromJson(json),
+      method: 'PUT',
+      body: {'scheduled_date': newScheduledDate},
+      operationName: 'Reschedule Visit',
+    );
   }
 
-  // Convenience method for cancelling
+  // Cancel a visit
   Future<VisitModel> cancelVisit(int visitId, {String? reason}) async {
-    final updateData = <String, dynamic>{};
+    final body = <String, dynamic>{};
     if (reason != null) {
-      updateData['cancellation_reason'] = reason;
+      body['cancellation_reason'] = reason;
     }
-    return await updateVisit(visitId, updateData);
+    return await _makeRequest(
+      '/visits/$visitId/cancel',
+      (json) => VisitModel.fromJson(json),
+      method: 'PUT',
+      body: body.isNotEmpty ? body : null,
+      operationName: 'Cancel Visit',
+    );
   }
 
   Future<AgentModel> getRelationshipManager() async {
@@ -1261,7 +1299,7 @@ class ApiService extends getx.GetConnect {
 
   // Amenities Management
   Future<List<AmenityModel>> getAllAmenities() async {
-    return await _makeRequest('/amenities', (json) {
+    return await _makeRequest('/amenities/', (json) {
       final amenitiesData = json['data'] ?? json;
 
       if (amenitiesData is List) {
