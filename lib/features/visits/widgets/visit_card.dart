@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/data/models/visit_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../widgets/common/robust_network_image.dart';
+import '../../../core/utils/debug_logger.dart';
 
 class VisitCard extends StatelessWidget {
   final VisitModel visit;
@@ -11,6 +12,7 @@ class VisitCard extends StatelessWidget {
   final String timeText;
   final VoidCallback onReschedule;
   final VoidCallback onCancel;
+  final VoidCallback? onTap;
 
   const VisitCard({
     super.key,
@@ -20,10 +22,12 @@ class VisitCard extends StatelessWidget {
     required this.timeText,
     required this.onReschedule,
     required this.onCancel,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    DebugLogger.info('🔖 Building VisitCard id=${visit.id} status=${visit.status} date=${visit.scheduledDate.toIso8601String()}');
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -35,7 +39,10 @@ class VisitCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               RobustNetworkImage(
@@ -171,6 +178,7 @@ class VisitCard extends StatelessWidget {
               _buildStatusChip(visit.status),
             ],
           ),
+        ),
 
           if (visit.property != null) ...[
             const SizedBox(height: 10),
@@ -196,7 +204,7 @@ class VisitCard extends StatelessWidget {
             ),
           ],
 
-          if (isUpcoming && visit.status == VisitStatus.scheduled) ...[
+          if (isUpcoming && (visit.canCancel || visit.canReschedule)) ...[
             const SizedBox(height: 12),
             if ((visit.specialRequirements ?? '').isNotEmpty) ...[
               Row(

@@ -305,11 +305,12 @@ The app supports multiple backend integrations:
 
 ### API Service Architecture
 Located in `lib/core/data/providers/api_service.dart`:
-- Centralized error handling with comprehensive exception types
-- Response wrapper with type-safe responses
-- Authentication token management
-- Retry logic for failed requests
-- Environment-based endpoint configuration
+- Uses Dart's built-in `http` package for HTTP requests
+- Centralized error handling with comprehensive exception types (`ApiException`, `ApiAuthException`)
+- Response wrapper with type-safe `ApiResponse<T>` and `PaginatedResponse<T>` classes
+- Authentication token management integrated with Supabase Auth
+- Environment-based endpoint configuration with timeout support
+- Comprehensive error mapping and user-friendly error handling
 
 ### Supabase Integration
 The app uses Supabase as the primary backend service:
@@ -329,10 +330,21 @@ The app uses Supabase as the primary backend service:
 ### Required Environment Variables
 ```bash
 # .env.development and .env.production
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-API_BASE_URL=your_api_base_url  # Optional, defaults to localhost:8000
-GOOGLE_PLACES_API_KEY=your_google_places_key  # For location search
+# API Configuration
+API_BASE_URL=http://localhost:8000
+API_TIMEOUT_SECONDS=15  # Optional: override HTTP client timeout
+
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url_here
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Google Places API Key
+GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
+
+# App Configuration
+DEFAULT_COUNTRY=in
+DEBUG_MODE=true
+LOG_API_CALLS=true
 ```
 
 ### Platform Support
@@ -346,8 +358,8 @@ GOOGLE_PLACES_API_KEY=your_google_places_key  # For location search
 - **flutter**: SDK framework
 - **get**: ^4.6.6 - State management and routing
 - **json_annotation/json_serializable**: Model serialization
-- **dio**: ^5.3.0 - HTTP client for API calls
-- **supabase_flutter**: ^2.8.0 - Backend as a Service integration
+- **http**: ^1.1.0 - HTTP client for API calls
+- **supabase_flutter**: ^2.10.0 - Backend as a Service integration
 - **get_storage**: ^2.1.1 - Local data persistence
 - **flutter_secure_storage**: ^9.2.2 - Secure token storage for authentication
 
@@ -363,22 +375,26 @@ GOOGLE_PLACES_API_KEY=your_google_places_key  # For location search
 
 ### Functionality
 - **geolocator**: ^14.0.1 - Location services and GPS
-- **geocoding**: ^3.0.0 - Address geocoding
+- **geocoding**: ^4.0.0 - Address geocoding
 - **flutter_map**: ^8.1.1 - Interactive map integration
 - **latlong2**: ^0.9.0 - Latitude/longitude calculations
 - **webview_flutter**: ^4.4.2 - 360° tour viewing
 - **webview_flutter_web**: ^0.2.2+4 - Web platform support for WebView
-- **connectivity_plus**: ^5.0.2 - Network connectivity status
+- **connectivity_plus**: ^6.1.5 - Network connectivity status
 - **flutter_localizations**: Internationalization support
 - **intl**: ^0.20.2 - Date/time formatting and localization
 - **shared_preferences**: ^2.2.2 - Platform-specific persistent storage
-- **flutter_dotenv**: ^5.1.0 - Environment variable management
+- **flutter_dotenv**: ^6.0.0 - Environment variable management
+- **logger**: ^2.0.2+1 - Structured logging and debugging
+- **url_launcher**: ^6.3.0 - External URL and app launching
 
 ## Development Guidelines
 
+**NOTE**: Additional repository guidelines and commit standards are available in `AGENTS.md` in the project root.
+
 ### Change Scope and Minimal-Change Policy
 - Implement only what is explicitly requested. Avoid opportunistic refactors or UI changes unless asked.
-- Make the least necessary edits to achieve the requirement while upholding best practices for Flutter, GetX, and Dio.
+- Make the least necessary edits to achieve the requirement while upholding best practices for Flutter, GetX, and HTTP/Supabase integration.
 - Prefer modifying existing code over adding parallel/new implementations. Do not keep legacy code alongside new code; remove obsolete code paths.
 - Avoid redundant code intended for backward compatibility. The codebase is in active development; prioritize cleanliness over temporary shims.
 - Reuse existing widgets, controllers, repositories, and helpers whenever possible. Do not create duplicates.
@@ -440,6 +456,14 @@ GOOGLE_PLACES_API_KEY=your_google_places_key  # For location search
 - **Handle errors** with `lib/core/utils/error_handler.dart`
 - **Log with DebugLogger**: Use `lib/core/utils/debug_logger.dart` for development logging
 - **Follow lint rules**: Adhere to `analysis_options.yaml`; fix lints in files you touch
+
+#### Code Formatting and Analysis Standards
+- **Line length**: Maximum 100 characters (configured in `analysis_options.yaml`)
+- **Linting**: Uses `package:flutter_lints/flutter.yaml` for standard Flutter lints
+- **Formatting**: Run `dart format .` to apply consistent Dart formatting
+- **Analysis**: Run `flutter analyze` to catch static analysis issues
+- **File naming**: Use `snake_case.dart` for file names (e.g., `property_details_view.dart`)
+- **Build generation**: Always run `dart run build_runner build --delete-conflicting-outputs` after model changes
 
 ### GetX Best Practices
 ```dart
@@ -684,3 +708,14 @@ Root Router → View (SafeGetView) → Controller (GetxController) → Repositor
 - Reactive variables: `final RxBool isLoading = false.obs;`
 - Update UI: `isLoading.value = true;` triggers automatic rebuilds
 - Bindings handle dependency injection in `onInit()` methods
+
+## Additional Guidelines
+
+### MCP Integration
+The project includes MCP (Model Context Protocol) server integration for Dart/Flutter development tools. Key MCP tools available:
+- **Dart analysis**: `mcp__dart__analyze_files` for project-wide error analysis
+- **Test running**: `mcp__dart__run_tests` instead of direct `flutter test` commands
+- **Hot reload**: `mcp__dart__hot_reload` for development workflow
+- **Code generation**: `mcp__dart__dart_format` for consistent formatting
+
+**Important**: Always prefer MCP tools over direct shell commands when available for better integration with the development environment.

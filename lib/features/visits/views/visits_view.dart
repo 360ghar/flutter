@@ -6,6 +6,8 @@ import '../../../core/utils/app_colors.dart';
 import '../widgets/visits_skeleton_loaders.dart';
 import '../widgets/visit_card.dart';
 import '../widgets/agent_card.dart';
+import '../../../core/routes/app_routes.dart';
+import '../../../core/utils/debug_logger.dart';
 
 class VisitsView extends GetView<VisitsController> {
   const VisitsView({super.key});
@@ -114,6 +116,17 @@ class VisitsView extends GetView<VisitsController> {
                   ),
                 ),
 
+                // Subtle background refresh indicator (like other pages)
+                Obx(() => controller.isBackgroundRefreshing.value
+                    ? LinearProgressIndicator(
+                        minHeight: 2,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primaryYellow,
+                        ),
+                      )
+                    : const SizedBox.shrink()),
+
                 // Relationship Manager Section - Always visible
                 Container(
                   color: AppColors.scaffoldBackground,
@@ -192,6 +205,7 @@ class VisitsView extends GetView<VisitsController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(() {
+              DebugLogger.info('🖼️ Building Upcoming tab | count=${controller.upcomingVisits.length}');
               if (controller.upcomingVisits.isEmpty) {
                 return _buildEmptyState(
                   'no_visits'.tr,
@@ -213,6 +227,11 @@ class VisitsView extends GetView<VisitsController> {
                         timeText: controller.formatVisitTime(
                           visit.scheduledDate,
                         ),
+                        onTap: () {
+                          if (visit.property != null) {
+                            Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
+                          }
+                        },
                         onReschedule: () => _showRescheduleDialog(visit),
                         onCancel: () => _showCancelDialog(visit),
                       ),
@@ -236,6 +255,7 @@ class VisitsView extends GetView<VisitsController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(() {
+              DebugLogger.info('🖼️ Building Past tab | count=${controller.pastVisits.length}');
               if (controller.pastVisits.isEmpty) {
                 return _buildEmptyState(
                   'no_visits'.tr,
@@ -257,6 +277,11 @@ class VisitsView extends GetView<VisitsController> {
                         timeText: controller.formatVisitTime(
                           visit.scheduledDate,
                         ),
+                        onTap: () {
+                          if (visit.property != null) {
+                            Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
+                          }
+                        },
                         onReschedule: () => _showRescheduleDialog(visit),
                         onCancel: () => _showCancelDialog(visit),
                       ),
@@ -410,48 +435,56 @@ class VisitsView extends GetView<VisitsController> {
   void _showCancelDialog(VisitModel visit) {
     final TextEditingController reasonController = TextEditingController();
     Get.dialog(
-      AlertDialog(
-        title: const Text('Cancel Visit'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Are you sure you want to cancel your visit to ${visit.propertyTitle}?',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonController,
-              decoration: InputDecoration(
-                labelText: 'Reason (optional)',
-                hintText: 'e.g. Not available on this date',
-                filled: true,
-                fillColor: AppColors.inputBackground,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: AppColors.border),
+      StatefulBuilder(
+        builder: (context, setState) {
+          final canSubmit = reasonController.text.trim().isNotEmpty;
+          return AlertDialog(
+            title: const Text('Cancel Visit'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Are you sure you want to cancel your visit to ${visit.propertyTitle}?',
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reasonController,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    labelText: 'Reason (required)',
+                    hintText: 'e.g. Not available on this date',
+                    filled: true,
+                    fillColor: AppColors.inputBackground,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Get.back(), child: const Text('No')),
+              ElevatedButton(
+                onPressed: canSubmit
+                    ? () {
+                        final reason = reasonController.text.trim();
+                        controller.cancelVisit(
+                          visit.id.toString(),
+                          reason: reason,
+                        );
+                        Get.back();
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.errorRed,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Yes, Cancel'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('No')),
-          ElevatedButton(
-            onPressed: () {
-              final reason = reasonController.text.trim();
-              controller.cancelVisit(
-                visit.id.toString(),
-                reason: reason.isEmpty ? null : reason,
-              );
-              Get.back();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.errorRed,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Yes, Cancel'),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

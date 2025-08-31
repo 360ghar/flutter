@@ -153,7 +153,9 @@ class VisitModel {
 
   bool get isUpcoming =>
       DateTime.now().isBefore(scheduledDate) &&
-      (status == VisitStatus.scheduled || status == VisitStatus.confirmed);
+      (status == VisitStatus.scheduled ||
+          status == VisitStatus.confirmed ||
+          status == VisitStatus.rescheduled);
   bool get isCompleted => status == VisitStatus.completed;
   bool get isCancelled => status == VisitStatus.cancelled;
 
@@ -173,10 +175,12 @@ class VisitModel {
     }
   }
 
-  bool get canReschedule =>
-      status == VisitStatus.scheduled || status == VisitStatus.confirmed;
-  bool get canCancel =>
-      status == VisitStatus.scheduled || status == VisitStatus.confirmed;
+  bool get canReschedule => status == VisitStatus.scheduled ||
+      status == VisitStatus.confirmed ||
+      status == VisitStatus.rescheduled;
+  bool get canCancel => status == VisitStatus.scheduled ||
+      status == VisitStatus.confirmed ||
+      status == VisitStatus.rescheduled;
 
   VisitModel copyWith({
     int? id,

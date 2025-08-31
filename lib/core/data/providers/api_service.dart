@@ -1236,14 +1236,14 @@ class ApiService extends getx.GetConnect {
   // Location Services
 
   // Visit Scheduling
-  Future<Map<String, dynamic>> scheduleVisit({
+  Future<VisitModel> scheduleVisit({
     required int propertyId,
     required String scheduledDate,
     String? specialRequirements,
   }) async {
     return await _makeRequest(
       '/visits/',
-      (json) => json,
+      (json) => VisitModel.fromJson(json),
       method: 'POST',
       body: {
         'property_id': propertyId,
@@ -1254,64 +1254,74 @@ class ApiService extends getx.GetConnect {
     );
   }
 
-  Future<List<VisitModel>> getMyVisits({String? visitType}) async {
-    final queryParams = <String, String>{};
-    if (visitType != null) {
-      queryParams['visit_type'] = visitType;
-    }
-
-    final response = await _makeRequest<Map<String, dynamic>>(
-      '/visits/',
-      (json) => json,
-      queryParams: queryParams,
-      operationName: 'Get My Visits',
+  // Visits listing (aligned with API docs)
+  Future<VisitListResponse> getUpcomingVisits() async {
+    return await _makeRequest(
+      '/visits/upcoming/',
+      (json) => VisitListResponse.fromJson(json),
+      method: 'GET',
+      operationName: 'Get Upcoming Visits',
     );
-
-    // Parse the response structure with upcoming_visits and past_visits
-    final List<dynamic> upcoming = response['upcoming_visits'] ?? [];
-    final List<dynamic> past = response['past_visits'] ?? [];
-
-    final allVisitsData = [...upcoming, ...past];
-
-    // Convert the list to VisitModel objects
-    return allVisitsData.map((item) => VisitModel.fromJson(item as Map<String, dynamic>)).toList();
   }
 
-  // Generic method to update visit (reschedule or cancel)
+  Future<VisitListResponse> getPastVisits() async {
+    return await _makeRequest(
+      '/visits/past/',
+      (json) => VisitListResponse.fromJson(json),
+      method: 'GET',
+      operationName: 'Get Past Visits',
+    );
+  }
+
+  Future<VisitListResponse> getVisitsSummary() async {
+    return await _makeRequest(
+      '/visits/',
+      (json) => VisitListResponse.fromJson(json),
+      method: 'GET',
+      operationName: 'Get All Visits Summary',
+    );
+  }
+
+  // Generic method to update visit (reserved for admin/agent)
   Future<VisitModel> updateVisit(int visitId, Map<String, dynamic> updateData) async {
     return await _makeRequest(
       '/visits/$visitId',
       (json) => VisitModel.fromJson(json),
-      method: 'PATCH',
+      method: 'PUT',
       body: updateData,
       operationName: 'Update Visit',
     );
   }
 
-  // Reschedule a visit
-  Future<VisitModel> rescheduleVisit(int visitId, String newScheduledDate) async {
-    return await _makeRequest(
+  // Reschedule a visit (API returns message + success)
+  Future<bool> rescheduleVisit(int visitId, {required String newDate, String? reason}) async {
+    final resp = await _makeRequest<Map<String, dynamic>>(
       '/visits/$visitId/reschedule',
-      (json) => VisitModel.fromJson(json),
-      method: 'PUT',
-      body: {'scheduled_date': newScheduledDate},
+      (json) => json,
+      method: 'POST',
+      body: {
+        'new_date': newDate,
+        if (reason != null) 'reason': reason,
+      },
       operationName: 'Reschedule Visit',
     );
+    final success = (resp['success'] == true);
+    return success;
   }
 
-  // Cancel a visit
-  Future<VisitModel> cancelVisit(int visitId, {String? reason}) async {
-    final body = <String, dynamic>{};
-    if (reason != null) {
-      body['cancellation_reason'] = reason;
-    }
-    return await _makeRequest(
+  // Cancel a visit (API returns message + success)
+  Future<bool> cancelVisit(int visitId, {required String reason}) async {
+    final resp = await _makeRequest<Map<String, dynamic>>(
       '/visits/$visitId/cancel',
-      (json) => VisitModel.fromJson(json),
-      method: 'PUT',
-      body: body.isNotEmpty ? body : null,
+      (json) => json,
+      method: 'POST',
+      body: {
+        'reason': reason,
+      },
       operationName: 'Cancel Visit',
     );
+    final success = (resp['success'] == true);
+    return success;
   }
 
   Future<AgentModel> getRelationshipManager() async {
