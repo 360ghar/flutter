@@ -89,6 +89,13 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) =>
           .toList(),
       distanceKm: (json['distance_km'] as num?)?.toDouble(),
       liked: json['liked'] as bool? ?? false,
+      userHasScheduledVisit:
+          json['user_has_scheduled_visit'] as bool? ?? false,
+      userScheduledVisitCount:
+          (json['user_scheduled_visit_count'] as num?)?.toInt() ?? 0,
+      userNextVisitDate: json['user_next_visit_date'] == null
+          ? null
+          : DateTime.parse(json['user_next_visit_date'] as String),
     );
 
 Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
@@ -145,6 +152,9 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) =>
       'images': instance.images?.map((e) => e.toJson()).toList(),
       'distance_km': instance.distanceKm,
       'liked': instance.liked,
+      'user_has_scheduled_visit': instance.userHasScheduledVisit,
+      'user_scheduled_visit_count': instance.userScheduledVisitCount,
+      'user_next_visit_date': instance.userNextVisitDate?.toIso8601String(),
     };
 
 const _$PropertyTypeEnumMap = {

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../likes/controllers/likes_controller.dart';
 import '../../visits/controllers/visits_controller.dart';
 import '../../../core/data/models/property_model.dart';
@@ -136,25 +139,7 @@ class PropertyDetailsView extends StatelessWidget {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: PageView.builder(
-                itemCount: safeProperty.images?.length ?? 0,
-                itemBuilder: (context, index) {
-                  return RobustNetworkImage(
-                    imageUrl:
-                        safeProperty.images?[index].imageUrl ??
-                        safeProperty.mainImage,
-                    fit: BoxFit.cover,
-                    errorWidget: Container(
-                      color: AppColors.inputBackground,
-                      child: Icon(
-                        Icons.image,
-                        size: 50,
-                        color: AppColors.disabledColor,
-                      ),
-                    ),
-                  );
-                },
-              ),
+              background: _PropertyImageGallery(property: safeProperty),
             ),
           ),
 
@@ -292,6 +277,85 @@ class PropertyDetailsView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
+
+                    // Map + Get Directions (only if coordinates available)
+                    if (safeProperty.hasLocation) ...[
+                      Text(
+                        'Location',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 220,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: AppColors.getCardShadow(),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: FlutterMap(
+                          options: MapOptions(
+                            initialCenter: LatLng(
+                              safeProperty.latitude!,
+                              safeProperty.longitude!,
+                            ),
+                            initialZoom: 15,
+                            interactionOptions: const InteractionOptions(
+                              flags: InteractiveFlag.pinchZoom |
+                                  InteractiveFlag.drag,
+                            ),
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              subdomains: const ['a', 'b', 'c'],
+                              userAgentPackageName: 'com.ghar360.app',
+                            ),
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: LatLng(
+                                    safeProperty.latitude!,
+                                    safeProperty.longitude!,
+                                  ),
+                                  width: 40,
+                                  height: 40,
+                                  child: const Icon(
+                                    Icons.location_on,
+                                    size: 36,
+                                    color: AppColors.primaryYellow,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openGoogleMaps(
+                            safeProperty.latitude!,
+                            safeProperty.longitude!,
+                            safeProperty.title,
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppColors.primaryYellow),
+                            foregroundColor: AppColors.textPrimary,
+                          ),
+                          icon: const Icon(Icons.directions),
+                          label: const Text('Get Directions'),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
                     // Address and Location
                     Container(
@@ -578,7 +642,14 @@ class PropertyDetailsView extends StatelessWidget {
           ),
           child: SizedBox(
             width: double.infinity,
-            child: scheduledVisit != null
+            child: (() {
+              // Prefer server-provided schedule info
+              final DateTime? scheduledDate =
+                  safeProperty.userNextVisitDate ?? scheduledVisit?.scheduledDate;
+              final bool alreadyScheduled =
+                  safeProperty.userHasScheduledVisit || scheduledDate != null;
+
+              return alreadyScheduled
                 ? Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 16,
@@ -595,7 +666,9 @@ class PropertyDetailsView extends StatelessWidget {
                         Icon(Icons.check_circle, color: AppColors.accentGreen),
                         const SizedBox(width: 8),
                         Text(
-                          'Scheduled on ${scheduledVisit.scheduledDate.day}/${scheduledVisit.scheduledDate.month}/${scheduledVisit.scheduledDate.year}',
+                          scheduledDate != null
+                              ? 'Scheduled on ${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}'
+                              : 'Visit Scheduled',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 16,
@@ -627,7 +700,8 @@ class PropertyDetailsView extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
+                  );
+            })(),
           ),
         );
       }),
@@ -994,6 +1068,102 @@ class PropertyDetailsView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Opens Google Maps with directions to the given coordinates
+Future<void> _openGoogleMaps(
+  double latitude,
+  double longitude,
+  String label,
+) async {
+  final url = Uri.parse(
+    'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude&travelmode=driving',
+  );
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  } else {
+    Get.snackbar(
+      'Unable to open maps',
+      'Please check your device settings',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: AppColors.snackbarBackground,
+      colorText: AppColors.snackbarText,
+    );
+  }
+}
+
+// Image gallery for the header
+class _PropertyImageGallery extends StatefulWidget {
+  final PropertyModel property;
+  const _PropertyImageGallery({required this.property});
+
+  @override
+  State<_PropertyImageGallery> createState() => _PropertyImageGalleryState();
+}
+
+class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
+  late final PageController _pageController;
+  int _current = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final images = widget.property.galleryImageUrls;
+    final itemCount = images.isNotEmpty ? images.length : 1;
+    return Stack(
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          itemCount: itemCount,
+          onPageChanged: (i) => setState(() => _current = i),
+          itemBuilder: (context, index) {
+            final url = images.isNotEmpty
+                ? images[index]
+                : widget.property.mainImage;
+            return RobustNetworkImage(
+              imageUrl: url,
+              fit: BoxFit.cover,
+              errorWidget: Container(
+                color: AppColors.inputBackground,
+                child: Icon(
+                  Icons.image,
+                  size: 50,
+                  color: AppColors.disabledColor,
+                ),
+              ),
+            );
+          },
+        ),
+        if (itemCount > 1)
+          Positioned(
+            right: 12,
+            bottom: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_current + 1}/$itemCount',
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

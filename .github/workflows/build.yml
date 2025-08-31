@@ -123,6 +123,19 @@ jobs:
     - name: Build APK
       run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64
 
+    - name: Rename APK to 360ghar.apk
+      run: |
+        set -euxo pipefail
+        src="build/app/outputs/flutter-apk/app-release.apk"
+        dest="build/app/outputs/flutter-apk/360ghar.apk"
+        if [ -f "$src" ]; then
+          mv "$src" "$dest"
+          echo "Renamed APK to $dest"
+        else
+          echo "APK not found at $src" >&2
+          exit 1
+        fi
+
     - name: Generate artifact name
       id: artifact-name
       run: |
@@ -141,7 +154,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.artifact-name.outputs.name }}
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: build/app/outputs/flutter-apk/360ghar.apk
         retention-days: ${{ steps.artifact-name.outputs.retention_days }}
         if-no-files-found: error
 

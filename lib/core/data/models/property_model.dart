@@ -132,6 +132,7 @@ class PropertyModel {
   final String? virtualTourUrl;
 
   // Availability
+  // Backend may send either is_active or is_available
   @JsonKey(name: 'is_active', defaultValue: true)
   final bool isAvailable;
   @JsonKey(name: 'available_from')
@@ -172,6 +173,14 @@ class PropertyModel {
   // Swipe-related fields
   @JsonKey(name: 'liked', defaultValue: false)
   final bool liked;
+
+  // User visit scheduling fields (per-property, user-scoped)
+  @JsonKey(name: 'user_has_scheduled_visit', defaultValue: false)
+  final bool userHasScheduledVisit;
+  @JsonKey(name: 'user_scheduled_visit_count', defaultValue: 0)
+  final int userScheduledVisitCount;
+  @JsonKey(name: 'user_next_visit_date')
+  final DateTime? userNextVisitDate;
 
   PropertyModel({
     required this.id,
@@ -226,9 +235,25 @@ class PropertyModel {
     this.images,
     this.distanceKm,
     this.liked = false,
+    this.userHasScheduledVisit = false,
+    this.userScheduledVisitCount = 0,
+    this.userNextVisitDate,
   });
 
-  factory PropertyModel.fromJson(Map<String, dynamic> json) => _$PropertyModelFromJson(json);
+  factory PropertyModel.fromJson(Map<String, dynamic> json) {
+    // Normalize backend variations without breaking generated parsing
+    final normalized = Map<String, dynamic>.from(json);
+    if (!normalized.containsKey('is_active') &&
+        normalized.containsKey('is_available')) {
+      normalized['is_active'] = normalized['is_available'];
+    }
+    // Normalize date string for user_next_visit_date into ISO if needed
+    final nextVisit = normalized['user_next_visit_date'];
+    if (nextVisit is String && nextVisit.isNotEmpty) {
+      // Let generated code parse ISO-8601 directly; no-op here
+    }
+    return _$PropertyModelFromJson(normalized);
+  }
 
   Map<String, dynamic> toJson() => _$PropertyModelToJson(this);
 
@@ -328,6 +353,34 @@ class PropertyModel {
     return urls;
   }
 
+  // Images suitable for gallery (filter out known non-image URLs like 360 tour links)
+  List<String> get galleryImageUrls {
+    final candidates = <String>[];
+    // Prefer sorted images by display order when available
+    final sortedImages = [...(images ?? [])]
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    for (final img in sortedImages) {
+      final url = img.imageUrl;
+      if (_looksLikeImageUrl(url)) candidates.add(url);
+    }
+    // Include main image if list still empty
+    if (candidates.isEmpty && mainImageUrl?.isNotEmpty == true) {
+      candidates.add(mainImageUrl!);
+    }
+    // Final fallback: at least one placeholder handled by UI if still empty
+    return candidates;
+  }
+
+  bool _looksLikeImageUrl(String url) {
+    final lower = url.toLowerCase();
+    if (lower.contains('kuula.co/share')) return false;
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.gif');
+  }
+
   // Location convenience methods
   bool get hasLocation => latitude != null && longitude != null;
 
@@ -414,4 +467,7 @@ class PropertyModel {
     }
     return '';
   }
+
+  // User visit helpers
+  bool get hasUserScheduled => userHasScheduledVisit || userNextVisitDate != null;
 }
