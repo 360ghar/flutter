@@ -261,33 +261,13 @@ class PageStateService extends GetxController {
   }
 
   void setCurrentPage(PageType pageType) {
+    if (currentPageType.value == pageType) return;
+
     final oldPageType = currentPageType.value;
     currentPageType.value = pageType;
     DebugLogger.info('📱 Switched from ${oldPageType.name} to ${pageType.name} page');
 
-    if (pageType == PageType.explore) {
-      DebugLogger.info(
-        '🗺️ Explore page activated - current properties: ${exploreState.value.properties.length}',
-      );
-    }
-  }
-
-  void notifyPageActivated(PageType pageType) {
-    DebugLogger.info('📢 Page activated: ${pageType.name}');
-    setCurrentPage(pageType);
-    final state = _getStateForPage(pageType);
-    DebugLogger.info(
-      '📋 ${pageType.name} state - properties: ${state.properties.length}, loading: ${state.isLoading}, stale: ${state.isDataStale}',
-    );
-
-    if (!state.isLoading && state.isDataStale) {
-      DebugLogger.info('🔄 Data is stale for ${pageType.name}, loading page data in background');
-      loadPageData(pageType, backgroundRefresh: true);
-    } else {
-      DebugLogger.info(
-        '⏸️ No background refresh needed for ${pageType.name} - loading: ${state.isLoading}, stale: ${state.isDataStale}',
-      );
-    }
+    // Feature controllers' ever() workers handle their own activation logic.
   }
 
   // Location management

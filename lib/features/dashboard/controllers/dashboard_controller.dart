@@ -70,7 +70,8 @@ class DashboardController extends GetxController {
     }
 
     if (pageType != null) {
-      _pageStateService.notifyPageActivated(pageType);
+      // Single source of truth: update current page type only
+      _pageStateService.setCurrentPage(pageType);
     }
   }
 
@@ -273,11 +274,14 @@ class DashboardController extends GetxController {
 
   // Navigation methods
   void changeTab(int index) {
+    if (currentIndex.value == index) return; // Prevent redundant updates
     currentIndex.value = index;
 
-    // Notify page state service about the page change
+    // Update PageStateService with the corresponding page type
     PageType? pageType;
     switch (index) {
+      case 0: // Profile (no associated PageType)
+        break;
       case 1:
         pageType = PageType.explore;
         break;
@@ -287,12 +291,13 @@ class DashboardController extends GetxController {
       case 3:
         pageType = PageType.likes;
         break;
-      case 4:
+      case 4: // Visits (no associated PageType)
         break;
     }
 
     if (pageType != null) {
-      _pageStateService.notifyPageActivated(pageType);
+      // Single source of truth: feature controllers listen to this
+      _pageStateService.setCurrentPage(pageType);
     }
   }
 

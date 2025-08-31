@@ -18,9 +18,6 @@ class LocationController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString locationError = ''.obs;
 
-  // Location search
-  final RxList<Map<String, dynamic>> searchResults =
-      <Map<String, dynamic>>[].obs;
 
   final RxString currentAddress = ''.obs;
 
@@ -341,135 +338,6 @@ class LocationController extends GetxController {
     return addressParts.isNotEmpty ? addressParts.join(', ') : 'Location';
   }
 
-  Future<void> searchLocations(String query) async {
-    if (query.trim().isEmpty || query.length < 2) {
-      searchResults.clear();
-      return;
-    }
-
-    try {
-      isLoading.value = true;
-
-      // Use Google Places API for location search
-      final results = await _searchGooglePlaces(query.trim());
-      searchResults.value = results;
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error searching locations', e, stackTrace);
-      Get.snackbar(
-        'search_error'.tr,
-        'failed_to_search_locations'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> _searchGooglePlaces(String query) async {
-    try {
-      final apiKey = dotenv.env['GOOGLE_PLACES_API_KEY'];
-      final countryCode = dotenv.env['DEFAULT_COUNTRY'] ?? 'in';
-
-      if (apiKey == null || apiKey.isEmpty) {
-        DebugLogger.warning('Google Places API key not found');
-        return [];
-      }
-
-      // Gurgaon/Gurugram coordinates: 28.4595, 77.0266
-      final url = Uri.https(
-        'maps.googleapis.com',
-        '/maps/api/place/autocomplete/json',
-        {
-          'input': query,
-          'location': '28.4595,77.0266',
-          'radius': '25000', // 25km radius to cover entire Gurgaon area
-          'components': 'country:$countryCode',
-          'strictbounds': 'true', // Restrict results to the specified area only
-          'key': apiKey,
-        },
-      );
-
-      // Add timeout and error handling
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode != 200) {
-        DebugLogger.error(
-          'Google Places API request failed: ${response.statusCode}',
-        );
-        DebugLogger.error('Response body: ${response.body}');
-        return [];
-      }
-
-      final data = json.decode(response.body);
-      final status = data['status'];
-
-      switch (status) {
-        case 'OK':
-          final predictions = data['predictions'] as List;
-          return predictions
-              .map(
-                (prediction) => {
-                  'id': prediction['place_id'],
-                  'name': prediction['description'],
-                  'city': prediction['structured_formatting']['main_text'],
-                  'region':
-                      prediction['structured_formatting']['secondary_text'],
-                  'type': 'google_places',
-                },
-              )
-              .toList();
-
-        case 'ZERO_RESULTS':
-          DebugLogger.info(
-            'Google Places API returned no results for query: $query',
-          );
-          return [];
-
-        case 'OVER_QUERY_LIMIT':
-          DebugLogger.error(
-            'Google Places API quota exceeded for query: $query',
-          );
-          DebugLogger.error('Response: ${response.body}');
-          // Could implement retry logic with backoff here
-          return [];
-
-        case 'REQUEST_DENIED':
-          DebugLogger.error(
-            'Google Places API request denied for query: $query',
-          );
-          DebugLogger.error('Response: ${response.body}');
-          // Could check API key validity here
-          return [];
-
-        case 'INVALID_REQUEST':
-          DebugLogger.error(
-            'Invalid Google Places API request for query: $query',
-          );
-          DebugLogger.error('Response: ${response.body}');
-          return [];
-
-        default:
-          DebugLogger.warning(
-            'Unknown Google Places API status: $status for query: $query',
-          );
-          DebugLogger.warning('Response: ${response.body}');
-          return [];
-      }
-    } on TimeoutException catch (e) {
-      DebugLogger.error(
-        'Google Places API request timed out for query: $query',
-        e,
-      );
-      return [];
-    } catch (e, stackTrace) {
-      DebugLogger.error(
-        'Error calling Google Places API for query: $query',
-        e,
-        stackTrace,
-      );
-      return [];
-    }
-  }
 
   void selectLocation(Map<String, dynamic> location) {
     final locationName = location['name'] ?? location['city'] ?? '';
@@ -539,9 +407,7 @@ class LocationController extends GetxController {
     'address': currentAddress.value,
   };
 
-  void clearSearchResults() {
-    searchResults.clear();
-  }
+  // clearSearchResults removed (no longer used)
 
   void clearLocationError() {
     locationError.value = '';
@@ -576,8 +442,7 @@ class LocationController extends GetxController {
       final apiKey = dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
       if (apiKey.isEmpty) {
         DebugLogger.warning('Google Places API key not found');
-        // Fallback to backend search
-        await searchLocations(query);
+        placeSuggestions.clear();
         return [];
       }
 

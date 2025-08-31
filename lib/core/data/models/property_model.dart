@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+
 import 'property_image_model.dart';
 
 part 'property_model.g.dart';
@@ -50,15 +51,9 @@ class PropertyAmenity {
   final String? icon;
   final String? category;
 
-  PropertyAmenity({
-    required this.id,
-    required this.title,
-    this.icon,
-    this.category,
-  });
+  PropertyAmenity({required this.id, required this.title, this.icon, this.category});
 
-  factory PropertyAmenity.fromJson(Map<String, dynamic> json) =>
-      _$PropertyAmenityFromJson(json);
+  factory PropertyAmenity.fromJson(Map<String, dynamic> json) => _$PropertyAmenityFromJson(json);
   Map<String, dynamic> toJson() => _$PropertyAmenityToJson(this);
 }
 
@@ -233,8 +228,7 @@ class PropertyModel {
     this.liked = false,
   });
 
-  factory PropertyModel.fromJson(Map<String, dynamic> json) =>
-      _$PropertyModelFromJson(json);
+  factory PropertyModel.fromJson(Map<String, dynamic> json) => _$PropertyModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$PropertyModelToJson(this);
 
@@ -320,20 +314,18 @@ class PropertyModel {
   }
 
   String get mainImage {
-    if (mainImageUrl?.isNotEmpty == true) {
-      return mainImageUrl!;
-    }
-    if (images?.isNotEmpty == true) {
-      return images!.first.imageUrl;
-    }
-    return 'https://via.placeholder.com/400x300?text=No+Image';
+    return mainImageUrl?.isNotEmpty == true
+        ? mainImageUrl!
+        : images?.firstOrNull?.imageUrl ?? 'https://via.placeholder.com/400x300?text=No+Image';
   }
 
+  // Also make the imageUrls getter safer
   List<String> get imageUrls {
-    if (images?.isNotEmpty == true) {
-      return images!.map((e) => e.imageUrl).toList();
+    final urls = images?.map((e) => e.imageUrl).toList() ?? [];
+    if (urls.isEmpty && mainImageUrl != null) {
+      urls.add(mainImageUrl!);
     }
-    return mainImageUrl != null ? [mainImageUrl!] : [];
+    return urls;
   }
 
   // Location convenience methods
@@ -341,8 +333,7 @@ class PropertyModel {
 
   // Amenities convenience methods
   bool get hasAmenities => amenities?.isNotEmpty == true;
-  List<String> get amenitiesList =>
-      amenities?.map((a) => a.title).toList() ?? [];
+  List<String> get amenitiesList => amenities?.map((a) => a.title).toList() ?? [];
   List<PropertyAmenity> get amenitiesData => amenities ?? [];
 
   // Virtual tour convenience methods
