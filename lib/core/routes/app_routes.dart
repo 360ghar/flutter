@@ -17,6 +17,7 @@ abstract class AppRoutes {
   static const preferences = '/preferences';
   static const privacy = '/privacy';
   static const help = '/help';
+  static const feedback = '/feedback';
   static const about = '/about';
   static const locationSearch = '/location-search';
 }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../../../core/controllers/app_update_controller.dart';
+import '../../../core/data/models/app_update_models.dart';
 import '../../../core/mixins/theme_mixin.dart';
 import '../../../core/utils/app_colors.dart';
 
@@ -8,6 +11,10 @@ class AboutView extends StatelessWidget with ThemeMixin {
 
   @override
   Widget build(BuildContext context) {
+    final appUpdateController = Get.find<AppUpdateController>();
+    final platformLabel = _platformLabel();
+    final versionInfoFuture = appUpdateController.getVersionInfo();
+
     return buildThemeAwareScaffold(
       title: 'About 360ghar',
       body: SingleChildScrollView(
@@ -26,7 +33,11 @@ class AboutView extends StatelessWidget with ThemeMixin {
                       color: AppColors.primaryYellow,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Icon(Icons.home, size: 40, color: AppColors.buttonText),
+                    child: Icon(
+                      Icons.home,
+                      size: 40,
+                      color: AppColors.buttonText,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -39,7 +50,10 @@ class AboutView extends StatelessWidget with ThemeMixin {
                   ),
                   Text(
                     'Your Real Estate Companion',
-                    style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -56,7 +70,11 @@ class AboutView extends StatelessWidget with ThemeMixin {
                   const SizedBox(height: 16),
                   Text(
                     '360ghar is a modern real estate application that transforms property browsing into an engaging, swipe-based experience. Discover your dream home with our intuitive interface, 360° virtual tours, and comprehensive property details.',
-                    style: TextStyle(fontSize: 16, color: AppColors.textPrimary, height: 1.5),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textPrimary,
+                      height: 1.5,
+                    ),
                   ),
                 ],
               ),
@@ -74,7 +92,8 @@ class AboutView extends StatelessWidget with ThemeMixin {
                   _buildFeatureItem(
                     icon: Icons.swipe,
                     title: 'Swipe to Discover',
-                    description: 'Dating-app style interface for property browsing',
+                    description:
+                        'Dating-app style interface for property browsing',
                   ),
                   _buildFeatureItem(
                     icon: Icons.threesixty,
@@ -89,7 +108,8 @@ class AboutView extends StatelessWidget with ThemeMixin {
                   _buildFeatureItem(
                     icon: Icons.location_on,
                     title: 'Location Intelligence',
-                    description: 'Detailed neighborhood information and mapping',
+                    description:
+                        'Detailed neighborhood information and mapping',
                   ),
                   _buildFeatureItem(
                     icon: Icons.person,
@@ -104,12 +124,23 @@ class AboutView extends StatelessWidget with ThemeMixin {
 
             // App Information
             buildThemeAwareCard(
-              child: Column(
-                children: [
-                  _buildInfoRow('Version', '1.0.0'),
-                  _buildInfoRow('Build', '100'),
-                  _buildInfoRow('Platform', 'Flutter'),
-                ],
+              child: FutureBuilder<AppVersionInfo?>(
+                future: versionInfoFuture,
+                builder: (context, snapshot) {
+                  final version = snapshot.data?.version;
+                  final buildNumber = snapshot.data?.buildNumber;
+
+                  return Column(
+                    children: [
+                      _buildInfoRow('Version', version ?? '—'),
+                      _buildInfoRow(
+                        'Build',
+                        buildNumber != null ? buildNumber.toString() : '—',
+                      ),
+                      _buildInfoRow('Platform', platformLabel),
+                    ],
+                  );
+                },
               ),
             ),
 
@@ -123,12 +154,18 @@ class AboutView extends StatelessWidget with ThemeMixin {
                 children: [
                   Text(
                     '© 2025 360ghar. All rights reserved.',
-                    style: TextStyle(fontSize: 14, color: AppColors.textTertiary),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Made with ❤️ for property seekers everywhere',
-                    style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                 ],
               ),
@@ -174,7 +211,11 @@ class AboutView extends StatelessWidget with ThemeMixin {
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
@@ -190,7 +231,10 @@ class AboutView extends StatelessWidget with ThemeMixin {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 16, color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+          ),
           Text(
             value,
             style: TextStyle(
@@ -202,5 +246,12 @@ class AboutView extends StatelessWidget with ThemeMixin {
         ],
       ),
     );
+  }
+
+  String _platformLabel() {
+    if (GetPlatform.isIOS) return 'iOS';
+    if (GetPlatform.isAndroid) return 'Android';
+    if (GetPlatform.isWeb) return 'Web';
+    return 'Flutter';
   }
 }

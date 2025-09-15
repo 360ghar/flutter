@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/mixins/theme_mixin.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../../core/utils/app_colors.dart';
 
 class HelpView extends StatelessWidget with ThemeMixin {
@@ -421,12 +422,7 @@ class HelpView extends StatelessWidget with ThemeMixin {
     );
   }
 
-  void _sendFeedback() {
-    Get.snackbar(
-      'Feedback',
-      'Feedback form would be opened here',
-      backgroundColor: AppColors.snackbarBackground,
-      colorText: AppColors.snackbarText,
-    );
+  Future<void> _sendFeedback() async {
+    await Get.toNamed(AppRoutes.feedback);
   }
 }

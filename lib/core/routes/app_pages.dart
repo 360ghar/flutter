@@ -19,9 +19,11 @@ import '../../features/likes/views/likes_view.dart';
 import '../../features/location_search/bindings/location_search_binding.dart';
 import '../../features/location_search/views/location_search_view.dart';
 import '../../features/profile/bindings/profile_binding.dart';
+import '../../features/profile/bindings/feedback_binding.dart';
 import '../../features/profile/controllers/preferences_controller.dart';
 import '../../features/profile/views/about_view.dart';
 import '../../features/profile/views/edit_profile_view.dart';
+import '../../features/profile/views/feedback_view.dart';
 import '../../features/profile/views/help_view.dart';
 import '../../features/profile/views/preferences_view.dart';
 import '../../features/profile/views/privacy_view.dart';
@@ -135,6 +137,12 @@ class AppPages {
     GetPage(
       name: AppRoutes.help,
       page: () => const HelpView(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.feedback,
+      page: () => const FeedbackView(),
+      binding: FeedbackBinding(),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(

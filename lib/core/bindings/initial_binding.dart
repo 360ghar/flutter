@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 import 'package:ghar360/features/auth/data/auth_repository.dart';
 import '../data/providers/api_service.dart';
+import '../data/repositories/app_update_repository.dart';
 import '../data/repositories/profile_repository.dart';
 import '../controllers/auth_controller.dart';
+import '../controllers/app_update_controller.dart';
 import '../controllers/location_controller.dart';
 import '../controllers/localization_controller.dart';
 import '../controllers/theme_controller.dart';
@@ -20,6 +22,9 @@ class InitialBinding extends Bindings {
     // NEW: Register AuthRepository
     Get.put<AuthRepository>(AuthRepository());
     DebugLogger.success('✅ AuthRepository registered');
+
+    Get.put<AppUpdateRepository>(AppUpdateRepository(), permanent: true);
+    DebugLogger.success('✅ AppUpdateRepository registered');
 
     // Register ProfileRepository for AuthController
     Get.put<ProfileRepository>(ProfileRepository());
@@ -68,6 +73,9 @@ class InitialBinding extends Bindings {
 
       Get.put<ThemeController>(ThemeController(), permanent: true);
       DebugLogger.success('✅ ThemeController registered');
+
+      Get.put<AppUpdateController>(AppUpdateController(), permanent: true);
+      DebugLogger.success('✅ AppUpdateController registered');
 
       // Note: PageStateService and repositories (PropertiesRepository, SwipesRepository)
       // are now registered in DashboardBinding to prevent unauthorized API calls
