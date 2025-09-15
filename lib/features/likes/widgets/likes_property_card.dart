@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/data/models/property_model.dart';
 import '../../../core/utils/app_colors.dart';
-import '../../../widgets/common/robust_network_image.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class LikesPropertyCard extends StatelessWidget {
   final PropertyModel property;

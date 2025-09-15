@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/controllers/page_state_service.dart';
-import '../../../core/models/auth_status.dart';
+import 'package:ghar360/core/data/models/auth_status.dart';
 import '../../../core/utils/error_handler.dart';
 
 class ProfileCompletionController extends GetxController {

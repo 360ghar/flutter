@@ -19,15 +19,10 @@ import '../../features/likes/views/likes_view.dart';
 import '../../features/location_search/bindings/location_search_binding.dart';
 import '../../features/location_search/views/location_search_view.dart';
 import '../../features/profile/bindings/profile_binding.dart';
-import '../../features/profile/controllers/about_controller.dart';
-import '../../features/profile/controllers/help_controller.dart';
-import '../../features/profile/controllers/notifications_controller.dart';
 import '../../features/profile/controllers/preferences_controller.dart';
-import '../../features/profile/controllers/privacy_controller.dart';
 import '../../features/profile/views/about_view.dart';
 import '../../features/profile/views/edit_profile_view.dart';
 import '../../features/profile/views/help_view.dart';
-import '../../features/profile/views/notifications_view.dart';
 import '../../features/profile/views/preferences_view.dart';
 import '../../features/profile/views/privacy_view.dart';
 import '../../features/profile/views/profile_view.dart';
@@ -133,35 +128,18 @@ class AppPages {
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
-      name: AppRoutes.notifications,
-      page: () => const NotificationsView(),
-      binding: BindingsBuilder(() {
-        Get.lazyPut<NotificationsController>(() => NotificationsController());
-      }),
-      middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
       name: AppRoutes.privacy,
       page: () => const PrivacyView(),
-      binding: BindingsBuilder(() {
-        Get.lazyPut<PrivacyController>(() => PrivacyController());
-      }),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.help,
       page: () => const HelpView(),
-      binding: BindingsBuilder(() {
-        Get.lazyPut<HelpController>(() => HelpController());
-      }),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: AppRoutes.about,
       page: () => const AboutView(),
-      binding: BindingsBuilder(() {
-        Get.lazyPut<AboutController>(() => AboutController());
-      }),
       middlewares: [AuthMiddleware()],
     ),
     GetPage(

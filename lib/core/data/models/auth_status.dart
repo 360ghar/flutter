@@ -1,4 +1,4 @@
-// lib/core/models/auth_status.dart
+// lib/core/data/models/auth_status.dart
 
 enum AuthStatus {
   initial, // App is starting, we don't know the state yet

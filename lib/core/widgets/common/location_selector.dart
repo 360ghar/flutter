@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../core/utils/app_colors.dart';
-import '../../core/controllers/location_controller.dart';
-import '../../core/controllers/page_state_service.dart';
-import '../../core/data/models/page_state_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/controllers/location_controller.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
 
 class LocationSelector extends GetView<LocationController> {
   final PageType pageType;

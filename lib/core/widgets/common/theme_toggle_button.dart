@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../core/controllers/theme_controller.dart';
-import '../../core/utils/theme.dart';
+import 'package:ghar360/core/controllers/theme_controller.dart';
+import 'package:ghar360/core/utils/theme.dart';
 
 class ThemeToggleButton extends StatelessWidget {
   final bool showLabel;

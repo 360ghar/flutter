@@ -15,7 +15,6 @@ abstract class AppRoutes {
   static const explore = '/explore'; // Map interface
   static const tour = '/tour';
   static const preferences = '/preferences';
-  static const notifications = '/notifications';
   static const privacy = '/privacy';
   static const help = '/help';
   static const about = '/about';

@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'core/controllers/auth_controller.dart';
-import 'core/models/auth_status.dart';
-import 'core/utils/debug_logger.dart';
-import 'widgets/common/error_states.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/data/models/auth_status.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/widgets/common/error_states.dart';
 
 class Root extends StatelessWidget {
   const Root({super.key});

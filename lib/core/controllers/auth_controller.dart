@@ -3,13 +3,13 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../data/models/user_model.dart';
-import '../utils/debug_logger.dart';
-import '../utils/error_handler.dart';
-import '../../features/auth/data/auth_repository.dart';
-import '../models/auth_status.dart';
-import '../data/repositories/profile_repository.dart';
-import '../routes/app_routes.dart';
+import 'package:ghar360/core/data/models/user_model.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_handler.dart';
+import 'package:ghar360/features/auth/data/auth_repository.dart';
+import 'package:ghar360/core/data/models/auth_status.dart';
+import 'package:ghar360/core/data/repositories/profile_repository.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 
 class AuthController extends GetxController {
   // Dependencies (Lazy loaded to avoid circular dependency issues)

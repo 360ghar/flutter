@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import '../../core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
-class PaginatedListView<T> extends StatefulWidget {
+class PaginatedGridView<T> extends StatefulWidget {
   final List<T> items;
   final Widget Function(BuildContext context, T item, int index) itemBuilder;
   final Future<void> Function() onLoadMore;
   final bool hasMore;
   final bool isLoadingMore;
   final Future<void> Function() onRefresh;
+  final int crossAxisCount;
+  final double childAspectRatio;
   final EdgeInsets padding;
   final Widget? emptyWidget;
   final bool isLoading;
-  final Widget? separatorBuilder;
-  final ScrollPhysics? physics;
 
-  const PaginatedListView({
+  const PaginatedGridView({
     super.key,
     required this.items,
     required this.itemBuilder,
@@ -22,18 +22,18 @@ class PaginatedListView<T> extends StatefulWidget {
     required this.hasMore,
     required this.isLoadingMore,
     required this.onRefresh,
+    this.crossAxisCount = 2,
+    this.childAspectRatio = 0.75,
     this.padding = const EdgeInsets.all(16),
     this.emptyWidget,
     this.isLoading = false,
-    this.separatorBuilder,
-    this.physics,
   });
 
   @override
-  State<PaginatedListView<T>> createState() => _PaginatedListViewState<T>();
+  State<PaginatedGridView<T>> createState() => _PaginatedGridViewState<T>();
 }
 
-class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
+class _PaginatedGridViewState<T> extends State<PaginatedGridView<T>> {
   late ScrollController _scrollController;
 
   @override
@@ -87,14 +87,16 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
       color: AppColors.loadingIndicator,
       backgroundColor: AppColors.surface,
       onRefresh: widget.onRefresh,
-      child: ListView.separated(
+      child: GridView.builder(
         controller: _scrollController,
         padding: widget.padding,
-        physics: widget.physics ?? const AlwaysScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: widget.crossAxisCount,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: widget.childAspectRatio,
+        ),
         itemCount: widget.items.length + (widget.hasMore ? 1 : 0),
-        separatorBuilder: (context, index) {
-          return widget.separatorBuilder ?? const SizedBox(height: 8);
-        },
         itemBuilder: (context, index) {
           if (index == widget.items.length) {
             // Loading indicator at the bottom

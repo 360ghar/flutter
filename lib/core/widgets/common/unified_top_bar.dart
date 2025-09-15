@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../core/utils/app_colors.dart';
-import '../../core/controllers/page_state_service.dart';
-import '../../core/data/models/page_state_model.dart';
-import 'location_selector.dart';
-import 'property_filter_widget.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/widgets/common/location_selector.dart';
+import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
 
 class UnifiedTopBar extends GetView<PageStateService>
     implements PreferredSizeWidget {

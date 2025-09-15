@@ -5,7 +5,7 @@ import '../../../core/utils/webview_helper.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/utils/theme.dart';
 import '../../../core/utils/debug_logger.dart';
-import '../../../widgets/common/robust_network_image.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'dart:math' as math;
 
 class PropertySwipeCard extends StatefulWidget {

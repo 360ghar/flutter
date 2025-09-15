@@ -5,10 +5,10 @@ import '../../../core/controllers/page_state_service.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/utils/error_mapper.dart';
-import '../../../widgets/common/error_states.dart';
-import '../../../widgets/common/loading_states.dart';
-import '../../../widgets/common/property_filter_widget.dart';
-import '../../../widgets/common/unified_top_bar.dart';
+import 'package:ghar360/core/widgets/common/error_states.dart';
+import 'package:ghar360/core/widgets/common/loading_states.dart';
+import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
+import 'package:ghar360/core/widgets/common/unified_top_bar.dart';
 import '../controllers/discover_controller.dart';
 import '../widgets/property_swipe_card.dart';
 

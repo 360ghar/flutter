@@ -3,8 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/utils/app_colors.dart';
-import '../../../widgets/common/robust_network_image.dart';
-import '../../../widgets/common/theme_toggle_button.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class ProfileView extends GetView<AuthController> {
   const ProfileView({super.key});
@@ -25,13 +24,7 @@ class ProfileView extends GetView<AuthController> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          actions: [
-            const ThemeToggleButton(),
-            IconButton(
-              icon: Icon(Icons.settings, color: AppColors.appBarIcon),
-              onPressed: () => Get.toNamed('/preferences'),
-            ),
-          ],
+          // Removed gear/theme toggle icon per updated design direction
         ),
         body: Obx(() {
           if (controller.isLoading.value) {
@@ -60,10 +53,6 @@ class ProfileView extends GetView<AuthController> {
                 _buildProfileHeader(user),
                 const SizedBox(height: 30),
 
-                // Profile Completion
-                _buildProfileCompletion(),
-                const SizedBox(height: 30),
-
                 // Menu Items
                 _buildMenuItem(
                   icon: Icons.person_outline,
@@ -76,12 +65,6 @@ class ProfileView extends GetView<AuthController> {
                   title: 'my_preferences'.tr,
                   subtitle: 'Property preferences and filters',
                   onTap: () => Get.toNamed('/preferences'),
-                ),
-                _buildMenuItem(
-                  icon: Icons.notifications,
-                  title: 'notifications'.tr,
-                  subtitle: 'Manage notification settings',
-                  onTap: () => Get.toNamed('/notifications'),
                 ),
                 _buildMenuItem(
                   icon: Icons.security,
@@ -203,60 +186,6 @@ class ProfileView extends GetView<AuthController> {
               user.phone,
               style: TextStyle(fontSize: 14, color: AppColors.textTertiary),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileCompletion() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: AppColors.getCardShadow(),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Profile Completion',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Obx(
-                () => Text(
-                  '${controller.profileCompletionPercentage.value}%',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryYellow,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Obx(
-            () => LinearProgressIndicator(
-              value: controller.profileCompletionPercentage.value / 100,
-              backgroundColor: AppColors.inputBackground,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                AppColors.primaryYellow,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Complete your profile to get better property recommendations',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-          ),
         ],
       ),
     );

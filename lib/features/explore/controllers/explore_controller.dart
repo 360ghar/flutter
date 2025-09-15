@@ -13,7 +13,7 @@ import '../../../core/data/models/unified_filter_model.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
 import '../../../core/utils/app_exceptions.dart';
 import '../../../core/utils/debug_logger.dart';
-import '../../../widgets/common/property_filter_widget.dart';
+import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
 
 enum ExploreState { initial, loading, loaded, empty, error, loadingMore }
 

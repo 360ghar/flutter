@@ -33,12 +33,6 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                   (value) => controller.emailNotifications.value = value,
                 ),
                 _buildSwitchTile(
-                  'price_drop_alerts'.tr,
-                  'price_drop_alerts_desc'.tr,
-                  controller.priceDropAlerts.value,
-                  (value) => controller.priceDropAlerts.value = value,
-                ),
-                _buildSwitchTile(
                   'similar_properties'.tr,
                   'similar_properties_desc'.tr,
                   controller.similarProperties.value,
@@ -46,54 +40,12 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 ),
               ]),
               const SizedBox(height: 24),
-              _buildSection('search_preferences'.tr, [
-                _buildSwitchTile(
-                  'location_services'.tr,
-                  'location_services_desc'.tr,
-                  controller.locationServices.value,
-                  (value) => controller.locationServices.value = value,
-                ),
-                _buildSwitchTile(
-                  'auto_complete_search'.tr,
-                  'auto_complete_search_desc'.tr,
-                  controller.autoCompleteSearch.value,
-                  (value) => controller.autoCompleteSearch.value = value,
-                ),
-              ]),
-              const SizedBox(height: 24),
               _buildSection('display_preferences'.tr, [
                 _buildThemeSelector(),
-                _buildSwitchTile(
-                  'show_property_tour'.tr,
-                  'show_property_tour_desc'.tr,
-                  controller.showPropertyTour.value,
-                  (value) => controller.showPropertyTour.value = value,
-                ),
-                _buildSwitchTile(
-                  'compact_view'.tr,
-                  'compact_view_desc'.tr,
-                  controller.compactView.value,
-                  (value) => controller.compactView.value = value,
-                ),
               ]),
               const SizedBox(height: 24),
               _buildSection('language_preferences'.tr, [
                 _buildLanguageSelector(),
-              ]),
-              const SizedBox(height: 24),
-              _buildSection('privacy_preferences'.tr, [
-                _buildSwitchTile(
-                  'share_analytics'.tr,
-                  'share_analytics_desc'.tr,
-                  controller.shareAnalytics.value,
-                  (value) => controller.shareAnalytics.value = value,
-                ),
-                _buildSwitchTile(
-                  'personalized_ads'.tr,
-                  'personalized_ads_desc'.tr,
-                  controller.personalizedAds.value,
-                  (value) => controller.personalizedAds.value = value,
-                ),
               ]),
               const SizedBox(height: 32),
               SizedBox(

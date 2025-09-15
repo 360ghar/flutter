@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/data/models/property_model.dart';
-import '../../core/utils/app_colors.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 class PropertyDetailsFeatures extends StatelessWidget {
   final PropertyModel property;

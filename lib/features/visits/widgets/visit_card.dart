@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/data/models/visit_model.dart';
 import '../../../core/utils/app_colors.dart';
-import '../../../widgets/common/robust_network_image.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import '../../../core/utils/debug_logger.dart';
 
 class VisitCard extends StatelessWidget {

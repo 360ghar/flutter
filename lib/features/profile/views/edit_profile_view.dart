@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/mixins/theme_mixin.dart';
 import '../controllers/edit_profile_controller.dart';
-import '../../../widgets/common/robust_network_image.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
   const EditProfileView({super.key});

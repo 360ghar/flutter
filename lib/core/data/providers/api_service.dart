@@ -3,13 +3,14 @@ import 'package:get/get.dart' as getx;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../controllers/auth_controller.dart';
+import '../../utils/app_exceptions.dart';
 import '../../utils/debug_logger.dart';
 import '../../utils/error_mapper.dart';
-import '../../utils/app_exceptions.dart';
 import '../models/agent_model.dart';
 import '../models/amenity_model.dart';
 import '../models/api_response_models.dart';
 import '../models/property_model.dart';
+import '../models/static_page_model.dart';
 import '../models/unified_filter_model.dart';
 import '../models/unified_property_response.dart';
 import '../models/user_model.dart';
@@ -456,7 +457,7 @@ class ApiService extends getx.GetConnect {
             'endpoint': endpoint,
             'method': method,
             'hasBody': body != null,
-            'hasQuery': queryParams != null && (queryParams?.isNotEmpty ?? false),
+            'hasQuery': queryParams?.isNotEmpty ?? false,
           },
         );
 
@@ -474,6 +475,16 @@ class ApiService extends getx.GetConnect {
     final delay = base + jitter;
     // Cap delay to reasonable upper bound
     return delay > 4000 ? 4000 : delay;
+  }
+
+  // Fetch static page content from core pages endpoint (no auth required)
+  Future<StaticPageModel> fetchStaticPage(String uniqueName) async {
+    return _makeRequest<StaticPageModel>(
+      '/pages/$uniqueName/public',
+      (json) => StaticPageModel.fromDynamic(json, fallbackTitle: uniqueName),
+      method: 'GET',
+      operationName: 'GET /pages/$uniqueName/public',
+    );
   }
 
   // Helper method for safer user model parsing
@@ -1225,10 +1236,7 @@ class ApiService extends getx.GetConnect {
       '/swipes/toggle/',
       (json) => json,
       method: 'POST',
-      body: {
-        'property_id': propertyId,
-        'is_liked': isLiked,
-      },
+      body: {'property_id': propertyId, 'is_liked': isLiked},
       operationName: 'Toggle Swipe Status',
     );
   }
@@ -1299,10 +1307,7 @@ class ApiService extends getx.GetConnect {
       '/visits/$visitId/reschedule',
       (json) => json,
       method: 'POST',
-      body: {
-        'new_date': newDate,
-        if (reason != null) 'reason': reason,
-      },
+      body: {'new_date': newDate, if (reason != null) 'reason': reason},
       operationName: 'Reschedule Visit',
     );
     final success = (resp['success'] == true);
@@ -1315,9 +1320,7 @@ class ApiService extends getx.GetConnect {
       '/visits/$visitId/cancel',
       (json) => json,
       method: 'POST',
-      body: {
-        'reason': reason,
-      },
+      body: {'reason': reason},
       operationName: 'Cancel Visit',
     );
     final success = (resp['success'] == true);

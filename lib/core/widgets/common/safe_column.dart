@@ -163,17 +163,3 @@ class OverflowSafeContainer extends StatelessWidget {
     return content;
   }
 }
-
-/// Extension to help identify potential overflow issues during development
-extension OverflowDebugger on Widget {
-  /// Wraps widget with overflow detection in debug mode
-  Widget debugOverflow({String? debugLabel}) {
-    assert(() {
-      // In debug mode, wrap with debugging information
-      return true;
-    }());
-
-    // In release mode, return the widget as-is
-    return this;
-  }
-}

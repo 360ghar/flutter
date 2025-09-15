@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/data/models/agent_model.dart';
-import '../../../widgets/common/robust_network_image.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class AgentCard extends StatelessWidget {
   final AgentModel agent;
