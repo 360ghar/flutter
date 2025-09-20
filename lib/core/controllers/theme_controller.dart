@@ -4,7 +4,7 @@ import 'package:get_storage/get_storage.dart';
 
 enum AppThemeMode { light, dark, system }
 
-class ThemeController extends GetxController {
+class ThemeController extends GetxController with WidgetsBindingObserver {
   final GetStorage _storage = GetStorage();
 
   final Rx<AppThemeMode> _themeMode = AppThemeMode.system.obs;
@@ -15,8 +15,15 @@ class ThemeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _loadThemeFromStorage();
     _updateThemeBasedOnMode();
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.onClose();
   }
 
   void _loadThemeFromStorage() {
@@ -122,6 +129,11 @@ class ThemeController extends GetxController {
     if (_themeMode.value == AppThemeMode.system) {
       _updateThemeBasedOnMode();
     }
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    handleSystemThemeChange();
   }
 
   ThemeMode get themeMode {

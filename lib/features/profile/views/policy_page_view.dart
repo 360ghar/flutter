@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/data/models/static_page_model.dart';
@@ -52,12 +53,30 @@ class _PolicyPageViewState extends State<PolicyPageView> {
 
     return MarkdownStyleSheet.fromTheme(theme).copyWith(
       p: theme.textTheme.bodyMedium?.copyWith(color: primaryTextColor, height: 1.6),
-      h1: theme.textTheme.headlineMedium?.copyWith(color: primaryTextColor, fontWeight: FontWeight.w700),
-      h2: theme.textTheme.headlineSmall?.copyWith(color: primaryTextColor, fontWeight: FontWeight.w700),
-      h3: theme.textTheme.titleLarge?.copyWith(color: primaryTextColor, fontWeight: FontWeight.w700),
-      h4: theme.textTheme.titleMedium?.copyWith(color: primaryTextColor, fontWeight: FontWeight.w600),
-      h5: theme.textTheme.titleSmall?.copyWith(color: primaryTextColor, fontWeight: FontWeight.w600),
-      h6: theme.textTheme.labelLarge?.copyWith(color: primaryTextColor, fontWeight: FontWeight.w600),
+      h1: theme.textTheme.headlineMedium?.copyWith(
+        color: primaryTextColor,
+        fontWeight: FontWeight.w700,
+      ),
+      h2: theme.textTheme.headlineSmall?.copyWith(
+        color: primaryTextColor,
+        fontWeight: FontWeight.w700,
+      ),
+      h3: theme.textTheme.titleLarge?.copyWith(
+        color: primaryTextColor,
+        fontWeight: FontWeight.w700,
+      ),
+      h4: theme.textTheme.titleMedium?.copyWith(
+        color: primaryTextColor,
+        fontWeight: FontWeight.w600,
+      ),
+      h5: theme.textTheme.titleSmall?.copyWith(
+        color: primaryTextColor,
+        fontWeight: FontWeight.w600,
+      ),
+      h6: theme.textTheme.labelLarge?.copyWith(
+        color: primaryTextColor,
+        fontWeight: FontWeight.w600,
+      ),
       blockquoteDecoration: BoxDecoration(
         color: AppColors.cardBackground,
         border: Border(left: BorderSide(color: AppColors.primaryYellow, width: 4)),
@@ -66,7 +85,11 @@ class _PolicyPageViewState extends State<PolicyPageView> {
       listBulletPadding: const EdgeInsets.only(right: 8),
       listIndent: 24,
       textAlign: WrapAlignment.start,
-      a: TextStyle(color: linkColor, decoration: TextDecoration.underline, fontWeight: FontWeight.w500),
+      a: TextStyle(
+        color: linkColor,
+        decoration: TextDecoration.underline,
+        fontWeight: FontWeight.w500,
+      ),
       code: TextStyle(
         backgroundColor: AppColors.inputBackground,
         color: primaryTextColor,
@@ -74,7 +97,10 @@ class _PolicyPageViewState extends State<PolicyPageView> {
         fontSize: (theme.textTheme.bodySmall?.fontSize ?? 13) * 0.95,
       ),
       tableBorder: TableBorder.all(color: AppColors.divider, width: 1),
-      tableHead: theme.textTheme.titleSmall?.copyWith(color: primaryTextColor, fontWeight: FontWeight.w600),
+      tableHead: theme.textTheme.titleSmall?.copyWith(
+        color: primaryTextColor,
+        fontWeight: FontWeight.w600,
+      ),
       tableBody: theme.textTheme.bodyMedium?.copyWith(color: secondaryTextColor),
       tableCellsPadding: const EdgeInsets.all(12),
     );
@@ -93,17 +119,15 @@ class _PolicyPageViewState extends State<PolicyPageView> {
     try {
       final bool launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open link')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('unable_to_open_link'.tr)));
       }
     } catch (e) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open link')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('unable_to_open_link'.tr)));
     }
   }
 
@@ -114,9 +138,13 @@ class _PolicyPageViewState extends State<PolicyPageView> {
     if (_isLoading) {
       body = Center(child: CircularProgressIndicator(color: AppColors.loadingIndicator));
     } else if (_error != null) {
-      body = Center(child: Text(_error!, style: TextStyle(color: AppColors.textSecondary)));
+      body = Center(
+        child: Text(_error!, style: TextStyle(color: AppColors.textSecondary)),
+      );
     } else if (_markdownContent == null || _markdownContent!.isEmpty) {
-      body = Center(child: Text('No content', style: TextStyle(color: AppColors.textSecondary)));
+      body = Center(
+        child: Text('no_content'.tr, style: TextStyle(color: AppColors.textSecondary)),
+      );
     } else {
       body = Markdown(
         data: _markdownContent!,

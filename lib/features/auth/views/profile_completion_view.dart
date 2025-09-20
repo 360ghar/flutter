@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_completion_controller.dart';
+import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/theme.dart';
 
 class ProfileCompletionView extends StatelessWidget {
@@ -23,9 +24,9 @@ class ProfileCompletionView extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       // Header
-                      const Text(
-                        'Complete Your Profile',
-                        style: TextStyle(
+                      Text(
+                        'complete_your_profile'.tr,
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                         ),
@@ -33,7 +34,7 @@ class ProfileCompletionView extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Help us personalize your property search experience',
+                        'personalize_experience_subtitle'.tr,
                         style: Theme.of(
                           context,
                         ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
@@ -66,16 +67,16 @@ class ProfileCompletionView extends StatelessWidget {
                       const SizedBox(height: 32),
 
                       // Navigation Buttons
-                      _buildNavigationButtons(controller),
+                      _buildNavigationButtons(context, controller),
 
                       const SizedBox(height: 16),
 
                       // Skip Button
                       TextButton(
                         onPressed: controller.skipToHome,
-                        child: const Text(
-                          'Skip for now',
-                          style: TextStyle(color: Colors.grey),
+                        child: Text(
+                          'skip_for_now'.tr,
+                          style: const TextStyle(color: Colors.grey),
                         ),
                       ),
                     ],
@@ -100,7 +101,7 @@ class ProfileCompletionView extends StatelessWidget {
     }
   }
 
-  Widget _buildNavigationButtons(ProfileCompletionController controller) {
+  Widget _buildNavigationButtons(BuildContext context, ProfileCompletionController controller) {
     return Row(
       children: [
         if (controller.currentStep.value > 0)
@@ -110,7 +111,7 @@ class ProfileCompletionView extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('Back'),
+              child: Text('back'.tr),
             ),
           ),
         if (controller.currentStep.value > 0) const SizedBox(width: 16),
@@ -124,27 +125,29 @@ class ProfileCompletionView extends StatelessWidget {
                       : controller.completeProfile),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: AppColors.primaryYellow,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: controller.isLoading.value
-                ? const SizedBox(
+                ? SizedBox(
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       strokeWidth: 2,
                     ),
                   )
                 : Text(
-                    controller.currentStep.value < 1 ? 'Next' : 'Complete',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    controller.currentStep.value < 1
+                        ? 'next'.tr
+                        : 'complete'.tr,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
                   ),
           ),
         ),
@@ -156,28 +159,28 @@ class ProfileCompletionView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Personal Information',
+        Text(
+          'personal_information'.tr,
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         // Full Name
         TextFormField(
           controller: controller.fullNameController,
-          decoration: const InputDecoration(
-            labelText: 'Full Name',
-            prefixIcon: Icon(Icons.person_outline),
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: 'full_name'.tr,
+            prefixIcon: const Icon(Icons.person_outline),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 16),
         // Email (for profile, not for auth)
         TextFormField(
           controller: controller.emailController,
-          decoration: const InputDecoration(
-            labelText: 'Email Address',
-            prefixIcon: Icon(Icons.email_outlined),
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: 'email_address'.tr,
+            prefixIcon: const Icon(Icons.email_outlined),
+            border: const OutlineInputBorder(),
           ),
           keyboardType: TextInputType.emailAddress,
         ),
@@ -185,11 +188,11 @@ class ProfileCompletionView extends StatelessWidget {
         // Date of Birth
         TextFormField(
           controller: controller.dateOfBirthController,
-          decoration: const InputDecoration(
-            labelText: 'Date of Birth',
-            prefixIcon: Icon(Icons.cake_outlined),
-            border: OutlineInputBorder(),
-            hintText: 'DD/MM/YYYY',
+          decoration: InputDecoration(
+            labelText: 'date_of_birth'.tr,
+            prefixIcon: const Icon(Icons.cake_outlined),
+            border: const OutlineInputBorder(),
+            hintText: 'dob_format_hint'.tr,
           ),
           readOnly: true,
           onTap: () => controller.selectDateOfBirth(),
@@ -270,19 +273,19 @@ class ProfileCompletionView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Text('What are you looking for?', style: theme.textTheme.titleLarge),
+        Text('what_are_you_looking_for'.tr, style: theme.textTheme.titleLarge),
         const SizedBox(height: 12),
         Row(
           children: [
             buildOption(
               purpose: 'rent',
               icon: Icons.key_outlined,
-              label: 'Rent',
+              label: 'rent'.tr,
             ),
             buildOption(
               purpose: 'buy',
               icon: Icons.home_outlined,
-              label: 'Buy',
+              label: 'buy'.tr,
             ),
           ],
         ),

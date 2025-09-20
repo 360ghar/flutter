@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/bindings/initial_binding.dart';
 import 'core/controllers/localization_controller.dart';
+import 'core/controllers/theme_controller.dart';
 import 'core/routes/app_pages.dart';
 import 'core/translations/app_translations.dart';
 import 'core/utils/debug_logger.dart';
@@ -65,7 +66,9 @@ void main() async {
 
       // Set up global error handlers
       FlutterError.onError = (FlutterErrorDetails details) {
-        DebugLogger.error('🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}');
+        DebugLogger.error(
+          '🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}',
+        );
         DebugLogger.error('🚨 [GLOBAL_ERROR] Stack trace: ${details.stack}');
 
         // One-time first null-check trap capture
@@ -79,7 +82,9 @@ void main() async {
     },
     (error, stack) {
       // One-time first null-check trap capture for unhandled async errors
-      if (error.toString().contains('Null check operator used on a null value')) {
+      if (error.toString().contains(
+        'Null check operator used on a null value',
+      )) {
         NullCheckTrap.capture(error, stack, source: 'zone');
       }
       DebugLogger.error('🚨 [GLOBAL_ERROR] Unhandled zone error', error, stack);
@@ -92,34 +97,44 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Let GetX bindings manage controllers and use Get's global updates
-    return GetMaterialApp(
-      title: 'app_name'.tr,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      // ThemeController triggers Get.changeThemeMode/forceAppUpdate, so explicit binding here is optional
-      themeMode: ThemeMode.system,
-      supportedLocales: LocalizationController.supportedLocales,
-      translations: AppTranslations(),
-      fallbackLocale: const Locale('en', 'US'),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      home: const Root(),
-      getPages: AppPages.routes,
-      initialBinding: InitialBinding(), // Correctly use bindings
-      debugShowCheckedModeBanner: false,
-      routingCallback: (routing) {
-        DebugLogger.debug('Routing to: ${routing?.current}');
+    final themeController = _ensureThemeController();
 
-        // Update dashboard tab when DashboardController is registered
-        if (Get.isRegistered<DashboardController>()) {
-          final currentRoute = routing?.current ?? '';
-          Get.find<DashboardController>().syncTabWithRoute(currentRoute);
-        }
-      },
+    // Rebuild GetMaterialApp whenever theme mode changes
+    return Obx(
+      () => GetMaterialApp(
+        title: 'app_name'.tr,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeController.themeMode,
+        supportedLocales: LocalizationController.supportedLocales,
+        translations: AppTranslations(),
+        fallbackLocale: const Locale('en', 'US'),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: const Root(),
+        getPages: AppPages.routes,
+        initialBinding: InitialBinding(), // Correctly use bindings
+        debugShowCheckedModeBanner: false,
+        routingCallback: (routing) {
+          DebugLogger.debug('Routing to: ${routing?.current}');
+
+          // Update dashboard tab when DashboardController is registered
+          if (Get.isRegistered<DashboardController>()) {
+            final currentRoute = routing?.current ?? '';
+            Get.find<DashboardController>().syncTabWithRoute(currentRoute);
+          }
+        },
+      ),
     );
+  }
+
+  ThemeController _ensureThemeController() {
+    if (!Get.isRegistered<ThemeController>()) {
+      Get.put<ThemeController>(ThemeController(), permanent: true);
+    }
+    return Get.find<ThemeController>();
   }
 }

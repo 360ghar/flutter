@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/app_colors.dart';
 import '../../../core/data/models/property_model.dart';
 import 'property_card.dart';
 
@@ -45,8 +46,19 @@ class _SwipeStackState extends State<SwipeStack>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (_properties.isEmpty) {
-      return const Center(child: Text('No more properties to show'));
+      return Center(
+        child: Text(
+          'No more properties to show',
+          style: TextStyle(
+            fontSize: 16,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      );
     }
 
     return GestureDetector(

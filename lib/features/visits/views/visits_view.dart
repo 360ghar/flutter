@@ -364,14 +364,14 @@ class VisitsView extends GetView<VisitsController> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Reschedule Visit'),
+        title: Text('reschedule_visit'.tr),
         content: StatefulBuilder(
           builder: (context, setState) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Reschedule your visit to ${visit.propertyTitle}',
+                  '${'reschedule_visit_to_prefix'.tr} ${visit.propertyTitle}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 20),
@@ -382,7 +382,7 @@ class VisitsView extends GetView<VisitsController> {
                     Icons.calendar_today,
                     color: AppColors.primaryYellow,
                   ),
-                  title: const Text('Date'),
+                  title: Text('date'.tr),
                   subtitle: Text(
                     '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                   ),
@@ -407,7 +407,7 @@ class VisitsView extends GetView<VisitsController> {
           },
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
           ElevatedButton(
             onPressed: () {
               final newDateTime = DateTime(
@@ -425,7 +425,7 @@ class VisitsView extends GetView<VisitsController> {
               backgroundColor: AppColors.primaryYellow,
               foregroundColor: AppColors.buttonText,
             ),
-            child: const Text('Reschedule'),
+            child: Text('reschedule'.tr),
           ),
         ],
       ),
@@ -439,20 +439,20 @@ class VisitsView extends GetView<VisitsController> {
         builder: (context, setState) {
           final canSubmit = reasonController.text.trim().isNotEmpty;
           return AlertDialog(
-            title: const Text('Cancel Visit'),
+            title: Text('cancel_visit'.tr),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Are you sure you want to cancel your visit to ${visit.propertyTitle}?',
+                  '${'cancel_visit_confirm_prefix'.tr} ${visit.propertyTitle}?',
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: reasonController,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    labelText: 'Reason (required)',
-                    hintText: 'e.g. Not available on this date',
+                    labelText: 'reason_required_label'.tr,
+                    hintText: 'reason_required_hint'.tr,
                     filled: true,
                     fillColor: AppColors.inputBackground,
                     border: OutlineInputBorder(
@@ -464,7 +464,7 @@ class VisitsView extends GetView<VisitsController> {
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Get.back(), child: const Text('No')),
+              TextButton(onPressed: () => Get.back(), child: Text('no'.tr)),
               ElevatedButton(
                 onPressed: canSubmit
                     ? () {
@@ -478,9 +478,10 @@ class VisitsView extends GetView<VisitsController> {
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.errorRed,
-                  foregroundColor: Colors.white,
+                  foregroundColor:
+                      Theme.of(context).colorScheme.onError,
                 ),
-                child: const Text('Yes, Cancel'),
+                child: Text('yes_cancel'.tr),
               ),
             ],
           );

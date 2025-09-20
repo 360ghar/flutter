@@ -10,6 +10,9 @@ class ProfileView extends GetView<AuthController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Obx(
       () => Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
@@ -50,7 +53,7 @@ class ProfileView extends GetView<AuthController> {
             child: Column(
               children: [
                 // Profile Header
-                _buildProfileHeader(user),
+                _buildProfileHeader(context, user),
                 const SizedBox(height: 30),
 
                 // Menu Items
@@ -97,7 +100,9 @@ class ProfileView extends GetView<AuthController> {
     );
   }
 
-  Widget _buildProfileHeader(dynamic user) {
+  Widget _buildProfileHeader(BuildContext context, dynamic user) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -124,7 +129,7 @@ class ProfileView extends GetView<AuthController> {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                           ),
                         ),
                       ),
@@ -246,7 +251,7 @@ class ProfileView extends GetView<AuthController> {
           ),
         ),
         child: Text(
-          'Logout',
+          'logout'.tr,
           style: TextStyle(
             color: AppColors.errorRed,
             fontSize: 16,
@@ -261,16 +266,16 @@ class ProfileView extends GetView<AuthController> {
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text('Logout', style: TextStyle(color: AppColors.textPrimary)),
+        title: Text('logout'.tr, style: TextStyle(color: AppColors.textPrimary)),
         content: Text(
-          'Are you sure you want to logout?',
+          'logout_confirm_message'.tr,
           style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
             child: Text(
-              'Cancel',
+              'cancel'.tr,
               style: TextStyle(color: AppColors.textSecondary),
             ),
           ),
@@ -279,7 +284,7 @@ class ProfileView extends GetView<AuthController> {
               Get.back();
               controller.signOut();
             },
-            child: Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+            child: Text('logout'.tr, style: TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),

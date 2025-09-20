@@ -12,6 +12,8 @@ class LocationSelector extends GetView<LocationController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final pageStateService = Get.find<PageStateService>();
 
     return Obx(() {
@@ -186,7 +188,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                 }
               },
               decoration: InputDecoration(
-                hintText: 'Search for a location',
+                hintText: 'search_location_hint'.tr,
                 hintStyle: TextStyle(color: AppColors.textSecondary),
                 prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
                 suffixIcon: Obx(() {
@@ -234,8 +236,8 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
               children: [
                 _buildQuickActionTile(
                   icon: Icons.my_location,
-                  title: 'Use Current Location',
-                  subtitle: 'Get location from GPS',
+                  title: 'use_current_location'.tr,
+                  subtitle: 'get_location_from_gps'.tr,
                   iconColor: AppColors.primaryYellow,
                   onTap: () => _useCurrentLocation(),
                 ),
@@ -436,7 +438,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         'Unable to get current location',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.errorRed,
-        colorText: Colors.white,
+        colorText: Theme.of(context).colorScheme.onError,
       );
     }
   }
@@ -470,7 +472,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         'Unable to select location',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.errorRed,
-        colorText: Colors.white,
+        colorText: Theme.of(context).colorScheme.onError,
       );
     }
   }

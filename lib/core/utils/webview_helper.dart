@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'debug_logger.dart';
 
@@ -131,7 +132,7 @@ class WebViewHelper {
                   DebugLogger.warning('Could not open URL', e);
                 }
               },
-              child: const Text('Open in New Tab'),
+              child: Text('open_in_new_tab'.tr),
             ),
         ],
       ),

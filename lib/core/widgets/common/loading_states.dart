@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:shimmer/shimmer.dart';
 
 class LoadingStates {
   // Skeleton loaders for different content types
   static Widget propertyCardSkeleton() {
+    final baseColor = AppColors.textSecondary.withValues(alpha: 0.2);
+    final highlightColor = AppColors.textSecondary.withValues(alpha: 0.05);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Shimmer.fromColors(
-        baseColor: Colors.grey[300]!,
-        highlightColor: Colors.grey[100]!,
+        baseColor: baseColor,
+        highlightColor: highlightColor,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -17,7 +21,7 @@ class LoadingStates {
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: baseColor,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(12),
                 ),
@@ -33,7 +37,7 @@ class LoadingStates {
                     height: 20,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: baseColor,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -43,7 +47,7 @@ class LoadingStates {
                     height: 16,
                     width: 200,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: baseColor,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -55,7 +59,7 @@ class LoadingStates {
                         height: 18,
                         width: 100,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: baseColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -65,7 +69,7 @@ class LoadingStates {
                         height: 16,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: baseColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -88,6 +92,9 @@ class LoadingStates {
   }
 
   static Widget propertyGridSkeleton({int itemCount = 6}) {
+    final baseColor = AppColors.textSecondary.withValues(alpha: 0.2);
+    final highlightColor = AppColors.textSecondary.withValues(alpha: 0.05);
+
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -98,8 +105,8 @@ class LoadingStates {
       ),
       itemCount: itemCount,
       itemBuilder: (context, index) => Shimmer.fromColors(
-        baseColor: Colors.grey[300]!,
-        highlightColor: Colors.grey[100]!,
+        baseColor: baseColor,
+        highlightColor: highlightColor,
         child: Card(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,7 +116,7 @@ class LoadingStates {
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: baseColor,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(12),
                     ),
@@ -127,7 +134,7 @@ class LoadingStates {
                         height: 16,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: baseColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -136,7 +143,7 @@ class LoadingStates {
                         height: 12,
                         width: 100,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: baseColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -145,7 +152,7 @@ class LoadingStates {
                         height: 14,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: baseColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -161,17 +168,20 @@ class LoadingStates {
   }
 
   static Widget swipeCardSkeleton() {
+    final baseColor = AppColors.textSecondary.withValues(alpha: 0.2);
+    final highlightColor = AppColors.textSecondary.withValues(alpha: 0.05);
+
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: Container(
         margin: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.grey[300],
+          color: baseColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: AppColors.shadowColor,
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -184,7 +194,7 @@ class LoadingStates {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: baseColor,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(20),
                   ),
@@ -201,7 +211,7 @@ class LoadingStates {
                       height: 24,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: baseColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -210,7 +220,7 @@ class LoadingStates {
                       height: 16,
                       width: 200,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: baseColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -221,7 +231,7 @@ class LoadingStates {
                           height: 20,
                           width: 120,
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: baseColor,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -230,7 +240,7 @@ class LoadingStates {
                           height: 18,
                           width: 100,
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: baseColor,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -246,16 +256,26 @@ class LoadingStates {
     );
   }
 
-  static Widget mapLoadingOverlay() {
+  static Widget mapLoadingOverlay(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      color: Colors.white.withValues(alpha: 0.8),
-      child: const Center(
+      color: AppColors.surface.withValues(alpha: 0.8),
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading properties...', style: TextStyle(fontSize: 16)),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading properties...',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ],
         ),
       ),
@@ -266,17 +286,19 @@ class LoadingStates {
     required int current,
     required int total,
     String? message,
+    BuildContext? context,
   }) {
+    final theme = context != null ? Theme.of(context) : null;
     final progress = total > 0 ? current / total : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppColors.shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -287,12 +309,18 @@ class LoadingStates {
         children: [
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.grey[300],
+            backgroundColor: AppColors.inputBackground,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              theme?.colorScheme.primary ?? AppColors.primaryYellow,
+            ),
           ),
           const SizedBox(height: 12),
           Text(
             message ?? 'Loading page $current of $total...',
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -301,26 +329,50 @@ class LoadingStates {
 
   // Pull-to-refresh indicator
   static Widget pullToRefreshIndicator(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: const Center(child: CircularProgressIndicator()),
+      child: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+        ),
+      ),
     );
   }
 
   // Load more indicator for infinite scroll
-  static Widget loadMoreIndicator() {
+  static Widget loadMoreIndicator({BuildContext? context}) {
+    final theme = context != null ? Theme.of(context) : null;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      child: const Center(child: CircularProgressIndicator()),
+      child: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(
+            theme?.colorScheme.primary ?? AppColors.primaryYellow,
+          ),
+        ),
+      ),
     );
   }
 
   // Inline loading for buttons
-  static Widget inlineLoading({double size = 16.0, Color? color}) {
+  static Widget inlineLoading({
+    double size = 16.0,
+    Color? color,
+    BuildContext? context,
+  }) {
+    final theme = context != null ? Theme.of(context) : null;
+    final indicatorColor = color ?? theme?.colorScheme.primary ?? AppColors.primaryYellow;
+
     return SizedBox(
       width: size,
       height: size,
-      child: CircularProgressIndicator(strokeWidth: 2, color: color),
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        valueColor: AlwaysStoppedAnimation<Color>(indicatorColor),
+      ),
     );
   }
 
@@ -330,14 +382,16 @@ class LoadingStates {
     double height = 16,
     BorderRadius? borderRadius,
   }) {
+    final baseColor = AppColors.textSecondary.withValues(alpha: 0.2);
+    final highlightColor = AppColors.textSecondary.withValues(alpha: 0.05);
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: Colors.grey[300],
+          color: baseColor,
           borderRadius: borderRadius ?? BorderRadius.circular(4),
         ),
       ),
@@ -345,19 +399,28 @@ class LoadingStates {
   }
 
   // Full screen loading overlay
-  static Widget fullScreenLoading({String? message}) {
+  static Widget fullScreenLoading({String? message, BuildContext? context}) {
+    final theme = context != null ? Theme.of(context) : null;
+
     return Container(
-      color: Colors.white.withValues(alpha: 0.9),
+      color: AppColors.surface.withValues(alpha: 0.9),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                theme?.colorScheme.primary ?? AppColors.primaryYellow,
+              ),
+            ),
             if (message != null) ...[
               const SizedBox(height: 16),
               Text(
                 message,
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.textPrimary,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -368,28 +431,52 @@ class LoadingStates {
   }
 
   // Search loading state
-  static Widget searchLoading() {
-    return const Center(
+  static Widget searchLoading({BuildContext? context}) {
+    final theme = context != null ? Theme.of(context) : null;
+
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text('Searching properties...', style: TextStyle(fontSize: 16)),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              theme?.colorScheme.primary ?? AppColors.primaryYellow,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Searching properties...',
+            style: TextStyle(
+              fontSize: 16,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ],
       ),
     );
   }
 
   // Location loading state
-  static Widget locationLoading() {
-    return const Center(
+  static Widget locationLoading({BuildContext? context}) {
+    final theme = context != null ? Theme.of(context) : null;
+
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text('Getting your location...', style: TextStyle(fontSize: 16)),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              theme?.colorScheme.primary ?? AppColors.primaryYellow,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Getting your location...',
+            style: TextStyle(
+              fontSize: 16,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ],
       ),
     );

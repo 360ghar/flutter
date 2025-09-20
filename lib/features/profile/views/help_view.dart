@@ -11,7 +11,7 @@ class HelpView extends StatelessWidget with ThemeMixin {
   @override
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
-      title: 'Help & Support',
+      title: 'help'.tr,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

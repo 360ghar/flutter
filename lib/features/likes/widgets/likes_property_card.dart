@@ -19,6 +19,9 @@ class LikesPropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Card(
       margin: const EdgeInsets.all(0),
       elevation: 2,
@@ -67,16 +70,15 @@ class LikesPropertyCard extends StatelessWidget {
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
-                                  color: AppColors.primaryYellow,
+                                  color: colorScheme.primary,
                                   strokeWidth: 2,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'Loading...',
-                                style: TextStyle(
+                                style: theme.textTheme.bodySmall?.copyWith(
                                   color: AppColors.textSecondary,
-                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -94,11 +96,11 @@ class LikesPropertyCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryYellow,
+                        color: colorScheme.primary,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
+                            color: AppColors.shadowColor,
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -106,10 +108,10 @@ class LikesPropertyCard extends StatelessWidget {
                       ),
                       child: Text(
                         property.propertyTypeString.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ),
@@ -119,7 +121,7 @@ class LikesPropertyCard extends StatelessWidget {
                     right: 8,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
+                        color: colorScheme.scrim.withValues(alpha: 0.5),
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
@@ -127,7 +129,7 @@ class LikesPropertyCard extends StatelessWidget {
                           isFavourite ? Icons.favorite : Icons.favorite_border,
                           color: isFavourite
                               ? AppColors.favoriteActive
-                              : Colors.white,
+                              : colorScheme.onPrimary,
                           size: 20,
                         ),
                         onPressed: onFavouriteToggle,

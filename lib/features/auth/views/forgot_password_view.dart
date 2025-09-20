@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/forgot_password_controller.dart';
-import '../../../core/utils/theme.dart';
 import '../../../core/routes/app_routes.dart';
 
 class ForgotPasswordView extends GetView<ForgotPasswordController> {
@@ -33,6 +32,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
   }
 
   Widget _buildPhoneStep(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Form(
       key: controller.formKey,
       child: SingleChildScrollView(
@@ -44,15 +46,15 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
             // Header
             Text(
               'reset_password'.tr,
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: theme.textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'reset_password_subtitle'.tr,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -96,7 +98,10 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
                   controller.errorMessage.value,
-                  style: const TextStyle(color: Colors.red),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               );
@@ -110,26 +115,25 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                     : controller.sendResetOtp,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppTheme.primaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: controller.isLoading.value
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                           strokeWidth: 2,
                         ),
                       )
                     : Text(
                         'send_otp'.tr,
-                        style: const TextStyle(
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
               ),
@@ -148,6 +152,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
   }
 
   Widget _buildOtpStep(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -164,7 +171,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
               Expanded(
                 child: Text(
                   'verify_otp'.tr,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: theme.textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -174,9 +181,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           const SizedBox(height: 8),
           Text(
             'enter_otp_subtitle'.tr,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -206,7 +213,10 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
               padding: const EdgeInsets.only(bottom: 16),
               child: Text(
                 controller.errorMessage.value,
-                style: const TextStyle(color: Colors.red),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
             );
@@ -220,26 +230,25 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                   : controller.verifyResetOtp,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: AppTheme.primaryColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: controller.isLoading.value
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         strokeWidth: 2,
                       ),
                     )
                   : Text(
                       'verify_otp'.tr,
-                      style: const TextStyle(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                       ),
                     ),
             ),
@@ -265,6 +274,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
   }
 
   Widget _buildNewPasswordStep(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -281,7 +293,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
               Expanded(
                 child: Text(
                   'set_new_password'.tr,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: theme.textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -291,9 +303,9 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           const SizedBox(height: 8),
           Text(
             'choose_new_password'.tr,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -351,7 +363,10 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
               padding: const EdgeInsets.only(bottom: 16),
               child: Text(
                 controller.errorMessage.value,
-                style: const TextStyle(color: Colors.red),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
             );
@@ -365,26 +380,25 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                   : controller.updatePassword,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: AppTheme.primaryColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: controller.isLoading.value
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         strokeWidth: 2,
                       ),
                     )
                   : Text(
                       'update_password'.tr,
-                      style: const TextStyle(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                       ),
                     ),
             ),

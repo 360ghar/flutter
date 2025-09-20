@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/splash_controller.dart';
+import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/theme.dart';
 
 class SplashView extends GetView<SplashController> {
@@ -99,7 +100,7 @@ class SplashView extends GetView<SplashController> {
                               ? TextButton.icon(
                                   onPressed: controller.previousStep,
                                   icon: const Icon(Icons.arrow_back),
-                                  label: const Text('Back'),
+                                  label: Text('back'.tr),
                                   style: TextButton.styleFrom(
                                     foregroundColor: AppTheme.textGray,
                                   ),
@@ -110,8 +111,9 @@ class SplashView extends GetView<SplashController> {
                           ElevatedButton(
                             onPressed: controller.nextStep,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryYellow,
-                              foregroundColor: Colors.white,
+                              backgroundColor: AppColors.primaryYellow,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 32,
                                 vertical: 16,
@@ -122,8 +124,8 @@ class SplashView extends GetView<SplashController> {
                             ),
                             child: Text(
                               controller.currentStep.value < 3
-                                  ? 'Next'
-                                  : 'Get Started',
+                                  ? 'next'.tr
+                                  : 'get_started'.tr,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -166,7 +168,7 @@ class SplashView extends GetView<SplashController> {
               Text(
                 'Experience 360° Virtual Tours',
                 style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  color: AppTheme.textDark,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                   height: 1.2,
                 ),

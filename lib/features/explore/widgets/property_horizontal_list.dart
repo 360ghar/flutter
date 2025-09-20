@@ -93,6 +93,9 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Obx(() {
       final properties = widget.controller.properties;
       if (properties.isEmpty) {

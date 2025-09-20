@@ -16,6 +16,7 @@ class AppTranslations extends Translations {
       'ok': 'OK',
       'yes': 'Yes',
       'no': 'No',
+      'unable_to_open_link': 'Unable to open link',
       'search': 'Search',
       'filter': 'Filter',
       'clear': 'Clear',
@@ -149,6 +150,10 @@ class AppTranslations extends Translations {
       'language_changed': 'Language Changed',
       'language_changed_message': 'Language has been changed successfully',
 
+      // Theme
+      'app_theme': 'App Theme',
+      'app_theme_desc': 'Choose light, dark, or system theme',
+
       // Explore/Map
       'explore_properties': 'Explore',
       'map_view': 'Map View',
@@ -212,6 +217,11 @@ class AppTranslations extends Translations {
       'confirm_password_required': 'Please confirm your password',
       'passwords_dont_match': 'Passwords do not match',
       'remember_me': 'Remember me',
+      'agree_terms_prefix': 'I agree to the',
+      'terms_and_conditions': 'Terms and Conditions',
+      'agree_terms_suffix': '',
+      'terms_consent_required':
+          'Please agree to the Terms and Conditions to continue',
 
       // Authentication Messages
       'sign_in_subtitle': 'Sign in with your phone number',
@@ -255,6 +265,173 @@ class AppTranslations extends Translations {
       'my_location': 'My Location',
       'light': 'Light',
       'dark': 'Dark',
+      // Common & UI
+      'my_likes': 'My Likes',
+      'get_started': 'Get Started',
+      'info': 'Info',
+      'sign_out': 'Sign Out',
+      'clear_search': 'Clear Search',
+      'try_different_search': 'Try Different Search',
+      'change_filters': 'Change Filters',
+      'refresh': 'Refresh',
+      'open_settings': 'Open Settings',
+      'grant_permission': 'Grant Permission',
+      'open_in_new_tab': 'Open in New Tab',
+      'no_content': 'No content',
+
+      // Location Search
+      'search_location': 'Search Location',
+      'search_location_hint': 'Search for a location',
+      'search_city_or_area_hint': 'Search for a city or area...',
+      'use_current_location': 'Use Current Location',
+      'tap_to_get_current_location': 'Tap to get your current location',
+      'no_locations_found': 'No locations found',
+      'try_search_different_location': 'Try searching for a different location',
+      'popular_cities': 'Popular Cities',
+      'get_location_from_gps': 'Get location from GPS',
+
+      // Explore
+      'no_properties_found': 'No Properties Found',
+      'no_properties_found_area_message':
+          'No properties found in this area.\nTry adjusting your search location or filters.',
+      'adjust_filters': 'Adjust Filters',
+      'loading_more_properties': 'Loading more properties...',
+      'map_render_failed_message': 'Map failed to render. Please try again.',
+
+      // Error states
+      'connection_error_title': 'Connection Error',
+      'connection_error_message':
+          'Please check your internet connection and try again.',
+      'no_results_found': 'No Results Found',
+      'no_results_message_prefix':
+          'We couldn\'t find any properties matching',
+      'location_access_needed': 'Location Access Needed',
+      'location_access_needed_message':
+          'We need location access to show properties near you.',
+      'no_more_properties': 'No More Properties',
+      'no_more_properties_message':
+          'You\'ve seen all properties matching your criteria.',
+      'profile_load_error': 'Profile Load Error',
+      'profile_load_error_message':
+          'Unable to load your profile. Please try again or sign out to start fresh.',
+      'connection_problem': 'Connection Problem',
+      'authentication_required': 'Authentication Required',
+      'invalid_input': 'Invalid Input',
+      'not_found': 'Not Found',
+      'server_error': 'Server Error',
+      'something_went_wrong': 'Something went wrong',
+
+      // App Update
+      'update_available': 'Update Available',
+      'mandatory_update_required': 'Mandatory Update Required',
+      'current_version': 'Current version',
+      'latest_version': 'Latest version',
+      'minimum_supported': 'Minimum supported',
+      'update_now': 'Update Now',
+      'not_now': 'Not Now',
+      'update': 'Update',
+      'mandatory_update_desc':
+          'Please update the app to continue using all features.',
+      'optional_update_desc':
+          'A new update is available with the latest improvements.',
+
+      // Property details
+      'get_directions': 'Get Directions',
+      'special_requirements_label': 'Special requirements (optional)',
+      'special_requirements_hint':
+          'Any access instructions or preferences...?',
+      'visit_scheduled': 'Visit Scheduled',
+      'visit_scheduled_message_prefix': 'Your visit to',
+      'visit_scheduled_message_infix': 'is scheduled for',
+
+      // Visits
+      'reschedule_visit': 'Reschedule Visit',
+      'reschedule': 'Reschedule',
+      'cancel_visit': 'Cancel Visit',
+      'date': 'Date',
+      'reason_required_label': 'Reason (required)',
+      'reason_required_hint': 'e.g. Not available on this date',
+      'yes_cancel': 'Yes, Cancel',
+      'cancel_visit_confirm_prefix':
+          'Are you sure you want to cancel your visit to',
+      'reschedule_visit_to_prefix': 'Reschedule your visit to',
+
+      // Profile completion
+      'complete': 'Complete',
+      'personal_information': 'Personal Information',
+      'full_name': 'Full Name',
+      'email_address': 'Email Address',
+      'date_of_birth': 'Date of Birth',
+      'dob_format_hint': 'DD/MM/YYYY',
+
+      // Filter widget
+      'filter_properties': 'Filter Properties',
+      'purpose': 'Purpose',
+      'buy': 'Buy',
+      'property_price': 'Property price',
+      'price_per_month': 'Price per month',
+      'max_bedrooms': 'Max Bedrooms',
+      'any': 'Any',
+      'filters_applied': 'Filters Applied',
+      'filters_applied_message': 'Properties filtered based on your preferences',
+      'all': 'All',
+      'loft': 'Loft',
+      // Amenities
+      'amenity_gym': 'Gym',
+      'amenity_pool': 'Pool',
+      'amenity_parking': 'Parking',
+      'amenity_balcony': 'Balcony',
+      'amenity_garden': 'Garden',
+      'amenity_security': 'Security',
+      'amenity_elevator': 'Elevator',
+      'amenity_terrace': 'Terrace',
+      'amenity_club_house': 'Club House',
+      'amenity_kids_play_area': 'Kids Play Area',
+      'amenity_power_backup': 'Power Backup',
+      'amenity_water_supply': 'Water Supply',
+
+      // Likes & counts
+      'liked_properties': 'Liked Properties',
+      'passed_properties': 'Passed Properties',
+      'no_liked_properties': 'No Liked Properties',
+      'no_passed_properties': 'No Passed Properties',
+      'property': 'property',
+      'properties': 'properties',
+      'results': 'results',
+      'no_properties_match_your_search':
+          'No properties match your search',
+      'feature_coming_soon_move_to_liked':
+          'Feature coming soon: Move to liked properties',
+      'send_feedback': 'Send Feedback',
+      'sending_feedback': 'Sending feedback...',
+      'network_error': 'Network Error',
+      'validation_error': 'Validation Error',
+      'logout_confirm_message': 'Are you sure you want to logout?',
+      // Search bar hints
+      'search_locations_hint': 'Search locations...',
+      'search_in_likes_hint': 'Search in your likes...',
+      'search_properties_hint_simple': 'Search properties...',
+      'complete_your_profile': 'Complete Your Profile',
+      'personalize_experience_subtitle':
+          'Help us personalize your property search experience',
+      'skip_for_now': 'Skip for now',
+      'what_are_you_looking_for': 'What are you looking for?',
+      // Tour
+      'error_loading_tour': 'Error Loading Tour',
+      'check_internet_connection': 'Please check your internet connection',
+      'virtual_tour_title': '360° Virtual Tour',
+      'fullscreen_mode': 'Fullscreen Mode',
+      'rotate_device_better_experience': 'Rotate your device for better experience',
+      'share_tour': 'Share Tour',
+      'tour_link_copied': 'Tour link copied to clipboard',
+      'loading_virtual_tour': 'Loading 360° Tour...',
+      // Edit profile
+      'additional_information': 'Additional Information',
+      'name_required': 'Name is required',
+      'valid_email_required': 'Please enter a valid email',
+      'select_your_date_of_birth': 'Select your date of birth',
+      'saving': 'Saving...',
+      'save_changes': 'Save Changes',
     },
     'hi_IN': {
       // General
@@ -276,6 +453,7 @@ class AppTranslations extends Translations {
       'back': 'वापस',
       'next': 'अगला',
       'done': 'पूर्ण',
+      'unable_to_open_link': 'लिंक खोलने में असमर्थ',
 
       // Navigation
       'profile': 'प्रोफाइल',
@@ -468,6 +646,11 @@ class AppTranslations extends Translations {
       'confirm_password_required': 'कृपया अपने पासवर्ड की पुष्टि करें',
       'passwords_dont_match': 'पासवर्ड मेल नहीं खाते',
       'remember_me': 'मुझे याद रखें',
+      'agree_terms_prefix': 'मैं',
+      'terms_and_conditions': 'नियम और शर्तों',
+      'agree_terms_suffix': 'से सहमत हूँ',
+      'terms_consent_required':
+          'आगे बढ़ने के लिए कृपया नियम और शर्तों से सहमत हों',
 
       // Authentication Messages
       'sign_in_subtitle': 'अपने फोन नंबर से साइन इन करें',
@@ -507,10 +690,175 @@ class AppTranslations extends Translations {
       'password_updated_successfully': 'पासवर्ड सफलतापूर्वक अपडेट हो गया',
       'failed_to_update_password': 'पासवर्ड अपडेट करने में विफल',
 
+      // Theme
+      'app_theme': 'एप थीम',
+      'app_theme_desc': 'लाइट, डार्क या सिस्टम थीम चुनें',
+
       'passed': 'पास',
       'my_location': 'मेरा स्थान',
       'light': 'हल्का',
       'dark': 'गहरा',
+      // Common & UI
+      'my_likes': 'मेरे लाइक्स',
+      'get_started': 'शुरू करें',
+      'info': 'जानकारी',
+      'sign_out': 'साइन आउट',
+      'clear_search': 'खोज साफ करें',
+      'try_different_search': 'अन्य खोज आज़माएँ',
+      'change_filters': 'फ़िल्टर बदलें',
+      'refresh': 'रिफ्रेश',
+      'open_settings': 'सेटिंग्स खोलें',
+      'grant_permission': 'अनुमति दें',
+      'open_in_new_tab': 'नए टैब में खोलें',
+      'no_content': 'कोई सामग्री नहीं',
+
+      // Location Search
+      'search_location': 'स्थान खोजें',
+      'search_location_hint': 'किसी स्थान की खोज करें',
+      'search_city_or_area_hint': 'किसी शहर या क्षेत्र की खोज करें...',
+      'use_current_location': 'वर्तमान स्थान का उपयोग करें',
+      'tap_to_get_current_location': 'अपना वर्तमान स्थान प्राप्त करने के लिए टैप करें',
+      'no_locations_found': 'कोई स्थान नहीं मिला',
+      'try_search_different_location': 'किसी अन्य स्थान की खोज करें',
+      'popular_cities': 'लोकप्रिय शहर',
+      'get_location_from_gps': 'जीपीएस से स्थान प्राप्त करें',
+
+      // Explore
+      'no_properties_found': 'कोई संपत्ति नहीं मिली',
+      'no_properties_found_area_message':
+          'इस क्षेत्र में कोई संपत्ति नहीं मिली।\nअपने खोज स्थान या फ़िल्टर समायोजित करने का प्रयास करें।',
+      'adjust_filters': 'फ़िल्टर समायोजित करें',
+      'loading_more_properties': 'अधिक संपत्तियाँ लोड हो रही हैं...',
+      'map_render_failed_message': 'मानचित्र रेंडर करने में विफल। कृपया पुनः प्रयास करें।',
+
+      // Error states
+      'connection_error_title': 'कनेक्शन त्रुटि',
+      'connection_error_message':
+          'कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।',
+      'no_results_found': 'कोई परिणाम नहीं मिला',
+      'no_results_message_prefix': 'हम इस खोज से मेल खाने वाली कोई संपत्ति नहीं ढूंढ सके',
+      'location_access_needed': 'स्थान पहुंच आवश्यक',
+      'location_access_needed_message':
+          'आपके आस-पास की संपत्तियाँ दिखाने के लिए हमें स्थान की आवश्यकता है।',
+      'no_more_properties': 'और संपत्तियाँ नहीं',
+      'no_more_properties_message': 'आपने अपनी आवश्यकतानुसार सभी संपत्तियाँ देख ली हैं।',
+      'profile_load_error': 'प्रोफ़ाइल लोड त्रुटि',
+      'profile_load_error_message':
+          'हम आपकी प्रोफ़ाइल लोड नहीं कर सके। कृपया पुनः प्रयास करें या साइन आउट करें।',
+      'connection_problem': 'कनेक्शन समस्या',
+      'authentication_required': 'प्रमाणीकरण आवश्यक',
+      'invalid_input': 'अमान्य इनपुट',
+      'not_found': 'नहीं मिला',
+      'server_error': 'सर्वर त्रुटि',
+      'something_went_wrong': 'कुछ गलत हो गया',
+
+      // App Update
+      'update_available': 'अपडेट उपलब्ध',
+      'mandatory_update_required': 'अनिवार्य अपडेट आवश्यक',
+      'current_version': 'वर्तमान संस्करण',
+      'latest_version': 'नवीनतम संस्करण',
+      'minimum_supported': 'न्यूनतम समर्थित',
+      'update_now': 'अभी अपडेट करें',
+      'not_now': 'अभी नहीं',
+      'update': 'अपडेट',
+      'mandatory_update_desc':
+          'सभी सुविधाओं का उपयोग जारी रखने के लिए कृपया ऐप अपडेट करें।',
+      'optional_update_desc': 'नया अपडेट उपलब्ध है जिसमें नवीनतम सुधार शामिल हैं।',
+
+      // Property details
+      'get_directions': 'दिशा-निर्देश प्राप्त करें',
+      'special_requirements_label': 'विशेष आवश्यकताएँ (वैकल्पिक)',
+      'special_requirements_hint': 'कोई पहुँच निर्देश या प्राथमिकताएँ...?',
+      'visit_scheduled': 'दौरा निर्धारित',
+      'visit_scheduled_message_prefix': 'आपका दौरा',
+      'visit_scheduled_message_infix': 'के लिए निर्धारित है',
+
+      // Visits
+      'reschedule_visit': 'दौरा पुनर्निर्धारित करें',
+      'reschedule': 'पुनर्निर्धारित करें',
+      'cancel_visit': 'दौरा रद्द करें',
+      'date': 'तारीख',
+      'reason_required_label': 'कारण (अनिवार्य)',
+      'reason_required_hint': 'जैसे: इस तारीख को उपलब्ध नहीं',
+      'yes_cancel': 'हाँ, रद्द करें',
+      'cancel_visit_confirm_prefix': 'क्या आप वाकई अपना दौरा रद्द करना चाहते हैं',
+      'reschedule_visit_to_prefix': 'अपने दौरे को पुनर्निर्धारित करें',
+
+      // Profile completion
+      'complete': 'पूर्ण करें',
+      'personal_information': 'व्यक्तिगत जानकारी',
+      'full_name': 'पूरा नाम',
+      'email_address': 'ईमेल पता',
+      'date_of_birth': 'जन्म तिथि',
+      'dob_format_hint': 'DD/MM/YYYY',
+
+      // Filter widget
+      'filter_properties': 'संपत्तियाँ फ़िल्टर करें',
+      'purpose': 'उद्देश्य',
+      'buy': 'खरीद',
+      'property_price': 'संपत्ति की कीमत',
+      'price_per_month': 'मासिक कीमत',
+      'max_bedrooms': 'अधिकतम बेडरूम',
+      'any': 'कोई भी',
+      'filters_applied': 'फ़िल्टर लागू किए गए',
+      'filters_applied_message': 'आपकी प्राथमिकताओं के आधार पर संपत्तियाँ फ़िल्टर की गईं',
+      'all': 'सभी',
+      'loft': 'लॉफ्ट',
+      // Amenities
+      'amenity_gym': 'जिम',
+      'amenity_pool': 'स्विमिंग पूल',
+      'amenity_parking': 'पार्किंग',
+      'amenity_balcony': 'बालकनी',
+      'amenity_garden': 'बगीचा',
+      'amenity_security': 'सुरक्षा',
+      'amenity_elevator': 'लिफ्ट',
+      'amenity_terrace': 'छत',
+      'amenity_club_house': 'क्लब हाउस',
+      'amenity_kids_play_area': 'बच्चों का खेलने का क्षेत्र',
+      'amenity_power_backup': 'पावर बैकअप',
+      'amenity_water_supply': 'जल आपूर्ति',
+
+      // Likes & counts
+      'liked_properties': 'पसंदीदा संपत्तियाँ',
+      'passed_properties': 'पास की गई संपत्तियाँ',
+      'no_liked_properties': 'कोई पसंदीदा संपत्तियाँ नहीं',
+      'no_passed_properties': 'कोई पास की गई संपत्तियाँ नहीं',
+      'property': 'संपत्ति',
+      'properties': 'संपत्तियाँ',
+      'results': 'परिणाम',
+      'no_properties_match_your_search': 'आपकी खोज से मेल खाने वाली कोई संपत्ति नहीं',
+      'feature_coming_soon_move_to_liked':
+          'जल्द आ रहा है: पसंदीदा में स्थानांतरित करें',
+      'send_feedback': 'प्रतिक्रिया भेजें',
+      'sending_feedback': 'प्रतिक्रिया भेजी जा रही है...',
+      'network_error': 'नेटवर्क त्रुटि',
+      'validation_error': 'मान्यकरण त्रुटि',
+      'logout_confirm_message': 'क्या आप वाकई लॉगआउट करना चाहते हैं?',
+      // Search bar hints
+      'search_locations_hint': 'स्थान खोजें...',
+      'search_in_likes_hint': 'आपके लाइक्स में खोजें...',
+      'search_properties_hint_simple': 'संपत्तियाँ खोजें...',
+      'complete_your_profile': 'अपनी प्रोफ़ाइल पूर्ण करें',
+      'personalize_experience_subtitle':
+          'हमें आपकी संपत्ति खोज अनुभव को वैयक्तिकृत करने में मदद करें',
+      'skip_for_now': 'अभी के लिए छोड़ें',
+      'what_are_you_looking_for': 'आप क्या खोज रहे हैं?',
+      // Tour
+      'error_loading_tour': 'टूर लोड करने में त्रुटि',
+      'check_internet_connection': 'कृपया अपना इंटरनेट कनेक्शन जांचें',
+      'virtual_tour_title': '360° वर्चुअल टूर',
+      'fullscreen_mode': 'पूर्ण-स्क्रीन मोड',
+      'rotate_device_better_experience': 'बेहतर अनुभव के लिए अपने डिवाइस को घुमाएँ',
+      'share_tour': 'टूर साझा करें',
+      'tour_link_copied': 'टूर लिंक क्लिपबोर्ड पर कॉपी किया गया',
+      'loading_virtual_tour': '360° टूर लोड हो रहा है...',
+      // Edit profile
+      'additional_information': 'अतिरिक्त जानकारी',
+      'name_required': 'नाम आवश्यक है',
+      'valid_email_required': 'कृपया एक वैध ईमेल दर्ज करें',
+      'select_your_date_of_birth': 'अपनी जन्म तिथि चुनें',
+      'saving': 'सहेजा जा रहा है...',
+      'save_changes': 'परिवर्तन सहेजें',
     },
   };
 }

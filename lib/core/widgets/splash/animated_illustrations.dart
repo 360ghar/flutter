@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:ghar360/core/utils/theme.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 // 360 Tour Illustration with rotating animation
 class Tour360Illustration extends StatelessWidget {
@@ -18,6 +18,8 @@ class Tour360Illustration extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([rotationAnimation, scaleAnimation]),
       builder: (context, child) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
         return Transform.scale(
           scale: scaleAnimation.value,
           child: Stack(
@@ -32,7 +34,7 @@ class Tour360Illustration extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppTheme.primaryYellow.withValues(alpha: 0.3),
+                      color: AppColors.primaryYellow.withValues(alpha: 0.3),
                       width: 3,
                     ),
                   ),
@@ -49,7 +51,7 @@ class Tour360Illustration extends StatelessWidget {
                             height: 12,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppTheme.accentBlue.withValues(alpha: 0.7),
+                              color: AppColors.accentBlue.withValues(alpha: 0.7),
                             ),
                           ),
                         );
@@ -64,19 +66,19 @@ class Tour360Illustration extends StatelessWidget {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.primaryYellow,
+                  color: AppColors.primaryYellow,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryYellow.withValues(alpha: 0.3),
+                      color: AppColors.primaryYellow.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.home_rounded,
                   size: 60,
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                 ),
               ),
               // 360° text
@@ -88,13 +90,13 @@ class Tour360Illustration extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.accentBlue,
+                    color: AppColors.accentBlue,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
+                  child: Text(
                     '360°',
-                    style: TextStyle(
-                      color: Colors.white,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -125,6 +127,8 @@ class VirtualToursIllustration extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([slideAnimation, scaleAnimation]),
       builder: (context, child) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
         return Transform.scale(
           scale: scaleAnimation.value,
           child: Stack(
@@ -135,11 +139,11 @@ class VirtualToursIllustration extends StatelessWidget {
                 width: 160,
                 height: 280,
                 decoration: BoxDecoration(
-                  color: AppTheme.textDark,
+                  color: colorScheme.onSurface.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: AppColors.shadowColor,
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -155,7 +159,7 @@ class VirtualToursIllustration extends StatelessWidget {
                       bottom: 20,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppTheme.backgroundWhite,
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Stack(
@@ -168,15 +172,15 @@ class VirtualToursIllustration extends StatelessWidget {
                               height: 120,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: AppTheme.accentBlue.withValues(
+                                  color: AppColors.accentBlue.withValues(
                                     alpha: 0.3,
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.apartment,
                                   size: 40,
-                                  color: AppTheme.accentBlue,
+                                  color: AppColors.accentBlue,
                                 ),
                               ),
                             ),
@@ -189,11 +193,11 @@ class VirtualToursIllustration extends StatelessWidget {
                                 height: 50,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppTheme.primaryYellow,
+                                  color: AppColors.primaryYellow,
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.play_arrow,
-                                  color: Colors.white,
+                                  color: colorScheme.onPrimary,
                                   size: 30,
                                 ),
                               ),
@@ -222,7 +226,7 @@ class VirtualToursIllustration extends StatelessWidget {
                       ),
                   child: const _FloatingIcon(
                     icon: Icons.access_time,
-                    color: AppTheme.accentGreen,
+                    color: AppColors.accentGreen,
                     delay: 0,
                   ),
                 ),
@@ -243,7 +247,7 @@ class VirtualToursIllustration extends StatelessWidget {
                       ),
                   child: const _FloatingIcon(
                     icon: Icons.location_on,
-                    color: AppTheme.accentOrange,
+                    color: AppColors.accentOrange,
                     delay: 500,
                   ),
                 ),
@@ -264,7 +268,7 @@ class VirtualToursIllustration extends StatelessWidget {
                       ),
                   child: const _FloatingIcon(
                     icon: Icons.home_work,
-                    color: AppTheme.accentBlue,
+                    color: AppColors.accentBlue,
                     delay: 1000,
                   ),
                 ),
@@ -293,6 +297,8 @@ class VerifiedListingIllustration extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([scaleAnimation, fadeAnimation]),
       builder: (context, child) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
         return Transform.scale(
           scale: scaleAnimation.value,
           child: Opacity(
@@ -305,11 +311,11 @@ class VerifiedListingIllustration extends StatelessWidget {
                   width: 220,
                   height: 280,
                   decoration: BoxDecoration(
-                    color: AppTheme.backgroundWhite,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: AppColors.shadowColor,
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -322,14 +328,14 @@ class VerifiedListingIllustration extends StatelessWidget {
                       Container(
                         height: 100,
                         decoration: BoxDecoration(
-                          color: AppTheme.backgroundGray,
+                          color: AppColors.background,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.image,
                             size: 30,
-                            color: AppTheme.textGray,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ),
@@ -345,12 +351,12 @@ class VerifiedListingIllustration extends StatelessWidget {
                                 height: 20,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppTheme.successGreen,
+                                  color: AppColors.successGreen,
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.check,
                                   size: 14,
-                                  color: Colors.white,
+                                  color: colorScheme.onPrimary,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -358,7 +364,7 @@ class VerifiedListingIllustration extends StatelessWidget {
                                 child: Container(
                                   height: 8,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.backgroundGray,
+                                    color: AppColors.background,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -379,18 +385,18 @@ class VerifiedListingIllustration extends StatelessWidget {
                     height: 60,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.successGreen,
+                      color: AppColors.successGreen,
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.successGreen.withValues(alpha: 0.3),
+                          color: AppColors.successGreen.withValues(alpha: 0.3),
                           blurRadius: 15,
                           spreadRadius: 2,
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.verified,
-                      color: Colors.white,
+                      color: colorScheme.onPrimary,
                       size: 30,
                     ),
                   ),
@@ -431,7 +437,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.successGreen.withValues(alpha: 0.1),
+                  color: AppColors.successGreen.withValues(alpha: 0.1),
                 ),
                 child: Stack(
                   alignment: Alignment.center,
@@ -442,19 +448,20 @@ class LowBrokerageIllustration extends StatelessWidget {
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppTheme.successGreen,
+                        color: AppColors.successGreen,
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.successGreen.withValues(alpha: 0.3),
+                            color:
+                                AppColors.successGreen.withValues(alpha: 0.3),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.attach_money,
                         size: 60,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
                     // Percentage badge
@@ -467,16 +474,16 @@ class LowBrokerageIllustration extends StatelessWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.accentOrange,
+                          color: AppColors.accentOrange,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Text(
+                        child: Text(
                           'LOW %',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                         ),
                       ),
                     ),
@@ -514,9 +521,13 @@ class LowBrokerageIllustration extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.accentBlue.withValues(alpha: 0.8),
+                      color: AppColors.accentBlue.withValues(alpha: 0.8),
                     ),
-                    child: Icon(icons[index], size: 20, color: Colors.white),
+                    child: Icon(
+                      icons[index],
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
                 );
               }),
@@ -595,7 +606,11 @@ class _FloatingIconState extends State<_FloatingIcon>
                 ),
               ],
             ),
-            child: Icon(widget.icon, color: Colors.white, size: 24),
+            child: Icon(
+              widget.icon,
+              color: Theme.of(context).colorScheme.onPrimary,
+              size: 24,
+            ),
           ),
         );
       },

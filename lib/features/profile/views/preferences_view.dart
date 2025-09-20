@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/controllers/theme_controller.dart';
 import '../../../core/mixins/theme_mixin.dart';
-import '../../../core/utils/theme.dart';
+import '../../../core/utils/app_colors.dart';
 import '../controllers/preferences_controller.dart';
 
 class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
@@ -53,7 +53,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 child: ElevatedButton(
                   onPressed: controller.savePreferences,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: AppColors.primaryYellow,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -61,11 +61,11 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                   ),
                   child: Text(
                     'save_preferences'.tr,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                   ),
                 ),
               ),
@@ -138,7 +138,9 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: AppTheme.primaryColor,
+            activeColor: Theme.of(Get.context!).colorScheme.primary,
+            activeTrackColor:
+                Theme.of(Get.context!).colorScheme.primary.withValues(alpha: 0.3),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
@@ -180,7 +182,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryColor),
+                border: Border.all(color: AppColors.primaryYellow),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -189,14 +191,14 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                   Text(
                     controller.getCurrentLanguage(),
                     style: TextStyle(
-                      color: AppTheme.primaryColor,
+                      color: AppColors.primaryYellow,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Icon(
                     Icons.keyboard_arrow_down,
-                    color: AppTheme.primaryColor,
+                    color: AppColors.primaryYellow,
                     size: 20,
                   ),
                 ],
@@ -239,7 +241,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
         Get.back();
       },
       trailing: controller.getCurrentLanguage() == languageName
-          ? Icon(Icons.check, color: AppTheme.primaryColor)
+          ? Icon(Icons.check, color: AppColors.primaryYellow)
           : null,
     );
   }
@@ -278,7 +280,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryColor),
+                border: Border.all(color: AppColors.primaryYellow),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -287,14 +289,14 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                   Text(
                     controller.currentThemeName,
                     style: TextStyle(
-                      color: AppTheme.primaryColor,
+                      color: AppColors.primaryYellow,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Icon(
                     Icons.keyboard_arrow_down,
-                    color: AppTheme.primaryColor,
+                    color: AppColors.primaryYellow,
                     size: 20,
                   ),
                 ],
@@ -333,14 +335,14 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
 
   Widget _buildThemeOption(String themeName, AppThemeMode mode, IconData icon) {
     return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor),
+      leading: Icon(icon, color: AppColors.primaryYellow),
       title: Text(themeName),
       onTap: () {
         controller.updateTheme(mode);
         Get.back();
       },
       trailing: controller.currentThemeMode == mode
-          ? Icon(Icons.check, color: AppTheme.primaryColor)
+          ? Icon(Icons.check, color: AppColors.primaryYellow)
           : null,
     );
   }

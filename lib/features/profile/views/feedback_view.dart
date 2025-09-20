@@ -12,7 +12,7 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
   @override
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
-      title: 'Send Feedback',
+      title: 'send_feedback'.tr,
       body: Form(
         key: controller.formKey,
         child: SingleChildScrollView(
@@ -137,8 +137,8 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              const Text(
-                                'Sending feedback...',
+                              Text(
+                                'sending_feedback'.tr,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -146,9 +146,9 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
                               ),
                             ],
                           )
-                        : const Text(
-                            'Send feedback',
-                            style: TextStyle(
+                        : Text(
+                            'send_feedback'.tr,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),

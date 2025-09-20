@@ -2,12 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../controllers/signup_controller.dart';
-import '../../../core/utils/theme.dart';
 import '../../../core/routes/app_routes.dart';
 
 class SignUpView extends GetView<SignUpController> {
   const SignUpView({super.key});
+
+  static final Uri _termsUri = Uri.parse('https://360ghar.com/policies');
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,24 @@ class SignUpView extends GetView<SignUpController> {
     );
   }
 
+  Future<void> _openTerms() async {
+    try {
+      final launched = await launchUrl(
+        _termsUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        Get.snackbar('error'.tr, 'unable_to_open_link'.tr);
+      }
+    } catch (_) {
+      Get.snackbar('error'.tr, 'unable_to_open_link'.tr);
+    }
+  }
+
   Widget _buildSignUpForm(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Form(
       key: controller.formKey,
       child: SingleChildScrollView(
@@ -37,15 +56,15 @@ class SignUpView extends GetView<SignUpController> {
             // Header
             Text(
               'create_account'.tr,
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: theme.textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'signup_subtitle'.tr,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -140,6 +159,88 @@ class SignUpView extends GetView<SignUpController> {
                 },
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Terms and Conditions Checkbox
+            Obx(
+              () => FormField<bool>(
+                initialValue: controller.isTermsAccepted.value,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) {
+                  if (value != true) {
+                    return 'terms_consent_required'.tr;
+                  }
+                  return null;
+                },
+                builder: (state) {
+                  final isChecked = controller.isTermsAccepted.value;
+                  final prefixText = 'agree_terms_prefix'.tr;
+                  final suffixText = 'agree_terms_suffix'.tr;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ListTileTheme(
+                        data: const ListTileThemeData(horizontalTitleGap: 12),
+                        child: CheckboxListTile(
+                          value: isChecked,
+                          onChanged: (value) {
+                            final accepted = value ?? false;
+                            controller.isTermsAccepted.value = accepted;
+                            state.didChange(accepted);
+                            state.validate();
+                          },
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            runAlignment: WrapAlignment.center,
+                            spacing: 4,
+                            runSpacing: 2,
+                            children: [
+                              Text(
+                                prefixText,
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                              TextButton(
+                                onPressed: () => _openTerms(),
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: const Size(0, 0),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'terms_and_conditions'.tr,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                              if (suffixText.isNotEmpty)
+                                Text(
+                                  suffixText,
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (state.hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12, top: 4),
+                          child: Text(
+                            state.errorText ?? '',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.error,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
             const SizedBox(height: 24),
 
             // Error Message
@@ -151,7 +252,10 @@ class SignUpView extends GetView<SignUpController> {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
                   controller.errorMessage.value,
-                  style: const TextStyle(color: Colors.red),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               );
@@ -165,26 +269,25 @@ class SignUpView extends GetView<SignUpController> {
                     : controller.signUp,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppTheme.primaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: controller.isLoading.value
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                           strokeWidth: 2,
                         ),
                       )
                     : Text(
                         'create_account'.tr,
-                        style: const TextStyle(
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
               ),
@@ -203,6 +306,9 @@ class SignUpView extends GetView<SignUpController> {
   }
 
   Widget _buildOtpForm(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -219,7 +325,7 @@ class SignUpView extends GetView<SignUpController> {
               Expanded(
                 child: Text(
                   'verify_phone_number'.tr,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: theme.textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -229,9 +335,9 @@ class SignUpView extends GetView<SignUpController> {
           const SizedBox(height: 8),
           Text(
             'otp_verification_subtitle'.tr,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -261,7 +367,10 @@ class SignUpView extends GetView<SignUpController> {
               padding: const EdgeInsets.only(bottom: 16),
               child: Text(
                 controller.errorMessage.value,
-                style: const TextStyle(color: Colors.red),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
             );
@@ -275,26 +384,25 @@ class SignUpView extends GetView<SignUpController> {
                   : controller.verifyOtp,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: AppTheme.primaryColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: controller.isLoading.value
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         strokeWidth: 2,
                       ),
                     )
                   : Text(
                       'verify_otp'.tr,
-                      style: const TextStyle(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                       ),
                     ),
             ),

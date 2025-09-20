@@ -29,7 +29,9 @@ class AppUpdateDialog extends StatelessWidget {
       onWillPop: () async => !isMandatory,
       child: AlertDialog(
         title: Text(
-          isMandatory ? 'Mandatory Update Required' : 'Update Available',
+          isMandatory
+              ? 'mandatory_update_required'.tr
+              : 'update_available'.tr,
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -37,14 +39,14 @@ class AppUpdateDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Current version: $currentVersion',
+                '${'current_version'.tr}: $currentVersion',
                 style: theme.textTheme.bodySmall,
               ),
               if (latestVersionLabel != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'Latest version: $latestVersionLabel',
+                    '${'latest_version'.tr}: $latestVersionLabel',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -54,7 +56,7 @@ class AppUpdateDialog extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'Minimum supported: $minSupportedVersion',
+                    '${'minimum_supported'.tr}: $minSupportedVersion',
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
@@ -68,8 +70,8 @@ class AppUpdateDialog extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 12),
                   child: Text(
                     isMandatory
-                        ? 'Please update the app to continue using all features.'
-                        : 'A new update is available with the latest improvements.',
+                        ? 'mandatory_update_desc'.tr
+                        : 'optional_update_desc'.tr,
                     style: theme.textTheme.bodyMedium,
                   ),
                 ),
@@ -86,7 +88,7 @@ class AppUpdateDialog extends StatelessWidget {
       return [
         TextButton(
           onPressed: () => Get.back(result: AppUpdateAction.update),
-          child: const Text('Update Now'),
+          child: Text('update_now'.tr),
         ),
       ];
     }
@@ -94,11 +96,11 @@ class AppUpdateDialog extends StatelessWidget {
     return [
       TextButton(
         onPressed: () => Get.back(result: AppUpdateAction.remindLater),
-        child: const Text('Not Now'),
+        child: Text('not_now'.tr),
       ),
       ElevatedButton(
         onPressed: () => Get.back(result: AppUpdateAction.update),
-        child: const Text('Update'),
+        child: Text('update'.tr),
       ),
     ];
   }

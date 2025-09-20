@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/utils/webview_helper.dart';
 import '../../../core/data/models/property_model.dart';
-import '../../../core/utils/theme.dart';
+import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/debug_logger.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'dart:math' as math;
@@ -33,12 +33,15 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppColors.shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -47,7 +50,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          color: Colors.white,
+          color: colorScheme.surface,
           child: SingleChildScrollView(
             physics: _interactiveChildActive
                 ? const NeverScrollableScrollPhysics()
@@ -78,16 +81,19 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                               imageUrl: widget.property.mainImage,
                               fit: BoxFit.cover,
                               placeholder: Container(
-                                color: Colors.grey[300],
-                                child: const Center(
+                                color: AppColors.inputBackground,
+                                child: Center(
                                   child: CircularProgressIndicator(
-                                    color: AppTheme.primaryYellow,
+                                    color: colorScheme.primary,
                                   ),
                                 ),
                               ),
                               errorWidget: Container(
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.error),
+                                color: AppColors.surface,
+                                child: Icon(
+                                  Icons.error,
+                                  color: colorScheme.error,
+                                ),
                               ),
                             ),
                           ),
@@ -120,9 +126,9 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                 color: Colors.black.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.share,
-                                color: Colors.white,
+                                color: colorScheme.onPrimary,
                                 size: 20,
                               ),
                             ),
@@ -144,20 +150,20 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
-                                  children: const [
+                                  children: [
                                     Icon(
                                       Icons.threesixty,
-                                      color: Colors.white,
+                                      color: colorScheme.onPrimary,
                                       size: 16,
                                     ),
-                                    SizedBox(width: 4),
+                                    const SizedBox(width: 4),
                                     Text(
                                       'Virtual tour',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      style: theme.textTheme.labelMedium
+                                          ?.copyWith(
+                                            color: colorScheme.onPrimary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -181,33 +187,36 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                     children: [
                                       RichText(
                                         text: TextSpan(
+                                          style: theme.textTheme.headlineSmall
+                                              ?.copyWith(
+                                                color: colorScheme.onPrimary,
+                                                fontSize: 28,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                           children: [
                                             TextSpan(
                                               text: widget
                                                   .property
                                                   .formattedPrice,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 28,
-                                                fontWeight: FontWeight.bold,
-                                              ),
                                             ),
                                             if (widget.property.purpose ==
                                                 PropertyPurpose.rent)
-                                              const TextSpan(
+                                              TextSpan(
                                                 text: ' /mo',
                                                 style: TextStyle(
-                                                  color: Colors.white70,
+                                                  color: colorScheme.onPrimary
+                                                      .withValues(alpha: 0.7),
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             if (widget.property.purpose ==
                                                 PropertyPurpose.shortStay)
-                                              const TextSpan(
+                                              TextSpan(
                                                 text: ' /day',
                                                 style: TextStyle(
-                                                  color: Colors.white70,
+                                                  color: colorScheme.onPrimary
+                                                      .withValues(alpha: 0.7),
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,
                                                 ),
@@ -222,18 +231,18 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppTheme.primaryYellow,
+                                          color: colorScheme.primary,
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
                                         ),
                                         child: Text(
                                           widget.property.purposeString,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                                color: colorScheme.onPrimary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                         ),
                                       ),
                                     ],
@@ -243,9 +252,8 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                   // Title
                                   Text(
                                     widget.property.title,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -254,19 +262,22 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                   // Location
                                   Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.location_on,
-                                        color: Colors.white70,
+                                        color: colorScheme.onPrimary.withValues(
+                                          alpha: 0.7,
+                                        ),
                                         size: 16,
                                       ),
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
                                           widget.property.addressDisplay,
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 14,
-                                          ),
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                color: colorScheme.onPrimary
+                                                    .withValues(alpha: 0.7),
+                                              ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -286,9 +297,8 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
-                                          ),
+                                          color: colorScheme.onPrimary
+                                              .withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -302,11 +312,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                                     .property
                                                     .bedroomBathroomText
                                               : 'Property',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          style: theme.textTheme.labelMedium
+                                              ?.copyWith(
+                                                color: colorScheme.onPrimary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                         ),
                                       ),
 
@@ -318,20 +328,19 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                             vertical: 6,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.2,
-                                            ),
+                                            color: colorScheme.onPrimary
+                                                .withValues(alpha: 0.2),
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
                                           ),
                                           child: Text(
                                             widget.property.areaText,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: theme.textTheme.labelMedium
+                                                ?.copyWith(
+                                                  color: colorScheme.onPrimary,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ),
 
@@ -343,20 +352,19 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                             vertical: 6,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.2,
-                                            ),
+                                            color: colorScheme.onPrimary
+                                                .withValues(alpha: 0.2),
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
                                           ),
                                           child: Text(
                                             widget.property.floorText,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: theme.textTheme.labelMedium
+                                                ?.copyWith(
+                                                  color: colorScheme.onPrimary,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ),
                                       // Price per sqft if available
@@ -367,20 +375,19 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                             vertical: 6,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.2,
-                                            ),
+                                            color: colorScheme.onPrimary
+                                                .withValues(alpha: 0.2),
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
                                           ),
                                           child: Text(
                                             '₹${widget.property.pricePerSqft!.toStringAsFixed(0)}/sqft',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: theme.textTheme.labelMedium
+                                                ?.copyWith(
+                                                  color: colorScheme.onPrimary,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ),
                                       // Parking if available
@@ -391,20 +398,19 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                             vertical: 6,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.2,
-                                            ),
+                                            color: colorScheme.onPrimary
+                                                .withValues(alpha: 0.2),
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
                                           ),
                                           child: Text(
                                             '${widget.property.parkingSpaces} Parking',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: theme.textTheme.labelMedium
+                                                ?.copyWith(
+                                                  color: colorScheme.onPrimary,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ),
                                     ],
@@ -415,36 +421,40 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                     children: [
                                       Row(
                                         children: [
-                                          const Icon(
+                                          Icon(
                                             Icons.visibility,
-                                            color: Colors.white70,
+                                            color: colorScheme.onPrimary
+                                                .withValues(alpha: 0.7),
                                             size: 14,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             '${widget.property.viewCount}',
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 12,
-                                            ),
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: colorScheme.onPrimary
+                                                      .withValues(alpha: 0.7),
+                                                ),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(width: 12),
                                       Row(
                                         children: [
-                                          const Icon(
+                                          Icon(
                                             Icons.favorite,
-                                            color: Colors.white70,
+                                            color: colorScheme.onPrimary
+                                                .withValues(alpha: 0.7),
                                             size: 14,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             '${widget.property.likeCount}',
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 12,
-                                            ),
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: colorScheme.onPrimary
+                                                      .withValues(alpha: 0.7),
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -460,7 +470,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                         vertical: 8,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(
+                                        color: colorScheme.surface.withValues(
                                           alpha: 0.9,
                                         ),
                                         borderRadius: BorderRadius.circular(20),
@@ -470,17 +480,17 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                         children: [
                                           Icon(
                                             Icons.keyboard_arrow_down,
-                                            color: Colors.black87,
+                                            color: colorScheme.onSurface,
                                             size: 16,
                                           ),
                                           const SizedBox(width: 4),
-                                          const Text(
+                                          Text(
                                             'Scroll for more details',
-                                            style: TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: theme.textTheme.labelMedium
+                                                ?.copyWith(
+                                                  color: colorScheme.onSurface,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -498,7 +508,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
 
                 // Additional Details Section (Scrollable content)
                 Container(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -514,16 +524,15 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.accentBlue.withValues(
+                                color: AppColors.accentBlue.withValues(
                                   alpha: 0.1,
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 widget.property.propertyTypeString,
-                                style: TextStyle(
-                                  color: AppTheme.accentBlue,
-                                  fontSize: 12,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: AppColors.accentBlue,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -535,16 +544,15 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.accentGreen.withValues(
+                                color: AppColors.accentGreen.withValues(
                                   alpha: 0.1,
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 widget.property.statusString,
-                                style: TextStyle(
-                                  color: AppTheme.accentGreen,
-                                  fontSize: 12,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: AppColors.accentGreen,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -554,12 +562,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                         const SizedBox(height: 20),
 
                         // Description
-                        const Text(
+                        Text(
                           'Description',
-                          style: TextStyle(
-                            fontSize: 18,
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -567,9 +574,8 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           widget.property.description?.isNotEmpty == true
                               ? widget.property.description!
                               : 'Beautiful ${widget.property.propertyTypeString} in ${widget.property.city ?? "prime location"}. ${widget.property.areaSqft != null ? "Spacious ${widget.property.areaSqft!.toInt()} sq ft area with modern amenities." : "Perfect for your needs."}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
                             height: 1.5,
                           ),
                         ),
@@ -578,12 +584,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                         // Highlights (features/tags)
                         if ((widget.property.features?.isNotEmpty ?? false) ||
                             (widget.property.tags?.isNotEmpty ?? false)) ...[
-                          const Text(
+                          Text(
                             'Highlights',
-                            style: TextStyle(
-                              fontSize: 18,
+                            style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              color: colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -606,23 +611,23 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppTheme.accentOrange
+                                          color: AppColors.accentOrange
                                               .withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(
                                             20,
                                           ),
                                           border: Border.all(
-                                            color: AppTheme.accentOrange
+                                            color: AppColors.accentOrange
                                                 .withValues(alpha: 0.3),
                                           ),
                                         ),
                                         child: Text(
                                           t,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: AppTheme.accentOrange,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          style: theme.textTheme.labelMedium
+                                              ?.copyWith(
+                                                color: AppColors.accentOrange,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                         ),
                                       ),
                                     )
@@ -633,12 +638,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
 
                         // Amenities section
                         if (widget.property.hasAmenities) ...[
-                          const Text(
+                          Text(
                             'Amenities',
-                            style: TextStyle(
-                              fontSize: 18,
+                            style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              color: colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -654,23 +658,23 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.accentBlue.withValues(
+                                      color: AppColors.accentBlue.withValues(
                                         alpha: 0.1,
                                       ),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: AppTheme.accentBlue.withValues(
+                                        color: AppColors.accentBlue.withValues(
                                           alpha: 0.3,
                                         ),
                                       ),
                                     ),
                                     child: Text(
                                       amenity,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppTheme.accentBlue,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style: theme.textTheme.labelMedium
+                                          ?.copyWith(
+                                            color: AppColors.accentBlue,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                     ),
                                   ),
                                 )
@@ -681,9 +685,8 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
                                 '+${widget.property.amenitiesList.length - 6} more amenities',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.accentBlue,
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: AppColors.accentBlue,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -702,15 +705,14 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                               Icon(
                                 Icons.threesixty,
                                 size: 20,
-                                color: AppTheme.primaryYellow,
+                                color: AppColors.primaryYellow,
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 '360° Virtual Tour',
-                                style: TextStyle(
-                                  fontSize: 16,
+                                style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: AppTheme.textDark,
+                                  color: colorScheme.onSurface,
                                 ),
                               ),
                               const Spacer(),
@@ -727,12 +729,12 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryYellow.withValues(
+                                    color: AppColors.primaryYellow.withValues(
                                       alpha: 0.1,
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: AppTheme.primaryYellow.withValues(
+                                      color: AppColors.primaryYellow.withValues(
                                         alpha: 0.3,
                                       ),
                                     ),
@@ -743,16 +745,17 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                       Icon(
                                         Icons.fullscreen,
                                         size: 14,
-                                        color: AppTheme.primaryYellow,
+                                        color: AppColors.primaryYellow,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         'Fullscreen',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: AppTheme.primaryYellow,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: theme.textTheme.labelMedium
+                                            ?.copyWith(
+                                              fontSize: 12,
+                                              color: AppColors.primaryYellow,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                     ],
                                   ),
@@ -780,13 +783,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppTheme.textLight.withValues(
-                                    alpha: 0.2,
-                                  ),
+                                  color: AppColors.border,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.cardShadow,
+                                    color: AppColors.shadowColor,
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                     spreadRadius: 1,
@@ -808,82 +809,98 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
+                            color: colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Property Details',
-                                style: TextStyle(
-                                  fontSize: 16,
+                                style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  color: colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 12),
                               _buildDetailRow(
+                                context,
                                 'Property Type',
                                 widget.property.propertyTypeString,
                               ),
                               _buildDetailRow(
+                                context,
                                 'Purpose',
                                 widget.property.purposeString,
                               ),
                               _buildDetailRow(
+                                context,
                                 'Status',
                                 widget.property.statusString,
                               ),
                               if (widget.property.bedrooms != null)
                                 _buildDetailRow(
+                                  context,
                                   'Bedrooms',
                                   '${widget.property.bedrooms}',
                                 ),
                               if (widget.property.bathrooms != null)
                                 _buildDetailRow(
+                                  context,
                                   'Bathrooms',
                                   '${widget.property.bathrooms}',
                                 ),
                               if (widget.property.areaSqft != null)
                                 _buildDetailRow(
+                                  context,
                                   'Area',
                                   widget.property.areaText,
                                 ),
                               if (widget.property.floorText.isNotEmpty)
                                 _buildDetailRow(
+                                  context,
                                   'Floor',
                                   widget.property.floorText,
                                 ),
                               if (widget.property.ageText.isNotEmpty)
-                                _buildDetailRow('Age', widget.property.ageText),
+                                _buildDetailRow(
+                                  context,
+                                  'Age',
+                                  widget.property.ageText,
+                                ),
                               if (widget.property.parkingSpaces != null)
                                 _buildDetailRow(
+                                  context,
                                   'Parking',
                                   '${widget.property.parkingSpaces} spaces',
                                 ),
                               if (widget.property.balconies != null)
                                 _buildDetailRow(
+                                  context,
                                   'Balconies',
                                   '${widget.property.balconies}',
                                 ),
                               if (widget.property.distanceKm != null)
                                 _buildDetailRow(
+                                  context,
                                   'Distance',
                                   widget.property.distanceText,
                                 ),
                               _buildDetailRow(
+                                context,
                                 'Location',
                                 widget.property.addressDisplay,
                               ),
                               if (widget.property.hasOwner)
                                 _buildDetailRow(
+                                  context,
                                   'Owner',
                                   widget.property.ownerDisplayName,
                                 ),
                               if (widget.property.builderName?.isNotEmpty ==
                                   true)
                                 _buildDetailRow(
+                                  context,
                                   'Builder',
                                   widget.property.builderName!,
                                 ),
@@ -894,6 +911,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
 
                         // Swipe Instructions (conditional)
                         ..._buildSwipeInstructions(
+                          context,
                           widget.showSwipeInstructions,
                         ),
                       ],
@@ -908,29 +926,30 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
     );
   }
 
-  List<Widget> _buildSwipeInstructions(bool show) {
+  List<Widget> _buildSwipeInstructions(BuildContext context, bool show) {
     if (!show) return const [];
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return [
       Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.primaryYellow.withValues(alpha: 0.1),
+          color: AppColors.primaryYellow.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppTheme.primaryYellow.withValues(alpha: 0.3),
+            color: AppColors.primaryYellow.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
-          children: const [
-            Icon(Icons.swipe, color: AppTheme.primaryYellow, size: 24),
-            SizedBox(width: 12),
+          children: [
+            const Icon(Icons.swipe, color: AppColors.primaryYellow, size: 24),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'Swipe right to like • Swipe left to pass',
-                style: TextStyle(
-                  fontSize: 14,
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ),
@@ -941,19 +960,25 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
     ];
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
             ),
           ),
         ],
@@ -1138,20 +1163,30 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
 
     if (_properties.isEmpty) {
       DebugLogger.warning('PropertySwipeStack: No properties to display');
-      return const Center(
+      final theme = Theme.of(context);
+      final colorScheme = theme.colorScheme;
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.home_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(
+              Icons.home_outlined,
+              size: 64,
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
             Text(
               'No more properties to show',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Check back later for new listings!',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
             ),
           ],
         ),
@@ -1304,7 +1339,7 @@ class SparklesPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppTheme.primaryYellow.withValues(alpha: 0.8)
+      ..color = AppColors.primaryYellow.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
 
     // Create sparkles at various positions
@@ -1332,7 +1367,7 @@ class SparklesPainter extends CustomPainter {
             8.0 * sparkleAnimation * (1 - sparkleAnimation * 0.5);
         final sparkleOpacity = (1 - sparkleAnimation).clamp(0.0, 1.0);
 
-        paint.color = AppTheme.primaryYellow.withValues(
+        paint.color = AppColors.primaryYellow.withValues(
           alpha: sparkleOpacity * 0.8,
         );
 
@@ -1474,8 +1509,10 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
   @override
   Widget build(BuildContext context) {
     if (hasError || controller == null) {
+      final theme = Theme.of(context);
+      final colorScheme = theme.colorScheme;
       return Container(
-        color: AppTheme.backgroundGray,
+        color: colorScheme.surfaceContainerHighest,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1483,23 +1520,21 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
               Icon(
                 Icons.public_off,
                 size: 48,
-                color: AppTheme.textGray.withValues(alpha: 0.7),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               const SizedBox(height: 16),
               Text(
                 '360° Tour Unavailable',
-                style: TextStyle(
-                  fontSize: 16,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.textGray,
+                  color: colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Virtual tour could not be loaded',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.textGray.withValues(alpha: 0.7),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -1513,19 +1548,24 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
         WebViewWidget(controller: controller!),
         if (isLoading)
           Container(
-            color: AppTheme.backgroundGray,
+            color:
+                Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(
-                    color: AppTheme.primaryYellow,
+                    color: AppColors.primaryYellow,
                     strokeWidth: 2,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Loading 360° Tour...',
-                    style: TextStyle(fontSize: 12, color: AppTheme.textGray),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
                   ),
                 ],
               ),

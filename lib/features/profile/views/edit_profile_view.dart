@@ -11,7 +11,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
   @override
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
-      title: 'Edit Profile',
+      title: 'edit_profile'.tr,
       body: Obx(() {
         if (controller.isLoading.value) {
           return Center(
@@ -98,16 +98,16 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      buildSectionTitle('Personal Information'),
+                      buildSectionTitle('personal_information'.tr),
                       const SizedBox(height: 20),
 
                       _buildTextField(
                         controller: controller.nameController,
-                        label: 'Full Name',
+                        label: 'full_name'.tr,
                         icon: Icons.person_outline,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Name is required';
+                            return 'name_required'.tr;
                           }
                           return null;
                         },
@@ -116,14 +116,14 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
 
                       _buildTextField(
                         controller: controller.emailController,
-                        label: 'Email Address',
+                        label: 'email_address'.tr,
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value != null &&
                               value.isNotEmpty &&
                               !GetUtils.isEmail(value)) {
-                            return 'Please enter a valid email';
+                            return 'valid_email_required'.tr;
                           }
                           return null;
                         },
@@ -132,7 +132,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
 
                       _buildTextField(
                         controller: controller.locationController,
-                        label: 'Location',
+                        label: 'location'.tr,
                         icon: Icons.location_on_outlined,
                       ),
                     ],
@@ -146,7 +146,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      buildSectionTitle('Additional Information'),
+                      buildSectionTitle('additional_information'.tr),
                       const SizedBox(height: 20),
 
                       GestureDetector(
@@ -175,7 +175,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                                         ? controller.formatDate(
                                             controller.dateOfBirth.value!,
                                           )
-                                        : 'Select your date of birth',
+                                        : 'select_your_date_of_birth'.tr,
                                     style: TextStyle(
                                       fontSize: 16,
                                       color:
@@ -219,7 +219,9 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                       ),
                     ),
                     child: Text(
-                      controller.isLoading.value ? 'Saving...' : 'Save Changes',
+                      controller.isLoading.value
+                          ? 'saving'.tr
+                          : 'save_changes'.tr,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

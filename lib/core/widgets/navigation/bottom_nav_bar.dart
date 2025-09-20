@@ -32,14 +32,26 @@ class CustomBottomNavigationBar extends StatelessWidget {
         elevation: 8,
         selectedFontSize: 12,
         unselectedFontSize: 12,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explore'),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Discover'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Likes'),
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Visits',
+            icon: const Icon(Icons.person),
+            label: 'profile'.tr,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.explore),
+            label: 'explore_properties'.tr,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.home),
+            label: 'discover'.tr,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.favorite),
+            label: 'liked'.tr,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.calendar_today),
+            label: 'visits'.tr,
           ),
         ],
       ),

@@ -55,7 +55,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   late String _propertyType;
   late List<String> _selectedAmenities;
 
-  final List<String> purposes = ['Buy', 'Rent'];
+  final List<String> purposes = ['buy', 'rent'];
 
   final List<String> propertyTypes = [
     'All',
@@ -95,7 +95,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
   void _initializeFilters() {
     final currentFilter = pageStateService.getCurrentPageState().filters;
-    _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'all');
+    _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'buy');
     // Clamp values to ensure they're within the slider range
     final maxRange = _getPriceMax(currentFilter.purpose ?? 'buy');
     _minPrice =
@@ -115,31 +115,27 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   String _mapPurpose(String purpose) {
     switch (purpose) {
       case 'buy':
-        return 'Buy';
-      case 'rent':
-        return 'Rent';
-      default:
-        return 'Buy';
-    }
-  }
-
-  String _mapPurposeToApi(String purpose) {
-    switch (purpose) {
-      case 'Buy':
         return 'buy';
-      case 'Rent':
+      case 'rent':
         return 'rent';
       default:
         return 'buy';
     }
   }
 
+  String _mapPurposeToApi(String purpose) {
+    return purpose; // already 'buy' or 'rent'
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -181,7 +177,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Filter Properties',
+            'filter_properties'.tr,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -202,7 +198,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Purpose',
+          'purpose'.tr,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -244,7 +240,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   ),
                 ),
                 child: Text(
-                  purpose,
+                  purpose.tr,
                   style: TextStyle(
                     fontSize: 16,
                     color: isSelected
@@ -262,9 +258,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   Widget _buildPriceFilter() {
-    final priceLabel = _selectedPurpose == 'Rent'
-        ? 'Price per month'
-        : 'Property price';
+    final priceLabel = _selectedPurpose == 'rent'
+        ? 'price_per_month'.tr
+        : 'property_price'.tr;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -335,7 +331,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Bedrooms',
+          'bedrooms'.tr,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -350,7 +346,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Min Bedrooms',
+                    'min_bedrooms'.tr,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.normal,
@@ -374,7 +370,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         .map(
                           (bedroom) => DropdownMenuItem(
                             value: bedroom,
-                            child: Text(bedroom == 0 ? 'Any' : '$bedroom+'),
+                            child: Text(
+                                bedroom == 0 ? 'any'.tr : '$bedroom+'),
                           ),
                         )
                         .toList(),
@@ -396,7 +393,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Max Bedrooms',
+                    'max_bedrooms'.tr,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.normal,
@@ -448,7 +445,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Property Type',
+          'property_type'.tr,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -484,7 +481,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   ),
                 ),
                 child: Text(
-                  type,
+                  _displayPropertyType(type),
                   style: TextStyle(
                     fontSize: 14,
                     color: isSelected
@@ -508,7 +505,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Amenities',
+          'amenities'.tr,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -558,7 +555,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                       ),
                     if (isSelected) const SizedBox(width: 6),
                     Text(
-                      amenity,
+                      _displayAmenity(amenity),
                       style: TextStyle(
                         fontSize: 14,
                         color: isSelected
@@ -598,7 +595,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 ),
               ),
               child: Text(
-                'Clear All',
+                'clear_filters'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   color: AppColors.primaryYellow,
@@ -620,7 +617,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 ),
               ),
               child: Text(
-                'Apply Filters',
+                'apply_filters'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   color: AppColors.surface,
@@ -636,7 +633,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
   void _clearFilters() {
     setState(() {
-      _selectedPurpose = 'Buy';
+      _selectedPurpose = 'buy';
       _minPrice = 500000.0;
       _maxPrice = 150000000.0;
       _minBedrooms = 0;
@@ -672,13 +669,50 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
     // Show confirmation
     Get.snackbar(
-      'Filters Applied',
-      'Properties filtered based on your preferences',
+      'filters_applied'.tr,
+      'filters_applied_message'.tr,
       snackPosition: SnackPosition.TOP,
       backgroundColor: AppColors.primaryYellow,
       colorText: AppColors.surface,
       duration: const Duration(seconds: 2),
     );
+  }
+
+  String _displayPropertyType(String type) {
+    final key = type.toLowerCase();
+    switch (key) {
+      case 'all':
+        return 'all'.tr;
+      case 'apartment':
+      case 'house':
+      case 'condo':
+      case 'penthouse':
+      case 'villa':
+      case 'studio':
+      case 'loft':
+        return key.tr;
+      default:
+        return type;
+    }
+  }
+
+  String _displayAmenity(String amenity) {
+    final map = {
+      'Gym': 'amenity_gym',
+      'Pool': 'amenity_pool',
+      'Parking': 'amenity_parking',
+      'Balcony': 'amenity_balcony',
+      'Garden': 'amenity_garden',
+      'Security': 'amenity_security',
+      'Elevator': 'amenity_elevator',
+      'Terrace': 'amenity_terrace',
+      'Club House': 'amenity_club_house',
+      'Kids Play Area': 'amenity_kids_play_area',
+      'Power Backup': 'amenity_power_backup',
+      'Water Supply': 'amenity_water_supply',
+    };
+    final key = map[amenity];
+    return key != null ? key.tr : amenity;
   }
 
   // Helper methods for price ranges based on purpose

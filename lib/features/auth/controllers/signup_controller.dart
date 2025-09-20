@@ -1,11 +1,13 @@
 // lib/features/auth/controllers/signup_controller.dart
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../data/auth_repository.dart';
-import '../../../core/utils/error_handler.dart';
+
 import '../../../core/utils/debug_logger.dart';
+import '../../../core/utils/error_handler.dart';
+import '../data/auth_repository.dart';
 
 class SignUpController extends GetxController {
   final AuthRepository _authRepository = Get.find();
@@ -19,12 +21,14 @@ class SignUpController extends GetxController {
   final isLoading = false.obs;
   final isPasswordVisible = false.obs;
   final isConfirmPasswordVisible = false.obs;
+  final isTermsAccepted = false.obs;
   final RxInt currentStep = 0.obs; // 0 for form, 1 for OTP
   final RxString errorMessage = ''.obs;
 
   final canResendOtp = false.obs;
   final otpCountdown = 0.obs;
   Timer? _otpTimer;
+  final RxBool _isControllerDisposed = false.obs;
 
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;
@@ -58,11 +62,7 @@ class SignUpController extends GetxController {
       currentStep.value = 1; // Move to OTP step
       _startOtpCountdown();
 
-      Get.snackbar(
-        'verify_phone'.tr,
-        'otp_sent_message'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
+      Get.snackbar('verify_phone'.tr, 'otp_sent_message'.tr, snackPosition: SnackPosition.TOP);
 
       DebugLogger.success('Sign up initiated for $phone');
     } on AuthException catch (e) {
@@ -89,10 +89,7 @@ class SignUpController extends GetxController {
 
     try {
       final phone = _normalizeIndianPhone(phoneController.text.trim());
-      await _authRepository.verifyPhoneOtp(
-        phone: phone,
-        token: otpController.text.trim(),
-      );
+      await _authRepository.verifyPhoneOtp(phone: phone, token: otpController.text.trim());
 
       // Success! The AuthController will now automatically navigate
       // the user to the profile completion screen.
@@ -115,10 +112,7 @@ class SignUpController extends GetxController {
       try {
         isLoading.value = true;
         final phone = _normalizeIndianPhone(phoneController.text.trim());
-        await _authRepository.signUpWithPhonePassword(
-          phone,
-          passwordController.text,
-        );
+        await _authRepository.signUpWithPhonePassword(phone, passwordController.text);
 
         _startOtpCountdown();
         Get.snackbar('otp_sent'.tr, 'otp_resent_message'.tr);
@@ -134,10 +128,18 @@ class SignUpController extends GetxController {
   }
 
   void _startOtpCountdown() {
+    // Cancel any existing timer first
+    _cancelOtpTimer();
+
     canResendOtp.value = false;
     otpCountdown.value = 60;
-    _otpTimer?.cancel();
+
     _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_isControllerDisposed.value) {
+        timer.cancel();
+        return;
+      }
+
       if (otpCountdown.value > 0) {
         otpCountdown.value--;
       } else {
@@ -147,20 +149,43 @@ class SignUpController extends GetxController {
     });
   }
 
+  void _cancelOtpTimer() {
+    _otpTimer?.cancel();
+    _otpTimer = null;
+  }
+
   void goBackToForm() {
     currentStep.value = 0;
     otpController.clear();
     errorMessage.value = '';
-    _otpTimer?.cancel();
+    _cancelOtpTimer();
   }
 
   @override
   void onClose() {
-    _otpTimer?.cancel();
-    phoneController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    otpController.dispose();
+    _disposeController();
     super.onClose();
+  }
+
+  @override
+  void dispose() {
+    _disposeController();
+    super.dispose();
+  }
+
+  void _disposeController() {
+    if (_isControllerDisposed.value) return;
+
+    _isControllerDisposed.value = true;
+    _cancelOtpTimer();
+
+    try {
+      phoneController.dispose();
+      passwordController.dispose();
+      confirmPasswordController.dispose();
+      otpController.dispose();
+    } catch (e) {
+      DebugLogger.error('Error disposing text controllers', e);
+    }
   }
 }

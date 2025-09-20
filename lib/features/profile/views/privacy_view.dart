@@ -105,7 +105,8 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                       onPressed: _showDeleteAccountDialog,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.errorRed,
-                        foregroundColor: Colors.white,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onError,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

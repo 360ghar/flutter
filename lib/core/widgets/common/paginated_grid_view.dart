@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
 
 class PaginatedGridView<T> extends StatefulWidget {
   final List<T> items;
@@ -62,16 +61,21 @@ class _PaginatedGridViewState<T> extends State<PaginatedGridView<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (widget.isLoading) {
       return Center(
-        child: CircularProgressIndicator(color: AppColors.loadingIndicator),
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+        ),
       );
     }
 
     if (widget.items.isEmpty && widget.emptyWidget != null) {
       return RefreshIndicator(
-        color: AppColors.loadingIndicator,
-        backgroundColor: AppColors.surface,
+        color: colorScheme.primary,
+        backgroundColor: colorScheme.surface,
         onRefresh: widget.onRefresh,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -84,8 +88,8 @@ class _PaginatedGridViewState<T> extends State<PaginatedGridView<T>> {
     }
 
     return RefreshIndicator(
-      color: AppColors.loadingIndicator,
-      backgroundColor: AppColors.surface,
+      color: colorScheme.primary,
+      backgroundColor: colorScheme.surface,
       onRefresh: widget.onRefresh,
       child: GridView.builder(
         controller: _scrollController,
@@ -105,7 +109,7 @@ class _PaginatedGridViewState<T> extends State<PaginatedGridView<T>> {
                 padding: const EdgeInsets.all(16),
                 child: widget.isLoadingMore
                     ? CircularProgressIndicator(
-                        color: AppColors.loadingIndicator,
+                        valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
                       )
                     : const SizedBox.shrink(),
               ),

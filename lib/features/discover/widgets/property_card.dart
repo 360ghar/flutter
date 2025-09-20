@@ -23,6 +23,8 @@ class PropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Obx(
       () => Card(
         margin: const EdgeInsets.only(bottom: 16),
@@ -51,18 +53,18 @@ class PropertyCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        isFavourite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavourite
+                            ? AppColors.favoriteActive
+                            : colorScheme.onPrimary,
                       ),
-                      child: IconButton(
-                        icon: Icon(
-                          isFavourite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavourite
-                              ? AppColors.favoriteActive
-                              : Colors.white,
-                        ),
                         onPressed: onFavouriteToggle,
                       ),
                     ),

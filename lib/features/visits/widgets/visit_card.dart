@@ -27,6 +27,9 @@ class VisitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     DebugLogger.info('🔖 Building VisitCard id=${visit.id} status=${visit.status} date=${visit.scheduledDate.toIso8601String()}');
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

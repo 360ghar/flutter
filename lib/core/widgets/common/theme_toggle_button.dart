@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/controllers/theme_controller.dart';
-import 'package:ghar360/core/utils/theme.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 class ThemeToggleButton extends StatelessWidget {
   final bool showLabel;
@@ -52,6 +52,20 @@ class ThemeToggleButton extends StatelessWidget {
         }
       }
 
+      final theme = Theme.of(context);
+      final colorScheme = theme.colorScheme;
+
+      Color iconColorFor(AppThemeMode mode) {
+        switch (mode) {
+          case AppThemeMode.light:
+            return colorScheme.primary;
+          case AppThemeMode.dark:
+            return colorScheme.onPrimary;
+          case AppThemeMode.system:
+            return colorScheme.secondary;
+        }
+      }
+
       if (showLabel) {
         return InkWell(
           onTap: () => themeController.toggleTheme(),
@@ -64,12 +78,17 @@ class ThemeToggleButton extends StatelessWidget {
                 Icon(
                   getThemeIcon(),
                   size: iconSize ?? 20,
-                  color: AppTheme.primaryColor,
+                  color: iconColorFor(currentMode),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   getThemeLabel(),
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color:
+                        theme.textTheme.labelLarge?.color ??
+                        AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),
@@ -79,7 +98,11 @@ class ThemeToggleButton extends StatelessWidget {
 
       return IconButton(
         onPressed: () => themeController.toggleTheme(),
-        icon: Icon(getThemeIcon(), size: iconSize ?? 24),
+        icon: Icon(
+          getThemeIcon(),
+          size: iconSize ?? 24,
+          color: iconColorFor(currentMode),
+        ),
         tooltip: getTooltip(),
       );
     });
@@ -97,16 +120,21 @@ class AnimatedThemeToggle extends StatelessWidget {
 
     return Obx(() {
       final currentMode = themeController.currentThemeMode;
+      final theme = Theme.of(context);
+      final colorScheme = theme.colorScheme;
+      final isDark = theme.brightness == Brightness.dark;
 
       // Get appropriate colors and icons based on current theme mode
       Color getBackgroundColor() {
         switch (currentMode) {
           case AppThemeMode.light:
-            return Colors.grey[300]!;
+            return isDark
+                ? colorScheme.surfaceContainerHighest
+                : colorScheme.surfaceTint.withValues(alpha: 0.25);
           case AppThemeMode.dark:
-            return AppTheme.primaryColor;
+            return colorScheme.primary;
           case AppThemeMode.system:
-            return Colors.blue[300]!;
+            return colorScheme.secondaryContainer;
         }
       }
 
@@ -124,11 +152,11 @@ class AnimatedThemeToggle extends StatelessWidget {
       Color getIconColor() {
         switch (currentMode) {
           case AppThemeMode.light:
-            return Colors.amber;
+            return colorScheme.primary;
           case AppThemeMode.dark:
-            return AppTheme.primaryColor;
+            return colorScheme.onPrimary;
           case AppThemeMode.system:
-            return Colors.blue[600]!;
+            return colorScheme.onSecondaryContainer;
         }
       }
 
@@ -148,10 +176,10 @@ class AnimatedThemeToggle extends StatelessWidget {
               height: (size ?? 60) / 2 - 4,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white,
+                color: theme.colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
+                    color: AppColors.shadowColor,
                     spreadRadius: 1,
                     blurRadius: 3,
                     offset: const Offset(0, 1),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/location_search_controller.dart';
-import '../../../core/utils/theme.dart';
+import '../../../core/utils/app_colors.dart';
 import '../../../core/controllers/location_controller.dart';
 
 class LocationSearchView extends GetView<LocationSearchController> {
@@ -11,7 +11,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search Location'),
+        title: Text('search_location'.tr),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -32,7 +32,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
         color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.shadowColor.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -42,7 +42,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
         controller: controller.searchController,
         autofocus: true,
         decoration: InputDecoration(
-          hintText: 'Search for a city or area...',
+          hintText: 'search_city_or_area_hint'.tr,
           prefixIcon: const Icon(Icons.search),
           suffixIcon: Obx(
             () => controller.searchQuery.value.isNotEmpty
@@ -64,7 +64,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+            borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
           ),
           filled: true,
           fillColor: Theme.of(context).scaffoldBackgroundColor,
@@ -80,20 +80,20 @@ class LocationSearchView extends GetView<LocationSearchController> {
     return Obx(() {
       if (!locationController.hasLocation) {
         return ListTile(
-          leading: const Icon(Icons.my_location, color: AppTheme.primaryColor),
-          title: const Text('Use Current Location'),
-          subtitle: const Text('Tap to get your current location'),
+          leading: const Icon(Icons.my_location, color: AppColors.primaryYellow),
+          title: Text('use_current_location'.tr),
+          subtitle: Text('tap_to_get_current_location'.tr),
           onTap: controller.useCurrentLocation,
         );
       }
 
       return ListTile(
-        leading: const Icon(Icons.my_location, color: AppTheme.primaryColor),
-        title: const Text('Use Current Location'),
+        leading: const Icon(Icons.my_location, color: AppColors.primaryYellow),
+        title: Text('use_current_location'.tr),
         subtitle: Text(
           locationController.currentAddress.value.isNotEmpty
               ? locationController.currentAddress.value
-              : 'Location detected',
+              : 'location_found'.tr,
         ),
         onTap: controller.useCurrentLocation,
       );
@@ -149,12 +149,12 @@ class LocationSearchView extends GetView<LocationSearchController> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No locations found',
+            'no_locations_found'.tr,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            'Try searching for a different location',
+            'try_search_different_location'.tr,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -180,7 +180,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            'Popular Cities',
+            'popular_cities'.tr,
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),

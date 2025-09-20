@@ -334,25 +334,31 @@ class LikesController extends GetxController {
   // Statistics
   String get currentSegmentTitle {
     return currentSegment.value == LikesSegment.liked
-        ? 'Liked Properties'
-        : 'Passed Properties';
+        ? 'liked_properties'.tr
+        : 'passed_properties'.tr;
   }
 
   String get currentCountText {
     final count = currentProperties.length;
     return searchQuery.value.isNotEmpty
-        ? '$count results'
-        : (count == 1 ? '$count property' : '$count properties');
+        ? '$count ${'results'.tr}'
+        : (count == 1
+            ? '$count ${'property'.tr}'
+            : '$count ${'properties'.tr}');
   }
 
   String get emptyStateMessage {
     if (searchQuery.value.isNotEmpty) {
-      return 'No properties match your search';
+      return 'no_properties_match_your_search'.tr;
     }
 
     return currentSegment.value == LikesSegment.liked
-        ? 'No liked properties yet.\nStart swiping to see properties you love!'
-        : 'No passed properties yet.\nProperties you swipe left on will appear here.';
+        ? 'no_liked_properties'.tr +
+            '\n' +
+            'no_favorites_message'.tr
+        : 'no_passed_properties'.tr +
+            '\n' +
+            'no_more_properties_message'.tr;
   }
 
   // Helper getters

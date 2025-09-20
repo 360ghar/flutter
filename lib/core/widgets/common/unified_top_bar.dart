@@ -33,6 +33,7 @@ class UnifiedTopBar extends GetView<PageStateService>
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final theme = Theme.of(context);
       // Determine bottom search row visibility
       final bool supportsSearch = _shouldShowSearch();
       final bool searchVisible =
@@ -45,11 +46,11 @@ class UnifiedTopBar extends GetView<PageStateService>
       return AppBar(
         backgroundColor: AppColors.appBarBackground,
         elevation: 8,
-        shadowColor: Colors.black.withValues(alpha: 0.2),
+        shadowColor: AppColors.shadowColor,
         automaticallyImplyLeading: false,
         toolbarHeight: kToolbarHeight,
         titleSpacing: 16,
-        systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+        systemOverlayStyle: theme.brightness == Brightness.dark
             ? const SystemUiOverlayStyle(
                 statusBarColor: Colors.transparent,
                 statusBarIconBrightness: Brightness.light,
@@ -181,8 +182,8 @@ class UnifiedTopBar extends GetView<PageStateService>
                   ),
                   child: Text(
                     activeFiltersCount.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -246,11 +247,11 @@ class UnifiedTopBar extends GetView<PageStateService>
   String _getSearchHint() {
     switch (pageType) {
       case PageType.explore:
-        return 'Search locations...';
+        return 'search_locations_hint'.tr;
       case PageType.likes:
-        return 'Search in your likes...';
+        return 'search_in_likes_hint'.tr;
       case PageType.discover:
-        return 'Search properties...';
+        return 'search_properties_hint_simple'.tr;
     }
   }
 
@@ -304,7 +305,7 @@ class ExploreTopBar extends UnifiedTopBar {
     super.additionalActions,
   }) : super(
          pageType: PageType.explore,
-         title: 'Explore Properties',
+         title: 'explore_properties'.tr,
          showSearch: true,
        );
 }
@@ -324,5 +325,5 @@ class LikesTopBar extends UnifiedTopBar {
     super.onSearchChanged,
     super.onFilterTap,
     super.additionalActions,
-  }) : super(pageType: PageType.likes, title: 'My Likes', showSearch: true);
+  }) : super(pageType: PageType.likes, title: 'my_likes'.tr, showSearch: true);
 }

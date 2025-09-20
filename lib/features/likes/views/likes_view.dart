@@ -19,6 +19,9 @@ class LikesView extends GetView<LikesController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Obx(() {
       final pageStateService = Get.find<PageStateService>();
 
@@ -45,16 +48,16 @@ class LikesView extends GetView<LikesController> {
                   minHeight: 2,
                   backgroundColor: Colors.transparent,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.primaryYellow,
+                    colorScheme.primary,
                   ),
                 ),
               // Tab bar directly under the unified top bar
               Container(
                 color: AppColors.appBarBackground,
                 child: TabBar(
-                  labelColor: AppColors.primaryYellow,
+                  labelColor: colorScheme.primary,
                   unselectedLabelColor: AppColors.textSecondary,
-                  indicatorColor: AppColors.primaryYellow,
+                  indicatorColor: colorScheme.primary,
                   indicatorWeight: 3,
                   labelStyle: const TextStyle(
                     fontSize: 16,
@@ -74,7 +77,7 @@ class LikesView extends GetView<LikesController> {
                           children: [
                             const Icon(Icons.favorite, size: 18),
                             const SizedBox(width: 8),
-                            const Text('Liked'),
+                            Text('liked'.tr),
                             if (controller.currentSegment.value ==
                                     LikesSegment.liked &&
                                 controller.hasCurrentProperties) ...[
@@ -85,13 +88,13 @@ class LikesView extends GetView<LikesController> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryYellow,
+                                  color: colorScheme.primary,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
                                   '${controller.currentProperties.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: colorScheme.onPrimary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -109,7 +112,7 @@ class LikesView extends GetView<LikesController> {
                           children: [
                             const Icon(Icons.not_interested, size: 18),
                             const SizedBox(width: 8),
-                            const Text('Passed'),
+                            Text('passed'.tr),
                             if (controller.currentSegment.value ==
                                     LikesSegment.passed &&
                                 controller.hasCurrentProperties) ...[
@@ -120,13 +123,13 @@ class LikesView extends GetView<LikesController> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey,
+                                  color: colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
                                   '${controller.currentProperties.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -193,7 +196,7 @@ class LikesView extends GetView<LikesController> {
   Widget _buildPropertyGrid() {
     return RefreshIndicator(
       onRefresh: controller.refreshCurrentSegment,
-      color: AppColors.primaryYellow,
+      color: Get.theme.colorScheme.primary,
       child: CustomScrollView(
         slivers: [
           // Results header
@@ -323,12 +326,12 @@ class LikesView extends GetView<LikesController> {
     }
 
     return ErrorStates.emptyState(
-      title: isLiked ? 'No Liked Properties' : 'No Passed Properties',
+      title: isLiked ? 'no_liked_properties'.tr : 'no_passed_properties'.tr,
       message: controller.emptyStateMessage,
       icon: isLiked ? Icons.favorite_border : Icons.not_interested,
       onAction: () =>
           Get.find<DashboardController>().changeTab(2), // 2 = Discover tab
-      actionText: 'Explore Properties',
+      actionText: 'explore_properties'.tr,
     );
   }
 
@@ -340,8 +343,8 @@ class LikesView extends GetView<LikesController> {
       // This would be moving from passed to liked
       // For now, just show a message
       Get.snackbar(
-        'Info',
-        'Feature coming soon: Move to liked properties',
+        'info'.tr,
+        'feature_coming_soon_move_to_liked'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.primaryYellow.withValues(alpha: 0.1),
         colorText: AppColors.primaryYellow,

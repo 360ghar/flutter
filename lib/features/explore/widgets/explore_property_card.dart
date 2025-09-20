@@ -19,6 +19,8 @@ class ExplorePropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Card(
       margin: const EdgeInsets.all(0),
       elevation: 2,
@@ -98,7 +100,7 @@ class ExplorePropertyCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
+                            color: AppColors.shadowColor,
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -106,9 +108,8 @@ class ExplorePropertyCard extends StatelessWidget {
                       ),
                       child: Text(
                         property.propertyTypeString.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -127,7 +128,7 @@ class ExplorePropertyCard extends StatelessWidget {
                           isFavourite ? Icons.favorite : Icons.favorite_border,
                           color: isFavourite
                               ? AppColors.favoriteActive
-                              : Colors.white,
+                              : colorScheme.onPrimary,
                           size: 20,
                         ),
                         onPressed: onFavouriteToggle,

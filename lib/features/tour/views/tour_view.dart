@@ -49,11 +49,11 @@ class _TourViewState extends State<TourView> {
               isLoading = false;
             });
             Get.snackbar(
-              'Error Loading Tour',
-              'Please check your internet connection',
+              'error_loading_tour'.tr,
+              'check_internet_connection'.tr,
               snackPosition: SnackPosition.TOP,
               backgroundColor: AppColors.errorRed,
-              colorText: Colors.white,
+              colorText: AppColors.snackbarText,
             );
           },
         ),
@@ -99,7 +99,7 @@ class _TourViewState extends State<TourView> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          '360° Virtual Tour',
+          'virtual_tour_title'.tr,
           style: TextStyle(
             color: AppColors.appBarText,
             fontWeight: FontWeight.bold,
@@ -110,8 +110,8 @@ class _TourViewState extends State<TourView> {
             icon: Icon(Icons.fullscreen, color: AppColors.appBarIcon),
             onPressed: () {
               Get.snackbar(
-                'Fullscreen Mode',
-                'Rotate your device for better experience',
+                'fullscreen_mode'.tr,
+                'rotate_device_better_experience'.tr,
                 snackPosition: SnackPosition.TOP,
                 backgroundColor: AppColors.snackbarBackground,
                 colorText: AppColors.snackbarText,
@@ -122,8 +122,8 @@ class _TourViewState extends State<TourView> {
             icon: Icon(Icons.share, color: AppColors.appBarIcon),
             onPressed: () {
               Get.snackbar(
-                'Share Tour',
-                'Tour link copied to clipboard',
+                'share_tour'.tr,
+                'tour_link_copied'.tr,
                 snackPosition: SnackPosition.TOP,
                 backgroundColor: AppColors.snackbarBackground,
                 colorText: AppColors.snackbarText,
@@ -162,7 +162,7 @@ class _TourViewState extends State<TourView> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Loading 360° Tour...',
+                        'loading_virtual_tour'.tr,
                         style: TextStyle(
                           fontSize: 16,
                           color: AppColors.textSecondary,

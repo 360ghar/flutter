@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
-import '../../../core/utils/theme.dart';
 import '../../../core/routes/app_routes.dart';
 
 class LoginView extends GetView<LoginController> {
@@ -11,6 +10,9 @@ class LoginView extends GetView<LoginController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -32,9 +34,9 @@ class LoginView extends GetView<LoginController> {
                   const SizedBox(height: 8),
                   Text(
                     'sign_in_subtitle'.tr,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 48),
@@ -132,7 +134,10 @@ class LoginView extends GetView<LoginController> {
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Text(
                         controller.errorMessage.value,
-                        style: const TextStyle(color: Colors.red),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     );
@@ -146,26 +151,25 @@ class LoginView extends GetView<LoginController> {
                           : controller.signIn,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: AppTheme.primaryColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       child: controller.isLoading.value
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: colorScheme.onPrimary,
                                 strokeWidth: 2,
                               ),
                             )
                           : Text(
                               'sign_in'.tr,
-                              style: const TextStyle(
+                              style: theme.textTheme.titleMedium?.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: colorScheme.onPrimary,
                               ),
                             ),
                     ),
@@ -178,13 +182,13 @@ class LoginView extends GetView<LoginController> {
                       onPressed: () => Get.toNamed(AppRoutes.signup),
                       child: RichText(
                         text: TextSpan(
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: theme.textTheme.bodyMedium,
                           children: [
                             TextSpan(text: 'dont_have_account'.tr),
                             TextSpan(
                               text: ' ${'sign_up'.tr}',
-                              style: TextStyle(
-                                color: AppTheme.primaryColor,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.primary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

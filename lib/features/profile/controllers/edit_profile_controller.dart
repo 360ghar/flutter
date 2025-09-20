@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import '../../../core/controllers/auth_controller.dart';
 
 class EditProfileController extends GetxController {
@@ -55,12 +56,12 @@ class EditProfileController extends GetxController {
     // For now, just show a placeholder dialog
     Get.dialog(
       AlertDialog(
-        title: const Text('Profile Picture'),
-        content: const Text(
+        title: Text('profile_picture'.tr),
+        content: Text(
           'Image picker functionality would be implemented here using image_picker package.',
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('OK')),
+          TextButton(onPressed: () => Get.back(), child: Text('ok'.tr)),
         ],
       ),
     );
@@ -149,8 +150,8 @@ class EditProfileController extends GetxController {
         'Success',
         'Profile updated successfully',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: const Color(0xFF50C878), // AppTheme.accentGreen
-        colorText: Colors.white,
+        backgroundColor: const Color(0xFF50C878), // accentGreen
+        colorText: AppColors.snackbarText,
         duration: const Duration(seconds: 2),
       );
     } catch (e) {
@@ -158,8 +159,8 @@ class EditProfileController extends GetxController {
         'Error',
         'Failed to update profile: $e',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.errorRed,
+        colorText: AppColors.snackbarText,
         duration: const Duration(seconds: 3),
       );
     } finally {

@@ -34,6 +34,26 @@ class LocalizationController extends GetxController {
     if (languageCode != null && countryCode != null) {
       _currentLocale.value = Locale(languageCode, countryCode);
       Get.updateLocale(_currentLocale.value);
+    } else {
+      // No saved preference: normalize device locale to a supported one
+      final device = Get.deviceLocale;
+      final normalized = _normalizeToSupported(device);
+      _currentLocale.value = normalized;
+      Get.updateLocale(normalized);
+    }
+  }
+
+  // Map arbitrary device locales to the closest supported locale
+  Locale _normalizeToSupported(Locale? device) {
+    if (device == null) return const Locale('en', 'US');
+
+    switch (device.languageCode) {
+      case 'hi':
+        return const Locale('hi', 'IN');
+      case 'en':
+        return const Locale('en', 'US');
+      default:
+        return const Locale('en', 'US');
     }
   }
 

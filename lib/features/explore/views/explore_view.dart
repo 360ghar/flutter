@@ -34,8 +34,11 @@ class ExploreView extends GetView<ExploreController> {
       // Make Scaffold reactive to search visibility changes for proper space allocation
       final searchVisible = pageStateService.isSearchVisible(PageType.explore);
 
-      return Scaffold(
-        backgroundColor: AppColors.scaffoldBackground,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
         appBar: ExploreTopBar(
           key: ValueKey(
             'explore_topbar_$searchVisible',
@@ -83,7 +86,7 @@ class ExploreView extends GetView<ExploreController> {
                       DebugLogger.info(
                         '💻 Rendering loading state (no location yet)',
                       );
-                      return _buildLoadingState();
+                      return _buildLoadingState(context);
 
                     case ExploreState.error:
                       DebugLogger.info('⚠️ Rendering error state');
@@ -114,7 +117,7 @@ class ExploreView extends GetView<ExploreController> {
                       DebugLogger.info(
                         '🔄 Rendering default loading state (no location yet)',
                       );
-                      return _buildLoadingState();
+                      return _buildLoadingState(context);
                   }
                 }),
               ),
@@ -125,7 +128,7 @@ class ExploreView extends GetView<ExploreController> {
     });
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(BuildContext context) {
     return Stack(
       children: [
         // Skeleton map
@@ -145,7 +148,7 @@ class ExploreView extends GetView<ExploreController> {
               message: 'Loading properties for map...',
             );
           }
-          return LoadingStates.mapLoadingOverlay();
+          return LoadingStates.mapLoadingOverlay(context);
         }),
       ],
     );
@@ -177,15 +180,14 @@ class ExploreView extends GetView<ExploreController> {
 
   Widget _buildEmptyState(BuildContext context) {
     return ErrorStates.emptyState(
-      title: 'No Properties Found',
-      message:
-          'No properties found in this area.\nTry adjusting your search location or filters.',
+      title: 'no_properties_found'.tr,
+      message: 'no_properties_found_area_message'.tr,
       icon: Icons.location_off,
       onAction: () => showPropertyFilterBottomSheet(
         Get.context ?? context,
         pageType: 'explore',
       ),
-      actionText: 'Adjust Filters',
+      actionText: 'adjust_filters'.tr,
     );
   }
 
@@ -290,14 +292,12 @@ class ExploreView extends GetView<ExploreController> {
                                           : AppColors.accentBlue,
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: Colors.white,
+                                        color: Theme.of(context).colorScheme.onPrimary,
                                         width: 2,
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.2,
-                                          ),
+                                          color: AppColors.shadowColor,
                                           blurRadius: 6,
                                           offset: const Offset(0, 2),
                                         ),
@@ -322,8 +322,8 @@ class ExploreView extends GetView<ExploreController> {
                                                         .property
                                                         .formattedPrice)
                                             : '₹--',
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -342,7 +342,7 @@ class ExploreView extends GetView<ExploreController> {
                 DebugLogger.error('❌ Map rendering failed: $e');
                 return ErrorStates.networkError(
                   onRetry: controller.retryLoading,
-                  customMessage: 'Map failed to render. Please try again.',
+                  customMessage: 'map_render_failed_message'.tr,
                 );
               }
             },
@@ -387,7 +387,7 @@ class ExploreView extends GetView<ExploreController> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Loading more properties...',
+                    'loading_more_properties'.tr,
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.textPrimary,

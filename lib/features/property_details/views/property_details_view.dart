@@ -87,7 +87,8 @@ class PropertyDetailsView extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back,
+                    color: Theme.of(context).colorScheme.onPrimary),
                 onPressed: () => Get.back(),
               ),
             ),
@@ -106,7 +107,7 @@ class PropertyDetailsView extends StatelessWidget {
                           : Icons.favorite_border,
                       color: controller.isFavourite(safeProperty.id)
                           ? AppColors.favoriteActive
-                          : Colors.white,
+                          : Theme.of(context).colorScheme.onPrimary,
                     ),
                     onPressed: () {
                       if (controller.isFavourite(safeProperty.id)) {
@@ -125,7 +126,8 @@ class PropertyDetailsView extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.share, color: Colors.white),
+                  icon: Icon(Icons.share,
+                      color: Theme.of(context).colorScheme.onPrimary),
                   onPressed: () {
                     Get.snackbar(
                       'share_property'.tr,
@@ -351,7 +353,7 @@ class PropertyDetailsView extends StatelessWidget {
                             foregroundColor: AppColors.textPrimary,
                           ),
                           icon: const Icon(Icons.directions),
-                          label: const Text('Get Directions'),
+                          label: Text('get_directions'.tr),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -686,7 +688,7 @@ class PropertyDetailsView extends StatelessWidget {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryYellow,
-                      foregroundColor: Colors.black,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1007,8 +1009,8 @@ class PropertyDetailsView extends StatelessWidget {
                   controller: notesController,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    labelText: 'Special requirements (optional)',
-                    hintText: 'Any access instructions or preferences...?',
+                    labelText: 'special_requirements_label'.tr,
+                    hintText: 'special_requirements_hint'.tr,
                     filled: true,
                     fillColor: AppColors.inputBackground,
                     border: OutlineInputBorder(
@@ -1052,19 +1054,19 @@ class PropertyDetailsView extends StatelessWidget {
               Get.back();
 
               Get.snackbar(
-                'Visit Scheduled!',
-                'Your visit to ${safeProperty.title} is scheduled for ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                'visit_scheduled'.tr,
+                '${'visit_scheduled_message_prefix'.tr} ${safeProperty.title} ${'visit_scheduled_message_infix'.tr} ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                 snackPosition: SnackPosition.TOP,
-                backgroundColor: AppColors.accentGreen,
-                colorText: Colors.white,
+              backgroundColor: AppColors.accentGreen,
+              colorText: AppColors.snackbarText,
                 duration: const Duration(seconds: 3),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryYellow,
-              foregroundColor: Colors.black,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
-            child: const Text('Schedule Visit'),
+            child: Text('schedule_visit'.tr),
           ),
         ],
       ),
@@ -1154,12 +1156,15 @@ class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: AppColors.shadowColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${_current + 1}/$itemCount',
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
