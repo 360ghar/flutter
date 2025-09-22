@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Auto-format staged Dart files with line length 100 and re-stage them.
+
+# Collect staged .dart files (Added, Copied, Modified, Renamed)
+files=()
+while IFS= read -r -d '' file; do
+  # Skip deleted files just in case
+  if [ -f "$file" ] && [[ "$file" == *.dart ]]; then
+    files+=("$file")
+  fi
+done < <(git diff --cached --name-only -z --diff-filter=ACMR -- '*.dart')
+
+if [ ${#files[@]} -eq 0 ]; then
+  exit 0
+fi
+
+echo "pre-commit: formatting ${#files[@]} Dart file(s)"
+
+if command -v dart >/dev/null 2>&1; then
+  dart format --line-length 100 -o write "${files[@]}"
+elif command -v flutter >/dev/null 2>&1; then
+  # Fallback for environments without direct `dart` in PATH
+  flutter format -l 100 "${files[@]}"
+else
+  echo "Error: neither 'dart' nor 'flutter' found in PATH; cannot format Dart files." >&2
+  exit 1
+fi
+
+# Re-stage formatted files
+git add -- "${files[@]}"
+
+echo "pre-commit: formatting complete"
+exit 0
+

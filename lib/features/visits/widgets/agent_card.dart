@@ -9,12 +9,7 @@ class AgentCard extends StatelessWidget {
   final VoidCallback? onCall;
   final VoidCallback? onWhatsApp;
 
-  const AgentCard({
-    super.key,
-    required this.agent,
-    this.onCall,
-    this.onWhatsApp,
-  });
+  const AgentCard({super.key, required this.agent, this.onCall, this.onWhatsApp});
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +25,7 @@ class AgentCard extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.primaryYellow.withValues(alpha: 0.18),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.18), width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -62,11 +54,7 @@ class AgentCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.support_agent,
-                      color: AppColors.primaryYellow,
-                      size: 16,
-                    ),
+                    Icon(Icons.support_agent, color: AppColors.primaryYellow, size: 16),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -107,21 +95,14 @@ class AgentCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(
-                      Icons.work_outline,
-                      size: 14,
-                      color: AppColors.iconColor,
-                    ),
+                    Icon(Icons.work_outline, size: 14, color: AppColors.iconColor),
                     const SizedBox(width: 3),
                     Flexible(
                       child: Text(
                         agent.experienceLevelString,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ),
                   ],

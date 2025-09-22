@@ -37,8 +37,7 @@ class LikesView extends GetView<LikesController> {
               'likes_topbar_$searchVisible',
             ), // Force recreation when visibility changes
             onSearchChanged: controller.updateSearchQuery,
-            onFilterTap: () =>
-                showPropertyFilterBottomSheet(context, pageType: 'likes'),
+            onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'likes'),
           ),
           body: Column(
             children: [
@@ -47,9 +46,7 @@ class LikesView extends GetView<LikesController> {
                 LinearProgressIndicator(
                   minHeight: 2,
                   backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colorScheme.primary,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
                 ),
               // Tab bar directly under the unified top bar
               Container(
@@ -59,14 +56,9 @@ class LikesView extends GetView<LikesController> {
                   unselectedLabelColor: AppColors.textSecondary,
                   indicatorColor: colorScheme.primary,
                   indicatorWeight: 3,
-                  labelStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   onTap: (index) {
-                    final segment = index == 0
-                        ? LikesSegment.liked
-                        : LikesSegment.passed;
+                    final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
                     controller.switchToSegment(segment);
                   },
                   tabs: [
@@ -78,15 +70,11 @@ class LikesView extends GetView<LikesController> {
                             const Icon(Icons.favorite, size: 18),
                             const SizedBox(width: 8),
                             Text('liked'.tr),
-                            if (controller.currentSegment.value ==
-                                    LikesSegment.liked &&
+                            if (controller.currentSegment.value == LikesSegment.liked &&
                                 controller.hasCurrentProperties) ...[
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: colorScheme.primary,
                                   borderRadius: BorderRadius.circular(10),
@@ -113,15 +101,11 @@ class LikesView extends GetView<LikesController> {
                             const Icon(Icons.not_interested, size: 18),
                             const SizedBox(width: 8),
                             Text('passed'.tr),
-                            if (controller.currentSegment.value ==
-                                    LikesSegment.passed &&
+                            if (controller.currentSegment.value == LikesSegment.passed &&
                                 controller.hasCurrentProperties) ...[
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(10),
@@ -143,11 +127,7 @@ class LikesView extends GetView<LikesController> {
                   ],
                 ),
               ),
-              Expanded(
-                child: TabBarView(
-                  children: [_buildLikesTab(), _buildPassedTab()],
-                ),
-              ),
+              Expanded(child: TabBarView(children: [_buildLikesTab(), _buildPassedTab()])),
             ],
           ),
         ),
@@ -217,10 +197,7 @@ class LikesView extends GetView<LikesController> {
                     const Spacer(),
                     if (controller.hasSearchQuery)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.primaryYellow.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
@@ -255,8 +232,7 @@ class LikesView extends GetView<LikesController> {
 
                   // Show load more indicator at the end
                   if (index == properties.length) {
-                    if (controller.currentHasMore &&
-                        !controller.isCurrentLoadingMore) {
+                    if (controller.currentHasMore && !controller.isCurrentLoadingMore) {
                       // Trigger load more
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         controller.loadMoreCurrentSegment();
@@ -269,22 +245,17 @@ class LikesView extends GetView<LikesController> {
                   }
 
                   final property = properties[index];
-                  final isLiked =
-                      controller.currentSegment.value == LikesSegment.liked;
+                  final isLiked = controller.currentSegment.value == LikesSegment.liked;
 
                   return LikesPropertyCard(
                     property: property,
                     isFavourite: isLiked,
-                    onFavouriteToggle: () =>
-                        _handleFavoriteToggle(property, isLiked),
+                    onFavouriteToggle: () => _handleFavoriteToggle(property, isLiked),
                   );
                 },
                 childCount:
                     controller.currentProperties.length +
-                    (controller.currentHasMore ||
-                            controller.isCurrentLoadingMore
-                        ? 1
-                        : 0),
+                    (controller.currentHasMore || controller.isCurrentLoadingMore ? 1 : 0),
               ),
             ),
           ),
@@ -304,10 +275,7 @@ class LikesView extends GetView<LikesController> {
       try {
         // Don't wrap in Exception() - pass the original error message directly
         final exception = ErrorMapper.mapApiError(errorMessage);
-        return ErrorStates.genericError(
-          error: exception,
-          onRetry: controller.retryCurrentSegment,
-        );
+        return ErrorStates.genericError(error: exception, onRetry: controller.retryCurrentSegment);
       } catch (e) {
         return ErrorStates.networkError(
           onRetry: controller.retryCurrentSegment,
@@ -329,8 +297,7 @@ class LikesView extends GetView<LikesController> {
       title: isLiked ? 'no_liked_properties'.tr : 'no_passed_properties'.tr,
       message: controller.emptyStateMessage,
       icon: isLiked ? Icons.favorite_border : Icons.not_interested,
-      onAction: () =>
-          Get.find<DashboardController>().changeTab(2), // 2 = Discover tab
+      onAction: () => Get.find<DashboardController>().changeTab(2), // 2 = Discover tab
       actionText: 'explore_properties'.tr,
     );
   }

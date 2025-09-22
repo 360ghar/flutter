@@ -7,11 +7,7 @@ class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'
   final VoidCallback? onFiltersApplied;
 
-  const PropertyFilterWidget({
-    super.key,
-    required this.pageType,
-    this.onFiltersApplied,
-  });
+  const PropertyFilterWidget({super.key, required this.pageType, this.onFiltersApplied});
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +22,8 @@ class PropertyFilterWidget extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _FilterBottomSheet(
-        pageType: pageType,
-        onFiltersApplied: onFiltersApplied,
-      ),
+      builder: (context) =>
+          _FilterBottomSheet(pageType: pageType, onFiltersApplied: onFiltersApplied),
     );
   }
 }
@@ -98,12 +92,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     _selectedPurpose = _mapPurpose(currentFilter.purpose ?? 'buy');
     // Clamp values to ensure they're within the slider range
     final maxRange = _getPriceMax(currentFilter.purpose ?? 'buy');
-    _minPrice =
-        (currentFilter.priceMin ?? _getPriceMin(currentFilter.purpose ?? 'buy'))
-            .clamp(0.0, maxRange);
-    _maxPrice =
-        (currentFilter.priceMax ?? _getPriceMax(currentFilter.purpose ?? 'buy'))
-            .clamp(0.0, maxRange);
+    _minPrice = (currentFilter.priceMin ?? _getPriceMin(currentFilter.purpose ?? 'buy')).clamp(
+      0.0,
+      maxRange,
+    );
+    _maxPrice = (currentFilter.priceMax ?? _getPriceMax(currentFilter.purpose ?? 'buy')).clamp(
+      0.0,
+      maxRange,
+    );
     _minBedrooms = (currentFilter.bedroomsMin ?? 0).clamp(0, 10);
     _maxBedrooms = (currentFilter.bedroomsMax ?? 10).clamp(0, 10);
     _propertyType = (currentFilter.propertyType?.isNotEmpty == true)
@@ -184,10 +180,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               color: AppColors.textPrimary,
             ),
           ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close),
-          ),
+          IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
         ],
       ),
     );
@@ -199,11 +192,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           'purpose'.tr,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 15),
         Wrap(
@@ -223,19 +212,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primaryYellow
-                      : AppColors.inputBackground,
+                  color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
-                    color: isSelected
-                        ? AppColors.primaryYellow
-                        : AppColors.border,
+                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
                     width: 2,
                   ),
                 ),
@@ -243,9 +225,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   purpose.tr,
                   style: TextStyle(
                     fontSize: 16,
-                    color: isSelected
-                        ? AppColors.surface
-                        : AppColors.textPrimary,
+                    color: isSelected ? AppColors.surface : AppColors.textPrimary,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
@@ -258,20 +238,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   Widget _buildPriceFilter() {
-    final priceLabel = _selectedPurpose == 'rent'
-        ? 'price_per_month'.tr
-        : 'property_price'.tr;
+    final priceLabel = _selectedPurpose == 'rent' ? 'price_per_month'.tr : 'property_price'.tr;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           priceLabel,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 15),
         RangeSlider(
@@ -290,10 +264,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
           divisions: 100,
           activeColor: AppColors.primaryYellow,
           inactiveColor: AppColors.primaryYellow.withValues(alpha: 0.2),
-          labels: RangeLabels(
-            '₹${_formatPrice(_minPrice)}',
-            '₹${_formatPrice(_maxPrice)}',
-          ),
+          labels: RangeLabels('₹${_formatPrice(_minPrice)}', '₹${_formatPrice(_maxPrice)}'),
           onChanged: (RangeValues values) {
             setState(() {
               _minPrice = values.start;
@@ -332,11 +303,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           'bedrooms'.tr,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 15),
         Row(
@@ -361,17 +328,13 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: AppColors.border),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     items: List.generate(6, (index) => index)
                         .map(
                           (bedroom) => DropdownMenuItem(
                             value: bedroom,
-                            child: Text(
-                                bedroom == 0 ? 'any'.tr : '$bedroom+'),
+                            child: Text(bedroom == 0 ? 'any'.tr : '$bedroom+'),
                           ),
                         )
                         .toList(),
@@ -408,10 +371,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: AppColors.border),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     items: List.generate(11, (index) => index)
                         .where((bedroom) => bedroom >= _minBedrooms)
@@ -446,11 +406,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           'property_type'.tr,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 15),
         Wrap(
@@ -465,31 +421,20 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primaryYellow
-                      : AppColors.inputBackground,
+                  color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: isSelected
-                        ? AppColors.primaryYellow
-                        : AppColors.border,
+                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
                   ),
                 ),
                 child: Text(
                   _displayPropertyType(type),
                   style: TextStyle(
                     fontSize: 14,
-                    color: isSelected
-                        ? AppColors.surface
-                        : AppColors.textPrimary,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
+                    color: isSelected ? AppColors.surface : AppColors.textPrimary,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
               ),
@@ -506,11 +451,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           'amenities'.tr,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 15),
         Wrap(
@@ -529,41 +470,28 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.primaryYellow.withValues(alpha: 0.1)
                       : AppColors.inputBackground,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected
-                        ? AppColors.primaryYellow
-                        : AppColors.border,
+                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isSelected)
-                      const Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: AppColors.primaryYellow,
-                      ),
+                      const Icon(Icons.check_circle, size: 16, color: AppColors.primaryYellow),
                     if (isSelected) const SizedBox(width: 6),
                     Text(
                       _displayAmenity(amenity),
                       style: TextStyle(
                         fontSize: 14,
-                        color: isSelected
-                            ? AppColors.primaryYellow
-                            : AppColors.textPrimary,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+                        color: isSelected ? AppColors.primaryYellow : AppColors.textPrimary,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -590,9 +518,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: BorderSide(color: AppColors.primaryYellow),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
                 'clear_filters'.tr,
@@ -612,9 +538,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryYellow,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
                 'apply_filters'.tr,
@@ -759,9 +683,6 @@ void showPropertyFilterBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => _FilterBottomSheet(
-      pageType: pageType,
-      onFiltersApplied: onFiltersApplied,
-    ),
+    builder: (ctx) => _FilterBottomSheet(pageType: pageType, onFiltersApplied: onFiltersApplied),
   );
 }

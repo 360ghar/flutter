@@ -10,11 +10,12 @@ class StaticPageModel {
         ? Map<String, dynamic>.from(root['data'])
         : root;
 
-    final String title = (doc['title'] ?? doc['name'] ?? doc['page_title'] ?? fallbackTitle).toString();
-    final dynamic rawContent = doc['content'] ?? doc['html'] ?? doc['body'] ?? doc['description'] ?? doc['text'] ?? '';
+    final String title = (doc['title'] ?? doc['name'] ?? doc['page_title'] ?? fallbackTitle)
+        .toString();
+    final dynamic rawContent =
+        doc['content'] ?? doc['html'] ?? doc['body'] ?? doc['description'] ?? doc['text'] ?? '';
     final String content = rawContent?.toString() ?? '';
 
     return StaticPageModel(title: title, content: content);
   }
 }
-

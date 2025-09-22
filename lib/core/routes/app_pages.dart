@@ -41,11 +41,7 @@ import 'app_routes.dart';
 
 class AppPages {
   static final routes = [
-    GetPage(
-      name: AppRoutes.splash,
-      page: () => const SplashView(),
-      binding: SplashBinding(),
-    ),
+    GetPage(name: AppRoutes.splash, page: () => const SplashView(), binding: SplashBinding()),
     GetPage(
       name: AppRoutes.login,
       page: () => const LoginView(),
@@ -80,21 +76,9 @@ class AppPages {
           page: () => const DiscoverView(),
           binding: DiscoverBinding(),
         ),
-        GetPage(
-          name: AppRoutes.explore,
-          page: () => ExploreView(),
-          binding: ExploreBinding(),
-        ),
-        GetPage(
-          name: AppRoutes.likes,
-          page: () => LikesView(),
-          binding: LikesBinding(),
-        ),
-        GetPage(
-          name: AppRoutes.visits,
-          page: () => const VisitsView(),
-          binding: VisitsBinding(),
-        ),
+        GetPage(name: AppRoutes.explore, page: () => ExploreView(), binding: ExploreBinding()),
+        GetPage(name: AppRoutes.likes, page: () => LikesView(), binding: LikesBinding()),
+        GetPage(name: AppRoutes.visits, page: () => const VisitsView(), binding: VisitsBinding()),
         GetPage(
           name: AppRoutes.profile,
           page: () => const ProfileView(),
@@ -134,22 +118,14 @@ class AppPages {
       page: () => const PrivacyView(),
       middlewares: [AuthMiddleware()],
     ),
-    GetPage(
-      name: AppRoutes.help,
-      page: () => const HelpView(),
-      middlewares: [AuthMiddleware()],
-    ),
+    GetPage(name: AppRoutes.help, page: () => const HelpView(), middlewares: [AuthMiddleware()]),
     GetPage(
       name: AppRoutes.feedback,
       page: () => const FeedbackView(),
       binding: FeedbackBinding(),
       middlewares: [AuthMiddleware()],
     ),
-    GetPage(
-      name: AppRoutes.about,
-      page: () => const AboutView(),
-      middlewares: [AuthMiddleware()],
-    ),
+    GetPage(name: AppRoutes.about, page: () => const AboutView(), middlewares: [AuthMiddleware()]),
     GetPage(
       name: AppRoutes.locationSearch,
       page: () => const LocationSearchView(),

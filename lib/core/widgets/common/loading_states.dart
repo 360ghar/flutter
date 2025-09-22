@@ -22,9 +22,7 @@ class LoadingStates {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: baseColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               ),
             ),
             Padding(
@@ -117,9 +115,7 @@ class LoadingStates {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: baseColor,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                   ),
                 ),
               ),
@@ -180,11 +176,7 @@ class LoadingStates {
           color: baseColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(
-              color: AppColors.shadowColor,
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
+            BoxShadow(color: AppColors.shadowColor, blurRadius: 10, offset: const Offset(0, 5)),
           ],
         ),
         child: Column(
@@ -195,9 +187,7 @@ class LoadingStates {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: baseColor,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
               ),
             ),
@@ -271,10 +261,7 @@ class LoadingStates {
             const SizedBox(height: 16),
             Text(
               'Loading properties...',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textPrimary,
-              ),
+              style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
             ),
           ],
         ),
@@ -297,11 +284,7 @@ class LoadingStates {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowColor,
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
+          BoxShadow(color: AppColors.shadowColor, blurRadius: 10, offset: const Offset(0, 5)),
         ],
       ),
       child: Column(
@@ -317,10 +300,7 @@ class LoadingStates {
           const SizedBox(height: 12),
           Text(
             message ?? 'Loading page $current of $total...',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -358,11 +338,7 @@ class LoadingStates {
   }
 
   // Inline loading for buttons
-  static Widget inlineLoading({
-    double size = 16.0,
-    Color? color,
-    BuildContext? context,
-  }) {
+  static Widget inlineLoading({double size = 16.0, Color? color, BuildContext? context}) {
     final theme = context != null ? Theme.of(context) : null;
     final indicatorColor = color ?? theme?.colorScheme.primary ?? AppColors.primaryYellow;
 
@@ -417,10 +393,7 @@ class LoadingStates {
               const SizedBox(height: 16),
               Text(
                 message,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textPrimary,
-                ),
+                style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -446,10 +419,7 @@ class LoadingStates {
           const SizedBox(height: 16),
           Text(
             'Searching properties...',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -472,10 +442,7 @@ class LoadingStates {
           const SizedBox(height: 16),
           Text(
             'Getting your location...',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
           ),
         ],
       ),

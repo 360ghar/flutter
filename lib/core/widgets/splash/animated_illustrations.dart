@@ -75,20 +75,13 @@ class Tour360Illustration extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(
-                  Icons.home_rounded,
-                  size: 60,
-                  color: colorScheme.onPrimary,
-                ),
+                child: Icon(Icons.home_rounded, size: 60, color: colorScheme.onPrimary),
               ),
               // 360° text
               Positioned(
                 bottom: 20,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.accentBlue,
                     borderRadius: BorderRadius.circular(20),
@@ -172,16 +165,10 @@ class VirtualToursIllustration extends StatelessWidget {
                               height: 120,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: AppColors.accentBlue.withValues(
-                                    alpha: 0.3,
-                                  ),
+                                  color: AppColors.accentBlue.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Icon(
-                                  Icons.apartment,
-                                  size: 40,
-                                  color: AppColors.accentBlue,
-                                ),
+                                child: Icon(Icons.apartment, size: 40, color: AppColors.accentBlue),
                               ),
                             ),
                             // Play button for virtual tour
@@ -214,16 +201,12 @@ class VirtualToursIllustration extends StatelessWidget {
                 top: 50,
                 right: 20,
                 child: SlideTransition(
-                  position:
-                      Tween<Offset>(
-                        begin: const Offset(1, 0),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: scaleAnimation as AnimationController,
-                          curve: const Interval(0.0, 0.3),
-                        ),
-                      ),
+                  position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(
+                    CurvedAnimation(
+                      parent: scaleAnimation as AnimationController,
+                      curve: const Interval(0.0, 0.3),
+                    ),
+                  ),
                   child: const _FloatingIcon(
                     icon: Icons.access_time,
                     color: AppColors.accentGreen,
@@ -235,16 +218,12 @@ class VirtualToursIllustration extends StatelessWidget {
                 bottom: 80,
                 left: 20,
                 child: SlideTransition(
-                  position:
-                      Tween<Offset>(
-                        begin: const Offset(-1, 0),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: scaleAnimation as AnimationController,
-                          curve: const Interval(0.2, 0.5),
-                        ),
-                      ),
+                  position: Tween<Offset>(begin: const Offset(-1, 0), end: Offset.zero).animate(
+                    CurvedAnimation(
+                      parent: scaleAnimation as AnimationController,
+                      curve: const Interval(0.2, 0.5),
+                    ),
+                  ),
                   child: const _FloatingIcon(
                     icon: Icons.location_on,
                     color: AppColors.accentOrange,
@@ -256,16 +235,12 @@ class VirtualToursIllustration extends StatelessWidget {
                 top: 120,
                 left: 30,
                 child: SlideTransition(
-                  position:
-                      Tween<Offset>(
-                        begin: const Offset(0, -1),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: scaleAnimation as AnimationController,
-                          curve: const Interval(0.4, 0.7),
-                        ),
-                      ),
+                  position: Tween<Offset>(begin: const Offset(0, -1), end: Offset.zero).animate(
+                    CurvedAnimation(
+                      parent: scaleAnimation as AnimationController,
+                      curve: const Interval(0.4, 0.7),
+                    ),
+                  ),
                   child: const _FloatingIcon(
                     icon: Icons.home_work,
                     color: AppColors.accentBlue,
@@ -332,11 +307,7 @@ class VerifiedListingIllustration extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
-                          child: Icon(
-                            Icons.image,
-                            size: 30,
-                            color: AppColors.textSecondary,
-                          ),
+                          child: Icon(Icons.image, size: 30, color: AppColors.textSecondary),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -353,11 +324,7 @@ class VerifiedListingIllustration extends StatelessWidget {
                                   shape: BoxShape.circle,
                                   color: AppColors.successGreen,
                                 ),
-                                child: Icon(
-                                  Icons.check,
-                                  size: 14,
-                                  color: colorScheme.onPrimary,
-                                ),
+                                child: Icon(Icons.check, size: 14, color: colorScheme.onPrimary),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -394,11 +361,7 @@ class VerifiedListingIllustration extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Icon(
-                      Icons.verified,
-                      color: colorScheme.onPrimary,
-                      size: 30,
-                    ),
+                    child: Icon(Icons.verified, color: colorScheme.onPrimary, size: 30),
                   ),
                 ),
               ],
@@ -451,8 +414,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                         color: AppColors.successGreen,
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                AppColors.successGreen.withValues(alpha: 0.3),
+                            color: AppColors.successGreen.withValues(alpha: 0.3),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -469,10 +431,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                       top: 20,
                       right: 20,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppColors.accentOrange,
                           borderRadius: BorderRadius.circular(20),
@@ -480,10 +439,10 @@ class LowBrokerageIllustration extends StatelessWidget {
                         child: Text(
                           'LOW %',
                           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -504,18 +463,8 @@ class LowBrokerageIllustration extends StatelessWidget {
                 ];
 
                 return Positioned(
-                  left:
-                      100 +
-                      radius *
-                          math.cos(
-                            angle + rotationAnimation.value * 2 * math.pi,
-                          ),
-                  top:
-                      100 +
-                      radius *
-                          math.sin(
-                            angle + rotationAnimation.value * 2 * math.pi,
-                          ),
+                  left: 100 + radius * math.cos(angle + rotationAnimation.value * 2 * math.pi),
+                  top: 100 + radius * math.sin(angle + rotationAnimation.value * 2 * math.pi),
                   child: Container(
                     width: 40,
                     height: 40,
@@ -545,28 +494,20 @@ class _FloatingIcon extends StatefulWidget {
   final Color color;
   final int delay;
 
-  const _FloatingIcon({
-    required this.icon,
-    required this.color,
-    required this.delay,
-  });
+  const _FloatingIcon({required this.icon, required this.color, required this.delay});
 
   @override
   State<_FloatingIcon> createState() => _FloatingIconState();
 }
 
-class _FloatingIconState extends State<_FloatingIcon>
-    with SingleTickerProviderStateMixin {
+class _FloatingIconState extends State<_FloatingIcon> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
+    _controller = AnimationController(duration: const Duration(milliseconds: 2000), vsync: this);
     _animation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -606,11 +547,7 @@ class _FloatingIconState extends State<_FloatingIcon>
                 ),
               ],
             ),
-            child: Icon(
-              widget.icon,
-              color: Theme.of(context).colorScheme.onPrimary,
-              size: 24,
-            ),
+            child: Icon(widget.icon, color: Theme.of(context).colorScheme.onPrimary, size: 24),
           ),
         );
       },

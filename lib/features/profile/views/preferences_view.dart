@@ -40,13 +40,9 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 ),
               ]),
               const SizedBox(height: 24),
-              _buildSection('display_preferences'.tr, [
-                _buildThemeSelector(),
-              ]),
+              _buildSection('display_preferences'.tr, [_buildThemeSelector()]),
               const SizedBox(height: 24),
-              _buildSection('language_preferences'.tr, [
-                _buildLanguageSelector(),
-              ]),
+              _buildSection('language_preferences'.tr, [_buildLanguageSelector()]),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -55,17 +51,15 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryYellow,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text(
                     'save_preferences'.tr,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ),
@@ -101,12 +95,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
     );
   }
 
-  Widget _buildSwitchTile(
-    String title,
-    String subtitle,
-    bool value,
-    Function(bool) onChanged,
-  ) {
+  Widget _buildSwitchTile(String title, String subtitle, bool value, Function(bool) onChanged) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -115,20 +104,12 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Theme.of(
-                      Get.context!,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(Get.context!).colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -139,8 +120,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             value: value,
             onChanged: onChanged,
             activeColor: Theme.of(Get.context!).colorScheme.primary,
-            activeTrackColor:
-                Theme.of(Get.context!).colorScheme.primary.withValues(alpha: 0.3),
+            activeTrackColor: Theme.of(Get.context!).colorScheme.primary.withValues(alpha: 0.3),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
@@ -159,18 +139,13 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
               children: [
                 Text(
                   'select_language'.tr,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'select_language_desc'.tr,
                   style: TextStyle(
-                    color: Theme.of(
-                      Get.context!,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(Get.context!).colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -190,17 +165,10 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 children: [
                   Text(
                     controller.getCurrentLanguage(),
-                    style: TextStyle(
-                      color: AppColors.primaryYellow,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppColors.primaryYellow,
-                    size: 20,
-                  ),
+                  Icon(Icons.keyboard_arrow_down, color: AppColors.primaryYellow, size: 20),
                 ],
               ),
             ),
@@ -222,18 +190,12 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             _buildLanguageOption('हिंदी', 'hi', 'IN'),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-        ],
+        actions: [TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr))],
       ),
     );
   }
 
-  Widget _buildLanguageOption(
-    String languageName,
-    String langCode,
-    String countryCode,
-  ) {
+  Widget _buildLanguageOption(String languageName, String langCode, String countryCode) {
     return ListTile(
       title: Text(languageName),
       onTap: () {
@@ -257,18 +219,13 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
               children: [
                 Text(
                   'app_theme'.tr,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'app_theme_desc'.tr,
                   style: TextStyle(
-                    color: Theme.of(
-                      Get.context!,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(Get.context!).colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -288,17 +245,10 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 children: [
                   Text(
                     controller.currentThemeName,
-                    style: TextStyle(
-                      color: AppColors.primaryYellow,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppColors.primaryYellow,
-                    size: 20,
-                  ),
+                  Icon(Icons.keyboard_arrow_down, color: AppColors.primaryYellow, size: 20),
                 ],
               ),
             ),
@@ -319,16 +269,10 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             const SizedBox(height: 8),
             _buildThemeOption('Dark', AppThemeMode.dark, Icons.dark_mode),
             const SizedBox(height: 8),
-            _buildThemeOption(
-              'System',
-              AppThemeMode.system,
-              Icons.settings_system_daydream,
-            ),
+            _buildThemeOption('System', AppThemeMode.system, Icons.settings_system_daydream),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-        ],
+        actions: [TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr))],
       ),
     );
   }

@@ -8,10 +8,7 @@ class PropertyDetailsBinding extends Bindings {
   void dependencies() {
     // Register PropertiesRepository if not already registered
     if (!Get.isRegistered<PropertiesRepository>()) {
-      Get.lazyPut<PropertiesRepository>(
-        () => PropertiesRepository(),
-        fenix: true,
-      );
+      Get.lazyPut<PropertiesRepository>(() => PropertiesRepository(), fenix: true);
     }
 
     // Register LikesController for favorite management

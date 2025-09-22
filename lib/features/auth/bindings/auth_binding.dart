@@ -9,8 +9,6 @@ class AuthBinding extends Bindings {
     Get.lazyPut<LoginController>(() => LoginController());
 
     // Register ProfileCompletionController to ensure it's available when auth flow requires it
-    Get.lazyPut<ProfileCompletionController>(
-      () => ProfileCompletionController(),
-    );
+    Get.lazyPut<ProfileCompletionController>(() => ProfileCompletionController());
   }
 }

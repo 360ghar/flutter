@@ -21,12 +21,7 @@ class AuthenticationException extends AppException {
 class ValidationException extends AppException {
   final Map<String, List<String>>? fieldErrors;
 
-  ValidationException(
-    super.message, {
-    super.code,
-    super.details,
-    this.fieldErrors,
-  });
+  ValidationException(super.message, {super.code, super.details, this.fieldErrors});
 }
 
 class NotFoundException extends AppException {

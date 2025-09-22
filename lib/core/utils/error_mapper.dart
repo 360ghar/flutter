@@ -19,15 +19,9 @@ class ErrorMapper {
     // ADD THIS BLOCK AT THE TOP
     // ==========================================================
     if (error is String) {
-      NullCheckTrap.captureStringOccurrence(
-        error,
-        source: 'ErrorMapper.mapApiError(String)',
-      );
+      NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError(String)');
       // Return a generic exception for string errors.
-      return NetworkException(
-        'An unexpected error occurred. Please try again.',
-        details: error,
-      );
+      return NetworkException('An unexpected error occurred. Please try again.', details: error);
     }
     // ==========================================================
 
@@ -36,18 +30,11 @@ class ErrorMapper {
     if (error.toString().contains('Null check operator used on a null value')) {
       if (error is String) {
         // Capture a one-time stack to identify where this mapping is triggered
-        NullCheckTrap.captureStringOccurrence(
-          error,
-          source: 'ErrorMapper.mapApiError',
-        );
+        NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError');
       } else if (error is Error || error is Exception) {
-        DebugLogger.error(
-          '🚨 [ERROR_MAPPER] NULL CHECK OPERATOR ERROR DETECTED!',
-        );
+        DebugLogger.error('🚨 [ERROR_MAPPER] NULL CHECK OPERATOR ERROR DETECTED!');
         DebugLogger.error('🚨 [ERROR_MAPPER] Error type: ${error.runtimeType}');
-        DebugLogger.error(
-          '🚨 [ERROR_MAPPER] Error string: ${error.toString()}',
-        );
+        DebugLogger.error('🚨 [ERROR_MAPPER] Error string: ${error.toString()}');
 
         // CRITICAL: Get the current stack trace to see where this error is coming from
         DebugLogger.error(
@@ -63,9 +50,7 @@ class ErrorMapper {
             DebugLogger.error('🚨 [ERROR_MAPPER] ${error.stackTrace}');
           }
         } catch (e) {
-          DebugLogger.error(
-            '🚨 [ERROR_MAPPER] Could not get original stack trace: $e',
-          );
+          DebugLogger.error('🚨 [ERROR_MAPPER] Could not get original stack trace: $e');
         }
 
         // Log error source analysis
@@ -79,17 +64,11 @@ class ErrorMapper {
             '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_image_model.g.dart (generated code)',
           );
         } else if (stackString.contains('explore_controller.dart')) {
-          DebugLogger.error(
-            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: explore_controller.dart',
-          );
+          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: explore_controller.dart');
         } else if (stackString.contains('likes_controller.dart')) {
-          DebugLogger.error(
-            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: likes_controller.dart',
-          );
+          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: likes_controller.dart');
         } else if (stackString.contains('page_state_service.dart')) {
-          DebugLogger.error(
-            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: page_state_service.dart',
-          );
+          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: page_state_service.dart');
         } else {
           DebugLogger.error(
             '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: Unknown location - check full stack trace above',
@@ -113,10 +92,7 @@ class ErrorMapper {
       // Check if it's a specific error pattern
       if (error.contains('Null check operator used on a null value')) {
         // Also ensure the one-time string trap captures the call site
-        NullCheckTrap.captureStringOccurrence(
-          error,
-          source: 'ErrorMapper.mapApiError(String)',
-        );
+        NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError(String)');
         return NetworkException(
           'A data processing error occurred. Please try again.',
           details: error,
@@ -169,18 +145,13 @@ class ErrorMapper {
     // Handle wrapped ApiException (Exception: ApiException: ...)
     if (error is Exception && error.toString().contains('ApiException:')) {
       final errorString = error.toString();
-      final match = RegExp(
-        r'ApiException: (.+) \(Status: (\d+)\)',
-      ).firstMatch(errorString);
+      final match = RegExp(r'ApiException: (.+) \(Status: (\d+)\)').firstMatch(errorString);
       if (match != null) {
         final message = match.group(1)!;
         final statusCode = int.tryParse(match.group(2)!);
         return _mapHttpStatusCode(statusCode, message);
       }
-      return NetworkException(
-        'API error occurred. Please try again.',
-        details: error.toString(),
-      );
+      return NetworkException('API error occurred. Please try again.', details: error.toString());
     }
 
     // Handle wrapped ApiAuthException (Exception: ApiAuthException: ...)
@@ -214,10 +185,7 @@ class ErrorMapper {
     return NetworkException(error.message, details: error.response);
   }
 
-  static AppException _mapHttpStatusCode(
-    int? statusCode,
-    dynamic responseData,
-  ) {
+  static AppException _mapHttpStatusCode(int? statusCode, dynamic responseData) {
     switch (statusCode) {
       case 400:
         return ValidationException(
@@ -257,8 +225,7 @@ class ErrorMapper {
 
       case 422:
         return ValidationException(
-          _extractValidationMessage(responseData) ??
-              'Please check your input and try again.',
+          _extractValidationMessage(responseData) ?? 'Please check your input and try again.',
           code: 'VALIDATION_ERROR',
           details: responseData,
           fieldErrors: _extractFieldErrors(responseData),
@@ -371,9 +338,7 @@ class ErrorMapper {
     );
 
     // Log the full error for debugging
-    DebugLogger.error(
-      '❌ Error shown to user: title=$title, message=${error.message}',
-    );
+    DebugLogger.error('❌ Error shown to user: title=$title, message=${error.message}');
     if (error.details != null) {
       DebugLogger.error('Details: ${error.details}');
     }

@@ -11,8 +11,7 @@ import '../../../core/controllers/page_state_service.dart';
 enum DiscoverState { initial, loading, loaded, empty, error, prefetching }
 
 class DiscoverController extends GetxController {
-  final PropertiesRepository _propertiesRepository =
-      Get.find<PropertiesRepository>();
+  final PropertiesRepository _propertiesRepository = Get.find<PropertiesRepository>();
   final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
   final PageStateService _pageStateService = Get.find<PageStateService>();
 
@@ -54,9 +53,7 @@ class DiscoverController extends GetxController {
   void onReady() {
     super.onReady();
     DebugLogger.info('🚀 DiscoverController.onReady() called');
-    DebugLogger.info(
-      '📱 Current page type: ${_pageStateService.currentPageType.value}',
-    );
+    DebugLogger.info('📱 Current page type: ${_pageStateService.currentPageType.value}');
 
     // Set up listener for page activation
     _pageActivationWorker = ever(_pageStateService.currentPageType, (pageType) {
@@ -85,8 +82,7 @@ class DiscoverController extends GetxController {
     );
 
     // If page state already has properties but controller is still initial, hydrate deck immediately
-    if (state.properties.isNotEmpty &&
-        this.state.value == DiscoverState.initial) {
+    if (state.properties.isNotEmpty && this.state.value == DiscoverState.initial) {
       DebugLogger.info('🧩 Hydrating deck from existing PageState properties');
       _hydrateDeckFromPageState(state);
       return;
@@ -95,14 +91,10 @@ class DiscoverController extends GetxController {
     if (state.properties.isEmpty && this.state.value == DiscoverState.initial) {
       DebugLogger.info('🌍 Initializing location and loading initial data');
       // Initialize location and load initial data
-      _pageStateService
-          .useCurrentLocationForPage(PageType.discover)
-          .whenComplete(() {
-            DebugLogger.info(
-              '✅ Location initialization completed, loading deck',
-            );
-            _loadInitialDeck();
-          });
+      _pageStateService.useCurrentLocationForPage(PageType.discover).whenComplete(() {
+        DebugLogger.info('✅ Location initialization completed, loading deck');
+        _loadInitialDeck();
+      });
     } else if (state.isDataStale) {
       DebugLogger.info('🔄 Data is stale, refreshing in background');
       _refreshInBackground();
@@ -113,18 +105,13 @@ class DiscoverController extends GetxController {
 
   void _setupPageStateSync() {
     // Keep controller deck/state in sync with PageStateService for discover page
-    _pageStateSyncWorker = ever(_pageStateService.discoverState, (
-      PageStateModel ps,
-    ) {
+    _pageStateSyncWorker = ever(_pageStateService.discoverState, (PageStateModel ps) {
       try {
         // If PageState has properties and our deck is empty or behind, hydrate/sync
         if (ps.properties.isNotEmpty) {
-          final shouldHydrate =
-              deck.isEmpty || deck.length != ps.properties.length;
+          final shouldHydrate = deck.isEmpty || deck.length != ps.properties.length;
           if (shouldHydrate) {
-            DebugLogger.info(
-              '🔗 Syncing deck with PageState (${ps.properties.length} items)',
-            );
+            DebugLogger.info('🔗 Syncing deck with PageState (${ps.properties.length} items)');
             _hydrateDeckFromPageState(ps);
           } else if (state.value == DiscoverState.initial) {
             // Ensure state is not stuck in initial
@@ -150,10 +137,7 @@ class DiscoverController extends GetxController {
   Future<void> _refreshInBackground() async {
     try {
       // Delegate to PageStateService for background refresh
-      await _pageStateService.loadPageData(
-        PageType.discover,
-        backgroundRefresh: true,
-      );
+      await _pageStateService.loadPageData(PageType.discover, backgroundRefresh: true);
     } catch (e) {
       DebugLogger.error('❌ Background refresh failed: $e');
       // Handle silently or with subtle notification
@@ -172,9 +156,7 @@ class DiscoverController extends GetxController {
   }
 
   Future<void> _loadInitialDeck() async {
-    DebugLogger.info(
-      '🃏 _loadInitialDeck() called, current state: ${state.value}',
-    );
+    DebugLogger.info('🃏 _loadInitialDeck() called, current state: ${state.value}');
     if (state.value == DiscoverState.loading) {
       DebugLogger.warning('⚠️ Already loading, skipping');
       return;
@@ -193,9 +175,7 @@ class DiscoverController extends GetxController {
         DebugLogger.warning('📭 Deck is empty, setting state to empty');
         state.value = DiscoverState.empty;
       } else {
-        DebugLogger.success(
-          '✅ Deck loaded successfully with ${deck.length} properties',
-        );
+        DebugLogger.success('✅ Deck loaded successfully with ${deck.length} properties');
         state.value = DiscoverState.loaded;
         currentIndex.value = 0;
       }
@@ -208,9 +188,7 @@ class DiscoverController extends GetxController {
       // If PageStateService has data, ensure hydration to avoid desync
       final ps = _pageStateService.discoverState.value;
       if (ps.properties.isNotEmpty && deck.isEmpty) {
-        DebugLogger.info(
-          '🧩 Post-load hydration from PageStateService as deck is empty',
-        );
+        DebugLogger.info('🧩 Post-load hydration from PageStateService as deck is empty');
         _hydrateDeckFromPageState(ps);
       }
     }
@@ -218,9 +196,7 @@ class DiscoverController extends GetxController {
 
   Future<void> _loadMoreProperties() async {
     if (!_hasMore) {
-      DebugLogger.api(
-        '📚 No more properties to load (page $_currentPage/$_totalPages)',
-      );
+      DebugLogger.api('📚 No more properties to load (page $_currentPage/$_totalPages)');
       return;
     }
 
@@ -240,8 +216,7 @@ class DiscoverController extends GetxController {
         limit: _limit,
         latitude: pageState.selectedLocation!.latitude,
         longitude: pageState.selectedLocation!.longitude,
-        radiusKm:
-            _pageStateService.getCurrentPageState().filters.radiusKm ?? 10.0,
+        radiusKm: _pageStateService.getCurrentPageState().filters.radiusKm ?? 10.0,
         excludeSwiped: true,
         useCache: true,
       );
@@ -268,9 +243,7 @@ class DiscoverController extends GetxController {
     _totalPages = response.totalPages;
     _hasMore = response.hasMore;
 
-    DebugLogger.api(
-      '📊 Pagination updated: page $_currentPage/$_totalPages, hasMore: $_hasMore',
-    );
+    DebugLogger.api('📊 Pagination updated: page $_currentPage/$_totalPages, hasMore: $_hasMore');
   }
 
   // Swipe actions
@@ -286,9 +259,7 @@ class DiscoverController extends GetxController {
 
   Future<void> _handleSwipe(PropertyModel property, bool isLiked) async {
     try {
-      DebugLogger.api(
-        '👆 Swiping ${isLiked ? 'RIGHT (LIKE)' : 'LEFT (PASS)'}: ${property.title}',
-      );
+      DebugLogger.api('👆 Swiping ${isLiked ? 'RIGHT (LIKE)' : 'LEFT (PASS)'}: ${property.title}');
 
       // Optimistic update - move to next card immediately
       _moveToNextCard();
@@ -327,14 +298,10 @@ class DiscoverController extends GetxController {
 
   void _recordSwipeAsync(int propertyId, bool isLiked) {
     // Record swipe asynchronously without blocking UI
-    _swipesRepository
-        .recordSwipe(propertyId: propertyId, isLiked: isLiked)
-        .catchError((e) {
-          DebugLogger.error(
-            '❌ Failed to record swipe for property $propertyId: $e',
-          );
-          // Could add to retry queue here
-        });
+    _swipesRepository.recordSwipe(propertyId: propertyId, isLiked: isLiked).catchError((e) {
+      DebugLogger.error('❌ Failed to record swipe for property $propertyId: $e');
+      // Could add to retry queue here
+    });
   }
 
   void _recordSwipeStats(bool isLiked) {
@@ -349,9 +316,7 @@ class DiscoverController extends GetxController {
   void _checkForPrefetch() {
     final remainingCards = deck.length - currentIndex.value - 1;
 
-    if (remainingCards <= _prefetchThreshold &&
-        _hasMore &&
-        !isPrefetching.value) {
+    if (remainingCards <= _prefetchThreshold && _hasMore && !isPrefetching.value) {
       _prefetchMoreProperties();
     }
   }
@@ -382,13 +347,8 @@ class DiscoverController extends GetxController {
   // Reset and reload deck (when filters change)
   Future<void> _resetAndLoadDeck({bool backgroundRefresh = false}) async {
     if (backgroundRefresh) {
-      DebugLogger.api(
-        '🔄 Background refresh for discover deck via PageStateService',
-      );
-      await _pageStateService.loadPageData(
-        PageType.discover,
-        backgroundRefresh: true,
-      );
+      DebugLogger.api('🔄 Background refresh for discover deck via PageStateService');
+      await _pageStateService.loadPageData(PageType.discover, backgroundRefresh: true);
       _hydrateDeckFromPageState(_pageStateService.discoverState.value);
     } else {
       DebugLogger.api('🔄 Resetting deck due to filter change');
@@ -404,15 +364,10 @@ class DiscoverController extends GetxController {
         state.value = DiscoverState.loading;
         error.value = null;
         _pageStateService.notifyPageRefreshing(PageType.discover, true);
-        await _pageStateService.loadPageData(
-          PageType.discover,
-          forceRefresh: true,
-        );
+        await _pageStateService.loadPageData(PageType.discover, forceRefresh: true);
         _hydrateDeckFromPageState(_pageStateService.discoverState.value);
       } catch (e) {
-        DebugLogger.error(
-          '❌ Failed to reset and load deck via PageStateService: $e',
-        );
+        DebugLogger.error('❌ Failed to reset and load deck via PageStateService: $e');
         // Fallback to direct loading
         await _loadInitialDeck();
       } finally {
@@ -484,8 +439,7 @@ class DiscoverController extends GetxController {
       return 'Start swiping to see stats';
     }
 
-    final likeRate = (likesInSession.value / totalSwipesInSession.value * 100)
-        .round();
+    final likeRate = (likesInSession.value / totalSwipesInSession.value * 100).round();
     return '${totalSwipesInSession.value} swipes • ${likesInSession.value} likes • $likeRate% like rate';
   }
 

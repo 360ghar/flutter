@@ -69,9 +69,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 hintText: 'phone_hint'.tr,
               ),
               keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r"[0-9+\s]")),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[0-9+\s]"))],
               validator: (value) {
                 final raw = (value ?? '').trim();
                 if (raw.isEmpty) {
@@ -80,8 +78,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 final cleaned = raw.replaceAll(RegExp(r"\s+"), "");
                 final tenDigits = RegExp(r"^[0-9]{10}$");
                 final e164IN = RegExp(r"^\+91[0-9]{10}$");
-                if (!(tenDigits.hasMatch(cleaned) ||
-                    e164IN.hasMatch(cleaned))) {
+                if (!(tenDigits.hasMatch(cleaned) || e164IN.hasMatch(cleaned))) {
                   return 'phone_invalid'.tr;
                 }
                 return null;
@@ -110,14 +107,10 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
             // Send OTP Button
             Obx(
               () => ElevatedButton(
-                onPressed: controller.isLoading.value
-                    ? null
-                    : controller.sendResetOtp,
+                onPressed: controller.isLoading.value ? null : controller.sendResetOtp,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: controller.isLoading.value
                     ? SizedBox(
@@ -225,14 +218,10 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           // Verify OTP Button
           Obx(
             () => ElevatedButton(
-              onPressed: controller.isLoading.value
-                  ? null
-                  : controller.verifyResetOtp,
+              onPressed: controller.isLoading.value ? null : controller.verifyResetOtp,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: controller.isLoading.value
                   ? SizedBox(
@@ -258,9 +247,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           // Resend OTP Button
           Obx(
             () => TextButton(
-              onPressed: controller.canResendOtp.value
-                  ? controller.resendOtp
-                  : null,
+              onPressed: controller.canResendOtp.value ? controller.resendOtp : null,
               child: Text(
                 controller.canResendOtp.value
                     ? 'resend_code'.tr
@@ -321,9 +308,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 suffixIcon: IconButton(
                   onPressed: controller.togglePasswordVisibility,
                   icon: Icon(
-                    controller.isPasswordVisible.value
-                        ? Icons.visibility_off
-                        : Icons.visibility,
+                    controller.isPasswordVisible.value ? Icons.visibility_off : Icons.visibility,
                   ),
                 ),
               ),
@@ -375,14 +360,10 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           // Update Password Button
           Obx(
             () => ElevatedButton(
-              onPressed: controller.isLoading.value
-                  ? null
-                  : controller.updatePassword,
+              onPressed: controller.isLoading.value ? null : controller.updatePassword,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: controller.isLoading.value
                   ? SizedBox(

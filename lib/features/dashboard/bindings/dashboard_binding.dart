@@ -15,10 +15,7 @@ class DashboardBinding extends Bindings {
   void dependencies() {
     // Register core repositories needed by features
     if (!Get.isRegistered<PropertiesRepository>()) {
-      Get.lazyPut<PropertiesRepository>(
-        () => PropertiesRepository(),
-        fenix: true,
-      );
+      Get.lazyPut<PropertiesRepository>(() => PropertiesRepository(), fenix: true);
     }
 
     if (!Get.isRegistered<SwipesRepository>()) {

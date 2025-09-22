@@ -69,11 +69,7 @@ class DependencyManager {
       }
       return null;
     } catch (e, stackTrace) {
-      DebugLogger.error(
-        'Error finding dependency ${T.toString()}',
-        e,
-        stackTrace,
-      );
+      DebugLogger.error('Error finding dependency ${T.toString()}', e, stackTrace);
       return null;
     }
   }
@@ -86,11 +82,7 @@ class DependencyManager {
       }
       return Get.put<T>(creator(), permanent: permanent);
     } catch (e, stackTrace) {
-      DebugLogger.error(
-        'Error initializing dependency ${T.toString()}',
-        e,
-        stackTrace,
-      );
+      DebugLogger.error('Error initializing dependency ${T.toString()}', e, stackTrace);
       return null;
     }
   }

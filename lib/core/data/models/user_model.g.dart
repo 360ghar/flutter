@@ -22,14 +22,13 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   preferredLocations: (json['preferred_locations'] as List<dynamic>?)
       ?.map((e) => e as String)
       .toList(),
-  notificationSettings: (json['notification_settings'] as Map<String, dynamic>?)
-      ?.map((k, e) => MapEntry(k, e as bool)),
+  notificationSettings: (json['notification_settings'] as Map<String, dynamic>?)?.map(
+    (k, e) => MapEntry(k, e as bool),
+  ),
   privacySettings: json['privacy_settings'] as Map<String, dynamic>?,
   agentId: (json['agent_id'] as num?)?.toInt(),
   createdAt: DateTime.parse(json['created_at'] as String),
-  updatedAt: json['updated_at'] == null
-      ? null
-      : DateTime.parse(json['updated_at'] as String),
+  updatedAt: json['updated_at'] == null ? null : DateTime.parse(json['updated_at'] as String),
   fcmToken: json['fcmToken'] as String?,
 );
 

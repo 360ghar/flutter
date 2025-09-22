@@ -8,11 +8,7 @@ import '../../data/models/app_update_models.dart';
 enum AppUpdateAction { update, remindLater }
 
 class AppUpdateDialog extends StatelessWidget {
-  const AppUpdateDialog({
-    super.key,
-    required this.response,
-    required this.currentVersion,
-  });
+  const AppUpdateDialog({super.key, required this.response, required this.currentVersion});
 
   final AppVersionCheckResponse response;
   final String currentVersion;
@@ -28,28 +24,19 @@ class AppUpdateDialog extends StatelessWidget {
     return WillPopScope(
       onWillPop: () async => !isMandatory,
       child: AlertDialog(
-        title: Text(
-          isMandatory
-              ? 'mandatory_update_required'.tr
-              : 'update_available'.tr,
-        ),
+        title: Text(isMandatory ? 'mandatory_update_required'.tr : 'update_available'.tr),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '${'current_version'.tr}: $currentVersion',
-                style: theme.textTheme.bodySmall,
-              ),
+              Text('${'current_version'.tr}: $currentVersion', style: theme.textTheme.bodySmall),
               if (latestVersionLabel != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     '${'latest_version'.tr}: $latestVersionLabel',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
               if (minSupportedVersion != null)
@@ -69,9 +56,7 @@ class AppUpdateDialog extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: Text(
-                    isMandatory
-                        ? 'mandatory_update_desc'.tr
-                        : 'optional_update_desc'.tr,
+                    isMandatory ? 'mandatory_update_desc'.tr : 'optional_update_desc'.tr,
                     style: theme.textTheme.bodyMedium,
                   ),
                 ),

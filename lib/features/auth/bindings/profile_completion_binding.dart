@@ -4,8 +4,6 @@ import '../controllers/profile_completion_controller.dart';
 class ProfileCompletionBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<ProfileCompletionController>(
-      () => ProfileCompletionController(),
-    );
+    Get.lazyPut<ProfileCompletionController>(() => ProfileCompletionController());
   }
 }

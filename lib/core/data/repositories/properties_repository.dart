@@ -84,9 +84,7 @@ class PropertiesRepository extends GetxService {
         }
       }
 
-      DebugLogger.success(
-        '✅ Loaded ${allProperties.length}/${propertyIds.length} properties',
-      );
+      DebugLogger.success('✅ Loaded ${allProperties.length}/${propertyIds.length} properties');
       return allProperties;
     } on AppException catch (e) {
       DebugLogger.error('❌ Failed to fetch properties by IDs: ${e.message}');
@@ -128,9 +126,7 @@ class PropertiesRepository extends GetxService {
   }) async {
     try {
       DebugLogger.api('🗺️ Loading all properties for map view');
-      DebugLogger.info(
-        '🔍 Filters passed to loadAllPropertiesForMap: ${filters.toJson()}',
-      );
+      DebugLogger.info('🔍 Filters passed to loadAllPropertiesForMap: ${filters.toJson()}');
       DebugLogger.info('📊 Active filter count: ${filters.activeFilterCount}');
 
       final List<PropertyModel> allProperties = [];
@@ -174,14 +170,10 @@ class PropertiesRepository extends GetxService {
         currentPage++;
       } while (currentPage <= totalPages);
 
-      DebugLogger.success(
-        '✅ Loaded all ${allProperties.length} properties for map',
-      );
+      DebugLogger.success('✅ Loaded all ${allProperties.length} properties for map');
 
       // Final validation
-      final propertiesWithLocation = allProperties
-          .where((p) => p.hasLocation)
-          .length;
+      final propertiesWithLocation = allProperties.where((p) => p.hasLocation).length;
       DebugLogger.info(
         '🗺️ Final result: ${allProperties.length} total properties, $propertiesWithLocation with location data',
       );

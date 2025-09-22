@@ -41,10 +41,7 @@ class PropertyDetailsView extends StatelessWidget {
           ),
           title: Text(
             'property_details'.tr,
-            style: TextStyle(
-              color: AppColors.appBarText,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: AppColors.appBarText, fontWeight: FontWeight.bold),
           ),
         ),
         body: Center(
@@ -65,8 +62,7 @@ class PropertyDetailsView extends StatelessWidget {
 
     // Ensure visits are loaded to reflect scheduled state in UI
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!visitsController.hasLoadedVisits.value &&
-          !visitsController.isLoading.value) {
+      if (!visitsController.hasLoadedVisits.value && !visitsController.isLoading.value) {
         visitsController.loadVisitsLazy();
       }
     });
@@ -87,10 +83,7 @@ class PropertyDetailsView extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
+                icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
                 onPressed: () => Get.back(),
               ),
             ),
@@ -107,10 +100,9 @@ class PropertyDetailsView extends StatelessWidget {
                       controller.isFavourite(safeProperty.id)
                           ? Icons.favorite
                           : Icons.favorite_border,
-                      color:
-                          controller.isFavourite(safeProperty.id)
-                              ? AppColors.favoriteActive
-                              : Theme.of(context).colorScheme.onPrimary,
+                      color: controller.isFavourite(safeProperty.id)
+                          ? AppColors.favoriteActive
+                          : Theme.of(context).colorScheme.onPrimary,
                     ),
                     onPressed: () {
                       if (controller.isFavourite(safeProperty.id)) {
@@ -129,10 +121,7 @@ class PropertyDetailsView extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  icon: Icon(
-                    Icons.share,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
+                  icon: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimary),
                   onPressed: () {
                     Get.snackbar(
                       'share_property'.tr,
@@ -185,8 +174,7 @@ class PropertyDetailsView extends StatelessWidget {
                                           color: AppColors.propertyCardPrice,
                                         ),
                                       ),
-                                      if (safeProperty.purpose ==
-                                          PropertyPurpose.rent)
+                                      if (safeProperty.purpose == PropertyPurpose.rent)
                                         TextSpan(
                                           text: ' /mo',
                                           style: TextStyle(
@@ -195,8 +183,7 @@ class PropertyDetailsView extends StatelessWidget {
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                      if (safeProperty.purpose ==
-                                          PropertyPurpose.shortStay)
+                                      if (safeProperty.purpose == PropertyPurpose.shortStay)
                                         TextSpan(
                                           text: ' /day',
                                           style: TextStyle(
@@ -244,10 +231,7 @@ class PropertyDetailsView extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryYellow,
                                   borderRadius: BorderRadius.circular(20),
@@ -262,10 +246,7 @@ class PropertyDetailsView extends StatelessWidget {
                               ),
                               const SizedBox(height: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: AppColors.inputBackground,
                                   borderRadius: BorderRadius.circular(20),
@@ -307,30 +288,21 @@ class PropertyDetailsView extends StatelessWidget {
                         clipBehavior: Clip.antiAlias,
                         child: FlutterMap(
                           options: MapOptions(
-                            initialCenter: LatLng(
-                              safeProperty.latitude!,
-                              safeProperty.longitude!,
-                            ),
+                            initialCenter: LatLng(safeProperty.latitude!, safeProperty.longitude!),
                             initialZoom: 15,
                             interactionOptions: const InteractionOptions(
-                              flags:
-                                  InteractiveFlag.pinchZoom |
-                                  InteractiveFlag.drag,
+                              flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
                             ),
                           ),
                           children: [
                             TileLayer(
-                              urlTemplate:
-                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                               userAgentPackageName: 'com.ghar360.app',
                             ),
                             MarkerLayer(
                               markers: [
                                 Marker(
-                                  point: LatLng(
-                                    safeProperty.latitude!,
-                                    safeProperty.longitude!,
-                                  ),
+                                  point: LatLng(safeProperty.latitude!, safeProperty.longitude!),
                                   width: 40,
                                   height: 40,
                                   child: const Icon(
@@ -348,12 +320,11 @@ class PropertyDetailsView extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: OutlinedButton.icon(
-                          onPressed:
-                              () => _openGoogleMaps(
-                                safeProperty.latitude!,
-                                safeProperty.longitude!,
-                                safeProperty.title,
-                              ),
+                          onPressed: () => _openGoogleMaps(
+                            safeProperty.latitude!,
+                            safeProperty.longitude!,
+                            safeProperty.title,
+                          ),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: AppColors.primaryYellow),
                             foregroundColor: AppColors.textPrimary,
@@ -375,19 +346,12 @@ class PropertyDetailsView extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.location_on,
-                            color: AppColors.iconColor,
-                            size: 20,
-                          ),
+                          Icon(Icons.location_on, color: AppColors.iconColor, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               safeProperty.addressDisplay,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: AppColors.textSecondary,
-                              ),
+                              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
                             ),
                           ),
                         ],
@@ -411,11 +375,7 @@ class PropertyDetailsView extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       safeProperty.description ?? 'No description available',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textSecondary,
-                        height: 1.5,
-                      ),
+                      style: TextStyle(fontSize: 16, color: AppColors.textSecondary, height: 1.5),
                     ),
                     const SizedBox(height: 16),
                     if ((safeProperty.features?.isNotEmpty ?? false) ||
@@ -433,8 +393,7 @@ class PropertyDetailsView extends StatelessWidget {
                         spacing: 8,
                         runSpacing: 8,
                         children:
-                            ((safeProperty.features != null &&
-                                        safeProperty.features!.isNotEmpty)
+                            ((safeProperty.features != null && safeProperty.features!.isNotEmpty)
                                     ? safeProperty.features!
                                     : (safeProperty.tags ?? []))
                                 .take(6)
@@ -445,13 +404,10 @@ class PropertyDetailsView extends StatelessWidget {
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primaryYellow.withValues(
-                                        alpha: 0.1,
-                                      ),
+                                      color: AppColors.primaryYellow.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: AppColors.primaryYellow
-                                            .withValues(alpha: 0.3),
+                                        color: AppColors.primaryYellow.withValues(alpha: 0.3),
                                       ),
                                     ),
                                     child: Text(
@@ -478,8 +434,7 @@ class PropertyDetailsView extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // Owner/Agent Information
-                    if (safeProperty.hasOwner ||
-                        safeProperty.builderName?.isNotEmpty == true) ...[
+                    if (safeProperty.hasOwner || safeProperty.builderName?.isNotEmpty == true) ...[
                       _buildContactSection(safeProperty),
                       const SizedBox(height: 24),
                     ],
@@ -500,19 +455,12 @@ class PropertyDetailsView extends StatelessWidget {
                       children:
                           safeProperty.amenities?.map((amenity) {
                             return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryYellow.withValues(
-                                  alpha: 0.1,
-                                ),
+                                color: AppColors.primaryYellow.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: AppColors.primaryYellow.withValues(
-                                    alpha: 0.3,
-                                  ),
+                                  color: AppColors.primaryYellow.withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Text(
@@ -563,83 +511,60 @@ class PropertyDetailsView extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface,
             boxShadow: [
-              BoxShadow(
-                color: AppColors.shadowColor,
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
+              BoxShadow(color: AppColors.shadowColor, blurRadius: 10, offset: const Offset(0, -5)),
             ],
           ),
           child: SizedBox(
             width: double.infinity,
-            child:
-                (() {
-                  // Prefer server-provided schedule info
-                  final DateTime? scheduledDate =
-                      safeProperty.userNextVisitDate ??
-                      scheduledVisit?.scheduledDate;
-                  final bool alreadyScheduled =
-                      safeProperty.userHasScheduledVisit ||
-                      scheduledDate != null;
+            child: (() {
+              // Prefer server-provided schedule info
+              final DateTime? scheduledDate =
+                  safeProperty.userNextVisitDate ?? scheduledVisit?.scheduledDate;
+              final bool alreadyScheduled =
+                  safeProperty.userHasScheduledVisit || scheduledDate != null;
 
-                  return alreadyScheduled
-                      ? Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.inputBackground,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: AppColors.accentGreen,
+              return alreadyScheduled
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.inputBackground,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle, color: AppColors.accentGreen),
+                          const SizedBox(width: 8),
+                          Text(
+                            scheduledDate != null
+                                ? 'Scheduled on ${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}'
+                                : 'Visit Scheduled',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              scheduledDate != null
-                                  ? 'Scheduled on ${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}'
-                                  : 'Visit Scheduled',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                      : ElevatedButton.icon(
-                        onPressed:
-                            () => _showBookVisitDialog(
-                              context,
-                              safeProperty,
-                              visitsController,
-                            ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryYellow,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                        icon: const Icon(Icons.calendar_today),
-                        label: Text(
-                          'schedule_visit'.tr,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      );
-                })(),
+                        ],
+                      ),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: () =>
+                          _showBookVisitDialog(context, safeProperty, visitsController),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryYellow,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.calendar_today),
+                      label: Text(
+                        'schedule_visit'.tr,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    );
+            })(),
           ),
         );
       }),
@@ -659,11 +584,7 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.info_outline,
-                color: AppColors.primaryYellow,
-                size: 20,
-              ),
+              Icon(Icons.info_outline, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Property Information',
@@ -679,17 +600,13 @@ class PropertyDetailsView extends StatelessWidget {
 
           _buildInfoRow('Status', property.statusString),
           _buildInfoRow('Purpose', property.purposeString),
-          if (property.ageText.isNotEmpty)
-            _buildInfoRow('Age', property.ageText),
+          if (property.ageText.isNotEmpty) _buildInfoRow('Age', property.ageText),
           if (property.maxOccupancy != null)
             _buildInfoRow('Max Occupancy', '${property.maxOccupancy} people'),
           if (property.minimumStayDays != null)
             _buildInfoRow('Minimum Stay', '${property.minimumStayDays} days'),
           if (property.availableFrom?.isNotEmpty == true)
-            _buildInfoRow(
-              'Available From',
-              _formatDate(property.availableFrom!),
-            ),
+            _buildInfoRow('Available From', _formatDate(property.availableFrom!)),
         ],
       ),
     );
@@ -708,11 +625,7 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.payments_outlined,
-                color: AppColors.primaryYellow,
-                size: 20,
-              ),
+              Icon(Icons.payments_outlined, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Pricing Details',
@@ -726,35 +639,17 @@ class PropertyDetailsView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          _buildInfoRow(
-            'Base Price',
-            '₹${property.basePrice.toStringAsFixed(0)}',
-          ),
+          _buildInfoRow('Base Price', '₹${property.basePrice.toStringAsFixed(0)}'),
           if (property.monthlyRent != null)
-            _buildInfoRow(
-              'Monthly Rent',
-              '₹${property.monthlyRent!.toStringAsFixed(0)}',
-            ),
+            _buildInfoRow('Monthly Rent', '₹${property.monthlyRent!.toStringAsFixed(0)}'),
           if (property.dailyRate != null)
-            _buildInfoRow(
-              'Daily Rate',
-              '₹${property.dailyRate!.toStringAsFixed(0)}',
-            ),
+            _buildInfoRow('Daily Rate', '₹${property.dailyRate!.toStringAsFixed(0)}'),
           if (property.securityDeposit != null)
-            _buildInfoRow(
-              'Security Deposit',
-              '₹${property.securityDeposit!.toStringAsFixed(0)}',
-            ),
+            _buildInfoRow('Security Deposit', '₹${property.securityDeposit!.toStringAsFixed(0)}'),
           if (property.maintenanceCharges != null)
-            _buildInfoRow(
-              'Maintenance',
-              '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
-            ),
+            _buildInfoRow('Maintenance', '₹${property.maintenanceCharges!.toStringAsFixed(0)}'),
           if (property.pricePerSqft != null)
-            _buildInfoRow(
-              'Price per Sq Ft',
-              '₹${property.pricePerSqft!.toStringAsFixed(0)}',
-            ),
+            _buildInfoRow('Price per Sq Ft', '₹${property.pricePerSqft!.toStringAsFixed(0)}'),
         ],
       ),
     );
@@ -773,11 +668,7 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.contact_phone,
-                color: AppColors.primaryYellow,
-                size: 20,
-              ),
+              Icon(Icons.contact_phone, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Contact Information',
@@ -793,8 +684,7 @@ class PropertyDetailsView extends StatelessWidget {
 
           if (property.hasOwner) ...[
             _buildInfoRow('Owner', property.ownerDisplayName),
-            if (property.hasOwnerContact)
-              _buildInfoRow('Contact', property.ownerContact!),
+            if (property.hasOwnerContact) _buildInfoRow('Contact', property.ownerContact!),
           ],
           if (property.builderName?.isNotEmpty == true)
             _buildInfoRow('Builder', property.builderName!),
@@ -846,11 +736,7 @@ class PropertyDetailsView extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -893,10 +779,7 @@ class PropertyDetailsView extends StatelessWidget {
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text(
-          'Schedule Visit',
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
+        title: Text('Schedule Visit', style: TextStyle(color: AppColors.textPrimary)),
         content: StatefulBuilder(
           builder: (context, setState) {
             return Column(
@@ -904,23 +787,14 @@ class PropertyDetailsView extends StatelessWidget {
               children: [
                 Text(
                   'Schedule a visit to ${safeProperty.title}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
 
                 // Date Selection
                 ListTile(
-                  leading: const Icon(
-                    Icons.calendar_today,
-                    color: AppColors.primaryYellow,
-                  ),
-                  title: Text(
-                    'Date',
-                    style: TextStyle(color: AppColors.textPrimary),
-                  ),
+                  leading: const Icon(Icons.calendar_today, color: AppColors.primaryYellow),
+                  title: Text('Date', style: TextStyle(color: AppColors.textPrimary)),
                   subtitle: Text(
                     '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                     style: TextStyle(color: AppColors.textSecondary),
@@ -963,10 +837,7 @@ class PropertyDetailsView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
+            child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -978,16 +849,11 @@ class PropertyDetailsView extends StatelessWidget {
                 defaultMinute,
               );
 
-              final notes =
-                  notesController.text.trim().isEmpty
-                      ? null
-                      : notesController.text.trim();
+              final notes = notesController.text.trim().isEmpty
+                  ? null
+                  : notesController.text.trim();
 
-              visitsController.bookVisit(
-                safeProperty,
-                visitDateTime,
-                notes: notes,
-              );
+              visitsController.bookVisit(safeProperty, visitDateTime, notes: notes);
               Get.back();
 
               Get.snackbar(
@@ -1012,11 +878,7 @@ class PropertyDetailsView extends StatelessWidget {
 }
 
 // Opens Google Maps with directions to the given coordinates
-Future<void> _openGoogleMaps(
-  double latitude,
-  double longitude,
-  String label,
-) async {
+Future<void> _openGoogleMaps(double latitude, double longitude, String label) async {
   final url = Uri.parse(
     'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude&travelmode=driving',
   );
@@ -1069,18 +931,13 @@ class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
           itemCount: itemCount,
           onPageChanged: (i) => setState(() => _current = i),
           itemBuilder: (context, index) {
-            final url =
-                images.isNotEmpty ? images[index] : widget.property.mainImage;
+            final url = images.isNotEmpty ? images[index] : widget.property.mainImage;
             return RobustNetworkImage(
               imageUrl: url,
               fit: BoxFit.cover,
               errorWidget: Container(
                 color: AppColors.inputBackground,
-                child: Icon(
-                  Icons.image,
-                  size: 50,
-                  color: AppColors.disabledColor,
-                ),
+                child: Icon(Icons.image, size: 50, color: AppColors.disabledColor),
               ),
             );
           },
@@ -1097,10 +954,7 @@ class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
               ),
               child: Text(
                 '${_current + 1}/$itemCount',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12),
               ),
             ),
           ),
@@ -1147,11 +1001,7 @@ class _VirtualTourSectionState extends State<_VirtualTourSection> {
             Expanded(
               child: Row(
                 children: [
-                  Icon(
-                    Icons.threesixty,
-                    size: 24,
-                    color: AppColors.primaryYellow,
-                  ),
+                  Icon(Icons.threesixty, size: 24, color: AppColors.primaryYellow),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1177,28 +1027,16 @@ class _VirtualTourSectionState extends State<_VirtualTourSection> {
             const SizedBox(width: 12),
             TextButton.icon(
               onPressed: _openFullScreen,
-              icon: Icon(
-                Icons.fullscreen,
-                size: 18,
-                color: AppColors.primaryYellow,
-              ),
+              icon: Icon(Icons.fullscreen, size: 18, color: AppColors.primaryYellow),
               label: const Text('Fullscreen'),
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 backgroundColor: AppColors.primaryYellow.withValues(alpha: 0.1),
                 foregroundColor: AppColors.primaryYellow,
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: AppColors.primaryYellow.withValues(alpha: 0.3),
-                  ),
+                  side: BorderSide(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
                 ),
               ),
             ),
@@ -1207,62 +1045,58 @@ class _VirtualTourSectionState extends State<_VirtualTourSection> {
         const SizedBox(height: 12),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
-          child:
-              _showEmbeddedTour
-                  ? _TourContainer(
-                    key: const ValueKey('embeddedTour'),
-                    child: _Embedded360TourDetails(tourUrl: widget.tourUrl),
-                  )
-                  : _TourContainer(
-                    key: const ValueKey('tourPlaceholder'),
-                    child: GestureDetector(
-                      onTap: _handleLoadTour,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (widget.thumbnailUrl != null &&
-                              widget.thumbnailUrl!.isNotEmpty)
-                            RobustNetworkImage(
-                              imageUrl: widget.thumbnailUrl!,
-                              fit: BoxFit.cover,
-                              memCacheWidth: 800,
-                              memCacheHeight: 450,
-                            )
-                          else
-                            Container(color: AppColors.inputBackground),
-                          Container(
-                            color: Colors.black.withValues(alpha: 0.35),
+          child: _showEmbeddedTour
+              ? _TourContainer(
+                  key: const ValueKey('embeddedTour'),
+                  child: _Embedded360TourDetails(tourUrl: widget.tourUrl),
+                )
+              : _TourContainer(
+                  key: const ValueKey('tourPlaceholder'),
+                  child: GestureDetector(
+                    onTap: _handleLoadTour,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty)
+                          RobustNetworkImage(
+                            imageUrl: widget.thumbnailUrl!,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 800,
+                            memCacheHeight: 450,
+                          )
+                        else
+                          Container(color: AppColors.inputBackground),
+                        Container(color: Colors.black.withValues(alpha: 0.35)),
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.play_circle_fill,
+                                size: 64,
+                                color: AppColors.primaryYellow,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Tap to load virtual tour',
+                                style:
+                                    theme.textTheme.titleMedium?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ) ??
+                                    const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
                           ),
-                          Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.play_circle_fill,
-                                  size: 64,
-                                  color: AppColors.primaryYellow,
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Tap to load virtual tour',
-                                  style:
-                                      theme.textTheme.titleMedium?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                      ) ??
-                                      const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
+                ),
         ),
       ],
     );
@@ -1294,8 +1128,7 @@ class _Embedded360TourDetails extends StatefulWidget {
   const _Embedded360TourDetails({required this.tourUrl});
 
   @override
-  State<_Embedded360TourDetails> createState() =>
-      _Embedded360TourDetailsState();
+  State<_Embedded360TourDetails> createState() => _Embedded360TourDetailsState();
 }
 
 class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
@@ -1315,40 +1148,40 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
       }
     ''';
 
-    controller =
-        WebViewController()
-          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-          ..setBackgroundColor(const Color(0x00000000))
-          ..setNavigationDelegate(
-            NavigationDelegate(
-              onPageStarted: (String url) {
-                if (mounted) {
-                  setState(() {
-                    isLoading = true;
-                  });
-                }
-                controller.runJavaScript(consoleSilencer);
-              },
-              onPageFinished: (String url) {
-                if (mounted) {
-                  setState(() {
-                    isLoading = false;
-                  });
-                }
-                controller.runJavaScript(consoleSilencer);
-              },
-              onWebResourceError: (WebResourceError error) {
-                if (mounted) {
-                  setState(() {
-                    isLoading = false;
-                  });
-                }
-              },
-            ),
-          );
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (String url) {
+            if (mounted) {
+              setState(() {
+                isLoading = true;
+              });
+            }
+            controller.runJavaScript(consoleSilencer);
+          },
+          onPageFinished: (String url) {
+            if (mounted) {
+              setState(() {
+                isLoading = false;
+              });
+            }
+            controller.runJavaScript(consoleSilencer);
+          },
+          onWebResourceError: (WebResourceError error) {
+            if (mounted) {
+              setState(() {
+                isLoading = false;
+              });
+            }
+          },
+        ),
+      );
 
     final sanitizedUrl = widget.tourUrl;
-    final htmlContent = '''
+    final htmlContent =
+        '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -1398,10 +1231,7 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(
-                    color: AppColors.primaryYellow,
-                    strokeWidth: 3,
-                  ),
+                  CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 3),
                   const SizedBox(height: 12),
                   Text(
                     'Loading 360° Tour...',

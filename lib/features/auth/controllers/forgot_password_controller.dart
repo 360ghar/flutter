@@ -59,11 +59,7 @@ class ForgotPasswordController extends GetxController {
       currentStep.value = 1; // Move to OTP step
       _startOtpCountdown();
 
-      Get.snackbar(
-        'otp_sent'.tr,
-        'password_reset_otp_sent'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
+      Get.snackbar('otp_sent'.tr, 'password_reset_otp_sent'.tr, snackPosition: SnackPosition.TOP);
 
       DebugLogger.success('Password reset OTP sent to $phone');
     } catch (e) {
@@ -87,10 +83,7 @@ class ForgotPasswordController extends GetxController {
 
     try {
       final phone = _normalizeIndianPhone(phoneController.text.trim());
-      await _authRepository.verifyPhoneOtp(
-        phone: phone,
-        token: otpController.text.trim(),
-      );
+      await _authRepository.verifyPhoneOtp(phone: phone, token: otpController.text.trim());
 
       // This creates a temporary session for password reset
       currentStep.value = 2; // Move to password reset step

@@ -7,11 +7,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
-  const CustomBottomNavigationBar({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-  });
+  const CustomBottomNavigationBar({super.key, required this.currentIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -33,26 +29,11 @@ class CustomBottomNavigationBar extends StatelessWidget {
         selectedFontSize: 12,
         unselectedFontSize: 12,
         items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: 'profile'.tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.explore),
-            label: 'explore_properties'.tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: 'discover'.tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.favorite),
-            label: 'liked'.tr,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.calendar_today),
-            label: 'visits'.tr,
-          ),
+          BottomNavigationBarItem(icon: const Icon(Icons.person), label: 'profile'.tr),
+          BottomNavigationBarItem(icon: const Icon(Icons.explore), label: 'explore_properties'.tr),
+          BottomNavigationBarItem(icon: const Icon(Icons.home), label: 'discover'.tr),
+          BottomNavigationBarItem(icon: const Icon(Icons.favorite), label: 'liked'.tr),
+          BottomNavigationBarItem(icon: const Icon(Icons.calendar_today), label: 'visits'.tr),
         ],
       ),
     );

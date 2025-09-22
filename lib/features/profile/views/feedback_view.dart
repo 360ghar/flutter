@@ -22,11 +22,7 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
             children: [
               Text(
                 'Help our team fix issues faster by sharing a few details.',
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.5,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 16, height: 1.5, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 24),
               _buildSectionTitle('Issue type'),
@@ -114,15 +110,12 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
                 () => SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed:
-                        controller.isSubmitting.value ? null : controller.submitFeedback,
+                    onPressed: controller.isSubmitting.value ? null : controller.submitFeedback,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.buttonBackground,
                       foregroundColor: AppColors.buttonText,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: controller.isSubmitting.value
                         ? Row(
@@ -139,19 +132,13 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
                               const SizedBox(width: 12),
                               Text(
                                 'sending_feedback'.tr,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                             ],
                           )
                         : Text(
                             'send_feedback'.tr,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                   ),
                 ),
@@ -166,11 +153,7 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      ),
+      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
     );
   }
 
@@ -249,12 +232,7 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
       dropdownColor: AppColors.cardBackground,
       style: TextStyle(color: AppColors.textPrimary, fontSize: 15),
       items: items
-          .map(
-            (item) => DropdownMenuItem<T>(
-              value: item,
-              child: Text(itemLabel(item)),
-            ),
-          )
+          .map((item) => DropdownMenuItem<T>(value: item, child: Text(itemLabel(item))))
           .toList(),
     );
   }

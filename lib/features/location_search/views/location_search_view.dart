@@ -46,10 +46,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
           prefixIcon: const Icon(Icons.search),
           suffixIcon: Obx(
             () => controller.searchQuery.value.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: controller.clearSearch,
-                  )
+                ? IconButton(icon: const Icon(Icons.clear), onPressed: controller.clearSearch)
                 : const SizedBox.shrink(),
           ),
           border: OutlineInputBorder(
@@ -58,9 +55,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-            ),
+            borderSide: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -104,8 +99,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
     final locationController = Get.find<LocationController>();
 
     return Obx(() {
-      if (controller.isLoading.value ||
-          locationController.isSearchingPlaces.value) {
+      if (controller.isLoading.value || locationController.isSearchingPlaces.value) {
         return const Center(child: CircularProgressIndicator());
       }
 
@@ -127,9 +121,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
           return ListTile(
             leading: const Icon(Icons.location_on_outlined),
             title: Text(suggestion.mainText),
-            subtitle: suggestion.secondaryText.isNotEmpty
-                ? Text(suggestion.secondaryText)
-                : null,
+            subtitle: suggestion.secondaryText.isNotEmpty ? Text(suggestion.secondaryText) : null,
             onTap: () => controller.selectPlace(suggestion),
           );
         },
@@ -142,21 +134,11 @@ class LocationSearchView extends GetView<LocationSearchController> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.search_off,
-            size: 64,
-            color: Theme.of(context).disabledColor,
-          ),
+          Icon(Icons.search_off, size: 64, color: Theme.of(context).disabledColor),
           const SizedBox(height: 16),
-          Text(
-            'no_locations_found'.tr,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('no_locations_found'.tr, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text(
-            'try_search_different_location'.tr,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          Text('try_search_different_location'.tr, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
@@ -181,9 +163,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
           padding: const EdgeInsets.all(16),
           child: Text(
             'popular_cities'.tr,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
         Expanded(
@@ -196,8 +176,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
                 leading: const Icon(Icons.location_city_outlined),
                 title: Text(city['name']!),
                 subtitle: Text(city['state']!),
-                onTap: () =>
-                    controller.selectCity(city['name']!, city['state']!),
+                onTap: () => controller.selectCity(city['name']!, city['state']!),
               );
             },
           ),

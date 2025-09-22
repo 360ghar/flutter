@@ -81,58 +81,35 @@ class LikesController extends GetxController {
 
       // Keep controller's segment in sync with PageStateService
       final segStr = _pageStateService.currentLikesSegment;
-      DebugLogger.debug(
-        '💖 [LIKES_CONTROLLER] Current segment string: $segStr',
-      );
+      DebugLogger.debug('💖 [LIKES_CONTROLLER] Current segment string: $segStr');
 
-      currentSegment.value = segStr == 'liked'
-          ? LikesSegment.liked
-          : LikesSegment.passed;
-      DebugLogger.debug(
-        '💖 [LIKES_CONTROLLER] Segment updated to: ${currentSegment.value}',
-      );
+      currentSegment.value = segStr == 'liked' ? LikesSegment.liked : LikesSegment.passed;
+      DebugLogger.debug('💖 [LIKES_CONTROLLER] Segment updated to: ${currentSegment.value}');
 
       // Ensure we have a location, then load current segment via PageStateService
       if (!ps.hasLocation) {
-        DebugLogger.debug(
-          '💖 [LIKES_CONTROLLER] No location available, requesting location',
-        );
-        _pageStateService
-            .useCurrentLocationForPage(PageType.likes)
-            .whenComplete(() {
-              DebugLogger.debug(
-                '💖 [LIKES_CONTROLLER] Location obtained, loading data',
-              );
-              _pageStateService.loadPageData(
-                PageType.likes,
-                forceRefresh: true,
-              );
-            });
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] No location available, requesting location');
+        _pageStateService.useCurrentLocationForPage(PageType.likes).whenComplete(() {
+          DebugLogger.debug('💖 [LIKES_CONTROLLER] Location obtained, loading data');
+          _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+        });
         return;
       }
 
       if (ps.properties.isEmpty && !ps.isLoading) {
-        DebugLogger.debug(
-          '💖 [LIKES_CONTROLLER] No properties and not loading, requesting data',
-        );
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] No properties and not loading, requesting data');
         _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       } else if (ps.isDataStale) {
-        DebugLogger.debug(
-          '💖 [LIKES_CONTROLLER] Data is stale, refreshing in background',
-        );
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] Data is stale, refreshing in background');
         _pageStateService.loadPageData(PageType.likes, backgroundRefresh: true);
       } else {
-        DebugLogger.debug(
-          '💖 [LIKES_CONTROLLER] Data is current, no action needed',
-        );
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] Data is current, no action needed');
       }
     } catch (e, stackTrace) {
       DebugLogger.error('❌ [LIKES_CONTROLLER] Error in activatePage: $e');
       DebugLogger.error('❌ [LIKES_CONTROLLER] Stack trace: $stackTrace');
       if (e.toString().contains('Null check operator used on a null value')) {
-        DebugLogger.error(
-          '🚨 [LIKES_CONTROLLER] NULL CHECK OPERATOR ERROR in activatePage!',
-        );
+        DebugLogger.error('🚨 [LIKES_CONTROLLER] NULL CHECK OPERATOR ERROR in activatePage!');
       }
     }
   }
@@ -157,9 +134,7 @@ class LikesController extends GetxController {
     if (currentSegment.value == segment) return;
     currentSegment.value = segment;
     DebugLogger.api('📱 Switched to ${segment.name} segment');
-    _pageStateService.updateLikesSegment(
-      segment == LikesSegment.liked ? 'liked' : 'passed',
-    );
+    _pageStateService.updateLikesSegment(segment == LikesSegment.liked ? 'liked' : 'passed');
   }
 
   // Deprecated loaders replaced by PageStateService handlers (kept to avoid breaking references)
@@ -189,9 +164,7 @@ class LikesController extends GetxController {
       await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       DebugLogger.success('✅ Property $propertyId added to favorites');
     } catch (e) {
-      DebugLogger.error(
-        '❌ Failed to add property $propertyId to favorites: $e',
-      );
+      DebugLogger.error('❌ Failed to add property $propertyId to favorites: $e');
     }
   }
 
@@ -206,9 +179,7 @@ class LikesController extends GetxController {
       await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       DebugLogger.success('✅ Property $propertyId removed from favorites');
     } catch (e) {
-      DebugLogger.error(
-        '❌ Failed to remove property $propertyId from favorites: $e',
-      );
+      DebugLogger.error('❌ Failed to remove property $propertyId from favorites: $e');
     }
   }
 
@@ -303,11 +274,9 @@ class LikesController extends GetxController {
     }
   }
 
-  void retryLiked() =>
-      _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+  void retryLiked() => _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
 
-  void retryPassed() =>
-      _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+  void retryPassed() => _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
 
   // Getters for current segment
   List<PropertyModel> get currentProperties {
@@ -342,9 +311,7 @@ class LikesController extends GetxController {
     final count = currentProperties.length;
     return searchQuery.value.isNotEmpty
         ? '$count ${'results'.tr}'
-        : (count == 1
-            ? '$count ${'property'.tr}'
-            : '$count ${'properties'.tr}');
+        : (count == 1 ? '$count ${'property'.tr}' : '$count ${'properties'.tr}');
   }
 
   String get emptyStateMessage {
@@ -353,12 +320,8 @@ class LikesController extends GetxController {
     }
 
     return currentSegment.value == LikesSegment.liked
-        ? 'no_liked_properties'.tr +
-            '\n' +
-            'no_favorites_message'.tr
-        : 'no_passed_properties'.tr +
-            '\n' +
-            'no_more_properties_message'.tr;
+        ? 'no_liked_properties'.tr + '\n' + 'no_favorites_message'.tr
+        : 'no_passed_properties'.tr + '\n' + 'no_more_properties_message'.tr;
   }
 
   // Helper getters
@@ -368,10 +331,8 @@ class LikesController extends GetxController {
       currentProperties.isEmpty &&
       _pageStateService.likesState.value.error == null;
   bool get hasCurrentError => _pageStateService.likesState.value.error != null;
-  bool get isCurrentLoaded =>
-      !isCurrentLoading && !isCurrentEmpty && !hasCurrentError;
-  bool get isCurrentLoadingMore =>
-      _pageStateService.likesState.value.isLoadingMore;
+  bool get isCurrentLoaded => !isCurrentLoading && !isCurrentEmpty && !hasCurrentError;
+  bool get isCurrentLoadingMore => _pageStateService.likesState.value.isLoadingMore;
   bool get hasCurrentProperties => currentProperties.isNotEmpty;
   bool get hasSearchQuery => searchQuery.value.isNotEmpty;
 }

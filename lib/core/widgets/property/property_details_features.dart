@@ -28,17 +28,9 @@ class PropertyDetailsFeatures extends StatelessWidget {
               if (property.bedrooms != null)
                 _buildFeature(Icons.bed, '${property.bedrooms}', 'Bedrooms'),
               if (property.bathrooms != null)
-                _buildFeature(
-                  Icons.bathtub_outlined,
-                  '${property.bathrooms}',
-                  'Bathrooms',
-                ),
+                _buildFeature(Icons.bathtub_outlined, '${property.bathrooms}', 'Bathrooms'),
               if (property.areaSqft != null)
-                _buildFeature(
-                  Icons.square_foot,
-                  '${property.areaSqft?.toInt()}',
-                  'Sq Ft',
-                ),
+                _buildFeature(Icons.square_foot, '${property.areaSqft?.toInt()}', 'Sq Ft'),
             ],
           ),
           if (property.balconies != null ||
@@ -51,17 +43,9 @@ class PropertyDetailsFeatures extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 if (property.balconies != null)
-                  _buildFeature(
-                    Icons.balcony,
-                    '${property.balconies}',
-                    'Balconies',
-                  ),
+                  _buildFeature(Icons.balcony, '${property.balconies}', 'Balconies'),
                 if (property.parkingSpaces != null)
-                  _buildFeature(
-                    Icons.local_parking,
-                    '${property.parkingSpaces}',
-                    'Parking',
-                  ),
+                  _buildFeature(Icons.local_parking, '${property.parkingSpaces}', 'Parking'),
                 if (property.floorNumber != null)
                   _buildFeature(
                     Icons.layers,
@@ -96,10 +80,7 @@ class PropertyDetailsFeatures extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
       ],
     );
   }

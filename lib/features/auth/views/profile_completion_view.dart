@@ -26,18 +26,13 @@ class ProfileCompletionView extends StatelessWidget {
                       // Header
                       Text(
                         'complete_your_profile'.tr,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'personalize_experience_subtitle'.tr,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
@@ -46,17 +41,12 @@ class ProfileCompletionView extends StatelessWidget {
                       LinearProgressIndicator(
                         value: (controller.currentStep.value + 1) / 2,
                         backgroundColor: Colors.grey[300],
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppTheme.primaryColor,
-                        ),
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Step ${controller.currentStep.value + 1} of 2',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
@@ -74,10 +64,7 @@ class ProfileCompletionView extends StatelessWidget {
                       // Skip Button
                       TextButton(
                         onPressed: controller.skipToHome,
-                        child: Text(
-                          'skip_for_now'.tr,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
+                        child: Text('skip_for_now'.tr, style: const TextStyle(color: Colors.grey)),
                       ),
                     ],
                   ),
@@ -108,9 +95,7 @@ class ProfileCompletionView extends StatelessWidget {
           Expanded(
             child: OutlinedButton(
               onPressed: controller.previousStep,
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
               child: Text('back'.tr),
             ),
           ),
@@ -126,9 +111,7 @@ class ProfileCompletionView extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: AppColors.primaryYellow,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: controller.isLoading.value
                 ? SizedBox(
@@ -140,14 +123,12 @@ class ProfileCompletionView extends StatelessWidget {
                     ),
                   )
                 : Text(
-                    controller.currentStep.value < 1
-                        ? 'next'.tr
-                        : 'complete'.tr,
+                    controller.currentStep.value < 1 ? 'next'.tr : 'complete'.tr,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                        ),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
           ),
         ),
@@ -208,11 +189,7 @@ class ProfileCompletionView extends StatelessWidget {
     final selectedBg = AppTheme.primaryColor;
     final selectedFg = AppTheme.textDark;
 
-    Widget buildOption({
-      required String purpose,
-      required IconData icon,
-      required String label,
-    }) {
+    Widget buildOption({required String purpose, required IconData icon, required String label}) {
       final isSelected = controller.selectedPropertyPurpose.value == purpose;
       return Expanded(
         child: InkWell(
@@ -248,11 +225,7 @@ class ProfileCompletionView extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  size: 28,
-                  color: isSelected ? selectedFg : onSurface,
-                ),
+                Icon(icon, size: 28, color: isSelected ? selectedFg : onSurface),
                 const SizedBox(width: 12),
                 Text(
                   label,
@@ -277,16 +250,8 @@ class ProfileCompletionView extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            buildOption(
-              purpose: 'rent',
-              icon: Icons.key_outlined,
-              label: 'rent'.tr,
-            ),
-            buildOption(
-              purpose: 'buy',
-              icon: Icons.home_outlined,
-              label: 'buy'.tr,
-            ),
+            buildOption(purpose: 'rent', icon: Icons.key_outlined, label: 'rent'.tr),
+            buildOption(purpose: 'buy', icon: Icons.home_outlined, label: 'buy'.tr),
           ],
         ),
       ],

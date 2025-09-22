@@ -44,9 +44,7 @@ class PropertyCard extends StatelessWidget {
                     height: 200,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     memCacheWidth: 400,
                     memCacheHeight: 200,
                   ),
@@ -61,10 +59,7 @@ class PropertyCard extends StatelessWidget {
                       child: IconButton(
                         icon: Icon(
                           isFavourite ? Icons.favorite : Icons.favorite_border,
-                          color:
-                              isFavourite
-                                  ? AppColors.favoriteActive
-                                  : colorScheme.onPrimary,
+                          color: isFavourite ? AppColors.favoriteActive : colorScheme.onPrimary,
                         ),
                         onPressed: onFavouriteToggle,
                       ),
@@ -119,32 +114,21 @@ class PropertyCard extends StatelessWidget {
                       children: [
                         _buildFeature(Icons.bed, '${property.bedrooms} Beds'),
                         const SizedBox(width: 16),
-                        _buildFeature(
-                          Icons.bathtub_outlined,
-                          '${property.bathrooms} Baths',
-                        ),
+                        _buildFeature(Icons.bathtub_outlined, '${property.bathrooms} Baths'),
                         const SizedBox(width: 16),
-                        _buildFeature(
-                          Icons.square_foot,
-                          '${property.areaSqft} sqft',
-                        ),
+                        _buildFeature(Icons.square_foot, '${property.areaSqft} sqft'),
                       ],
                     ),
 
                     // 360° Tour Embedded Section
-                    if (property.virtualTourUrl != null &&
-                        property.virtualTourUrl!.isNotEmpty) ...[
+                    if (property.virtualTourUrl != null && property.virtualTourUrl!.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Icon(
-                                Icons.threesixty,
-                                size: 20,
-                                color: AppColors.primaryYellow,
-                              ),
+                              Icon(Icons.threesixty, size: 20, color: AppColors.primaryYellow),
                               const SizedBox(width: 8),
                               Text(
                                 '360° Virtual Tour',
@@ -157,25 +141,15 @@ class PropertyCard extends StatelessWidget {
                               const Spacer(),
                               InkWell(
                                 onTap: () {
-                                  Get.toNamed(
-                                    '/tour',
-                                    arguments: property.virtualTourUrl,
-                                  );
+                                  Get.toNamed('/tour', arguments: property.virtualTourUrl);
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primaryYellow.withValues(
-                                      alpha: 0.1,
-                                    ),
+                                    color: AppColors.primaryYellow.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: AppColors.primaryYellow.withValues(
-                                        alpha: 0.3,
-                                      ),
+                                      color: AppColors.primaryYellow.withValues(alpha: 0.3),
                                     ),
                                   ),
                                   child: Row(
@@ -217,9 +191,7 @@ class PropertyCard extends StatelessWidget {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: _Embedded360Tour(
-                                  tourUrl: property.virtualTourUrl!,
-                                ),
+                                child: _Embedded360Tour(tourUrl: property.virtualTourUrl!),
                               ),
                             ),
                           ),
@@ -243,11 +215,7 @@ class PropertyCard extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.propertyFeatureText,
-            height: 1.4,
-          ),
+          style: TextStyle(fontSize: 14, color: AppColors.propertyFeatureText, height: 1.4),
         ),
       ],
     );
@@ -310,9 +278,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
               controller!.runJavaScript(consoleSilencer);
             },
             onWebResourceError: (WebResourceError error) {
-              DebugLogger.warning(
-                'WebView error in 360° tour: ${error.description}',
-              );
+              DebugLogger.warning('WebView error in 360° tour: ${error.description}');
               if (mounted) {
                 setState(() {
                   isLoading = false;
@@ -324,7 +290,8 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
         );
 
       final sanitizedUrl = widget.tourUrl;
-      final htmlContent = '''
+      final htmlContent =
+          '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -361,11 +328,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
 
       controller!.loadHtmlString(htmlContent);
     } catch (e, stackTrace) {
-      DebugLogger.error(
-        'Error initializing WebView for 360° tour',
-        e,
-        stackTrace,
-      );
+      DebugLogger.error('Error initializing WebView for 360° tour', e, stackTrace);
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -424,17 +387,11 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(
-                    color: AppColors.primaryYellow,
-                    strokeWidth: 2,
-                  ),
+                  CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 2),
                   const SizedBox(height: 8),
                   Text(
                     'Loading 360° Tour...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
               ),

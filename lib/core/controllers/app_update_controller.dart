@@ -15,14 +15,12 @@ import '../utils/debug_logger.dart';
 import '../widgets/common/app_update_dialog.dart';
 
 class AppUpdateController extends GetxService with WidgetsBindingObserver {
-  AppUpdateController({GetStorage? storage})
-    : _storage = storage ?? GetStorage();
+  AppUpdateController({GetStorage? storage}) : _storage = storage ?? GetStorage();
 
   static const Duration _minimumCheckInterval = Duration(hours: 24);
   static const String _appIdentifier = 'user';
   static const String _lastCheckKey = 'app_update:last_check_at';
-  static const String _dismissedVersionKey =
-      'app_update:last_dismissed_version';
+  static const String _dismissedVersionKey = 'app_update:last_dismissed_version';
 
   final AppUpdateRepository _repository = Get.find();
   final GetStorage _storage;
@@ -67,9 +65,7 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
 
     final versionInfo = await _loadCurrentVersion(force: force);
     if (versionInfo == null) {
-      DebugLogger.warning(
-        'Skipping app version check: unable to read package info',
-      );
+      DebugLogger.warning('Skipping app version check: unable to read package info');
       return;
     }
 
@@ -79,8 +75,7 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
 
     if (!force && !hasMandatoryResponse) {
       final lastCheck = _lastCheck ?? _readLastCheckFromStorage();
-      if (lastCheck != null &&
-          now.difference(lastCheck) < _minimumCheckInterval) {
+      if (lastCheck != null && now.difference(lastCheck) < _minimumCheckInterval) {
         DebugLogger.debug('Skipping version check - last check at $lastCheck');
         return;
       }
@@ -108,11 +103,8 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
 
       _lastResponse = response;
 
-      if (!response.isMandatory &&
-          _shouldSkipOptionalPrompt(response.latestVersion)) {
-        DebugLogger.debug(
-          'Optional update ${response.latestVersion} already dismissed.',
-        );
+      if (!response.isMandatory && _shouldSkipOptionalPrompt(response.latestVersion)) {
+        DebugLogger.debug('Optional update ${response.latestVersion} already dismissed.');
         return;
       }
 
@@ -132,10 +124,7 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       final buildNumber = int.tryParse(packageInfo.buildNumber);
-      _currentVersionInfo = AppVersionInfo(
-        version: packageInfo.version,
-        buildNumber: buildNumber,
-      );
+      _currentVersionInfo = AppVersionInfo(version: packageInfo.version, buildNumber: buildNumber);
       return _currentVersionInfo;
     } catch (e, stackTrace) {
       DebugLogger.warning('Failed to read package info', e, stackTrace);
@@ -163,10 +152,7 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
 
     try {
       final action = await Get.dialog<AppUpdateAction?>(
-        AppUpdateDialog(
-          response: response,
-          currentVersion: versionInfo.version,
-        ),
+        AppUpdateDialog(response: response, currentVersion: versionInfo.version),
         barrierDismissible: !response.isMandatory,
         barrierColor: Colors.black54,
       );

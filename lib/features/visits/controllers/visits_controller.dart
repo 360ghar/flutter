@@ -142,22 +142,22 @@ class VisitsController extends GetxController {
       final summary = await _apiService.getVisitsSummary();
       var allVisits = summary.visits;
       DebugLogger.info(
-          '📥 Visits fetched: total=${allVisits.length} | example=' +
-              (allVisits.isNotEmpty
-                  ? '{id: ${allVisits.first.id}, status: ${allVisits.first.status}, date: ${allVisits.first.scheduledDate.toIso8601String()}}'
-                  : 'none'));
+        '📥 Visits fetched: total=${allVisits.length} | example=' +
+            (allVisits.isNotEmpty
+                ? '{id: ${allVisits.first.id}, status: ${allVisits.first.status}, date: ${allVisits.first.scheduledDate.toIso8601String()}}'
+                : 'none'),
+      );
 
       // Fallback: some backends may return counts without visits payload on summary
       if (allVisits.isEmpty && summary.total > 0) {
-        DebugLogger.warning('⚠️ Summary returned no visits list but total=${summary.total}. Falling back to upcoming + past endpoints');
+        DebugLogger.warning(
+          '⚠️ Summary returned no visits list but total=${summary.total}. Falling back to upcoming + past endpoints',
+        );
         final results = await Future.wait([
           _apiService.getUpcomingVisits(),
           _apiService.getPastVisits(),
         ]);
-        allVisits = [
-          ...results[0].visits,
-          ...results[1].visits,
-        ];
+        allVisits = [...results[0].visits, ...results[1].visits];
         DebugLogger.info('📥 Fallback combined visits: ${allVisits.length}');
       }
 
@@ -165,9 +165,7 @@ class VisitsController extends GetxController {
       final upcomingVisits = allVisits
           .where((v) => now.isBefore(v.scheduledDate) && v.status != VisitStatus.completed)
           .toList();
-      final pastVisits = allVisits
-          .where((v) => !now.isBefore(v.scheduledDate))
-          .toList();
+      final pastVisits = allVisits.where((v) => !now.isBefore(v.scheduledDate)).toList();
 
       // Sort per spec
       upcomingVisits.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
@@ -184,7 +182,9 @@ class VisitsController extends GetxController {
       } else {
         DebugLogger.info('🟢 Upcoming visits (${upcomingVisits.length}):');
         for (final v in upcomingVisits) {
-          DebugLogger.info('  • id=${v.id} status=${v.status} date=${v.scheduledDate.toIso8601String()}');
+          DebugLogger.info(
+            '  • id=${v.id} status=${v.status} date=${v.scheduledDate.toIso8601String()}',
+          );
         }
       }
       if (pastVisits.isEmpty) {
@@ -192,7 +192,9 @@ class VisitsController extends GetxController {
       } else {
         DebugLogger.info('🔵 Past visits (${pastVisits.length}):');
         for (final v in pastVisits) {
-          DebugLogger.info('  • id=${v.id} status=${v.status} date=${v.scheduledDate.toIso8601String()}');
+          DebugLogger.info(
+            '  • id=${v.id} status=${v.status} date=${v.scheduledDate.toIso8601String()}',
+          );
         }
       }
 
@@ -286,13 +288,10 @@ class VisitsController extends GetxController {
       final visitModel = await _apiService.scheduleVisit(
         propertyId: propertyId,
         scheduledDate: visitDateTime.toUtc().toIso8601String(),
-        specialRequirements:
-            notes ?? 'Property visit scheduled through 360ghar app',
+        specialRequirements: notes ?? 'Property visit scheduled through 360ghar app',
       );
 
-      DebugLogger.success(
-        '✅ Visit scheduled successfully: ${visitModel.id}',
-      );
+      DebugLogger.success('✅ Visit scheduled successfully: ${visitModel.id}');
 
       // The API returns the complete visit model, no need to reconstruct
       // Just reload visits to get the updated list
@@ -354,9 +353,7 @@ class VisitsController extends GetxController {
   }
 
   Future<bool> cancelVisit(dynamic visitId, {required String reason}) async {
-    final visitIdInt = visitId is int
-        ? visitId
-        : int.tryParse(visitId.toString()) ?? 0;
+    final visitIdInt = visitId is int ? visitId : int.tryParse(visitId.toString()) ?? 0;
     final visitIndex = visits.indexWhere((visit) => visit.id == visitIdInt);
     if (visitIndex == -1) return false;
 
@@ -401,14 +398,8 @@ class VisitsController extends GetxController {
     }
   }
 
-  Future<bool> rescheduleVisit(
-    dynamic visitId,
-    DateTime newDateTime, {
-    String? reason,
-  }) async {
-    final visitIdInt = visitId is int
-        ? visitId
-        : int.tryParse(visitId.toString()) ?? 0;
+  Future<bool> rescheduleVisit(dynamic visitId, DateTime newDateTime, {String? reason}) async {
+    final visitIdInt = visitId is int ? visitId : int.tryParse(visitId.toString()) ?? 0;
     final visitIndex = visits.indexWhere((visit) => visit.id == visitIdInt);
     if (visitIndex == -1) return false;
 
@@ -450,14 +441,10 @@ class VisitsController extends GetxController {
   }
 
   void markVisitCompleted(dynamic visitId) {
-    final visitIdInt = visitId is int
-        ? visitId
-        : int.tryParse(visitId.toString()) ?? 0;
+    final visitIdInt = visitId is int ? visitId : int.tryParse(visitId.toString()) ?? 0;
     final visitIndex = visits.indexWhere((visit) => visit.id == visitIdInt);
     if (visitIndex != -1) {
-      visits[visitIndex] = visits[visitIndex].copyWith(
-        status: VisitStatus.completed,
-      );
+      visits[visitIndex] = visits[visitIndex].copyWith(status: VisitStatus.completed);
     }
   }
 
@@ -470,30 +457,33 @@ class VisitsController extends GetxController {
   }
 
   List<VisitModel> get upcomingVisits {
-    DebugLogger.info('📊 Getter upcomingVisits called | rxLen=${upcomingVisitsList.length} loaded=${hasLoadedVisits.value} isLoading=${isLoading.value}');
+    DebugLogger.info(
+      '📊 Getter upcomingVisits called | rxLen=${upcomingVisitsList.length} loaded=${hasLoadedVisits.value} isLoading=${isLoading.value}',
+    );
     if (upcomingVisitsList.isNotEmpty || hasLoadedVisits.value) {
       return upcomingVisitsList;
     }
     // Fallback compute
     final now = DateTime.now();
-    final list = visits
-        .where((v) => now.isBefore(v.scheduledDate) && v.status != VisitStatus.completed)
-        .toList()
-      ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+    final list =
+        visits
+            .where((v) => now.isBefore(v.scheduledDate) && v.status != VisitStatus.completed)
+            .toList()
+          ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
     DebugLogger.info('📊 Getter upcomingVisits fallback computed=${list.length}');
     return list;
   }
 
   List<VisitModel> get pastVisits {
-    DebugLogger.info('📊 Getter pastVisits called | rxLen=${pastVisitsList.length} loaded=${hasLoadedVisits.value} isLoading=${isLoading.value}');
+    DebugLogger.info(
+      '📊 Getter pastVisits called | rxLen=${pastVisitsList.length} loaded=${hasLoadedVisits.value} isLoading=${isLoading.value}',
+    );
     if (pastVisitsList.isNotEmpty || hasLoadedVisits.value) {
       return pastVisitsList;
     }
     // Fallback compute: all dates in the past, any status
     final now = DateTime.now();
-    final list = visits
-        .where((v) => !now.isBefore(v.scheduledDate))
-        .toList()
+    final list = visits.where((v) => !now.isBefore(v.scheduledDate)).toList()
       ..sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
     DebugLogger.info('📊 Getter pastVisits fallback computed=${list.length}');
     return list;

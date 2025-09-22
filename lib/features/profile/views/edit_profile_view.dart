@@ -14,9 +14,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
       title: 'edit_profile'.tr,
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(
-            child: CircularProgressIndicator(color: AppColors.loadingIndicator),
-          );
+          return Center(child: CircularProgressIndicator(color: AppColors.loadingIndicator));
         }
 
         return SingleChildScrollView(
@@ -39,8 +37,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                                   backgroundColor: AppColors.primaryYellow,
                                   child: Text(
                                     controller.nameController.text.isNotEmpty
-                                        ? controller.nameController.text[0]
-                                              .toUpperCase()
+                                        ? controller.nameController.text[0].toUpperCase()
                                         : 'U',
                                     style: TextStyle(
                                       fontSize: 40,
@@ -55,8 +52,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                                 backgroundColor: AppColors.primaryYellow,
                                 child: Text(
                                   controller.nameController.text.isNotEmpty
-                                      ? controller.nameController.text[0]
-                                            .toUpperCase()
+                                      ? controller.nameController.text[0].toUpperCase()
                                       : 'U',
                                   style: TextStyle(
                                     fontSize: 40,
@@ -73,17 +69,10 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                           decoration: BoxDecoration(
                             color: AppColors.primaryYellow,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.surface,
-                              width: 3,
-                            ),
+                            border: Border.all(color: AppColors.surface, width: 3),
                           ),
                           child: IconButton(
-                            icon: Icon(
-                              Icons.camera_alt,
-                              color: AppColors.buttonText,
-                              size: 20,
-                            ),
+                            icon: Icon(Icons.camera_alt, color: AppColors.buttonText, size: 20),
                             onPressed: controller.pickProfileImage,
                           ),
                         ),
@@ -120,9 +109,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
-                          if (value != null &&
-                              value.isNotEmpty &&
-                              !GetUtils.isEmail(value)) {
+                          if (value != null && value.isNotEmpty && !GetUtils.isEmail(value)) {
                             return 'valid_email_required'.tr;
                           }
                           return null;
@@ -152,10 +139,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                       GestureDetector(
                         onTap: () => controller.selectDateOfBirth(context),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           decoration: BoxDecoration(
                             color: AppColors.inputBackground,
                             borderRadius: BorderRadius.circular(12),
@@ -163,23 +147,17 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.calendar_today,
-                                color: AppColors.iconColor,
-                              ),
+                              Icon(Icons.calendar_today, color: AppColors.iconColor),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Obx(
                                   () => Text(
                                     controller.dateOfBirth.value != null
-                                        ? controller.formatDate(
-                                            controller.dateOfBirth.value!,
-                                          )
+                                        ? controller.formatDate(controller.dateOfBirth.value!)
                                         : 'select_your_date_of_birth'.tr,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color:
-                                          controller.dateOfBirth.value != null
+                                      color: controller.dateOfBirth.value != null
                                           ? AppColors.textPrimary
                                           : AppColors.textSecondary,
                                     ),
@@ -189,11 +167,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                               if (controller.dateOfBirth.value != null)
                                 GestureDetector(
                                   onTap: controller.clearDateOfBirth,
-                                  child: Icon(
-                                    Icons.clear,
-                                    color: AppColors.iconColor,
-                                    size: 20,
-                                  ),
+                                  child: Icon(Icons.clear, color: AppColors.iconColor, size: 20),
                                 ),
                             ],
                           ),
@@ -214,18 +188,11 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                       backgroundColor: AppColors.buttonBackground,
                       foregroundColor: AppColors.buttonText,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(
-                      controller.isLoading.value
-                          ? 'saving'.tr
-                          : 'save_changes'.tr,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      controller.isLoading.value ? 'saving'.tr : 'save_changes'.tr,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),

@@ -60,9 +60,7 @@ class EditProfileController extends GetxController {
         content: Text(
           'Image picker functionality would be implemented here using image_picker package.',
         ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('ok'.tr)),
-        ],
+        actions: [TextButton(onPressed: () => Get.back(), child: Text('ok'.tr))],
       ),
     );
   }
@@ -70,13 +68,9 @@ class EditProfileController extends GetxController {
   Future<void> selectDateOfBirth(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate:
-          dateOfBirth.value ??
-          DateTime.now().subtract(const Duration(days: 365 * 25)),
+      initialDate: dateOfBirth.value ?? DateTime.now().subtract(const Duration(days: 365 * 25)),
       firstDate: DateTime(1900),
-      lastDate: DateTime.now().subtract(
-        const Duration(days: 365 * 13),
-      ), // Minimum 13 years old
+      lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)), // Minimum 13 years old
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -117,17 +111,13 @@ class EditProfileController extends GetxController {
       }
 
       // Prepare updated preferences (keep app-specific data like location)
-      final updatedPreferences = Map<String, dynamic>.from(
-        currentUser.preferences ?? {},
-      );
+      final updatedPreferences = Map<String, dynamic>.from(currentUser.preferences ?? {});
       updatedPreferences['location'] = locationController.text.trim();
 
       // Prepare profile data for update (align with backend fields)
       final profileData = <String, dynamic>{
         'full_name': nameController.text.trim(),
-        'profile_image_url': profileImageUrl.value.isEmpty
-            ? null
-            : profileImageUrl.value,
+        'profile_image_url': profileImageUrl.value.isEmpty ? null : profileImageUrl.value,
       };
 
       // Save date of birth to top-level user field

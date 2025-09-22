@@ -137,6 +137,14 @@ Contributions are what make the open-source community such an amazing place to l
 4.  Push to the Branch (`git push origin feature/AmazingFeature`)
 5.  Open a Pull Request
 
+**Formatting & Hooks**
+- Line length: 100 for Dart formatting.
+- On save: workspace `.vscode/settings.json` enables `editor.formatOnSave` for `[dart]` and sets `editor.rulers` to 100.
+- Formatter: uses `Dart-Code.dart-code` (official Dart/Flutter VS Code/Cursor extension).
+- Shared hook: `.githooks/pre-commit` auto-formats staged `.dart` files and re-stages them.
+- One-time setup: run `bash scripts/setup_hooks.sh` to set `core.hooksPath`.
+- Manual format: run `dart format -o write --line-length 100 .` at repo root.
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the `LICENSE` file for details.

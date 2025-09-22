@@ -16,10 +16,7 @@ class LocalizationController extends GetxController {
   Locale get currentLocale => _currentLocale.value;
 
   // Language names for display
-  final Map<String, String> languageNames = {
-    'en_US': 'English',
-    'hi_IN': 'हिंदी',
-  };
+  final Map<String, String> languageNames = {'en_US': 'English', 'hi_IN': 'हिंदी'};
 
   @override
   void onInit() {
@@ -77,8 +74,7 @@ class LocalizationController extends GetxController {
   }
 
   String getCurrentLanguageName() {
-    String localeKey =
-        '${_currentLocale.value.languageCode}_${_currentLocale.value.countryCode}';
+    String localeKey = '${_currentLocale.value.languageCode}_${_currentLocale.value.countryCode}';
     return languageNames[localeKey] ?? 'English';
   }
 

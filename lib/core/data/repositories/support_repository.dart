@@ -11,9 +11,7 @@ class SupportRepository extends GetxService {
 
   Future<BugReportResponse> submitBugReport(BugReportRequest request) async {
     try {
-      DebugLogger.info(
-        '📝 Submitting bug report: ${request.title} (${request.bugType.value})',
-      );
+      DebugLogger.info('📝 Submitting bug report: ${request.title} (${request.bugType.value})');
       final response = await _apiService.submitBugReport(request);
       DebugLogger.success('✅ Bug report submitted (id=${response.id})');
       return response;

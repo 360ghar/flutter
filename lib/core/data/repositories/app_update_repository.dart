@@ -10,25 +10,14 @@ import '../providers/api_service.dart';
 class AppUpdateRepository extends GetxService {
   final ApiService _apiService = Get.find();
 
-  Future<AppVersionCheckResponse> checkForUpdates(
-    AppVersionCheckRequest request,
-  ) async {
+  Future<AppVersionCheckResponse> checkForUpdates(AppVersionCheckRequest request) async {
     try {
       final response = await _apiService.checkAppVersion(request: request);
-      DebugLogger.info(
-        'App update check completed. Update available: ${response.updateAvailable}',
-      );
+      DebugLogger.info('App update check completed. Update available: ${response.updateAvailable}');
       return response;
     } on NotFoundException catch (e, stackTrace) {
-      DebugLogger.warning(
-        'App update endpoint unavailable, skipping check',
-        e,
-        stackTrace,
-      );
-      return AppVersionCheckResponse(
-        updateAvailable: false,
-        isMandatory: false,
-      );
+      DebugLogger.warning('App update endpoint unavailable, skipping check', e, stackTrace);
+      return AppVersionCheckResponse(updateAvailable: false, isMandatory: false);
     } catch (e, stackTrace) {
       DebugLogger.warning('Failed to check for app updates', e, stackTrace);
       rethrow;

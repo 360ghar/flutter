@@ -12,9 +12,7 @@ class ReactiveStateMonitor {
       final lastLength = _lastValues[name] as int? ?? -1;
 
       if (currentLength != lastLength) {
-        DebugLogger.info(
-          '📊 [$name] List changed: $lastLength → $currentLength items',
-        );
+        DebugLogger.info('📊 [$name] List changed: $lastLength → $currentLength items');
         _lastValues[name] = currentLength;
 
         // Log sample items if available
@@ -24,12 +22,8 @@ class ReactiveStateMonitor {
             DebugLogger.info('  item[$i]=${_getItemDescription(newList[i])}');
           }
         } else if (newList.isNotEmpty) {
-          DebugLogger.info(
-            '📝 [$name] First item: ${_getItemDescription(newList.first)}',
-          );
-          DebugLogger.info(
-            '📝 [$name] Last item: ${_getItemDescription(newList.last)}',
-          );
+          DebugLogger.info('📝 [$name] First item: ${_getItemDescription(newList.first)}');
+          DebugLogger.info('📝 [$name] Last item: ${_getItemDescription(newList.last)}');
         }
       }
     });
@@ -54,12 +48,8 @@ class ReactiveStateMonitor {
 
       if (newValue != lastValue) {
         final displayValue = newValue.isEmpty ? '(empty)' : newValue;
-        final displayLastValue = lastValue?.isEmpty == true
-            ? '(empty)'
-            : lastValue ?? '(null)';
-        DebugLogger.info(
-          '📝 [$name] String changed: $displayLastValue → $displayValue',
-        );
+        final displayLastValue = lastValue?.isEmpty == true ? '(empty)' : lastValue ?? '(null)';
+        DebugLogger.info('📝 [$name] String changed: $displayLastValue → $displayValue');
         _lastValues[name] = newValue;
       }
     });
@@ -94,13 +84,8 @@ class ReactiveStateMonitor {
   }
 
   /// Create a monitor for a PropertyController
-  static void monitorPropertyController(
-    dynamic controller,
-    String controllerName,
-  ) {
-    DebugLogger.info(
-      '🔍 Setting up reactive state monitoring for $controllerName',
-    );
+  static void monitorPropertyController(dynamic controller, String controllerName) {
+    DebugLogger.info('🔍 Setting up reactive state monitoring for $controllerName');
 
     try {
       // Monitor key lists
@@ -108,22 +93,13 @@ class ReactiveStateMonitor {
         monitorRxList(controller.properties, '$controllerName.properties');
       }
       if (controller.discoverProperties != null) {
-        monitorRxList(
-          controller.discoverProperties,
-          '$controllerName.discoverProperties',
-        );
+        monitorRxList(controller.discoverProperties, '$controllerName.discoverProperties');
       }
       if (controller.favouriteProperties != null) {
-        monitorRxList(
-          controller.favouriteProperties,
-          '$controllerName.favouriteProperties',
-        );
+        monitorRxList(controller.favouriteProperties, '$controllerName.favouriteProperties');
       }
       if (controller.nearbyProperties != null) {
-        monitorRxList(
-          controller.nearbyProperties,
-          '$controllerName.nearbyProperties',
-        );
+        monitorRxList(controller.nearbyProperties, '$controllerName.nearbyProperties');
       }
 
       // Monitor loading states
@@ -131,10 +107,7 @@ class ReactiveStateMonitor {
         monitorRxBool(controller.isLoading, '$controllerName.isLoading');
       }
       if (controller.isLoadingDiscover != null) {
-        monitorRxBool(
-          controller.isLoadingDiscover,
-          '$controllerName.isLoadingDiscover',
-        );
+        monitorRxBool(controller.isLoadingDiscover, '$controllerName.isLoadingDiscover');
       }
 
       // Monitor error state

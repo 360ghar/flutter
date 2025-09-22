@@ -25,9 +25,7 @@ class ExploreView extends GetView<ExploreController> {
 
   @override
   Widget build(BuildContext context) {
-    DebugLogger.info(
-      '🎨 ExploreView build() called. Current state: ${controller.state.value}',
-    );
+    DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
 
     return Obx(() {
       final pageStateService = Get.find<PageStateService>();
@@ -42,8 +40,7 @@ class ExploreView extends GetView<ExploreController> {
             'explore_topbar_$searchVisible',
           ), // Force recreation when visibility changes
           onSearchChanged: (query) => controller.updateSearchQuery(query),
-          onFilterTap:
-              () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
+          onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
         ),
         body: Obx(() {
           final isRefreshing = pageStateService.exploreState.value.isRefreshing;
@@ -55,9 +52,7 @@ class ExploreView extends GetView<ExploreController> {
                 LinearProgressIndicator(
                   minHeight: 2,
                   backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.primaryYellow,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
                 ),
               // Main content
               Expanded(
@@ -72,19 +67,14 @@ class ExploreView extends GetView<ExploreController> {
                     case ExploreState.loading:
                       // If location is available, keep the map visible and let markers update
                       final hasLocation =
-                          Get.find<PageStateService>()
-                              .exploreState
-                              .value
-                              .hasLocation;
+                          Get.find<PageStateService>().exploreState.value.hasLocation;
                       if (hasLocation) {
                         DebugLogger.info(
                           '💻 Loading properties, rendering map with pending markers',
                         );
                         return _buildMapInterface(context);
                       }
-                      DebugLogger.info(
-                        '💻 Rendering loading state (no location yet)',
-                      );
+                      DebugLogger.info('💻 Rendering loading state (no location yet)');
                       return _buildLoadingState(context);
 
                     case ExploreState.error:
@@ -104,19 +94,12 @@ class ExploreView extends GetView<ExploreController> {
 
                     default:
                       final hasLocation =
-                          Get.find<PageStateService>()
-                              .exploreState
-                              .value
-                              .hasLocation;
+                          Get.find<PageStateService>().exploreState.value.hasLocation;
                       if (hasLocation) {
-                        DebugLogger.info(
-                          '🔄 Initializing; rendering map while loading',
-                        );
+                        DebugLogger.info('🔄 Initializing; rendering map while loading');
                         return _buildMapInterface(context);
                       }
-                      DebugLogger.info(
-                        '🔄 Rendering default loading state (no location yet)',
-                      );
+                      DebugLogger.info('🔄 Rendering default loading state (no location yet)');
                       return _buildLoadingState(context);
                   }
                 }),
@@ -134,9 +117,7 @@ class ExploreView extends GetView<ExploreController> {
         // Skeleton map
         Container(
           color: AppColors.surface,
-          child: Center(
-            child: Icon(Icons.map, size: 100, color: AppColors.divider),
-          ),
+          child: Center(child: Icon(Icons.map, size: 100, color: AppColors.divider)),
         ),
 
         // Loading overlay with progress
@@ -161,14 +142,8 @@ class ExploreView extends GetView<ExploreController> {
 
       try {
         // Pass the actual error object and its stack trace
-        final exception = ErrorMapper.mapApiError(
-          appError.error,
-          appError.stackTrace,
-        );
-        return ErrorStates.genericError(
-          error: exception,
-          onRetry: controller.retryLoading,
-        );
+        final exception = ErrorMapper.mapApiError(appError.error, appError.stackTrace);
+        return ErrorStates.genericError(error: exception, onRetry: controller.retryLoading);
       } catch (e) {
         return ErrorStates.networkError(
           onRetry: controller.retryLoading,
@@ -183,11 +158,7 @@ class ExploreView extends GetView<ExploreController> {
       title: 'no_properties_found'.tr,
       message: 'no_properties_found_area_message'.tr,
       icon: Icons.location_off,
-      onAction:
-          () => showPropertyFilterBottomSheet(
-            Get.context ?? context,
-            pageType: 'explore',
-          ),
+      onAction: () => showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'explore'),
       actionText: 'adjust_filters'.tr,
     );
   }
@@ -214,9 +185,7 @@ class ExploreView extends GetView<ExploreController> {
                     onPositionChanged: (position, hasGesture) {
                       if (hasGesture && controller.isMapReady.value) {
                         final zoomChanged =
-                            (position.zoom - controller.currentZoom.value)
-                                .abs() >
-                            0.1;
+                            (position.zoom - controller.currentZoom.value).abs() > 0.1;
                         final distance = _calculateDistance(
                           controller.currentCenter.value,
                           position.center,
@@ -231,21 +200,16 @@ class ExploreView extends GetView<ExploreController> {
                       DebugLogger.success('🗺️ Map is ready!');
                       controller.onMapReady();
                     },
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.all,
-                    ),
+                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.ghar360.app',
                       maxZoom: 18,
                     ),
                     RichAttributionWidget(
-                      attributions: const [
-                        TextSourceAttribution('© OpenStreetMap contributors'),
-                      ],
+                      attributions: const [TextSourceAttribution('© OpenStreetMap contributors')],
                     ),
                     // Search radius circle (reactive)
                     Obx(() {
@@ -257,12 +221,8 @@ class ExploreView extends GetView<ExploreController> {
                           CircleMarker(
                             point: controller.currentCenter.value,
                             radius: controller.currentRadius.value * 1000,
-                            color: AppColors.primaryYellow.withValues(
-                              alpha: 0.1,
-                            ),
-                            borderColor: AppColors.primaryYellow.withValues(
-                              alpha: 0.5,
-                            ),
+                            color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                            borderColor: AppColors.primaryYellow.withValues(alpha: 0.5),
                             borderStrokeWidth: 2,
                           ),
                         ],
@@ -273,29 +233,26 @@ class ExploreView extends GetView<ExploreController> {
                       final markers = controller.propertyMarkers;
                       if (markers.isEmpty) return const SizedBox.shrink();
                       return MarkerLayer(
-                        markers:
-                            markers
-                                .map(
-                                  (marker) => Marker(
-                                    point: marker.position,
-                                    width: 40,
-                                    height: 40,
-                                    child: PropertyMarkerChip(
-                                      property: marker.property,
-                                      isSelected: marker.isSelected,
-                                      label: marker.label,
-                                      onTap: () {
-                                        DebugLogger.info(
-                                          'Property marker tapped: ${marker.property.title}',
-                                        );
-                                        controller.selectProperty(
-                                          marker.property,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                        markers: markers
+                            .map(
+                              (marker) => Marker(
+                                point: marker.position,
+                                width: 40,
+                                height: 40,
+                                child: PropertyMarkerChip(
+                                  property: marker.property,
+                                  isSelected: marker.isSelected,
+                                  label: marker.label,
+                                  onTap: () {
+                                    DebugLogger.info(
+                                      'Property marker tapped: ${marker.property.title}',
+                                    );
+                                    controller.selectProperty(marker.property);
+                                  },
+                                ),
+                              ),
+                            )
+                            .toList(),
                       );
                     }),
                   ],
@@ -342,18 +299,13 @@ class ExploreView extends GetView<ExploreController> {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.primaryYellow,
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'loading_more_properties'.tr,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
                   ),
                 ],
               ),
@@ -364,10 +316,7 @@ class ExploreView extends GetView<ExploreController> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: SafeArea(
-            top: false,
-            child: PropertyHorizontalList(controller: controller),
-          ),
+          child: SafeArea(top: false, child: PropertyHorizontalList(controller: controller)),
         ),
       ],
     );
@@ -461,10 +410,7 @@ class ExploreView extends GetView<ExploreController> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              currentAreaText,
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
+            Text(currentAreaText, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
             if (locationDisplayText != 'All Locations' &&
                 locationDisplayText != 'Select Location') ...[
               const SizedBox(height: 4),
@@ -489,15 +435,11 @@ class ExploreView extends GetView<ExploreController> {
     const double earthRadius = 6371000; // Earth's radius in meters
     final double lat1Rad = point1.latitude * (math.pi / 180);
     final double lat2Rad = point2.latitude * (math.pi / 180);
-    final double deltaLat =
-        (point2.latitude - point1.latitude) * (math.pi / 180);
-    final double deltaLng =
-        (point2.longitude - point1.longitude) * (math.pi / 180);
+    final double deltaLat = (point2.latitude - point1.latitude) * (math.pi / 180);
+    final double deltaLng = (point2.longitude - point1.longitude) * (math.pi / 180);
     final double a =
         (math.sin(deltaLat / 2) * math.sin(deltaLat / 2)) +
-        math.cos(lat1Rad) *
-            math.cos(lat2Rad) *
-            (math.sin(deltaLng / 2) * math.sin(deltaLng / 2));
+        math.cos(lat1Rad) * math.cos(lat2Rad) * (math.sin(deltaLng / 2) * math.sin(deltaLng / 2));
     final double c = 2 * math.asin(math.sqrt(a));
     return earthRadius * c;
   }

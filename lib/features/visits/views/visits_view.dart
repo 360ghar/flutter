@@ -41,10 +41,7 @@ class VisitsView extends GetView<VisitsController> {
                     indicatorWeight: 3,
                     labelColor: AppColors.primaryYellow,
                     unselectedLabelColor: AppColors.tabUnselected,
-                    labelStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     unselectedLabelStyle: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.normal,
@@ -117,15 +114,15 @@ class VisitsView extends GetView<VisitsController> {
                 ),
 
                 // Subtle background refresh indicator (like other pages)
-                Obx(() => controller.isBackgroundRefreshing.value
-                    ? LinearProgressIndicator(
-                        minHeight: 2,
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primaryYellow,
-                        ),
-                      )
-                    : const SizedBox.shrink()),
+                Obx(
+                  () => controller.isBackgroundRefreshing.value
+                      ? LinearProgressIndicator(
+                          minHeight: 2,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                        )
+                      : const SizedBox.shrink(),
+                ),
 
                 // Relationship Manager Section - Always visible
                 Container(
@@ -165,10 +162,7 @@ class VisitsView extends GetView<VisitsController> {
         // Agent skeleton loader
         Container(
           color: AppColors.scaffoldBackground,
-          child: const Padding(
-            padding: EdgeInsets.all(20),
-            child: RelationshipManagerSkeleton(),
-          ),
+          child: const Padding(padding: EdgeInsets.all(20), child: RelationshipManagerSkeleton()),
         ),
 
         // Tab content skeleton loaders
@@ -189,9 +183,7 @@ class VisitsView extends GetView<VisitsController> {
   Widget _buildSkeletonList() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        children: List.generate(3, (index) => const VisitCardSkeleton()),
-      ),
+      child: Column(children: List.generate(3, (index) => const VisitCardSkeleton())),
     );
   }
 
@@ -205,7 +197,9 @@ class VisitsView extends GetView<VisitsController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(() {
-              DebugLogger.info('🖼️ Building Upcoming tab | count=${controller.upcomingVisits.length}');
+              DebugLogger.info(
+                '🖼️ Building Upcoming tab | count=${controller.upcomingVisits.length}',
+              );
               if (controller.upcomingVisits.isEmpty) {
                 return _buildEmptyState(
                   'no_visits'.tr,
@@ -221,12 +215,8 @@ class VisitsView extends GetView<VisitsController> {
                       (visit) => VisitCard(
                         visit: visit,
                         isUpcoming: true,
-                        dateText: controller.formatVisitDate(
-                          visit.scheduledDate,
-                        ),
-                        timeText: controller.formatVisitTime(
-                          visit.scheduledDate,
-                        ),
+                        dateText: controller.formatVisitDate(visit.scheduledDate),
+                        timeText: controller.formatVisitTime(visit.scheduledDate),
                         onTap: () {
                           if (visit.property != null) {
                             Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
@@ -271,12 +261,8 @@ class VisitsView extends GetView<VisitsController> {
                       (visit) => VisitCard(
                         visit: visit,
                         isUpcoming: false,
-                        dateText: controller.formatVisitDate(
-                          visit.scheduledDate,
-                        ),
-                        timeText: controller.formatVisitTime(
-                          visit.scheduledDate,
-                        ),
+                        dateText: controller.formatVisitDate(visit.scheduledDate),
+                        timeText: controller.formatVisitTime(visit.scheduledDate),
                         onTap: () {
                           if (visit.property != null) {
                             Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
@@ -298,8 +284,7 @@ class VisitsView extends GetView<VisitsController> {
   Widget _buildRelationshipManagerCard() {
     // Initialize agent data loading once on card build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!controller.hasLoadedAgent.value &&
-          !controller.isLoadingAgent.value) {
+      if (!controller.hasLoadedAgent.value && !controller.isLoadingAgent.value) {
         controller.loadRelationshipManagerLazy();
       }
     });
@@ -326,12 +311,7 @@ class VisitsView extends GetView<VisitsController> {
     });
   }
 
-  Widget _buildEmptyState(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildEmptyState(String title, String subtitle, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -378,14 +358,9 @@ class VisitsView extends GetView<VisitsController> {
 
                 // Date Selection
                 ListTile(
-                  leading: Icon(
-                    Icons.calendar_today,
-                    color: AppColors.primaryYellow,
-                  ),
+                  leading: Icon(Icons.calendar_today, color: AppColors.primaryYellow),
                   title: Text('date'.tr),
-                  subtitle: Text(
-                    '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-                  ),
+                  subtitle: Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
                   onTap: () async {
                     final DateTime? picked = await showDatePicker(
                       context: context,
@@ -443,9 +418,7 @@ class VisitsView extends GetView<VisitsController> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '${'cancel_visit_confirm_prefix'.tr} ${visit.propertyTitle}?',
-                ),
+                Text('${'cancel_visit_confirm_prefix'.tr} ${visit.propertyTitle}?'),
                 const SizedBox(height: 12),
                 TextField(
                   controller: reasonController,
@@ -469,17 +442,13 @@ class VisitsView extends GetView<VisitsController> {
                 onPressed: canSubmit
                     ? () {
                         final reason = reasonController.text.trim();
-                        controller.cancelVisit(
-                          visit.id.toString(),
-                          reason: reason,
-                        );
+                        controller.cancelVisit(visit.id.toString(), reason: reason);
                         Get.back();
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.errorRed,
-                  foregroundColor:
-                      Theme.of(context).colorScheme.onError,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
                 ),
                 child: Text('yes_cancel'.tr),
               ),

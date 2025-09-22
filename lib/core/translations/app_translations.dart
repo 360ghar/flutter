@@ -102,8 +102,7 @@ class AppTranslations extends Translations {
       'enable_location_services_message':
           'Please enable location services to use location features',
       'location_permission': 'Location Permission',
-      'location_permission_permanently_denied':
-          'Location permission permanently denied',
+      'location_permission_permanently_denied': 'Location permission permanently denied',
       'location_access_permanently_denied_message':
           'Location access is permanently denied. Please enable it in settings.',
       'location_permission_denied': 'Location permission denied',
@@ -112,10 +111,8 @@ class AppTranslations extends Translations {
       'location_error': 'Location Error',
       'failed_to_get_current_location': 'Failed to get current location',
       'failed_to_check_location_service': 'Failed to check location service',
-      'error_requesting_location_permission':
-          'Error requesting location permission',
-      'failed_to_get_location_message':
-          'Failed to get your current location. Please try again.',
+      'error_requesting_location_permission': 'Error requesting location permission',
+      'failed_to_get_location_message': 'Failed to get your current location. Please try again.',
       'search_error': 'Search Error',
       'failed_to_search_locations': 'Failed to search locations',
       'location_selected': 'Location Selected',
@@ -204,8 +201,7 @@ class AppTranslations extends Translations {
       'welcome_back': 'Welcome back!',
       'signed_in_with_google': 'Signed in with Google!',
       'enter_email_first': 'Please enter your email address first',
-      'password_reset_email_sent':
-          'Password reset email sent! Please check your inbox.',
+      'password_reset_email_sent': 'Password reset email sent! Please check your inbox.',
 
       // Authentication Form Fields
       'phone_number': 'Phone Number',
@@ -220,8 +216,7 @@ class AppTranslations extends Translations {
       'agree_terms_prefix': 'I agree to the',
       'terms_and_conditions': 'Terms and Conditions',
       'agree_terms_suffix': '',
-      'terms_consent_required':
-          'Please agree to the Terms and Conditions to continue',
+      'terms_consent_required': 'Please agree to the Terms and Conditions to continue',
 
       // Authentication Messages
       'sign_in_subtitle': 'Sign in with your phone number',
@@ -235,8 +230,7 @@ class AppTranslations extends Translations {
       'verify_phone': 'Verify Phone',
       'verify_phone_number': 'Verify Phone Number',
       'otp_sent_message': 'A verification code has been sent to your phone',
-      'otp_verification_subtitle':
-          'We\'ve sent a verification code to your phone',
+      'otp_verification_subtitle': 'We\'ve sent a verification code to your phone',
       'enter_otp': 'Enter 6-digit code',
       'enter_otp_subtitle': 'Enter the 6-digit code you received',
       'verify_otp': 'Verify OTP',
@@ -300,17 +294,13 @@ class AppTranslations extends Translations {
 
       // Error states
       'connection_error_title': 'Connection Error',
-      'connection_error_message':
-          'Please check your internet connection and try again.',
+      'connection_error_message': 'Please check your internet connection and try again.',
       'no_results_found': 'No Results Found',
-      'no_results_message_prefix':
-          'We couldn\'t find any properties matching',
+      'no_results_message_prefix': 'We couldn\'t find any properties matching',
       'location_access_needed': 'Location Access Needed',
-      'location_access_needed_message':
-          'We need location access to show properties near you.',
+      'location_access_needed_message': 'We need location access to show properties near you.',
       'no_more_properties': 'No More Properties',
-      'no_more_properties_message':
-          'You\'ve seen all properties matching your criteria.',
+      'no_more_properties_message': 'You\'ve seen all properties matching your criteria.',
       'profile_load_error': 'Profile Load Error',
       'profile_load_error_message':
           'Unable to load your profile. Please try again or sign out to start fresh.',
@@ -330,16 +320,13 @@ class AppTranslations extends Translations {
       'update_now': 'Update Now',
       'not_now': 'Not Now',
       'update': 'Update',
-      'mandatory_update_desc':
-          'Please update the app to continue using all features.',
-      'optional_update_desc':
-          'A new update is available with the latest improvements.',
+      'mandatory_update_desc': 'Please update the app to continue using all features.',
+      'optional_update_desc': 'A new update is available with the latest improvements.',
 
       // Property details
       'get_directions': 'Get Directions',
       'special_requirements_label': 'Special requirements (optional)',
-      'special_requirements_hint':
-          'Any access instructions or preferences...?',
+      'special_requirements_hint': 'Any access instructions or preferences...?',
       'visit_scheduled': 'Visit Scheduled',
       'visit_scheduled_message_prefix': 'Your visit to',
       'visit_scheduled_message_infix': 'is scheduled for',
@@ -352,8 +339,7 @@ class AppTranslations extends Translations {
       'reason_required_label': 'Reason (required)',
       'reason_required_hint': 'e.g. Not available on this date',
       'yes_cancel': 'Yes, Cancel',
-      'cancel_visit_confirm_prefix':
-          'Are you sure you want to cancel your visit to',
+      'cancel_visit_confirm_prefix': 'Are you sure you want to cancel your visit to',
       'reschedule_visit_to_prefix': 'Reschedule your visit to',
 
       // Profile completion
@@ -398,10 +384,8 @@ class AppTranslations extends Translations {
       'property': 'property',
       'properties': 'properties',
       'results': 'results',
-      'no_properties_match_your_search':
-          'No properties match your search',
-      'feature_coming_soon_move_to_liked':
-          'Feature coming soon: Move to liked properties',
+      'no_properties_match_your_search': 'No properties match your search',
+      'feature_coming_soon_move_to_liked': 'Feature coming soon: Move to liked properties',
       'send_feedback': 'Send Feedback',
       'sending_feedback': 'Sending feedback...',
       'network_error': 'Network Error',
@@ -412,8 +396,7 @@ class AppTranslations extends Translations {
       'search_in_likes_hint': 'Search in your likes...',
       'search_properties_hint_simple': 'Search properties...',
       'complete_your_profile': 'Complete Your Profile',
-      'personalize_experience_subtitle':
-          'Help us personalize your property search experience',
+      'personalize_experience_subtitle': 'Help us personalize your property search experience',
       'skip_for_now': 'Skip for now',
       'what_are_you_looking_for': 'What are you looking for?',
       // Tour
@@ -522,20 +505,17 @@ class AppTranslations extends Translations {
       'email_notifications': 'ईमेल सूचनाएं',
       'email_notifications_desc': 'ईमेल के द्वारा संपत्ति अपडेट प्राप्त करें',
       'price_drop_alerts': 'कीमत में कमी की चेतावनी',
-      'price_drop_alerts_desc':
-          'जब सेव की गई संपत्तियों की कीमत घटे तो सूचित करें',
+      'price_drop_alerts_desc': 'जब सेव की गई संपत्तियों की कीमत घटे तो सूचित करें',
       'similar_properties': 'समान संपत्तियां',
       'similar_properties_desc': 'सुझावों में समान संपत्तियां दिखाएं',
 
       'location_services': 'स्थान सेवाएं',
-      'location_services_desc':
-          'आस-पास की संपत्तियों के लिए स्थान का उपयोग करें',
+      'location_services_desc': 'आस-पास की संपत्तियों के लिए स्थान का उपयोग करें',
       'location_services_disabled': 'स्थान सेवाएं अक्षम हैं',
       'enable_location_services_message':
           'स्थान सुविधाओं का उपयोग करने के लिए कृपया स्थान सेवाएं सक्षम करें',
       'location_permission': 'स्थान अनुमति',
-      'location_permission_permanently_denied':
-          'स्थान अनुमति स्थायी रूप से अस्वीकृत',
+      'location_permission_permanently_denied': 'स्थान अनुमति स्थायी रूप से अस्वीकृत',
       'location_access_permanently_denied_message':
           'स्थान पहुंच स्थायी रूप से अस्वीकृत है। कृपया इसे सेटिंग्स में सक्षम करें।',
       'location_permission_denied': 'स्थान अनुमति अस्वीकृत',
@@ -544,8 +524,7 @@ class AppTranslations extends Translations {
       'location_error': 'स्थान त्रुटि',
       'failed_to_get_current_location': 'वर्तमान स्थान प्राप्त करने में विफल',
       'failed_to_check_location_service': 'स्थान सेवा जांचने में विफल',
-      'error_requesting_location_permission':
-          'स्थान अनुमति का अनुरोध करने में त्रुटि',
+      'error_requesting_location_permission': 'स्थान अनुमति का अनुरोध करने में त्रुटि',
       'failed_to_get_location_message':
           'आपका वर्तमान स्थान प्राप्त करने में विफल। कृपया फिर से कोशिश करें।',
       'search_error': 'खोज त्रुटि',
@@ -568,8 +547,7 @@ class AppTranslations extends Translations {
       'compact_view_desc': 'कॉम्पैक्ट लेआउट में अधिक संपत्तियां दिखाएं',
 
       'share_analytics': 'एनालिटिक्स साझा करें',
-      'share_analytics_desc':
-          'उपयोग डेटा साझा करके ऐप को बेहतर बनाने में मदद करें',
+      'share_analytics_desc': 'उपयोग डेटा साझा करके ऐप को बेहतर बनाने में मदद करें',
       'personalized_ads': 'व्यक्तिगत विज्ञापन',
       'personalized_ads_desc': 'व्यक्तिगत विज्ञापन दिखाएं',
 
@@ -633,8 +611,7 @@ class AppTranslations extends Translations {
       'welcome_back': 'वापसी पर स्वागत है!',
       'signed_in_with_google': 'गूगल के साथ साइन इन हो गया!',
       'enter_email_first': 'कृपया पहले अपना ईमेल पता दर्ज करें',
-      'password_reset_email_sent':
-          'पासवर्ड रीसेट ईमेल भेजा गया है! कृपया अपना इनबॉक्स जांचें।',
+      'password_reset_email_sent': 'पासवर्ड रीसेट ईमेल भेजा गया है! कृपया अपना इनबॉक्स जांचें।',
 
       // Authentication Form Fields
       'phone_number': 'फोन नंबर',
@@ -649,8 +626,7 @@ class AppTranslations extends Translations {
       'agree_terms_prefix': 'मैं',
       'terms_and_conditions': 'नियम और शर्तों',
       'agree_terms_suffix': 'से सहमत हूँ',
-      'terms_consent_required':
-          'आगे बढ़ने के लिए कृपया नियम और शर्तों से सहमत हों',
+      'terms_consent_required': 'आगे बढ़ने के लिए कृपया नियम और शर्तों से सहमत हों',
 
       // Authentication Messages
       'sign_in_subtitle': 'अपने फोन नंबर से साइन इन करें',
@@ -677,8 +653,7 @@ class AppTranslations extends Translations {
 
       // Password Reset
       'reset_password': 'पासवर्ड रीसेट करें',
-      'reset_password_subtitle':
-          'आपके फोन पर भेजे गए OTP के माध्यम से रीसेट करें',
+      'reset_password_subtitle': 'आपके फोन पर भेजे गए OTP के माध्यम से रीसेट करें',
       'send_otp': 'OTP भेजें',
       'back_to_login': 'लॉगिन पर वापस जाएं',
       'set_new_password': 'नया पासवर्ड सेट करें',
@@ -733,8 +708,7 @@ class AppTranslations extends Translations {
 
       // Error states
       'connection_error_title': 'कनेक्शन त्रुटि',
-      'connection_error_message':
-          'कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।',
+      'connection_error_message': 'कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।',
       'no_results_found': 'कोई परिणाम नहीं मिला',
       'no_results_message_prefix': 'हम इस खोज से मेल खाने वाली कोई संपत्ति नहीं ढूंढ सके',
       'location_access_needed': 'स्थान पहुंच आवश्यक',
@@ -761,8 +735,7 @@ class AppTranslations extends Translations {
       'update_now': 'अभी अपडेट करें',
       'not_now': 'अभी नहीं',
       'update': 'अपडेट',
-      'mandatory_update_desc':
-          'सभी सुविधाओं का उपयोग जारी रखने के लिए कृपया ऐप अपडेट करें।',
+      'mandatory_update_desc': 'सभी सुविधाओं का उपयोग जारी रखने के लिए कृपया ऐप अपडेट करें।',
       'optional_update_desc': 'नया अपडेट उपलब्ध है जिसमें नवीनतम सुधार शामिल हैं।',
 
       // Property details
@@ -827,8 +800,7 @@ class AppTranslations extends Translations {
       'properties': 'संपत्तियाँ',
       'results': 'परिणाम',
       'no_properties_match_your_search': 'आपकी खोज से मेल खाने वाली कोई संपत्ति नहीं',
-      'feature_coming_soon_move_to_liked':
-          'जल्द आ रहा है: पसंदीदा में स्थानांतरित करें',
+      'feature_coming_soon_move_to_liked': 'जल्द आ रहा है: पसंदीदा में स्थानांतरित करें',
       'send_feedback': 'प्रतिक्रिया भेजें',
       'sending_feedback': 'प्रतिक्रिया भेजी जा रही है...',
       'network_error': 'नेटवर्क त्रुटि',

@@ -43,8 +43,7 @@ class SearchCenter {
 
   SearchCenter({required this.latitude, required this.longitude});
 
-  factory SearchCenter.fromJson(Map<String, dynamic> json) =>
-      _$SearchCenterFromJson(json);
+  factory SearchCenter.fromJson(Map<String, dynamic> json) => _$SearchCenterFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchCenterToJson(this);
 }

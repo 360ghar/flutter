@@ -46,9 +46,7 @@ class ExplorePropertyCard extends StatelessWidget {
                       height: 120,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                       memCacheWidth: 200,
                       memCacheHeight: 120,
                       placeholder: Container(
@@ -56,9 +54,7 @@ class ExplorePropertyCard extends StatelessWidget {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: AppColors.inputBackground,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(16),
-                          ),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                         ),
                         child: Center(
                           child: Column(
@@ -76,10 +72,7 @@ class ExplorePropertyCard extends StatelessWidget {
                               const SizedBox(height: 8),
                               Text(
                                 'Loading...',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                ),
+                                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                               ),
                             ],
                           ),
@@ -91,10 +84,7 @@ class ExplorePropertyCard extends StatelessWidget {
                     top: 8,
                     left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.primaryYellow,
                         borderRadius: BorderRadius.circular(12),
@@ -126,9 +116,7 @@ class ExplorePropertyCard extends StatelessWidget {
                       child: IconButton(
                         icon: Icon(
                           isFavourite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavourite
-                              ? AppColors.favoriteActive
-                              : colorScheme.onPrimary,
+                          color: isFavourite ? AppColors.favoriteActive : colorScheme.onPrimary,
                           size: 20,
                         ),
                         onPressed: onFavouriteToggle,
@@ -173,10 +161,7 @@ class ExplorePropertyCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       property.addressDisplay,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.propertyCardSubtext,
-                      ),
+                      style: TextStyle(fontSize: 12, color: AppColors.propertyCardSubtext),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -184,11 +169,7 @@ class ExplorePropertyCard extends StatelessWidget {
                     Row(
                       children: [
                         if (property.bedroomBathroomText.isNotEmpty) ...[
-                          Icon(
-                            Icons.bed_outlined,
-                            size: 14,
-                            color: AppColors.propertyFeatureText,
-                          ),
+                          Icon(Icons.bed_outlined, size: 14, color: AppColors.propertyFeatureText),
                           const SizedBox(width: 4),
                           Text(
                             property.bedroomBathroomText,
@@ -201,11 +182,7 @@ class ExplorePropertyCard extends StatelessWidget {
                         ],
                         if (property.areaText.isNotEmpty) ...[
                           const SizedBox(width: 12),
-                          Icon(
-                            Icons.square_foot,
-                            size: 14,
-                            color: AppColors.propertyFeatureText,
-                          ),
+                          Icon(Icons.square_foot, size: 14, color: AppColors.propertyFeatureText),
                           const SizedBox(width: 4),
                           Text(
                             property.areaText,
@@ -218,8 +195,7 @@ class ExplorePropertyCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    if (property.floorText.isNotEmpty ||
-                        property.ageText.isNotEmpty) ...[
+                    if (property.floorText.isNotEmpty || property.ageText.isNotEmpty) ...[
                       const SizedBox(height: 1),
                       Flexible(
                         child: Row(
@@ -250,8 +226,7 @@ class ExplorePropertyCard extends StatelessWidget {
                               ),
                             ],
                             if (property.ageText.isNotEmpty) ...[
-                              if (property.floorText.isNotEmpty)
-                                const SizedBox(width: 8),
+                              if (property.floorText.isNotEmpty) const SizedBox(width: 8),
                               Flexible(
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,

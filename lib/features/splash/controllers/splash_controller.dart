@@ -29,25 +29,25 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
       vsync: this,
     );
 
-    fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
-    );
+    fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: animationController, curve: Curves.easeInOut));
 
-    slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: animationController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
+    slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: animationController, curve: Curves.easeOutCubic));
 
-    scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeOutBack),
-    );
+    scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: animationController, curve: Curves.easeOutBack));
 
-    rotationAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
-    );
+    rotationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: animationController, curve: Curves.easeInOut));
 
     animationController.forward();
   }

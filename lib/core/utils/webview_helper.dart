@@ -109,11 +109,7 @@ class WebViewHelper {
           const SizedBox(height: 16),
           Text(
             '360° Tour Unavailable',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(

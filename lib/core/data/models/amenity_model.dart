@@ -25,8 +25,7 @@ class AmenityModel {
     this.updatedAt,
   });
 
-  factory AmenityModel.fromJson(Map<String, dynamic> json) =>
-      _$AmenityModelFromJson(json);
+  factory AmenityModel.fromJson(Map<String, dynamic> json) => _$AmenityModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$AmenityModelToJson(this);
 
@@ -97,12 +96,7 @@ class PropertyAmenityResponse {
   final String? icon;
   final String? category;
 
-  PropertyAmenityResponse({
-    required this.id,
-    required this.title,
-    this.icon,
-    this.category,
-  });
+  PropertyAmenityResponse({required this.id, required this.title, this.icon, this.category});
 
   factory PropertyAmenityResponse.fromJson(Map<String, dynamic> json) =>
       _$PropertyAmenityResponseFromJson(json);

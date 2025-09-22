@@ -31,8 +31,7 @@ class VisitAgentInfo {
     required this.phone,
   });
 
-  factory VisitAgentInfo.fromJson(Map<String, dynamic> json) =>
-      _$VisitAgentInfoFromJson(json);
+  factory VisitAgentInfo.fromJson(Map<String, dynamic> json) => _$VisitAgentInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$VisitAgentInfoToJson(this);
 }
@@ -145,8 +144,7 @@ class VisitModel {
   Map<String, dynamic> toJson() => _$VisitModelToJson(this);
 
   // Convenience getters
-  String get propertyTitle =>
-      property?.title ?? propertyTitleApi ?? 'Property #$propertyId';
+  String get propertyTitle => property?.title ?? propertyTitleApi ?? 'Property #$propertyId';
   String get agentName => agents?.name ?? agentNameApi ?? 'Unknown Agent';
   String get agentPhone => agents?.phone ?? '';
   String get notes => visitNotes ?? '';
@@ -175,10 +173,12 @@ class VisitModel {
     }
   }
 
-  bool get canReschedule => status == VisitStatus.scheduled ||
+  bool get canReschedule =>
+      status == VisitStatus.scheduled ||
       status == VisitStatus.confirmed ||
       status == VisitStatus.rescheduled;
-  bool get canCancel => status == VisitStatus.scheduled ||
+  bool get canCancel =>
+      status == VisitStatus.scheduled ||
       status == VisitStatus.confirmed ||
       status == VisitStatus.rescheduled;
 

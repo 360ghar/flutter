@@ -47,11 +47,7 @@ class LocationSelector extends GetView<LocationController> {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(
-                Icons.keyboard_arrow_down,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
+              Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
             ],
           ),
         ),
@@ -199,9 +195,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                       margin: const EdgeInsets.all(12),
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primaryYellow,
-                        ),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
                       ),
                     );
                   } else if (_searchController.text.isNotEmpty) {
@@ -216,10 +210,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                   return const SizedBox.shrink();
                 }),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
           ),
@@ -257,18 +248,11 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.location_off,
-                        size: 48,
-                        color: AppColors.textSecondary,
-                      ),
+                      Icon(Icons.location_off, size: 48, color: AppColors.textSecondary),
                       const SizedBox(height: 16),
                       Text(
                         'No locations found',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -295,10 +279,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
 
   Widget _buildRadiusSelector() {
     final current = _getPageState(pageStateService);
-    final radiusValue = (_radiusKm ?? current.filters.radiusKm ?? 10.0).clamp(
-      5.0,
-      50.0,
-    );
+    final radiusValue = (_radiusKm ?? current.filters.radiusKm ?? 10.0).clamp(5.0, 50.0);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
@@ -338,10 +319,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
               setState(() => _radiusKm = val);
               final state = _getPageState(pageStateService);
               final updatedFilters = state.filters.copyWith(radiusKm: val);
-              pageStateService.updatePageFilters(
-                widget.pageType,
-                updatedFilters,
-              );
+              pageStateService.updatePageFilters(widget.pageType, updatedFilters);
             },
           ),
         ],
@@ -369,20 +347,10 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         ),
         title: Text(
           title,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: AppColors.textSecondary,
-        ),
+        subtitle: Text(subtitle, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSecondary),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         tileColor: AppColors.surface,
@@ -406,16 +374,10 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       ),
       title: Text(
         title,
-        style: TextStyle(
-          fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
-        ),
+        style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary),
       ),
       subtitle: subtitle.isNotEmpty
-          ? Text(
-              subtitle,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            )
+          ? Text(subtitle, style: TextStyle(color: AppColors.textSecondary, fontSize: 12))
           : null,
       onTap: onTap,
     );

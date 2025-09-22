@@ -69,8 +69,7 @@ class DebugLogger {
   static void error(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
     // Always capture stack trace if not provided for errors
-    final effectiveStackTrace =
-        stackTrace ?? (error != null ? StackTrace.current : null);
+    final effectiveStackTrace = stackTrace ?? (error != null ? StackTrace.current : null);
     _logger.e('❌ $message', error: error, stackTrace: effectiveStackTrace);
   }
 
@@ -109,11 +108,7 @@ class DebugLogger {
   }
 
   /// Property related logs
-  static void property(
-    String message, [
-    dynamic error,
-    StackTrace? stackTrace,
-  ]) {
+  static void property(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
     _logger.i('🏠 $message', error: error, stackTrace: stackTrace);
   }
@@ -127,11 +122,7 @@ class DebugLogger {
   }
 
   /// Connection related logs
-  static void connection(
-    String message, [
-    dynamic error,
-    StackTrace? stackTrace,
-  ]) {
+  static void connection(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
     _logger.i('🔌 $message', error: error, stackTrace: stackTrace);
   }
@@ -143,12 +134,7 @@ class DebugLogger {
   }
 
   /// Log JWT token details securely (only in debug mode)
-  static void logJWTToken(
-    String token, {
-    DateTime? expiresAt,
-    String? userId,
-    String? userEmail,
-  }) {
+  static void logJWTToken(String token, {DateTime? expiresAt, String? userId, String? userEmail}) {
     if (!isDebugMode) return;
 
     _ensureInitialized();
@@ -243,11 +229,7 @@ class DebugLogger {
       });
     }
 
-    _logger.e(
-      message.toString(),
-      error: error,
-      stackTrace: effectiveStackTrace,
-    );
+    _logger.e(message.toString(), error: error, stackTrace: effectiveStackTrace);
   }
 
   /// Comprehensive error reporting method
@@ -322,10 +304,7 @@ class DebugLogger {
     if (body is String) {
       // Remove potential passwords, tokens, etc.
       return body.replaceAllMapped(
-        RegExp(
-          r'"(password|token|key|secret)":\s*"[^"]*"',
-          caseSensitive: false,
-        ),
+        RegExp(r'"(password|token|key|secret)":\s*"[^"]*"', caseSensitive: false),
         (match) => '"${match.group(1)}": "***HIDDEN***"',
       );
     }

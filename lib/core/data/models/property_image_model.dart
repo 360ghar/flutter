@@ -7,10 +7,7 @@ class PropertyImageModel {
   final int id;
   @JsonKey(name: 'property_id')
   final int propertyId;
-  @JsonKey(
-    name: 'image_url',
-    defaultValue: 'https://via.placeholder.com/400x300?text=No+Image',
-  )
+  @JsonKey(name: 'image_url', defaultValue: 'https://via.placeholder.com/400x300?text=No+Image')
   final String imageUrl;
   final String? caption;
   @JsonKey(name: 'display_order', defaultValue: 0)
@@ -34,8 +31,7 @@ class PropertyImageModel {
 
   // Helper methods
   bool get isValid =>
-      imageUrl.isNotEmpty &&
-      imageUrl != 'https://via.placeholder.com/400x300?text=No+Image';
+      imageUrl.isNotEmpty && imageUrl != 'https://via.placeholder.com/400x300?text=No+Image';
 
   String get thumbnailUrl {
     // If using a CDN, can append thumbnail parameters

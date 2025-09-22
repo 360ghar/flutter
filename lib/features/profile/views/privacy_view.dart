@@ -92,11 +92,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                   const SizedBox(height: 12),
                   Text(
                     'Need to leave 360ghar? Submit a deletion request and our team will erase your profile and personal data after completing the verification steps.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
+                    style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -105,12 +101,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                       onPressed: _showDeleteAccountDialog,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.errorRed,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onError,
+                        foregroundColor: Theme.of(context).colorScheme.onError,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text(
                         'Delete Account',
@@ -146,16 +139,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
       ),
       title: Text(
         title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
       ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-      ),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
       trailing: Icon(Icons.chevron_right, color: AppColors.iconColor),
       onTap: onTap,
     );
@@ -180,16 +166,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
       ),
       title: Text(
         title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
       ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-      ),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
       trailing: Icon(Icons.arrow_forward_ios, color: AppColors.iconColor, size: 16),
       onTap: () => _openPolicy(uniqueName, title),
     );
@@ -208,10 +187,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text(
-          'Delete Account',
-          style: TextStyle(color: AppColors.errorRed),
-        ),
+        title: Text('Delete Account', style: TextStyle(color: AppColors.errorRed)),
         content: Text(
           'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be removed from our systems.',
           style: TextStyle(color: AppColors.textSecondary),
@@ -219,10 +195,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
+            child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {

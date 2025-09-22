@@ -60,8 +60,7 @@ class ThemeController extends GetxController with WidgetsBindingObserver {
         break;
       case AppThemeMode.system:
         isDarkMode.value =
-            WidgetsBinding.instance.platformDispatcher.platformBrightness ==
-            Brightness.dark;
+            WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
         break;
     }
     _updateAppTheme();
@@ -116,9 +115,7 @@ class ThemeController extends GetxController with WidgetsBindingObserver {
 
   // Sync with preferences controller
   void syncWithPreferences(bool darkThemeFromPreferences) {
-    final newMode = darkThemeFromPreferences
-        ? AppThemeMode.dark
-        : AppThemeMode.light;
+    final newMode = darkThemeFromPreferences ? AppThemeMode.dark : AppThemeMode.light;
     if (_themeMode.value != newMode) {
       setThemeMode(newMode);
     }

@@ -63,8 +63,7 @@ class UserModel {
     this.fcmToken,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) =>
-      _$UserModelFromJson(json);
+  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
@@ -127,8 +126,7 @@ class UserModel {
     if (dob == null) return null;
     final now = DateTime.now();
     int age = now.year - dob.year;
-    if (now.month < dob.month ||
-        (now.month == dob.month && now.day < dob.day)) {
+    if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
       age--;
     }
     return age;
@@ -153,8 +151,7 @@ class UserModel {
   // Profile completion percentage
   int get profileCompletionPercentage {
     int completedFields = 0;
-    const int totalFields =
-        5; // email, fullName, dateOfBirth, phone, profileImageUrl
+    const int totalFields = 5; // email, fullName, dateOfBirth, phone, profileImageUrl
 
     if (email.isNotEmpty) completedFields++;
     if (fullName != null && fullName!.isNotEmpty) completedFields++;

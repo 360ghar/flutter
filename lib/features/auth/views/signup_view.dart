@@ -29,10 +29,7 @@ class SignUpView extends GetView<SignUpController> {
 
   Future<void> _openTerms() async {
     try {
-      final launched = await launchUrl(
-        _termsUri,
-        mode: LaunchMode.externalApplication,
-      );
+      final launched = await launchUrl(_termsUri, mode: LaunchMode.externalApplication);
       if (!launched) {
         Get.snackbar('error'.tr, 'unable_to_open_link'.tr);
       }
@@ -79,9 +76,7 @@ class SignUpView extends GetView<SignUpController> {
                 hintText: 'phone_hint'.tr,
               ),
               keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r"[0-9+\s]")),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[0-9+\s]"))],
               validator: (value) {
                 final raw = (value ?? '').trim();
                 if (raw.isEmpty) {
@@ -90,8 +85,7 @@ class SignUpView extends GetView<SignUpController> {
                 final cleaned = raw.replaceAll(RegExp(r"\s+"), "");
                 final tenDigits = RegExp(r"^[0-9]{10}$");
                 final e164IN = RegExp(r"^\+91[0-9]{10}$");
-                if (!(tenDigits.hasMatch(cleaned) ||
-                    e164IN.hasMatch(cleaned))) {
+                if (!(tenDigits.hasMatch(cleaned) || e164IN.hasMatch(cleaned))) {
                   return 'phone_invalid'.tr;
                 }
                 return null;
@@ -110,9 +104,7 @@ class SignUpView extends GetView<SignUpController> {
                   suffixIcon: IconButton(
                     onPressed: controller.togglePasswordVisibility,
                     icon: Icon(
-                      controller.isPasswordVisible.value
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      controller.isPasswordVisible.value ? Icons.visibility_off : Icons.visibility,
                     ),
                   ),
                 ),
@@ -198,10 +190,7 @@ class SignUpView extends GetView<SignUpController> {
                             spacing: 4,
                             runSpacing: 2,
                             children: [
-                              Text(
-                                prefixText,
-                                style: theme.textTheme.bodyMedium,
-                              ),
+                              Text(prefixText, style: theme.textTheme.bodyMedium),
                               TextButton(
                                 onPressed: () => _openTerms(),
                                 style: TextButton.styleFrom(
@@ -218,10 +207,7 @@ class SignUpView extends GetView<SignUpController> {
                                 ),
                               ),
                               if (suffixText.isNotEmpty)
-                                Text(
-                                  suffixText,
-                                  style: theme.textTheme.bodyMedium,
-                                ),
+                                Text(suffixText, style: theme.textTheme.bodyMedium),
                             ],
                           ),
                         ),
@@ -231,9 +217,7 @@ class SignUpView extends GetView<SignUpController> {
                           padding: const EdgeInsets.only(left: 12, top: 4),
                           child: Text(
                             state.errorText ?? '',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.error,
-                            ),
+                            style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.error),
                           ),
                         ),
                     ],
@@ -264,14 +248,10 @@ class SignUpView extends GetView<SignUpController> {
             // Sign Up Button
             Obx(
               () => ElevatedButton(
-                onPressed: controller.isLoading.value
-                    ? null
-                    : controller.signUp,
+                onPressed: controller.isLoading.value ? null : controller.signUp,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: controller.isLoading.value
                     ? SizedBox(
@@ -318,10 +298,7 @@ class SignUpView extends GetView<SignUpController> {
           // Back Button and Header
           Row(
             children: [
-              IconButton(
-                onPressed: controller.goBackToForm,
-                icon: const Icon(Icons.arrow_back),
-              ),
+              IconButton(onPressed: controller.goBackToForm, icon: const Icon(Icons.arrow_back)),
               Expanded(
                 child: Text(
                   'verify_phone_number'.tr,
@@ -379,14 +356,10 @@ class SignUpView extends GetView<SignUpController> {
           // Verify Button
           Obx(
             () => ElevatedButton(
-              onPressed: controller.isLoading.value
-                  ? null
-                  : controller.verifyOtp,
+              onPressed: controller.isLoading.value ? null : controller.verifyOtp,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: controller.isLoading.value
                   ? SizedBox(
@@ -412,9 +385,7 @@ class SignUpView extends GetView<SignUpController> {
           // Resend OTP Button
           Obx(
             () => TextButton(
-              onPressed: controller.canResendOtp.value
-                  ? controller.resendOtp
-                  : null,
+              onPressed: controller.canResendOtp.value ? controller.resendOtp : null,
               child: Text(
                 controller.canResendOtp.value
                     ? 'resend_code'.tr

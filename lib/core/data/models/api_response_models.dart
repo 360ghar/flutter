@@ -25,8 +25,7 @@ class PaginationParams {
 
   PaginationParams({this.page = 1, this.limit = 20});
 
-  factory PaginationParams.fromJson(Map<String, dynamic> json) =>
-      _$PaginationParamsFromJson(json);
+  factory PaginationParams.fromJson(Map<String, dynamic> json) => _$PaginationParamsFromJson(json);
 
   Map<String, dynamic> toJson() => _$PaginationParamsToJson(this);
 
@@ -89,8 +88,7 @@ class MessageResponse {
 
   MessageResponse({required this.message, this.success = true});
 
-  factory MessageResponse.fromJson(Map<String, dynamic> json) =>
-      _$MessageResponseFromJson(json);
+  factory MessageResponse.fromJson(Map<String, dynamic> json) => _$MessageResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MessageResponseToJson(this);
 }
@@ -104,8 +102,7 @@ class ErrorResponse {
 
   ErrorResponse({required this.message, this.errorCode, this.details});
 
-  factory ErrorResponse.fromJson(Map<String, dynamic> json) =>
-      _$ErrorResponseFromJson(json);
+  factory ErrorResponse.fromJson(Map<String, dynamic> json) => _$ErrorResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$ErrorResponseToJson(this);
 }
@@ -129,8 +126,7 @@ class SearchParams {
     this.limit = 20,
   });
 
-  factory SearchParams.fromJson(Map<String, dynamic> json) =>
-      _$SearchParamsFromJson(json);
+  factory SearchParams.fromJson(Map<String, dynamic> json) => _$SearchParamsFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchParamsToJson(this);
 }
@@ -198,8 +194,7 @@ class PrivacySettings {
     this.contactSharing = true,
   });
 
-  factory PrivacySettings.fromJson(Map<String, dynamic> json) =>
-      _$PrivacySettingsFromJson(json);
+  factory PrivacySettings.fromJson(Map<String, dynamic> json) => _$PrivacySettingsFromJson(json);
 
   Map<String, dynamic> toJson() => _$PrivacySettingsToJson(this);
 
@@ -227,8 +222,7 @@ class LocationUpdate {
 
   LocationUpdate({required this.latitude, required this.longitude});
 
-  factory LocationUpdate.fromJson(Map<String, dynamic> json) =>
-      _$LocationUpdateFromJson(json);
+  factory LocationUpdate.fromJson(Map<String, dynamic> json) => _$LocationUpdateFromJson(json);
 
   Map<String, dynamic> toJson() => _$LocationUpdateToJson(this);
 }

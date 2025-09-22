@@ -38,10 +38,7 @@ mixin ThemeMixin {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: Get.theme.colorScheme.surface,
-      child: Padding(
-        padding: padding ?? const EdgeInsets.all(16),
-        child: child,
-      ),
+      child: Padding(padding: padding ?? const EdgeInsets.all(16), child: child),
     );
   }
 
@@ -139,9 +136,7 @@ mixin ThemeMixin {
               if (icon != null) ...[
                 Icon(
                   icon,
-                  color: isDestructive
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.primary,
+                  color: isDestructive ? theme.colorScheme.error : theme.colorScheme.primary,
                   size: 24,
                 ),
                 const SizedBox(width: 16),
@@ -164,9 +159,7 @@ mixin ThemeMixin {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.7,
-                        ),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),

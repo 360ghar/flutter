@@ -60,14 +60,11 @@ class PageStateModel {
       pageType: pageType,
       filters: UnifiedFilterModel.initial(),
       properties: [],
-      additionalData: pageType == PageType.likes
-          ? {'currentSegment': 'liked'}
-          : null,
+      additionalData: pageType == PageType.likes ? {'currentSegment': 'liked'} : null,
     );
   }
 
-  factory PageStateModel.fromJson(Map<String, dynamic> json) =>
-      _$PageStateModelFromJson(json);
+  factory PageStateModel.fromJson(Map<String, dynamic> json) => _$PageStateModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$PageStateModelToJson(this);
 
@@ -110,17 +107,14 @@ class PageStateModel {
   // Getters for common operations
   bool get hasLocation => selectedLocation != null;
 
-  bool get hasActiveFilters =>
-      filters.activeFilterCount > 0 || (searchQuery?.isNotEmpty ?? false);
+  bool get hasActiveFilters => filters.activeFilterCount > 0 || (searchQuery?.isNotEmpty ?? false);
 
   int get activeFiltersCount =>
       filters.activeFilterCount + (searchQuery?.isNotEmpty ?? false ? 1 : 0);
 
   String get locationDisplayText {
     if (hasLocation) {
-      return selectedLocation!.name.isNotEmpty
-          ? selectedLocation!.name
-          : 'Current Location';
+      return selectedLocation!.name.isNotEmpty ? selectedLocation!.name : 'Current Location';
     }
     return 'Select Location';
   }

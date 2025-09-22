@@ -19,8 +19,7 @@ class SwipeStack extends StatefulWidget {
   State<SwipeStack> createState() => _SwipeStackState();
 }
 
-class _SwipeStackState extends State<SwipeStack>
-    with SingleTickerProviderStateMixin {
+class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMixin {
   late List<PropertyModel> _properties;
   late AnimationController _animationController;
 
@@ -53,10 +52,7 @@ class _SwipeStackState extends State<SwipeStack>
       return Center(
         child: Text(
           'No more properties to show',
-          style: TextStyle(
-            fontSize: 16,
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
         ),
       );
     }

@@ -31,11 +31,7 @@ class ProfileView extends GetView<AuthController> {
         ),
         body: Obx(() {
           if (controller.isLoading.value) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: AppColors.loadingIndicator,
-              ),
-            );
+            return Center(child: CircularProgressIndicator(color: AppColors.loadingIndicator));
           }
 
           final user = controller.currentUser.value;
@@ -123,9 +119,7 @@ class ProfileView extends GetView<AuthController> {
                         radius: 50,
                         backgroundColor: AppColors.primaryYellow,
                         child: Text(
-                          user.name.isNotEmpty
-                              ? user.name[0].toUpperCase()
-                              : 'U',
+                          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -156,11 +150,7 @@ class ProfileView extends GetView<AuthController> {
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.surface, width: 2),
                   ),
-                  child: Icon(
-                    Icons.camera_alt,
-                    size: 16,
-                    color: AppColors.buttonText,
-                  ),
+                  child: Icon(Icons.camera_alt, size: 16, color: AppColors.buttonText),
                 ),
               ),
             ],
@@ -187,10 +177,7 @@ class ProfileView extends GetView<AuthController> {
 
           // Phone
           if (user.phone.isNotEmpty)
-            Text(
-              user.phone,
-              style: TextStyle(fontSize: 14, color: AppColors.textTertiary),
-            ),
+            Text(user.phone, style: TextStyle(fontSize: 14, color: AppColors.textTertiary)),
         ],
       ),
     );
@@ -216,21 +203,10 @@ class ProfileView extends GetView<AuthController> {
         ),
         title: Text(
           title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: AppColors.iconColor,
-        ),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.iconColor),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         tileColor: AppColors.surface,
@@ -246,17 +222,11 @@ class ProfileView extends GetView<AuthController> {
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: AppColors.errorRed),
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: Text(
           'logout'.tr,
-          style: TextStyle(
-            color: AppColors.errorRed,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: AppColors.errorRed, fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -274,10 +244,7 @@ class ProfileView extends GetView<AuthController> {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text(
-              'cancel'.tr,
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
+            child: Text('cancel'.tr, style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {

@@ -12,9 +12,7 @@ class ProfileRepository extends GetxService {
   /// Updates the user profile on the backend
   Future<UserModel> updateUserProfile(Map<String, dynamic> profileData) async {
     try {
-      DebugLogger.info(
-        '👤 Updating user profile with data: ${profileData.keys.join(', ')}',
-      );
+      DebugLogger.info('👤 Updating user profile with data: ${profileData.keys.join(', ')}');
       final updatedUser = await _apiService.updateUserProfile(profileData);
       DebugLogger.success('✅ Profile updated successfully');
       return updatedUser;
@@ -25,9 +23,7 @@ class ProfileRepository extends GetxService {
   }
 
   /// Updates the user's location on the backend
-  Future<UserModel> updateUserLocation(
-    Map<String, dynamic> locationData,
-  ) async {
+  Future<UserModel> updateUserLocation(Map<String, dynamic> locationData) async {
     try {
       DebugLogger.info('📍 Updating user location');
       final lat = locationData['current_latitude'] as double?;
@@ -46,9 +42,7 @@ class ProfileRepository extends GetxService {
   }
 
   /// Updates the user's preferences on the backend
-  Future<UserModel> updateUserPreferences(
-    Map<String, dynamic> preferences,
-  ) async {
+  Future<UserModel> updateUserPreferences(Map<String, dynamic> preferences) async {
     try {
       DebugLogger.info('⚙️ Updating user preferences');
       await _apiService.updateUserPreferences(preferences);
@@ -110,9 +104,7 @@ class ProfileRepository extends GetxService {
       DebugLogger.info('📸 Updating user profile image');
       // This would typically involve uploading the image first, then updating the profile
       // For now, we'll assume the imagePath is already a URL or the API handles the upload
-      final updatedUser = await updateUserProfile({
-        'profile_image_url': imagePath,
-      });
+      final updatedUser = await updateUserProfile({'profile_image_url': imagePath});
       DebugLogger.success('✅ Profile image updated successfully');
       return updatedUser;
     } on AppException catch (e, stackTrace) {

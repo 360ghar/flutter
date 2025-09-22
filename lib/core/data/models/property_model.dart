@@ -243,8 +243,7 @@ class PropertyModel {
   factory PropertyModel.fromJson(Map<String, dynamic> json) {
     // Normalize backend variations without breaking generated parsing
     final normalized = Map<String, dynamic>.from(json);
-    if (!normalized.containsKey('is_active') &&
-        normalized.containsKey('is_available')) {
+    if (!normalized.containsKey('is_active') && normalized.containsKey('is_available')) {
       normalized['is_active'] = normalized['is_available'];
     }
     // Normalize date string for user_next_visit_date into ISO if needed

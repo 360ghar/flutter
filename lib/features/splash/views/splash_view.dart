@@ -101,9 +101,7 @@ class SplashView extends GetView<SplashController> {
                                   onPressed: controller.previousStep,
                                   icon: const Icon(Icons.arrow_back),
                                   label: Text('back'.tr),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: AppTheme.textGray,
-                                  ),
+                                  style: TextButton.styleFrom(foregroundColor: AppTheme.textGray),
                                 )
                               : const SizedBox(width: 80),
 
@@ -112,24 +110,15 @@ class SplashView extends GetView<SplashController> {
                             onPressed: controller.nextStep,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryYellow,
-                              foregroundColor:
-                                  Theme.of(context).colorScheme.onPrimary,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 16,
-                              ),
+                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(25),
                               ),
                             ),
                             child: Text(
-                              controller.currentStep.value < 3
-                                  ? 'next'.tr
-                                  : 'get_started'.tr,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              controller.currentStep.value < 3 ? 'next'.tr : 'get_started'.tr,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ],
@@ -157,10 +146,7 @@ class SplashView extends GetView<SplashController> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // 360° Tour Animation
-              ScaleTransition(
-                scale: controller.scaleAnimation,
-                child: _build360TourIllustration(),
-              ),
+              ScaleTransition(scale: controller.scaleAnimation, child: _build360TourIllustration()),
 
               const SizedBox(height: 48),
 
@@ -180,10 +166,9 @@ class SplashView extends GetView<SplashController> {
               // Description
               Text(
                 'Step inside every property from anywhere. Our immersive 360° tours let you explore homes as if you were there, saving time and making better decisions.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textGray,
-                  height: 1.6,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppTheme.textGray, height: 1.6),
                 textAlign: TextAlign.center,
               ),
 
@@ -237,10 +222,9 @@ class SplashView extends GetView<SplashController> {
               // Description
               Text(
                 'Visit properties 24/7 from the comfort of your home. No scheduling conflicts, no travel time – just instant access to your dream homes.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textGray,
-                  height: 1.6,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppTheme.textGray, height: 1.6),
                 textAlign: TextAlign.center,
               ),
 
@@ -294,10 +278,9 @@ class SplashView extends GetView<SplashController> {
               // Description
               Text(
                 'Every property is thoroughly verified by our team. Real photos, accurate details, and authentic information – no fake listings, guaranteed.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textGray,
-                  height: 1.6,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppTheme.textGray, height: 1.6),
                 textAlign: TextAlign.center,
               ),
 
@@ -351,10 +334,9 @@ class SplashView extends GetView<SplashController> {
               // Description
               Text(
                 'Save thousands with our transparent, low brokerage fees while getting full-service support. Expert guidance, legal assistance, and end-to-end support.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textGray,
-                  height: 1.6,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppTheme.textGray, height: 1.6),
                 textAlign: TextAlign.center,
               ),
 
@@ -419,10 +401,7 @@ class SplashView extends GetView<SplashController> {
             height: 200,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: AppTheme.primaryYellow.withValues(alpha: 0.3),
-                width: 3,
-              ),
+              border: Border.all(color: AppTheme.primaryYellow.withValues(alpha: 0.3), width: 3),
             ),
           ),
           // Center house icon
@@ -440,11 +419,7 @@ class SplashView extends GetView<SplashController> {
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.home_rounded,
-              size: 60,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.home_rounded, size: 60, color: Colors.white),
           ),
           // 360° text
           Positioned(
@@ -457,11 +432,7 @@ class SplashView extends GetView<SplashController> {
               ),
               child: const Text(
                 '360°',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
           ),
@@ -516,11 +487,7 @@ class SplashView extends GetView<SplashController> {
                             color: AppTheme.accentBlue.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            Icons.apartment,
-                            size: 40,
-                            color: AppTheme.accentBlue,
-                          ),
+                          child: const Icon(Icons.apartment, size: 40, color: AppTheme.accentBlue),
                         ),
                       ),
                       // Play button for virtual tour
@@ -534,11 +501,7 @@ class SplashView extends GetView<SplashController> {
                             shape: BoxShape.circle,
                             color: AppTheme.primaryYellow,
                           ),
-                          child: const Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 30,
-                          ),
+                          child: const Icon(Icons.play_arrow, color: Colors.white, size: 30),
                         ),
                       ),
                     ],
@@ -599,9 +562,7 @@ class SplashView extends GetView<SplashController> {
                   color: AppTheme.backgroundGray,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Center(
-                  child: Icon(Icons.image, size: 30, color: AppTheme.textGray),
-                ),
+                child: const Center(child: Icon(Icons.image, size: 30, color: AppTheme.textGray)),
               ),
               const SizedBox(height: 14),
               // Property details with checkmarks
@@ -617,11 +578,7 @@ class SplashView extends GetView<SplashController> {
                           shape: BoxShape.circle,
                           color: AppTheme.successGreen,
                         ),
-                        child: const Icon(
-                          Icons.check,
-                          size: 14,
-                          color: Colors.white,
-                        ),
+                        child: const Icon(Icons.check, size: 14, color: Colors.white),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -696,21 +653,14 @@ class SplashView extends GetView<SplashController> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.attach_money,
-                  size: 60,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.attach_money, size: 60, color: Colors.white),
               ),
               // Percentage badge
               Positioned(
                 top: 20,
                 right: 20,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppTheme.accentOrange,
                     borderRadius: BorderRadius.circular(20),
@@ -757,11 +707,7 @@ class SplashView extends GetView<SplashController> {
         shape: BoxShape.circle,
         color: color,
         boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.3),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
+          BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 10, spreadRadius: 2),
         ],
       ),
       child: Icon(icon, color: Colors.white, size: 24),

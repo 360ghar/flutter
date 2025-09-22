@@ -68,8 +68,7 @@ class AgentModel {
     this.updatedAt,
   });
 
-  factory AgentModel.fromJson(Map<String, dynamic> json) =>
-      _$AgentModelFromJson(json);
+  factory AgentModel.fromJson(Map<String, dynamic> json) => _$AgentModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$AgentModelToJson(this);
 
@@ -101,8 +100,7 @@ class AgentModel {
       isAvailable: isAvailable ?? this.isAvailable,
       workingHours: workingHours ?? this.workingHours,
       totalUsersAssigned: totalUsersAssigned ?? this.totalUsersAssigned,
-      userSatisfactionRating:
-          userSatisfactionRating ?? this.userSatisfactionRating,
+      userSatisfactionRating: userSatisfactionRating ?? this.userSatisfactionRating,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

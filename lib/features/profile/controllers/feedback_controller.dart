@@ -10,7 +10,7 @@ import '../../../core/utils/debug_logger.dart';
 
 class FeedbackController extends GetxController {
   FeedbackController({SupportRepository? supportRepository})
-      : _supportRepository = supportRepository ?? Get.find<SupportRepository>();
+    : _supportRepository = supportRepository ?? Get.find<SupportRepository>();
 
   final SupportRepository _supportRepository;
 
@@ -80,7 +80,8 @@ class FeedbackController extends GetxController {
         );
       });
     } on ValidationException catch (e) {
-      final message = e.fieldErrors?.entries
+      final message =
+          e.fieldErrors?.entries
               .map((entry) => '${entry.key}: ${entry.value.join(', ')}')
               .join('\n') ??
           e.message;

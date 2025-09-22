@@ -39,16 +39,9 @@ class AuthRepository extends GetxService {
   }
 
   /// Verifies the OTP sent to the user's phone to complete sign-up or sign-in.
-  Future<AuthResponse> verifyPhoneOtp({
-    required String phone,
-    required String token,
-  }) {
+  Future<AuthResponse> verifyPhoneOtp({required String phone, required String token}) {
     DebugLogger.auth('Verifying OTP for phone: $phone');
-    return _supabase.auth.verifyOTP(
-      phone: phone,
-      token: token,
-      type: OtpType.sms,
-    );
+    return _supabase.auth.verifyOTP(phone: phone, token: token, type: OtpType.sms);
   }
 
   /// Sends a one-time password (OTP) to a phone for password reset or login.
@@ -60,9 +53,7 @@ class AuthRepository extends GetxService {
   /// Updates the current user's password. Requires the user to be logged in.
   Future<User> updateUserPassword(String newPassword) async {
     DebugLogger.auth('Updating user password.');
-    final response = await _supabase.auth.updateUser(
-      UserAttributes(password: newPassword),
-    );
+    final response = await _supabase.auth.updateUser(UserAttributes(password: newPassword));
     if (response.user == null) {
       throw const AuthException('Failed to update password. User not found.');
     }

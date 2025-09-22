@@ -66,9 +66,7 @@ void main() async {
 
       // Set up global error handlers
       FlutterError.onError = (FlutterErrorDetails details) {
-        DebugLogger.error(
-          '🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}',
-        );
+        DebugLogger.error('🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}');
         DebugLogger.error('🚨 [GLOBAL_ERROR] Stack trace: ${details.stack}');
 
         // One-time first null-check trap capture
@@ -82,9 +80,7 @@ void main() async {
     },
     (error, stack) {
       // One-time first null-check trap capture for unhandled async errors
-      if (error.toString().contains(
-        'Null check operator used on a null value',
-      )) {
+      if (error.toString().contains('Null check operator used on a null value')) {
         NullCheckTrap.capture(error, stack, source: 'zone');
       }
       DebugLogger.error('🚨 [GLOBAL_ERROR] Unhandled zone error', error, stack);

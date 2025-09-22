@@ -112,19 +112,13 @@ class UnifiedFilterModel {
 
     // Handle DateTime serialization properly for API
     if (availableFrom != null) {
-      json['available_from'] = availableFrom!.toIso8601String().split(
-        'T',
-      )[0]; // YYYY-MM-DD format
+      json['available_from'] = availableFrom!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
     }
     if (checkInDate != null) {
-      json['check_in_date'] = checkInDate!.toIso8601String().split(
-        'T',
-      )[0]; // YYYY-MM-DD format
+      json['check_in_date'] = checkInDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
     }
     if (checkOutDate != null) {
-      json['check_out_date'] = checkOutDate!.toIso8601String().split(
-        'T',
-      )[0]; // YYYY-MM-DD format
+      json['check_out_date'] = checkOutDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
     }
 
     // Ensure numeric values are within valid ranges
@@ -249,11 +243,7 @@ class LocationData {
   final double latitude;
   final double longitude;
 
-  LocationData({
-    required this.name,
-    required this.latitude,
-    required this.longitude,
-  });
+  LocationData({required this.name, required this.latitude, required this.longitude});
 
   factory LocationData.fromJson(Map<String, dynamic> json) {
     return LocationData(

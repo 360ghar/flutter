@@ -51,9 +51,7 @@ class LoginView extends GetView<LoginController> {
                       hintText: 'phone_hint'.tr,
                     ),
                     keyboardType: TextInputType.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r"[0-9+\s]")),
-                    ],
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[0-9+\s]"))],
                     validator: (value) {
                       final raw = (value ?? '').trim();
                       if (raw.isEmpty) {
@@ -62,8 +60,7 @@ class LoginView extends GetView<LoginController> {
                       final cleaned = raw.replaceAll(RegExp(r"\s+"), "");
                       final tenDigits = RegExp(r"^[0-9]{10}$");
                       final e164IN = RegExp(r"^\+91[0-9]{10}$");
-                      if (!(tenDigits.hasMatch(cleaned) ||
-                          e164IN.hasMatch(cleaned))) {
+                      if (!(tenDigits.hasMatch(cleaned) || e164IN.hasMatch(cleaned))) {
                         return 'phone_invalid'.tr;
                       }
                       return null;
@@ -146,14 +143,10 @@ class LoginView extends GetView<LoginController> {
                   // Sign In Button
                   Obx(
                     () => ElevatedButton(
-                      onPressed: controller.isLoading.value
-                          ? null
-                          : controller.signIn,
+                      onPressed: controller.isLoading.value ? null : controller.signIn,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       child: controller.isLoading.value
                           ? SizedBox(

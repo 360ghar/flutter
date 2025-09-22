@@ -11,8 +11,7 @@ class DashboardController extends GetxController {
   late final PageStateService _pageStateService;
 
   final RxMap<String, dynamic> dashboardData = <String, dynamic>{}.obs;
-  final RxList<Map<String, dynamic>> recentActivity =
-      <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> recentActivity = <Map<String, dynamic>>[].obs;
   final RxMap<String, dynamic> userStats = <String, dynamic>{}.obs;
   final RxBool isLoading = false.obs;
   final RxBool isRefreshing = false.obs;
@@ -51,9 +50,7 @@ class DashboardController extends GetxController {
 
     // Activate the initial page (Discover by default)
     final initialIndex = currentIndex.value;
-    DebugLogger.info(
-      '🚀 Dashboard ready, activating initial tab: $initialIndex',
-    );
+    DebugLogger.info('🚀 Dashboard ready, activating initial tab: $initialIndex');
 
     // Activate the default page without changing the index
     PageType? pageType;
@@ -83,10 +80,7 @@ class DashboardController extends GetxController {
       error.value = null;
 
       // Load dashboard data (analytics removed)
-      final results = await Future.wait([
-        _loadUserStats(),
-        _loadRecentActivity(),
-      ]);
+      final results = await Future.wait([_loadUserStats(), _loadRecentActivity()]);
 
       userStats.value = results[0] as Map<String, dynamic>;
       recentActivity.value = results[1] as List<Map<String, dynamic>>;
@@ -94,10 +88,7 @@ class DashboardController extends GetxController {
       // Clear analytics data that's no longer available
       dashboardData.value = {};
     } catch (e, stackTrace) {
-      error.value = AppError(
-        error: 'Failed to load dashboard data',
-        stackTrace: stackTrace,
-      );
+      error.value = AppError(error: 'Failed to load dashboard data', stackTrace: stackTrace);
       DebugLogger.error('Error loading dashboard data', e, stackTrace);
 
       Get.snackbar(
@@ -146,25 +137,19 @@ class DashboardController extends GetxController {
         {
           'type': 'property_view',
           'title': 'Viewed luxury apartment',
-          'timestamp': DateTime.now()
-              .subtract(const Duration(hours: 2))
-              .toIso8601String(),
+          'timestamp': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
           'icon': 'visibility',
         },
         {
           'type': 'search',
           'title': 'Searched for 2BHK apartments',
-          'timestamp': DateTime.now()
-              .subtract(const Duration(hours: 5))
-              .toIso8601String(),
+          'timestamp': DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
           'icon': 'search',
         },
         {
           'type': 'like',
           'title': 'Liked villa in Bandra',
-          'timestamp': DateTime.now()
-              .subtract(const Duration(days: 1))
-              .toIso8601String(),
+          'timestamp': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
           'icon': 'favorite',
         },
       ];
@@ -185,8 +170,7 @@ class DashboardController extends GetxController {
   int get totalViews => dashboardData['total_views'] ?? 0;
   int get totalLikes => dashboardData['total_likes'] ?? 0;
   int get totalVisitsScheduled => dashboardData['total_visits_scheduled'] ?? 0;
-  double get conversionRate =>
-      dashboardData['conversion_rate']?.toDouble() ?? 0.0;
+  double get conversionRate => dashboardData['conversion_rate']?.toDouble() ?? 0.0;
 
   List<String> get preferredLocations {
     final locations = dashboardData['preferred_locations'];
@@ -196,8 +180,7 @@ class DashboardController extends GetxController {
     return [];
   }
 
-  Map<String, dynamic> get activitySummary =>
-      dashboardData['activity_summary'] ?? {};
+  Map<String, dynamic> get activitySummary => dashboardData['activity_summary'] ?? {};
 
   // User stats getters
   int get propertiesViewed => userStats['properties_viewed'] ?? 0;

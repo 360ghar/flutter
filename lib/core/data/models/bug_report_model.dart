@@ -172,9 +172,7 @@ class BugReportResponse {
 
     Map<String, dynamic>? parsedDeviceInfo;
     if (json['device_info'] is Map<String, dynamic>) {
-      parsedDeviceInfo = Map<String, dynamic>.from(
-        json['device_info'] as Map<String, dynamic>,
-      );
+      parsedDeviceInfo = Map<String, dynamic>.from(json['device_info'] as Map<String, dynamic>);
     }
 
     DateTime? _parseDate(dynamic value) {
@@ -195,21 +193,19 @@ class BugReportResponse {
       status: (json['status'] ?? 'open').toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
-      stepsToReproduce:
-          json['steps_to_reproduce'] != null ? json['steps_to_reproduce'].toString() : null,
-      expectedBehavior:
-          json['expected_behavior'] != null ? json['expected_behavior'].toString() : null,
-      actualBehavior:
-          json['actual_behavior'] != null ? json['actual_behavior'].toString() : null,
+      stepsToReproduce: json['steps_to_reproduce'] != null
+          ? json['steps_to_reproduce'].toString()
+          : null,
+      expectedBehavior: json['expected_behavior'] != null
+          ? json['expected_behavior'].toString()
+          : null,
+      actualBehavior: json['actual_behavior'] != null ? json['actual_behavior'].toString() : null,
       deviceInfo: parsedDeviceInfo,
-      appVersion:
-          json['app_version'] != null ? json['app_version'].toString() : null,
+      appVersion: json['app_version'] != null ? json['app_version'].toString() : null,
       mediaUrls: media,
       tags: tagsList,
-      assignedTo:
-          json['assigned_to'] != null ? json['assigned_to'].toString() : null,
-      resolution:
-          json['resolution'] != null ? json['resolution'].toString() : null,
+      assignedTo: json['assigned_to'] != null ? json['assigned_to'].toString() : null,
+      resolution: json['resolution'] != null ? json['resolution'].toString() : null,
       resolvedAt: _parseDate(json['resolved_at']),
       createdAt: createdAt,
       updatedAt: _parseDate(json['updated_at']),

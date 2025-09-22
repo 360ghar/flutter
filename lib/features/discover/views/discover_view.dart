@@ -24,8 +24,7 @@ class DiscoverView extends GetView<DiscoverController> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: DiscoverTopBar(
-        onFilterTap: () =>
-            showPropertyFilterBottomSheet(context, pageType: 'discover'),
+        onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'discover'),
       ),
       body: Obx(() {
         // Debug snapshot of controller and page state for diagnosing stuck loaders
@@ -51,9 +50,7 @@ class DiscoverView extends GetView<DiscoverController> {
               LinearProgressIndicator(
                 minHeight: 2,
                 backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.primaryYellow,
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
               ),
             // Main content
             Expanded(
@@ -101,18 +98,13 @@ class DiscoverView extends GetView<DiscoverController> {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.primaryYellow,
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     'Loading more properties...',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -136,10 +128,7 @@ class DiscoverView extends GetView<DiscoverController> {
       try {
         // Don't wrap in Exception() - pass the original error message directly
         final exception = ErrorMapper.mapApiError(errorMessage);
-        return ErrorStates.genericError(
-          error: exception,
-          onRetry: controller.retryLoading,
-        );
+        return ErrorStates.genericError(error: exception, onRetry: controller.retryLoading);
       } catch (e) {
         return ErrorStates.networkError(
           onRetry: controller.retryLoading,
@@ -152,10 +141,8 @@ class DiscoverView extends GetView<DiscoverController> {
   Widget _buildEmptyState(BuildContext context) {
     return ErrorStates.swipeDeckEmpty(
       onRefresh: controller.refreshDeck,
-      onChangeFilters: () => showPropertyFilterBottomSheet(
-        Get.context ?? context,
-        pageType: 'discover',
-      ),
+      onChangeFilters: () =>
+          showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'discover'),
     );
   }
 
@@ -167,15 +154,11 @@ class DiscoverView extends GetView<DiscoverController> {
             padding: const EdgeInsets.all(16),
             child: Obx(
               () => PropertySwipeStack(
-                properties: controller.deck
-                    .take(3)
-                    .toList(), // Show max 3 cards in stack
+                properties: controller.deck.take(3).toList(), // Show max 3 cards in stack
                 onSwipeLeft: controller.swipeLeft,
                 onSwipeRight: controller.swipeRight,
-                onSwipeUp: (property) =>
-                    controller.viewPropertyDetails(property),
-                showSwipeInstructions:
-                    controller.totalSwipesInSession.value < 3,
+                onSwipeUp: (property) => controller.viewPropertyDetails(property),
+                showSwipeInstructions: controller.totalSwipesInSession.value < 3,
               ),
             ),
           ),

@@ -75,19 +75,13 @@ class ThemeToggleButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  getThemeIcon(),
-                  size: iconSize ?? 20,
-                  color: iconColorFor(currentMode),
-                ),
+                Icon(getThemeIcon(), size: iconSize ?? 20, color: iconColorFor(currentMode)),
                 const SizedBox(width: 8),
                 Text(
                   getThemeLabel(),
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color:
-                        theme.textTheme.labelLarge?.color ??
-                        AppColors.textPrimary,
+                    color: theme.textTheme.labelLarge?.color ?? AppColors.textPrimary,
                   ),
                 ),
               ],
@@ -98,11 +92,7 @@ class ThemeToggleButton extends StatelessWidget {
 
       return IconButton(
         onPressed: () => themeController.toggleTheme(),
-        icon: Icon(
-          getThemeIcon(),
-          size: iconSize ?? 24,
-          color: iconColorFor(currentMode),
-        ),
+        icon: Icon(getThemeIcon(), size: iconSize ?? 24, color: iconColorFor(currentMode)),
         tooltip: getTooltip(),
       );
     });
@@ -186,11 +176,7 @@ class AnimatedThemeToggle extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                getIcon(),
-                size: (size ?? 60) / 4,
-                color: getIconColor(),
-              ),
+              child: Icon(getIcon(), size: (size ?? 60) / 4, color: getIconColor()),
             ),
           ),
         ),

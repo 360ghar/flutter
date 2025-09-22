@@ -152,12 +152,7 @@ class OverflowSafeContainer extends StatelessWidget {
 
     // Wrap in container if needed
     if (padding != null || margin != null || decoration != null) {
-      content = Container(
-        padding: padding,
-        margin: margin,
-        decoration: decoration,
-        child: content,
-      );
+      content = Container(padding: padding, margin: margin, decoration: decoration, child: content);
     }
 
     return content;

@@ -39,9 +39,7 @@ class InitialBinding extends Bindings {
     // Note: Repositories and feature controllers will be initialized
     // in route-specific bindings to prevent unauthorized API calls
 
-    DebugLogger.success(
-      '✅ InitialBinding: Core dependencies registered successfully',
-    );
+    DebugLogger.success('✅ InitialBinding: Core dependencies registered successfully');
   }
 
   void _initializeApiService() {
@@ -65,10 +63,7 @@ class InitialBinding extends Bindings {
       Get.put<LocationController>(LocationController(), permanent: true);
       DebugLogger.success('✅ LocationController registered');
 
-      Get.put<LocalizationController>(
-        LocalizationController(),
-        permanent: true,
-      );
+      Get.put<LocalizationController>(LocalizationController(), permanent: true);
       DebugLogger.success('✅ LocalizationController registered');
 
       Get.put<ThemeController>(ThemeController(), permanent: true);

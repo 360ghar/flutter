@@ -10,14 +10,9 @@ class SwipesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
 
   // Record a swipe action
-  Future<void> recordSwipe({
-    required int propertyId,
-    required bool isLiked,
-  }) async {
+  Future<void> recordSwipe({required int propertyId, required bool isLiked}) async {
     try {
-      DebugLogger.api(
-        '👆 RECORDING SWIPE: ${isLiked ? 'LIKE' : 'DISLIKE'} property $propertyId',
-      );
+      DebugLogger.api('👆 RECORDING SWIPE: ${isLiked ? 'LIKE' : 'DISLIKE'} property $propertyId');
       DebugLogger.api('🔄 Swipe will update liked status to: $isLiked');
 
       await _apiService.swipeProperty(propertyId, isLiked);
@@ -100,12 +95,8 @@ class SwipesRepository extends GetxService {
           final property = PropertyModel.fromJson(propertiesJson[i]);
           properties.add(property);
         } catch (e) {
-          DebugLogger.error(
-            '❌ [SWIPES_REPO] Error parsing property ${i + 1}: $e',
-          );
-          DebugLogger.error(
-            '❌ [SWIPES_REPO] Property data: ${propertiesJson[i]}',
-          );
+          DebugLogger.error('❌ [SWIPES_REPO] Error parsing property ${i + 1}: $e');
+          DebugLogger.error('❌ [SWIPES_REPO] Property data: ${propertiesJson[i]}');
           // Continue with other properties instead of failing entirely
         }
       }
@@ -125,17 +116,12 @@ class SwipesRepository extends GetxService {
               final lat = searchCenterData['latitude'];
               final lng = searchCenterData['longitude'];
               if (lat != null && lng != null) {
-                return SearchCenter(
-                  latitude: lat.toDouble(),
-                  longitude: lng.toDouble(),
-                );
+                return SearchCenter(latitude: lat.toDouble(), longitude: lng.toDouble());
               }
             }
             return null;
           } catch (e) {
-            DebugLogger.error(
-              '❌ [SWIPES_REPO] Error creating SearchCenter: $e',
-            );
+            DebugLogger.error('❌ [SWIPES_REPO] Error creating SearchCenter: $e');
             return null;
           }
         }(),
@@ -160,9 +146,7 @@ class SwipesRepository extends GetxService {
     int limit = 50,
   }) async {
     try {
-      DebugLogger.api(
-        '❤️ Fetching liked properties (server-side): page=$page, limit=$limit',
-      );
+      DebugLogger.api('❤️ Fetching liked properties (server-side): page=$page, limit=$limit');
       final response = await getSwipeHistoryProperties(
         filters: filters,
         latitude: latitude,
@@ -187,9 +171,7 @@ class SwipesRepository extends GetxService {
     int limit = 50,
   }) async {
     try {
-      DebugLogger.api(
-        '👎 Fetching passed properties (server-side): page=$page, limit=$limit',
-      );
+      DebugLogger.api('👎 Fetching passed properties (server-side): page=$page, limit=$limit');
       final response = await getSwipeHistoryProperties(
         filters: filters,
         latitude: latitude,
@@ -225,9 +207,7 @@ class SwipesRepository extends GetxService {
         isLiked: true,
       );
 
-      DebugLogger.success(
-        '✅ Loaded ${response.properties.length} liked properties',
-      );
+      DebugLogger.success('✅ Loaded ${response.properties.length} liked properties');
       return response.properties;
     } on AppException catch (e) {
       DebugLogger.error('❌ Failed to fetch liked properties: ${e.message}');

@@ -70,11 +70,7 @@ class LocationSearchController extends GetxController {
           duration: const Duration(seconds: 2),
         );
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to get location details',
-          snackPosition: SnackPosition.TOP,
-        );
+        Get.snackbar('Error', 'Failed to get location details', snackPosition: SnackPosition.TOP);
       }
     } finally {
       isLoading.value = false;
