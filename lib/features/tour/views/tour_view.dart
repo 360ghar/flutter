@@ -18,22 +18,34 @@ class _TourViewState extends State<TourView> {
   void initState() {
     super.initState();
     final String tourUrl = Get.arguments as String;
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (String url) {
-            setState(() {
-              isLoading = true;
-            });
-          },
-          onPageFinished: (String url) {
-            setState(() {
-              isLoading = false;
-            });
-            // Inject CSS to enhance iframe display
-            controller.runJavaScript('''
+    const consoleSilencer = '''
+      if (window && window.console) {
+        window.console.log = function() {};
+        window.console.warn = function() {};
+        window.console.error = function() {};
+        window.console.info = function() {};
+        window.console.debug = function() {};
+      }
+    ''';
+
+    controller =
+        WebViewController()
+          ..setJavaScriptMode(JavaScriptMode.unrestricted)
+          ..setBackgroundColor(const Color(0x00000000))
+          ..setNavigationDelegate(
+            NavigationDelegate(
+              onPageStarted: (String url) {
+                setState(() {
+                  isLoading = true;
+                });
+                controller.runJavaScript(consoleSilencer);
+              },
+              onPageFinished: (String url) {
+                setState(() {
+                  isLoading = false;
+                });
+                controller.runJavaScript(consoleSilencer);
+                controller.runJavaScript('''
               document.body.style.margin = '0';
               document.body.style.padding = '0';
               var iframes = document.getElementsByTagName('iframe');
@@ -43,26 +55,24 @@ class _TourViewState extends State<TourView> {
                 iframes[i].style.border = 'none';
               }
             ''');
-          },
-          onWebResourceError: (WebResourceError error) {
-            setState(() {
-              isLoading = false;
-            });
-            Get.snackbar(
-              'error_loading_tour'.tr,
-              'check_internet_connection'.tr,
-              snackPosition: SnackPosition.TOP,
-              backgroundColor: AppColors.errorRed,
-              colorText: AppColors.snackbarText,
-            );
-          },
-        ),
-      );
+              },
+              onWebResourceError: (WebResourceError error) {
+                setState(() {
+                  isLoading = false;
+                });
+                Get.snackbar(
+                  'error_loading_tour'.tr,
+                  'check_internet_connection'.tr,
+                  snackPosition: SnackPosition.TOP,
+                  backgroundColor: AppColors.errorRed,
+                  colorText: AppColors.snackbarText,
+                );
+              },
+            ),
+          );
 
-    // Check if it's a Kuula URL and wrap it properly
     if (tourUrl.contains('kuula.co')) {
-      final htmlContent =
-          '''
+      final htmlContent = '''
         <!DOCTYPE html>
         <html>
         <head>
@@ -71,11 +81,14 @@ class _TourViewState extends State<TourView> {
             body { margin: 0; padding: 0; background: #000; }
             iframe { width: 100vw; height: 100vh; border: none; }
           </style>
+          <script type="text/javascript">
+            $consoleSilencer
+          </script>
         </head>
         <body>
-          <iframe class="ku-embed" frameborder="0" 
-                  allow="xr-spatial-tracking; gyroscope; accelerometer" 
-                  allowfullscreen scrolling="no" 
+          <iframe class="ku-embed" frameborder="0"
+                  allow="xr-spatial-tracking; gyroscope; accelerometer"
+                  allowfullscreen scrolling="no"
                   src="$tourUrl">
           </iframe>
         </body>

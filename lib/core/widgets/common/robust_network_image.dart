@@ -10,7 +10,9 @@ class ImageLoadingService {
     if (url.isEmpty) return false;
     try {
       final uri = Uri.parse(url);
-      return uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https') && uri.hasAuthority;
+      return uri.hasScheme &&
+          (uri.scheme == 'http' || uri.scheme == 'https') &&
+          uri.hasAuthority;
     } catch (e) {
       return false;
     }
@@ -114,8 +116,12 @@ class RobustNetworkImage extends StatelessWidget {
                 height: height,
                 fit: fit,
                 filterQuality: FilterQuality.medium,
-                errorBuilder: (context, error, stackTrace) =>
-                    errorWidget ?? _buildDefaultErrorWidget(),
+                cacheWidth: memCacheWidth,
+                cacheHeight: memCacheHeight,
+                gaplessPlayback: true,
+                errorBuilder:
+                    (context, error, stackTrace) =>
+                        errorWidget ?? _buildDefaultErrorWidget(),
               );
             },
           );
@@ -127,7 +133,12 @@ class RobustNetworkImage extends StatelessWidget {
             height: height,
             fit: fit,
             filterQuality: FilterQuality.medium,
-            errorBuilder: (context, error, stackTrace) => errorWidget ?? _buildDefaultErrorWidget(),
+            cacheWidth: memCacheWidth,
+            cacheHeight: memCacheHeight,
+            gaplessPlayback: true,
+            errorBuilder:
+                (context, error, stackTrace) =>
+                    errorWidget ?? _buildDefaultErrorWidget(),
           );
         }
       },
@@ -143,7 +154,10 @@ class RobustNetworkImage extends StatelessWidget {
         child: SizedBox(
           width: 24,
           height: 24,
-          child: CircularProgressIndicator(color: AppColors.loadingIndicator, strokeWidth: 2),
+          child: CircularProgressIndicator(
+            color: AppColors.loadingIndicator,
+            strokeWidth: 2,
+          ),
         ),
       ),
     );
@@ -162,7 +176,10 @@ class RobustNetworkImage extends StatelessWidget {
             AppColors.primaryYellow.withValues(alpha: 0.05),
           ],
         ),
-        border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.3), width: 1),
+        border: Border.all(
+          color: AppColors.primaryYellow.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: Center(
         child: Column(

@@ -52,9 +52,10 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
         child: Container(
           color: colorScheme.surface,
           child: SingleChildScrollView(
-            physics: _interactiveChildActive
-                ? const NeverScrollableScrollPhysics()
-                : const BouncingScrollPhysics(),
+            physics:
+                _interactiveChildActive
+                    ? const NeverScrollableScrollPhysics()
+                    : const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -63,10 +64,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                   builder: (context, constraints) {
                     // Use available parent height instead of full screen height
                     // This ensures we don't overlap with app bar or other UI elements
-                    final availableHeight = constraints.maxHeight > 0
-                        ? constraints.maxHeight
-                        : MediaQuery.of(context).size.height -
-                              200; // Fallback with safe margins
+                    final availableHeight =
+                        constraints.maxHeight > 0
+                            ? constraints.maxHeight
+                            : MediaQuery.of(context).size.height -
+                                200; // Fallback with safe margins
 
                     return SizedBox(
                       height: math.min(
@@ -195,9 +197,10 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                               ),
                                           children: [
                                             TextSpan(
-                                              text: widget
-                                                  .property
-                                                  .formattedPrice,
+                                              text:
+                                                  widget
+                                                      .property
+                                                      .formattedPrice,
                                             ),
                                             if (widget.property.purpose ==
                                                 PropertyPurpose.rent)
@@ -309,8 +312,8 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                                   .bedroomBathroomText
                                                   .isNotEmpty
                                               ? widget
-                                                    .property
-                                                    .bedroomBathroomText
+                                                  .property
+                                                  .bedroomBathroomText
                                               : 'Property',
                                           style: theme.textTheme.labelMedium
                                               ?.copyWith(
@@ -649,36 +652,37 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: widget.property.amenitiesList
-                                .take(6)
-                                .map(
-                                  (amenity) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.accentBlue.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: AppColors.accentBlue.withValues(
-                                          alpha: 0.3,
+                            children:
+                                widget.property.amenitiesList
+                                    .take(6)
+                                    .map(
+                                      (amenity) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.accentBlue
+                                              .withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          border: Border.all(
+                                            color: AppColors.accentBlue
+                                                .withValues(alpha: 0.3),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          amenity,
+                                          style: theme.textTheme.labelMedium
+                                              ?.copyWith(
+                                                color: AppColors.accentBlue,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                         ),
                                       ),
-                                    ),
-                                    child: Text(
-                                      amenity,
-                                      style: theme.textTheme.labelMedium
-                                          ?.copyWith(
-                                            color: AppColors.accentBlue,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                                    )
+                                    .toList(),
                           ),
                           if (widget.property.amenitiesList.length > 6)
                             Padding(
@@ -782,9 +786,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                               height: 500,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.border,
-                                ),
+                                border: Border.all(color: AppColors.border),
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppColors.shadowColor,
@@ -1230,10 +1232,10 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
                   opacity: 0.8,
                   child: PropertySwipeCard(
                     property: _properties[1],
-                    onInteractionStart: () =>
-                        setState(() => _blockGestures = true),
-                    onInteractionEnd: () =>
-                        setState(() => _blockGestures = false),
+                    onInteractionStart:
+                        () => setState(() => _blockGestures = true),
+                    onInteractionEnd:
+                        () => setState(() => _blockGestures = false),
                   ),
                 ),
               ),
@@ -1246,10 +1248,10 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
                   opacity: 0.6,
                   child: PropertySwipeCard(
                     property: _properties[2],
-                    onInteractionStart: () =>
-                        setState(() => _blockGestures = true),
-                    onInteractionEnd: () =>
-                        setState(() => _blockGestures = false),
+                    onInteractionStart:
+                        () => setState(() => _blockGestures = true),
+                    onInteractionEnd:
+                        () => setState(() => _blockGestures = false),
                   ),
                 ),
               ),
@@ -1260,36 +1262,41 @@ class _PropertySwipeStackState extends State<PropertySwipeStack>
             child: AnimatedBuilder(
               animation: _swipeAnimation,
               builder: (context, child) {
-                final swipeOffset = _isDragging
-                    ? Offset(_dragPosition.dx, 0)
-                    : Offset(
-                        _dragPosition.dx * (1 + _swipeAnimation.value * 2),
-                        0,
-                      );
+                final swipeOffset =
+                    _isDragging
+                        ? Offset(_dragPosition.dx, 0)
+                        : Offset(
+                          _dragPosition.dx * (1 + _swipeAnimation.value * 2),
+                          0,
+                        );
 
-                final swipeRotation = _isDragging
-                    ? _rotation
-                    : _rotation * (1 + _swipeAnimation.value * 2);
+                final swipeRotation =
+                    _isDragging
+                        ? _rotation
+                        : _rotation * (1 + _swipeAnimation.value * 2);
 
                 return Transform.translate(
                   offset: swipeOffset,
                   child: Transform(
-                    alignment: Alignment
-                        .bottomCenter, // Rotate from bottom center like a hinge
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001) // Add perspective
-                      ..rotateZ(swipeRotation),
+                    alignment:
+                        Alignment
+                            .bottomCenter, // Rotate from bottom center like a hinge
+                    transform:
+                        Matrix4.identity()
+                          ..setEntry(3, 2, 0.001) // Add perspective
+                          ..rotateZ(swipeRotation),
                     child: Opacity(
-                      opacity: _swipeAnimationController.isAnimating
-                          ? (1 - _swipeAnimation.value)
-                          : 1.0,
+                      opacity:
+                          _swipeAnimationController.isAnimating
+                              ? (1 - _swipeAnimation.value)
+                              : 1.0,
                       child: PropertySwipeCard(
                         property: _properties[0],
                         showSwipeInstructions: widget.showSwipeInstructions,
-                        onInteractionStart: () =>
-                            setState(() => _blockGestures = true),
-                        onInteractionEnd: () =>
-                            setState(() => _blockGestures = false),
+                        onInteractionStart:
+                            () => setState(() => _blockGestures = true),
+                        onInteractionEnd:
+                            () => setState(() => _blockGestures = false),
                       ),
                     ),
                   ),
@@ -1338,9 +1345,10 @@ class SparklesPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.primaryYellow.withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
+    final paint =
+        Paint()
+          ..color = AppColors.primaryYellow.withValues(alpha: 0.8)
+          ..style = PaintingStyle.fill;
 
     // Create sparkles at various positions
     final sparklePositions = [
@@ -1427,20 +1435,38 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
 
   void _initializeWebView() {
     try {
-      // Ensure WebView platform is initialized
       WebViewHelper.ensureInitialized();
+      const consoleSilencer = '''
+        if (window && window.console) {
+          window.console.log = function() {};
+          window.console.warn = function() {};
+          window.console.error = function() {};
+          window.console.info = function() {};
+          window.console.debug = function() {};
+        }
+      ''';
 
-      controller = WebViewController()
+      controller = WebViewController();
+      controller!
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(const Color(0x00000000))
         ..setNavigationDelegate(
           NavigationDelegate(
+            onPageStarted: (String url) {
+              if (mounted) {
+                setState(() {
+                  isLoading = true;
+                });
+              }
+              controller!.runJavaScript(consoleSilencer);
+            },
             onPageFinished: (String url) {
               if (mounted) {
                 setState(() {
                   isLoading = false;
                 });
               }
+              controller!.runJavaScript(consoleSilencer);
             },
             onWebResourceError: (WebResourceError error) {
               DebugLogger.warning(
@@ -1456,9 +1482,8 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
           ),
         );
 
-      // Create optimized HTML for embedded Kuula tour
-      final htmlContent =
-          '''
+      final sanitizedUrl = widget.tourUrl;
+      final htmlContent = '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -1477,6 +1502,9 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
             display: block;
           }
         </style>
+        <script type="text/javascript">
+          $consoleSilencer
+        </script>
       </head>
       <body>
         <iframe class="ku-embed" 
@@ -1484,7 +1512,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
                 allow="xr-spatial-tracking; gyroscope; accelerometer" 
                 allowfullscreen 
                 scrolling="no" 
-                src="${widget.tourUrl}">
+                src="$sanitizedUrl">
         </iframe>
       </body>
       </html>
@@ -1506,6 +1534,8 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
     }
   }
 
+  @override
+  @override
   @override
   Widget build(BuildContext context) {
     if (hasError || controller == null) {
@@ -1548,8 +1578,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
         WebViewWidget(controller: controller!),
         if (isLoading)
           Container(
-            color:
-                Theme.of(context).colorScheme.surfaceContainerHighest,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

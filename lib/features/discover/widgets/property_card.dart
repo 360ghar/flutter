@@ -53,18 +53,19 @@ class PropertyCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        isFavourite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavourite
-                            ? AppColors.favoriteActive
-                            : colorScheme.onPrimary,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
                       ),
+                      child: IconButton(
+                        icon: Icon(
+                          isFavourite ? Icons.favorite : Icons.favorite_border,
+                          color:
+                              isFavourite
+                                  ? AppColors.favoriteActive
+                                  : colorScheme.onPrimary,
+                        ),
                         onPressed: onFavouriteToggle,
                       ),
                     ),
@@ -276,17 +277,37 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
   void _initializeWebView() {
     try {
       WebViewHelper.ensureInitialized();
-      controller = WebViewController()
+      const consoleSilencer = '''
+        if (window && window.console) {
+          window.console.log = function() {};
+          window.console.warn = function() {};
+          window.console.error = function() {};
+          window.console.info = function() {};
+          window.console.debug = function() {};
+        }
+      ''';
+
+      controller = WebViewController();
+      controller!
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(const Color(0x00000000))
         ..setNavigationDelegate(
           NavigationDelegate(
+            onPageStarted: (String url) {
+              if (mounted) {
+                setState(() {
+                  isLoading = true;
+                });
+              }
+              controller!.runJavaScript(consoleSilencer);
+            },
             onPageFinished: (String url) {
               if (mounted) {
                 setState(() {
                   isLoading = false;
                 });
               }
+              controller!.runJavaScript(consoleSilencer);
             },
             onWebResourceError: (WebResourceError error) {
               DebugLogger.warning(
@@ -302,9 +323,8 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
           ),
         );
 
-      // Create optimized HTML for embedded Kuula tour
-      final htmlContent =
-          '''
+      final sanitizedUrl = widget.tourUrl;
+      final htmlContent = '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -323,6 +343,9 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
             display: block;
           }
         </style>
+        <script type="text/javascript">
+          $consoleSilencer
+        </script>
       </head>
       <body>
         <iframe class="ku-embed" 
@@ -330,7 +353,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
                 allow="xr-spatial-tracking; gyroscope; accelerometer" 
                 allowfullscreen 
                 scrolling="no" 
-                src="${widget.tourUrl}">
+                src="$sanitizedUrl">
         </iframe>
       </body>
       </html>
@@ -352,6 +375,8 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
     }
   }
 
+  @override
+  @override
   @override
   Widget build(BuildContext context) {
     if (hasError || controller == null) {

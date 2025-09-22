@@ -16,6 +16,7 @@ import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
 import 'package:ghar360/core/widgets/common/unified_top_bar.dart';
 import '../controllers/explore_controller.dart';
 import '../widgets/property_horizontal_list.dart';
+import '../widgets/property_marker_chip.dart';
 
 class ExploreView extends GetView<ExploreController> {
   const ExploreView({super.key});
@@ -34,18 +35,15 @@ class ExploreView extends GetView<ExploreController> {
       // Make Scaffold reactive to search visibility changes for proper space allocation
       final searchVisible = pageStateService.isSearchVisible(PageType.explore);
 
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      return Scaffold(
+        backgroundColor: AppColors.scaffoldBackground,
         appBar: ExploreTopBar(
           key: ValueKey(
             'explore_topbar_$searchVisible',
           ), // Force recreation when visibility changes
           onSearchChanged: (query) => controller.updateSearchQuery(query),
-          onFilterTap: () =>
-              showPropertyFilterBottomSheet(context, pageType: 'explore'),
+          onFilterTap:
+              () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
         ),
         body: Obx(() {
           final isRefreshing = pageStateService.exploreState.value.isRefreshing;
@@ -73,10 +71,11 @@ class ExploreView extends GetView<ExploreController> {
                   switch (currentState) {
                     case ExploreState.loading:
                       // If location is available, keep the map visible and let markers update
-                      final hasLocation = Get.find<PageStateService>()
-                          .exploreState
-                          .value
-                          .hasLocation;
+                      final hasLocation =
+                          Get.find<PageStateService>()
+                              .exploreState
+                              .value
+                              .hasLocation;
                       if (hasLocation) {
                         DebugLogger.info(
                           '💻 Loading properties, rendering map with pending markers',
@@ -104,10 +103,11 @@ class ExploreView extends GetView<ExploreController> {
                       return _buildMapInterface(context);
 
                     default:
-                      final hasLocation = Get.find<PageStateService>()
-                          .exploreState
-                          .value
-                          .hasLocation;
+                      final hasLocation =
+                          Get.find<PageStateService>()
+                              .exploreState
+                              .value
+                              .hasLocation;
                       if (hasLocation) {
                         DebugLogger.info(
                           '🔄 Initializing; rendering map while loading',
@@ -183,10 +183,11 @@ class ExploreView extends GetView<ExploreController> {
       title: 'no_properties_found'.tr,
       message: 'no_properties_found_area_message'.tr,
       icon: Icons.location_off,
-      onAction: () => showPropertyFilterBottomSheet(
-        Get.context ?? context,
-        pageType: 'explore',
-      ),
+      onAction:
+          () => showPropertyFilterBottomSheet(
+            Get.context ?? context,
+            pageType: 'explore',
+          ),
       actionText: 'adjust_filters'.tr,
     );
   }
@@ -272,68 +273,29 @@ class ExploreView extends GetView<ExploreController> {
                       final markers = controller.propertyMarkers;
                       if (markers.isEmpty) return const SizedBox.shrink();
                       return MarkerLayer(
-                        markers: markers
-                            .map(
-                              (marker) => Marker(
-                                point: marker.position,
-                                width: 40,
-                                height: 40,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    DebugLogger.info(
-                                      '📍 Property marker tapped: ${marker.property.title}',
-                                    );
-                                    controller.selectProperty(marker.property);
-                                  },
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: marker.isSelected
-                                          ? AppColors.primaryYellow
-                                          : AppColors.accentBlue,
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                        width: 2,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppColors.shadowColor,
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        marker
-                                                .property
-                                                .formattedPrice
-                                                .isNotEmpty
-                                            ? (marker
-                                                          .property
-                                                          .formattedPrice
-                                                          .length >
-                                                      4
-                                                  ? marker
-                                                        .property
-                                                        .formattedPrice
-                                                        .substring(0, 4)
-                                                  : marker
-                                                        .property
-                                                        .formattedPrice)
-                                            : '₹--',
-                                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                        markers:
+                            markers
+                                .map(
+                                  (marker) => Marker(
+                                    point: marker.position,
+                                    width: 40,
+                                    height: 40,
+                                    child: PropertyMarkerChip(
+                                      property: marker.property,
+                                      isSelected: marker.isSelected,
+                                      label: marker.label,
+                                      onTap: () {
+                                        DebugLogger.info(
+                                          'Property marker tapped: ${marker.property.title}',
+                                        );
+                                        controller.selectProperty(
+                                          marker.property,
+                                        );
+                                      },
                                     ),
                                   ),
-                                ),
-                              ),
-                            )
-                            .toList(),
+                                )
+                                .toList(),
                       );
                     }),
                   ],

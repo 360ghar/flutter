@@ -127,9 +127,10 @@ class LikesPropertyCard extends StatelessWidget {
                       child: IconButton(
                         icon: Icon(
                           isFavourite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavourite
-                              ? AppColors.favoriteActive
-                              : colorScheme.onPrimary,
+                          color:
+                              isFavourite
+                                  ? AppColors.favoriteActive
+                                  : colorScheme.onPrimary,
                           size: 20,
                         ),
                         onPressed: onFavouriteToggle,
@@ -191,12 +192,16 @@ class LikesPropertyCard extends StatelessWidget {
                             color: AppColors.propertyFeatureText,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            property.bedroomBathroomText,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.propertyFeatureText,
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Text(
+                              property.bedroomBathroomText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.propertyFeatureText,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -208,12 +213,16 @@ class LikesPropertyCard extends StatelessWidget {
                             color: AppColors.propertyFeatureText,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            property.areaText,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.propertyFeatureText,
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Text(
+                              property.areaText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.propertyFeatureText,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

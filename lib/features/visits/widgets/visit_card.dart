@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 import '../../../core/data/models/visit_model.dart';
 import '../../../core/utils/app_colors.dart';
-import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import '../../../core/utils/debug_logger.dart';
 
 class VisitCard extends StatelessWidget {
@@ -27,10 +27,9 @@ class VisitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    DebugLogger.info('🔖 Building VisitCard id=${visit.id} status=${visit.status} date=${visit.scheduledDate.toIso8601String()}');
+    DebugLogger.info(
+      '🔖 Building VisitCard id=${visit.id} status=${visit.status} date=${visit.scheduledDate.toIso8601String()}',
+    );
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -45,163 +44,134 @@ class VisitCard extends StatelessWidget {
           InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(12),
-            child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RobustNetworkImage(
-                imageUrl:
-                    visit.property?.mainImage ??
-                    visit.property?.mainImageUrl ??
-                    '',
-                width: 64,
-                height: 64,
-                fit: BoxFit.cover,
-                borderRadius: BorderRadius.circular(8),
-                errorWidget: Container(
-                  width: 64,
-                  height: 64,
-                  color: AppColors.inputBackground,
-                  child: Icon(Icons.image, color: AppColors.iconColor),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      visit.property?.title ?? visit.propertyTitle,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                    RobustNetworkImage(
+                      imageUrl: visit.property?.mainImage ?? visit.property?.mainImageUrl ?? '',
+                      width: 64,
+                      height: 64,
+                      fit: BoxFit.cover,
+                      borderRadius: BorderRadius.circular(8),
+                      errorWidget: Container(
+                        width: 64,
+                        height: 64,
+                        color: AppColors.inputBackground,
+                        child: Icon(Icons.image, color: AppColors.iconColor),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    if (visit.property != null) ...[
-                      Text(
-                        visit.property!.addressDisplay,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (visit.property!.bedrooms != null) ...[
-                            Icon(
-                              Icons.bed,
-                              size: 14,
-                              color: AppColors.iconColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${visit.property!.bedrooms} BHK',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  visit.property?.title ?? visit.propertyTitle,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                          ],
-                          if (visit.property!.bathrooms != null) ...[
-                            Icon(
-                              Icons.bathtub_outlined,
-                              size: 14,
-                              color: AppColors.iconColor,
-                            ),
-                            const SizedBox(width: 4),
+                              const SizedBox(width: 8),
+                              _buildStatusChip(visit.status),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          if (visit.property != null) ...[
                             Text(
-                              '${visit.property!.bathrooms} Bath',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
+                              visit.property!.addressDisplay,
+                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(width: 10),
-                          ],
-                          if (visit.property!.areaSqft != null) ...[
-                            Icon(
-                              Icons.square_foot,
-                              size: 14,
-                              color: AppColors.iconColor,
-                            ),
-                            const SizedBox(width: 4),
+                            const SizedBox(height: 6),
                             Text(
-                              '${visit.property!.areaSqft!.toStringAsFixed(0)} sq ft',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
+                              [
+                                if (visit.property!.bedrooms != null)
+                                  '${visit.property!.bedrooms}BHK',
+                                if (visit.property!.bathrooms != null)
+                                  '${visit.property!.bathrooms}B',
+                                if (visit.property!.areaSqft != null)
+                                  '${visit.property!.areaSqft!.toStringAsFixed(0)} sqft',
+                              ].join(' • '),
+                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 2,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 14,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    dateText,
+                                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    timeText,
+                                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          dateText,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Icon(
-                          Icons.access_time,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          timeText,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
-              _buildStatusChip(visit.status),
-            ],
+              ],
+            ),
           ),
-        ),
 
           if (visit.property != null) ...[
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  visit.property!.formattedPrice,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                Flexible(
+                  child: Text(
+                    visit.property!.formattedPrice,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   visit.property!.purposeString,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -218,10 +188,7 @@ class VisitCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       visit.specialRequirements!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -238,16 +205,11 @@ class VisitCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: AppColors.primaryYellow),
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: Text(
                       'Reschedule',
-                      style: TextStyle(
-                        color: AppColors.primaryYellow,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -258,16 +220,11 @@ class VisitCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: AppColors.errorRed),
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: Text(
                       'Cancel',
-                      style: TextStyle(
-                        color: AppColors.errorRed,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -307,19 +264,15 @@ class VisitCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        text.length > 6 ? text.substring(0, 6) : text,
+        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w600),
       ),
     );
   }

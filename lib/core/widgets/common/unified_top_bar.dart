@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/widgets/common/location_selector.dart';
 import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
 
-class UnifiedTopBar extends GetView<PageStateService>
-    implements PreferredSizeWidget {
+class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWidget {
   final PageType pageType;
   final String title;
   final bool showSearch;
@@ -36,8 +35,7 @@ class UnifiedTopBar extends GetView<PageStateService>
       final theme = Theme.of(context);
       // Determine bottom search row visibility
       final bool supportsSearch = _shouldShowSearch();
-      final bool searchVisible =
-          supportsSearch && controller.isSearchVisible(pageType);
+      final bool searchVisible = supportsSearch && controller.isSearchVisible(pageType);
 
       final PreferredSizeWidget? bottomWidget = searchVisible
           ? _buildBottomSearchBar(controller)
@@ -112,28 +110,15 @@ class UnifiedTopBar extends GetView<PageStateService>
                 onSearchChanged?.call(value);
               },
               controller: TextEditingController(text: searchQuery)
-                ..selection = TextSelection.fromPosition(
-                  TextPosition(offset: searchQuery.length),
-                ),
+                ..selection = TextSelection.fromPosition(TextPosition(offset: searchQuery.length)),
               style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 hintText: _getSearchHint(),
-                hintStyle: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: AppColors.iconColor,
-                  size: 18,
-                ),
+                hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: AppColors.iconColor, size: 18),
                 suffixIcon: searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: AppColors.iconColor,
-                          size: 18,
-                        ),
+                        icon: Icon(Icons.clear, color: AppColors.iconColor, size: 18),
                         onPressed: () {
                           pageStateService.clearPageSearch(pageType);
                           onSearchClear?.call();
@@ -141,10 +126,7 @@ class UnifiedTopBar extends GetView<PageStateService>
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 isDense: true,
               ),
             ),
@@ -154,10 +136,7 @@ class UnifiedTopBar extends GetView<PageStateService>
     );
   }
 
-  Widget _buildFilterButton(
-    BuildContext context,
-    PageStateService pageStateService,
-  ) {
+  Widget _buildFilterButton(BuildContext context, PageStateService pageStateService) {
     return Obx(() {
       final currentState = _getCurrentPageState(pageStateService);
       final activeFiltersCount = currentState.activeFiltersCount;
@@ -176,10 +155,7 @@ class UnifiedTopBar extends GetView<PageStateService>
                     color: AppColors.primaryYellow,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
+                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                   child: Text(
                     activeFiltersCount.toString(),
                     style: TextStyle(
@@ -194,9 +170,7 @@ class UnifiedTopBar extends GetView<PageStateService>
           ],
         ),
         onPressed:
-            onFilterTap ??
-            () =>
-                showPropertyFilterBottomSheet(context, pageType: pageType.name),
+            onFilterTap ?? () => showPropertyFilterBottomSheet(context, pageType: pageType.name),
       );
     });
   }
@@ -205,11 +179,7 @@ class UnifiedTopBar extends GetView<PageStateService>
     return Obx(() {
       final visible = pageStateService.isSearchVisible(pageType);
       return IconButton(
-        icon: Icon(
-          visible ? Icons.search_off : Icons.search,
-          color: AppColors.iconColor,
-          size: 22,
-        ),
+        icon: Icon(visible ? Icons.search_off : Icons.search, color: AppColors.iconColor, size: 22),
         onPressed: () => pageStateService.toggleSearch(pageType),
       );
     });
@@ -259,8 +229,7 @@ class UnifiedTopBar extends GetView<PageStateService>
   Size get preferredSize {
     double height = kToolbarHeight;
     final bool supportsSearch = _shouldShowSearch();
-    final bool searchVisible =
-        supportsSearch && controller.isSearchVisible(pageType);
+    final bool searchVisible = supportsSearch && controller.isSearchVisible(pageType);
 
     if (searchVisible) {
       height += 52; // Add height for search bar
@@ -298,16 +267,8 @@ extension UnifiedTopBarBuilder on Widget {
 
 // Specialized top bars for different page types
 class ExploreTopBar extends UnifiedTopBar {
-  const ExploreTopBar({
-    super.key,
-    super.onSearchChanged,
-    super.onFilterTap,
-    super.additionalActions,
-  }) : super(
-         pageType: PageType.explore,
-         title: 'explore_properties'.tr,
-         showSearch: true,
-       );
+  ExploreTopBar({super.key, super.onSearchChanged, super.onFilterTap, super.additionalActions})
+    : super(pageType: PageType.explore, title: 'explore_properties'.tr, showSearch: true);
 }
 
 class DiscoverTopBar extends UnifiedTopBar {
@@ -320,10 +281,6 @@ class DiscoverTopBar extends UnifiedTopBar {
 }
 
 class LikesTopBar extends UnifiedTopBar {
-  const LikesTopBar({
-    super.key,
-    super.onSearchChanged,
-    super.onFilterTap,
-    super.additionalActions,
-  }) : super(pageType: PageType.likes, title: 'my_likes'.tr, showSearch: true);
+  LikesTopBar({super.key, super.onSearchChanged, super.onFilterTap, super.additionalActions})
+    : super(pageType: PageType.likes, title: 'my_likes'.tr, showSearch: true);
 }
