@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/controllers/location_controller.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 class LocationSelector extends GetView<LocationController> {
   final PageType pageType;
@@ -12,8 +12,6 @@ class LocationSelector extends GetView<LocationController> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final pageStateService = Get.find<PageStateService>();
 
     return Obx(() {
@@ -384,6 +382,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   }
 
   void _useCurrentLocation() async {
+    final theme = Theme.of(context);
     try {
       Navigator.of(context).pop();
       await pageStateService.useCurrentLocationForPage(widget.pageType);
@@ -400,12 +399,13 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         'Unable to get current location',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.errorRed,
-        colorText: Theme.of(context).colorScheme.onError,
+        colorText: theme.colorScheme.onError,
       );
     }
   }
 
   void _selectPlaceSuggestion(PlaceSuggestion suggestion) async {
+    final theme = Theme.of(context);
     try {
       Navigator.of(context).pop();
 
@@ -434,7 +434,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         'Unable to select location',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.errorRed,
-        colorText: Theme.of(context).colorScheme.onError,
+        colorText: theme.colorScheme.onError,
       );
     }
   }

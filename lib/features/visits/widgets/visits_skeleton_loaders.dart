@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+
 import '../../../core/utils/app_colors.dart';
 
 class VisitSkeletonLoader extends StatelessWidget {
@@ -12,9 +13,6 @@ class VisitSkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Shimmer.fromColors(
       baseColor: AppColors.inputBackground,
       highlightColor: AppColors.surface,

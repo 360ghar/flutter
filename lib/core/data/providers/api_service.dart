@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart' as getx;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,9 +10,9 @@ import '../../utils/app_exceptions.dart';
 import '../../utils/debug_logger.dart';
 import '../../utils/error_mapper.dart';
 import '../models/agent_model.dart';
-import '../models/app_update_models.dart';
 import '../models/amenity_model.dart';
 import '../models/api_response_models.dart';
+import '../models/app_update_models.dart';
 import '../models/bug_report_model.dart';
 import '../models/property_model.dart';
 import '../models/static_page_model.dart';
@@ -95,6 +98,17 @@ class PaginatedResponse<T> {
       hasPrev: json['has_prev'] ?? false,
     );
   }
+}
+
+// Top-level functions for compute-based JSON parsing to offload work from main thread
+PropertyModel _parsePropertyModelCompute(String jsonString) {
+  final jsonMap = Map<String, dynamic>.from(json.decode(jsonString));
+  return ApiService._parsePropertyModel(jsonMap);
+}
+
+UnifiedPropertyResponse _parseUnifiedPropertyResponseCompute(String jsonString) {
+  final jsonMap = Map<String, dynamic>.from(json.decode(jsonString));
+  return ApiService._parseUnifiedPropertyResponse(jsonMap);
 }
 
 // Response wrapper for visits API
@@ -271,6 +285,25 @@ class ApiService extends getx.GetConnect {
       _supabase.auth.signOut();
       getx.Get.offAllNamed('/login');
     }
+  }
+
+  Future<Map<String, dynamic>> _makeRawRequest(
+    String endpoint, {
+    String method = 'GET',
+    Map<String, dynamic>? body,
+    Map<String, String>? queryParams,
+    int retries = 2,
+    String? operationName,
+  }) async {
+    return await _makeRequest(
+      endpoint,
+      (json) => json,
+      method: method,
+      body: body,
+      queryParams: queryParams,
+      retries: retries,
+      operationName: operationName,
+    );
   }
 
   Future<T> _makeRequest<T>(
@@ -940,13 +973,16 @@ class ApiService extends getx.GetConnect {
 
     DebugLogger.api('🔍 Final query params: $queryParams');
 
-    return await _makeRequest(
+    // Get raw response and use compute for heavy parsing
+    final rawResponse = await _makeRawRequest(
       '/properties/',
-      (json) => _parseUnifiedPropertyResponse(json),
       method: 'GET',
       queryParams: queryParams,
       operationName: 'Search Properties',
     );
+
+    // Use compute to offload heavy JSON parsing to separate isolate
+    return await compute(_parseUnifiedPropertyResponseCompute, json.encode(rawResponse));
   }
 
   // Property Discovery using unified search
@@ -956,9 +992,9 @@ class ApiService extends getx.GetConnect {
     int limit = 10,
     int page = 1,
   }) async {
-    return await _makeRequest(
+    // Get raw response and use compute for heavy parsing
+    final rawResponse = await _makeRawRequest(
       '/properties/',
-      (json) => _parseUnifiedPropertyResponse(json),
       method: 'GET',
       queryParams: {
         'page': page.toString(),
@@ -969,6 +1005,9 @@ class ApiService extends getx.GetConnect {
       },
       operationName: 'Discover Properties',
     );
+
+    // Use compute to offload heavy JSON parsing to separate isolate
+    return await compute(_parseUnifiedPropertyResponseCompute, json.encode(rawResponse));
   }
 
   Future<UnifiedPropertyResponse> exploreProperties({
@@ -1007,13 +1046,16 @@ class ApiService extends getx.GetConnect {
       queryParams['sort_by'] = filters['sort_by'].toString();
     }
 
-    return await _makeRequest(
+    // Get raw response and use compute for heavy parsing
+    final rawResponse = await _makeRawRequest(
       '/properties/',
-      (json) => _parseUnifiedPropertyResponse(json),
       method: 'GET',
       queryParams: queryParams,
       operationName: 'Explore Properties',
     );
+
+    // Use compute to offload heavy JSON parsing to separate isolate
+    return await compute(_parseUnifiedPropertyResponseCompute, json.encode(rawResponse));
   }
 
   Future<UnifiedPropertyResponse> filterProperties({
@@ -1045,20 +1087,28 @@ class ApiService extends getx.GetConnect {
       }
     });
 
-    return await _makeRequest(
+    // Get raw response and use compute for heavy parsing
+    final rawResponse = await _makeRawRequest(
       '/properties/',
-      (json) => _parseUnifiedPropertyResponse(json),
       method: 'GET',
       queryParams: queryParams,
       operationName: 'Filter Properties',
     );
+
+    // Use compute to offload heavy JSON parsing to separate isolate
+    return await compute(_parseUnifiedPropertyResponseCompute, json.encode(rawResponse));
   }
 
   Future<PropertyModel> getPropertyDetails(int propertyId) async {
-    return await _makeRequest('/properties/$propertyId', (json) {
-      final propertyData = json['data'] ?? json;
-      return _parsePropertyModel(propertyData);
-    }, operationName: 'Get Property Details');
+    // First get the raw response data
+    final rawResponse = await _makeRawRequest(
+      '/properties/$propertyId',
+      operationName: 'Get Property Details',
+    );
+    final propertyData = rawResponse['data'] ?? rawResponse;
+
+    // Use compute to offload JSON parsing to separate isolate
+    return await compute(_parsePropertyModelCompute, json.encode(propertyData));
   }
 
   // Connection Testing

@@ -106,7 +106,7 @@ mixin ThemeMixin {
           Switch(
             value: value,
             onChanged: enabled ? onChanged : null,
-            activeColor: theme.colorScheme.primary,
+            activeThumbColor: theme.colorScheme.primary,
             activeTrackColor: theme.colorScheme.primary.withValues(alpha: 0.3),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),

@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/utils/app_colors.dart';
-import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class ProfileView extends GetView<AuthController> {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Obx(
       () => Scaffold(
         backgroundColor: AppColors.scaffoldBackground,

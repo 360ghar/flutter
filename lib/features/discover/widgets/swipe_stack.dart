@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../core/utils/app_colors.dart';
+
 import '../../../core/data/models/property_model.dart';
+import '../../../core/utils/app_colors.dart';
 import 'property_card.dart';
 
 class SwipeStack extends StatefulWidget {
@@ -45,9 +46,6 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     if (_properties.isEmpty) {
       return Center(
         child: Text(

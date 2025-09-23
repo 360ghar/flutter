@@ -1,11 +1,13 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../../core/data/models/property_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/debug_logger.dart';
-import '../../../core/data/models/property_model.dart';
-import 'explore_property_card.dart';
 import '../controllers/explore_controller.dart';
+import 'explore_property_card.dart';
 
 class PropertyHorizontalList extends StatefulWidget {
   final ExploreController controller;
@@ -86,9 +88,6 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Obx(() {
       final properties = widget.controller.properties;
       if (properties.isEmpty) {

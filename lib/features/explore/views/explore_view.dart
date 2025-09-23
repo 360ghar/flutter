@@ -208,8 +208,8 @@ class ExploreView extends GetView<ExploreController> {
                       userAgentPackageName: 'com.ghar360.app',
                       maxZoom: 18,
                     ),
-                    RichAttributionWidget(
-                      attributions: const [TextSourceAttribution('© OpenStreetMap contributors')],
+                    const RichAttributionWidget(
+                      attributions: [TextSourceAttribution('© OpenStreetMap contributors')],
                     ),
                     // Search radius circle (reactive)
                     Obx(() {

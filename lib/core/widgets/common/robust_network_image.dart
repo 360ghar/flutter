@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/image_cache_service.dart';
 
@@ -82,6 +85,8 @@ class RobustNetworkImage extends StatelessWidget {
   }
 
   Widget _buildUnifiedImage(String url) {
+    final expectsSvg = _isSvgSource(url);
+
     return FutureBuilder<File?>(
       future: ImageCacheService.instance.getImageFile(url),
       builder: (context, snapshot) {
@@ -95,48 +100,108 @@ class RobustNetworkImage extends StatelessWidget {
 
         final file = snapshot.data!;
 
-        if (kIsWeb) {
-          // For web, we need to load the file as bytes and use Image.memory
-          return FutureBuilder<Uint8List?>(
-            future: file.readAsBytes(),
-            builder: (context, bytesSnapshot) {
-              if (bytesSnapshot.connectionState == ConnectionState.waiting) {
-                return placeholder ?? _buildDefaultPlaceholder();
-              }
+        return FutureBuilder<Uint8List?>(
+          future: file.readAsBytes(),
+          builder: (context, bytesSnapshot) {
+            if (bytesSnapshot.connectionState == ConnectionState.waiting) {
+              return placeholder ?? _buildDefaultPlaceholder();
+            }
 
-              if (bytesSnapshot.hasError || bytesSnapshot.data == null) {
-                return errorWidget ?? _buildDefaultErrorWidget();
-              }
+            if (bytesSnapshot.hasError || bytesSnapshot.data == null) {
+              return errorWidget ?? _buildDefaultErrorWidget();
+            }
 
-              return Image.memory(
-                bytesSnapshot.data!,
-                width: width,
-                height: height,
-                fit: fit,
-                filterQuality: FilterQuality.medium,
-                cacheWidth: memCacheWidth,
-                cacheHeight: memCacheHeight,
-                gaplessPlayback: true,
-                errorBuilder: (context, error, stackTrace) =>
-                    errorWidget ?? _buildDefaultErrorWidget(),
-              );
-            },
-          );
-        } else {
-          // For mobile platforms, use Image.file with cached file
-          return Image.file(
-            file,
-            width: width,
-            height: height,
-            fit: fit,
-            filterQuality: FilterQuality.medium,
-            cacheWidth: memCacheWidth,
-            cacheHeight: memCacheHeight,
-            gaplessPlayback: true,
-            errorBuilder: (context, error, stackTrace) => errorWidget ?? _buildDefaultErrorWidget(),
-          );
-        }
+            final bytes = bytesSnapshot.data!;
+            final isSvgImage = expectsSvg || _bytesLookLikeSvg(bytes);
+
+            if (isSvgImage) {
+              return _buildSvgFromBytes(bytes);
+            }
+
+            return _buildRasterFromBytes(bytes);
+          },
+        );
       },
+    );
+  }
+
+  bool _isSvgSource(String url) {
+    final lowerUrl = url.toLowerCase();
+    if (lowerUrl.endsWith('.svg')) return true;
+
+    try {
+      final uri = Uri.parse(url);
+      if (uri.pathSegments.any((segment) => segment.toLowerCase().contains('svg'))) {
+        return true;
+      }
+      if (uri.queryParameters.values.any((value) => value.toLowerCase().contains('svg'))) {
+        return true;
+      }
+    } catch (_) {
+      if (lowerUrl.contains('svg')) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool _bytesLookLikeSvg(Uint8List bytes) {
+    if (bytes.isEmpty) return false;
+    final previewLength = bytes.length > 512 ? 512 : bytes.length;
+    final preview = utf8.decode(bytes.sublist(0, previewLength), allowMalformed: true).trimLeft();
+    return preview.startsWith('<svg') || (preview.startsWith('<?xml') && preview.contains('<svg'));
+  }
+
+  Widget _buildSvgFromBytes(Uint8List bytes) {
+    final sanitizedBytes = _sanitizeSvgBytes(bytes);
+    final svgWidget = SvgPicture.memory(
+      sanitizedBytes,
+      width: width,
+      height: height,
+      fit: fit,
+      placeholderBuilder: (_) => placeholder ?? _buildDefaultPlaceholder(),
+    );
+
+    if (width != null || height != null) {
+      return SizedBox(width: width, height: height, child: svgWidget);
+    }
+
+    return svgWidget;
+  }
+
+  Uint8List _sanitizeSvgBytes(Uint8List bytes) {
+    try {
+      final svgString = utf8.decode(bytes, allowMalformed: true);
+      final cleaned = svgString
+          .replaceAll(
+            RegExp(r'<metadata[^>]*>.*?</metadata>', dotAll: true, caseSensitive: false),
+            '',
+          )
+          .replaceAll(RegExp(r'<metadata[^>]*/?>', caseSensitive: false), '')
+          .trim();
+
+      if (cleaned == svgString) {
+        return bytes;
+      }
+
+      return Uint8List.fromList(utf8.encode(cleaned));
+    } catch (_) {
+      return bytes;
+    }
+  }
+
+  Widget _buildRasterFromBytes(Uint8List bytes) {
+    return Image.memory(
+      bytes,
+      width: width,
+      height: height,
+      fit: fit,
+      filterQuality: FilterQuality.medium,
+      cacheWidth: memCacheWidth,
+      cacheHeight: memCacheHeight,
+      gaplessPlayback: true,
+      errorBuilder: (context, error, stackTrace) => errorWidget ?? _buildDefaultErrorWidget(),
     );
   }
 

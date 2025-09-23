@@ -44,6 +44,9 @@ class LikesController extends GetxController {
   // Page activation listener
   Worker? _pageActivationWorker;
 
+  // Flag to track if data has been loaded to prevent repeated calls
+  final RxBool _hasLoadedData = false.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -112,6 +115,14 @@ class LikesController extends GetxController {
         DebugLogger.error('🚨 [LIKES_CONTROLLER] NULL CHECK OPERATOR ERROR in activatePage!');
       }
     }
+  }
+
+  // This method is called when the "Likes" tab becomes visible
+  void onTabSelected() {
+    if (_hasLoadedData.value) return; // Don't fetch if already loaded
+
+    _hasLoadedData.value = true; // Mark as loaded to prevent repeated calls
+    activatePage();
   }
 
   @override
@@ -320,8 +331,8 @@ class LikesController extends GetxController {
     }
 
     return currentSegment.value == LikesSegment.liked
-        ? 'no_liked_properties'.tr + '\n' + 'no_favorites_message'.tr
-        : 'no_passed_properties'.tr + '\n' + 'no_more_properties_message'.tr;
+        ? '${'no_liked_properties'.tr}\n${'no_favorites_message'.tr}'
+        : '${'no_passed_properties'.tr}\n${'no_more_properties_message'.tr}';
   }
 
   // Helper getters

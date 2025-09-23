@@ -5,6 +5,8 @@ import '../../../core/controllers/page_state_service.dart';
 import '../../../core/data/models/page_state_model.dart';
 import '../../../core/utils/app_exceptions.dart';
 import '../../../core/utils/debug_logger.dart';
+import '../../likes/controllers/likes_controller.dart';
+import '../../visits/controllers/visits_controller.dart';
 
 class DashboardController extends GetxController {
   late final AuthController _authController;
@@ -273,8 +275,16 @@ class DashboardController extends GetxController {
         break;
       case 3:
         pageType = PageType.likes;
+        // Lazy load likes data when tab is selected
+        if (Get.isRegistered<LikesController>()) {
+          Get.find<LikesController>().onTabSelected();
+        }
         break;
       case 4: // Visits (no associated PageType)
+        // Lazy load visits data when tab is selected
+        if (Get.isRegistered<VisitsController>()) {
+          Get.find<VisitsController>().onTabSelected();
+        }
         break;
     }
 

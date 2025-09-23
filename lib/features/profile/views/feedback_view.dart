@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/data/models/bug_report_model.dart';
 import '../../../core/mixins/theme_mixin.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../profile/controllers/feedback_controller.dart';
-import '../../../core/data/models/bug_report_model.dart';
 
 class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
   const FeedbackView({super.key});
@@ -209,7 +209,7 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
     required String Function(T) itemLabel,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       onChanged: onChanged,
       decoration: InputDecoration(
         filled: true,

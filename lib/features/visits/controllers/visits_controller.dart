@@ -1,10 +1,11 @@
-import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
+import 'package:get/get.dart';
+
+import '../../../core/controllers/auth_controller.dart';
+import '../../../core/data/models/agent_model.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/visit_model.dart';
-import '../../../core/data/models/agent_model.dart';
 import '../../../core/data/providers/api_service.dart';
-import '../../../core/controllers/auth_controller.dart';
 import '../../../core/utils/debug_logger.dart'; // Added missing import
 import '../../dashboard/controllers/dashboard_controller.dart';
 
@@ -49,32 +50,22 @@ class VisitsController extends GetxController {
       _initializeController();
     }
 
-    // Observe dashboard tab switches to refresh when Visits tab is active
+    // Observe dashboard tab switches to load data when Visits tab is selected for the first time
     if (Get.isRegistered<DashboardController>()) {
       final dash = Get.find<DashboardController>();
-      DateTime? lastRefresh;
-      const cooldown = Duration(seconds: 30);
 
       ever<int>(dash.currentIndex, (idx) async {
         if (idx == 4) {
-          final now = DateTime.now();
-          // Throttle to avoid spamming refresh
-          if (lastRefresh == null || now.difference(lastRefresh!) > cooldown) {
-            DebugLogger.info('🔄 Visits tab activated — refreshing (background)');
-            await loadVisits(isRefresh: true, silent: true);
-            lastRefresh = now;
-          } else {
-            DebugLogger.info('⏳ Skipping visits refresh due to cooldown');
-          }
+          // Visits tab index
+          DebugLogger.info('🔄 Visits tab selected');
+          await onTabSelected();
         }
       });
 
-      // If app starts on Visits tab, ensure data loads quickly
+      // If app starts on Visits tab, load data immediately
       if (dash.currentIndex.value == 4) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!hasLoadedVisits.value && !isLoading.value) {
-            loadVisitsLazy();
-          }
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await onTabSelected();
         });
       }
     }
@@ -112,6 +103,24 @@ class VisitsController extends GetxController {
     await loadRelationshipManager();
   }
 
+  // This method is called when the "Visits" tab becomes visible
+  Future<void> onTabSelected() async {
+    if (hasLoadedVisits.value || isLoading.value) {
+      return; // Don't fetch if already loaded or loading
+    }
+
+    isLoading.value = true;
+    try {
+      await loadVisits();
+      hasLoadedVisits.value = true; // Mark as loaded
+    } catch (e) {
+      // Handle error
+      DebugLogger.error('Error loading visits on tab select: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   Future<void> loadVisits({bool isRefresh = false, bool silent = false}) async {
     if (!_authController.isAuthenticated) {
       error.value = 'User not authenticated';
@@ -142,10 +151,7 @@ class VisitsController extends GetxController {
       final summary = await _apiService.getVisitsSummary();
       var allVisits = summary.visits;
       DebugLogger.info(
-        '📥 Visits fetched: total=${allVisits.length} | example=' +
-            (allVisits.isNotEmpty
-                ? '{id: ${allVisits.first.id}, status: ${allVisits.first.status}, date: ${allVisits.first.scheduledDate.toIso8601String()}}'
-                : 'none'),
+        '📥 Visits fetched: total=${allVisits.length} | example=${allVisits.isNotEmpty ? '{id: ${allVisits.first.id}, status: ${allVisits.first.status}, date: ${allVisits.first.scheduledDate.toIso8601String()}}' : 'none'}',
       );
 
       // Fallback: some backends may return counts without visits payload on summary

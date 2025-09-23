@@ -119,7 +119,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Theme.of(Get.context!).colorScheme.primary,
+            activeThumbColor: Theme.of(Get.context!).colorScheme.primary,
             activeTrackColor: Theme.of(Get.context!).colorScheme.primary.withValues(alpha: 0.3),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),

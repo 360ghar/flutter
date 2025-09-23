@@ -33,4 +33,3 @@ git add -- "${files[@]}"
 
 echo "pre-commit: formatting complete"
 exit 0
-

@@ -2,187 +2,187 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, develop, feature/**, bugfix/**, hotfix/** ]
+    branches: [main, develop, feature/**, bugfix/**, hotfix/**]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Create environment file
-      run: |
-        # Determine environment content based on branch
-        if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.base_ref }}" == "main" ]]; then
-          echo "Using production environment for main branch/PR"
-          ENV_CONTENT="production"
-        else
-          echo "Using development environment for feature branches"
-          ENV_CONTENT="development"
-        fi
+      - name: Create environment file
+        run: |
+          # Determine environment content based on branch
+          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.base_ref }}" == "main" ]]; then
+            echo "Using production environment for main branch/PR"
+            ENV_CONTENT="production"
+          else
+            echo "Using development environment for feature branches"
+            ENV_CONTENT="development"
+          fi
 
-        # Create both environment files (required by pubspec.yaml assets)
-        # But populate them with appropriate content based on branch
-        for ENV_FILE in ".env.development" ".env.production"; do
-          cat > $ENV_FILE << EOF
-        # Environment variables for CI/CD build
-        # Generated from GitHub repository secrets
+          # Create both environment files (required by pubspec.yaml assets)
+          # But populate them with appropriate content based on branch
+          for ENV_FILE in ".env.development" ".env.production"; do
+            cat > $ENV_FILE << EOF
+          # Environment variables for CI/CD build
+          # Generated from GitHub repository secrets
 
-        # API Configuration
-        API_BASE_URL=${{ secrets.API_BASE_URL }}
-        SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-        SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-        GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
+          # API Configuration
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
 
-        # App Configuration
-        DEFAULT_COUNTRY=${{ secrets.DEFAULT_COUNTRY || 'in' }}
-        DEBUG_MODE=${{ secrets.DEBUG_MODE || 'false' }}
-        LOG_API_CALLS=${{ secrets.LOG_API_CALLS || 'false' }}
+          # App Configuration
+          DEFAULT_COUNTRY=${{ secrets.DEFAULT_COUNTRY || 'in' }}
+          DEBUG_MODE=${{ secrets.DEBUG_MODE || 'false' }}
+          LOG_API_CALLS=${{ secrets.LOG_API_CALLS || 'false' }}
 
-        # Build Configuration
-        BUILD_ENV=ci
-        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-        COMMIT_SHA=${{ github.sha }}
-        BRANCH_NAME=${{ github.head_ref || github.ref_name }}
-        EOF
-        done
+          # Build Configuration
+          BUILD_ENV=ci
+          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          COMMIT_SHA=${{ github.sha }}
+          BRANCH_NAME=${{ github.head_ref || github.ref_name }}
+          EOF
+          done
 
-        echo "Environment files created successfully"
-        # Don't print the file contents to avoid exposing secrets in logs
+          echo "Environment files created successfully"
+          # Don't print the file contents to avoid exposing secrets in logs
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
 
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.35.2'
-        channel: 'stable'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.2"
+          channel: "stable"
 
-    - name: Verify Flutter and Dart versions
-      run: |
-        echo "Flutter version: $(flutter --version)"
-        echo "Dart version: $(dart --version)"
-        dart_version=$(dart --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-        echo "Dart version extracted: $dart_version"
+      - name: Verify Flutter and Dart versions
+        run: |
+          echo "Flutter version: $(flutter --version)"
+          echo "Dart version: $(dart --version)"
+          dart_version=$(dart --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          echo "Dart version extracted: $dart_version"
 
-        # Check if Dart version is >= 3.8.0
-        if [ "$(printf '%s\n' "$dart_version" "3.8.0" | sort -V | head -n1)" = "3.8.0" ]; then
-          echo "✅ Dart version $dart_version is compatible (≥3.8.0)"
-        else
-          echo "❌ Dart version $dart_version is incompatible (<3.8.0)"
-          exit 1
-        fi
+          # Check if Dart version is >= 3.8.0
+          if [ "$(printf '%s\n' "$dart_version" "3.8.0" | sort -V | head -n1)" = "3.8.0" ]; then
+            echo "✅ Dart version $dart_version is compatible (≥3.8.0)"
+          else
+            echo "❌ Dart version $dart_version is incompatible (<3.8.0)"
+            exit 1
+          fi
 
-    - name: Cache Flutter dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.pub-cache
-          .flutter/plugins
-          .flutter/config
-          ~/.dart-tool
-          .dart_tool
-        key: flutter-dart-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
-        restore-keys: |
-          flutter-dart-${{ runner.os }}-
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            .flutter/plugins
+            .flutter/config
+            ~/.dart-tool
+            .dart_tool
+          key: flutter-dart-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
+          restore-keys: |
+            flutter-dart-${{ runner.os }}-
 
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-          android/.gradle
-        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          gradle-${{ runner.os }}-
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
-    - name: Cache Android SDK
-      uses: actions/cache@v3
-      with:
-        path: |
-          ${{ env.ANDROID_SDK_ROOT }}/platforms
-          ${{ env.ANDROID_SDK_ROOT }}/platform-tools
-          ${{ env.ANDROID_SDK_ROOT }}/build-tools
-          ${{ env.ANDROID_SDK_ROOT }}/ndk
-        key: android-sdk-${{ runner.os }}-${{ hashFiles('android/app/build.gradle') }}
-        restore-keys: |
-          android-sdk-${{ runner.os }}-
+      - name: Cache Android SDK
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.ANDROID_SDK_ROOT }}/platforms
+            ${{ env.ANDROID_SDK_ROOT }}/platform-tools
+            ${{ env.ANDROID_SDK_ROOT }}/build-tools
+            ${{ env.ANDROID_SDK_ROOT }}/ndk
+          key: android-sdk-${{ runner.os }}-${{ hashFiles('android/app/build.gradle') }}
+          restore-keys: |
+            android-sdk-${{ runner.os }}-
 
-    - name: Get Flutter dependencies
-      run: flutter pub get
+      - name: Get Flutter dependencies
+        run: flutter pub get
 
-    - name: Build APK
-      run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64
+      - name: Build APK
+        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64
 
-    - name: Rename APK to 360ghar.apk
-      run: |
-        set -euxo pipefail
-        src="build/app/outputs/flutter-apk/app-release.apk"
-        dest="build/app/outputs/flutter-apk/360ghar.apk"
-        if [ -f "$src" ]; then
-          mv "$src" "$dest"
-          echo "Renamed APK to $dest"
-        else
-          echo "APK not found at $src" >&2
-          exit 1
-        fi
+      - name: Rename APK to 360ghar.apk
+        run: |
+          set -euxo pipefail
+          src="build/app/outputs/flutter-apk/app-release.apk"
+          dest="build/app/outputs/flutter-apk/360ghar.apk"
+          if [ -f "$src" ]; then
+            mv "$src" "$dest"
+            echo "Renamed APK to $dest"
+          else
+            echo "APK not found at $src" >&2
+            exit 1
+          fi
 
-    - name: Generate artifact name
-      id: artifact-name
-      run: |
-        if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.base_ref }}" == "main" ]]; then
-          # For main branch and PRs targeting main, include timestamp for uniqueness
-          echo "name=ghar360-main-${{ github.run_id }}-${{ github.run_attempt }}" >> $GITHUB_OUTPUT
-          echo "retention_days=30" >> $GITHUB_OUTPUT
-        else
-          # For other branches, use branch name for consistent artifact name (overwrites previous)
-          BRANCH_NAME=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
-          echo "name=ghar360-${BRANCH_NAME}" >> $GITHUB_OUTPUT
-          echo "retention_days=1" >> $GITHUB_OUTPUT
-        fi
+      - name: Generate artifact name
+        id: artifact-name
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.base_ref }}" == "main" ]]; then
+            # For main branch and PRs targeting main, include timestamp for uniqueness
+            echo "name=ghar360-main-${{ github.run_id }}-${{ github.run_attempt }}" >> $GITHUB_OUTPUT
+            echo "retention_days=30" >> $GITHUB_OUTPUT
+          else
+            # For other branches, use branch name for consistent artifact name (overwrites previous)
+            BRANCH_NAME=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+            echo "name=ghar360-${BRANCH_NAME}" >> $GITHUB_OUTPUT
+            echo "retention_days=1" >> $GITHUB_OUTPUT
+          fi
 
-    - name: Upload APK as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ steps.artifact-name.outputs.name }}
-        path: build/app/outputs/flutter-apk/360ghar.apk
-        retention-days: ${{ steps.artifact-name.outputs.retention_days }}
-        if-no-files-found: error
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}
+          path: build/app/outputs/flutter-apk/360ghar.apk
+          retention-days: ${{ steps.artifact-name.outputs.retention_days }}
+          if-no-files-found: error
 
-    - name: Upload mapping file (if exists)
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ steps.artifact-name.outputs.name }}-mapping
-        path: build/app/outputs/mapping/release/mapping.txt
-        retention-days: ${{ steps.artifact-name.outputs.retention_days }}
-        if-no-files-found: warn
+      - name: Upload mapping file (if exists)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}-mapping
+          path: build/app/outputs/mapping/release/mapping.txt
+          retention-days: ${{ steps.artifact-name.outputs.retention_days }}
+          if-no-files-found: warn
 
-    - name: Comment on PR with build status
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const artifactName = '${{ steps.artifact-name.outputs.name }}';
-          const runId = '${{ github.run_id }}';
+      - name: Comment on PR with build status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifactName = '${{ steps.artifact-name.outputs.name }}';
+            const runId = '${{ github.run_id }}';
 
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `🤖 **Android APK Build Complete!**\n\n` +
-                  `📱 **Download APK**: [${artifactName}.apk](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${runId})\n\n` +
-                  `📋 **Build Details:**\n` +
-                  `- Branch: \`${context.payload.pull_request.head.ref}\`\n` +
-                  `- Commit: \`${context.sha.substring(0, 7)}\`\n` +
-                  `- Flutter Version: \`3.35.2\`\n\n` +
-                  `💡 *The APK will be available for download from the Artifacts section above.*`
-          });
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Android APK Build Complete!**\n\n` +
+                    `📱 **Download APK**: [${artifactName}.apk](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${runId})\n\n` +
+                    `📋 **Build Details:**\n` +
+                    `- Branch: \`${context.payload.pull_request.head.ref}\`\n` +
+                    `- Commit: \`${context.sha.substring(0, 7)}\`\n` +
+                    `- Flutter Version: \`3.35.2\`\n\n` +
+                    `💡 *The APK will be available for download from the Artifacts section above.*`
+            });

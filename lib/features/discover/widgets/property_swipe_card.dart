@@ -1,12 +1,14 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../../core/utils/webview_helper.dart';
+
 import '../../../core/data/models/property_model.dart';
 import '../../../core/utils/app_colors.dart';
 import '../../../core/utils/debug_logger.dart';
-import 'package:ghar360/core/widgets/common/robust_network_image.dart';
-import 'dart:math' as math;
+import '../../../core/utils/webview_helper.dart';
 
 class PropertySwipeCard extends StatefulWidget {
   final PropertyModel property;
@@ -1287,15 +1289,15 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          body { 
-            margin: 0; 
-            padding: 0; 
+          body {
+            margin: 0;
+            padding: 0;
             background: #f0f0f0;
             overflow: hidden;
           }
-          iframe { 
-            width: 100vw; 
-            height: 100vh; 
+          iframe {
+            width: 100vw;
+            height: 100vh;
             border: none;
             display: block;
           }
@@ -1305,11 +1307,11 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
         </script>
       </head>
       <body>
-        <iframe class="ku-embed" 
-                frameborder="0" 
-                allow="xr-spatial-tracking; gyroscope; accelerometer" 
-                allowfullscreen 
-                scrolling="no" 
+        <iframe class="ku-embed"
+                frameborder="0"
+                allow="xr-spatial-tracking; gyroscope; accelerometer"
+                allowfullscreen
+                scrolling="no"
                 src="$sanitizedUrl">
         </iframe>
       </body>

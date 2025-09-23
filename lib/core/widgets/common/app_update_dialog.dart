@@ -21,8 +21,8 @@ class AppUpdateDialog extends StatelessWidget {
     final latestVersionLabel = response.latestVersion;
     final minSupportedVersion = response.minSupportedVersion;
 
-    return WillPopScope(
-      onWillPop: () async => !isMandatory,
+    return PopScope(
+      canPop: !isMandatory,
       child: AlertDialog(
         title: Text(isMandatory ? 'mandatory_update_required'.tr : 'update_available'.tr),
         content: SingleChildScrollView(
