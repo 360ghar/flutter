@@ -6,6 +6,14 @@ class DebugLogger {
   static late final Logger _logger;
   static bool _initialized = false;
 
+  // Simple rate limiter to prevent log storm during rapid UI rebuilds
+  static int _windowStartMs = 0;
+  static int _infoCount = 0;
+  static int _debugCount = 0;
+  static const int _windowMs = 1000;
+  static const int _maxInfoPerWindow = 200; // generous for dev, still bounded
+  static const int _maxDebugPerWindow = 200;
+
   static bool get isDebugMode {
     try {
       return dotenv.env['DEBUG_MODE'] == 'true';
@@ -44,18 +52,21 @@ class DebugLogger {
   /// Debug level - Development debugging info (removed in production)
   static void debug(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
+    if (_shouldRateLimit(isInfo: false)) return;
     _logger.d(message, error: error, stackTrace: stackTrace);
   }
 
   /// Info level - General information about app state
   static void info(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
+    if (_shouldRateLimit(isInfo: true)) return;
     _logger.i('ℹ️ $message', error: error, stackTrace: stackTrace);
   }
 
   /// Success level - Successful operations
   static void success(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
+    if (_shouldRateLimit(isInfo: true)) return;
     _logger.i('✅ $message', error: error, stackTrace: stackTrace);
   }
 
@@ -85,6 +96,7 @@ class DebugLogger {
   static void api(String message, [dynamic error, StackTrace? stackTrace]) {
     if (shouldLogAPICalls) {
       _ensureInitialized();
+      if (_shouldRateLimit(isInfo: false)) return;
       _logger.d('🌐 $message', error: error, stackTrace: stackTrace);
     }
   }
@@ -92,24 +104,28 @@ class DebugLogger {
   /// Authentication related logs
   static void auth(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
+    if (_shouldRateLimit(isInfo: true)) return;
     _logger.i('🔐 $message', error: error, stackTrace: stackTrace);
   }
 
   /// JWT token related logs
   static void jwt(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
+    if (_shouldRateLimit(isInfo: true)) return;
     _logger.i('🔑 $message', error: error, stackTrace: stackTrace);
   }
 
   /// User related logs
   static void user(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
+    if (_shouldRateLimit(isInfo: true)) return;
     _logger.i('👤 $message', error: error, stackTrace: stackTrace);
   }
 
   /// Property related logs
   static void property(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
+    if (_shouldRateLimit(isInfo: true)) return;
     _logger.i('🏠 $message', error: error, stackTrace: stackTrace);
   }
 
@@ -117,6 +133,7 @@ class DebugLogger {
   static void network(String message, [dynamic error, StackTrace? stackTrace]) {
     if (shouldLogAPICalls) {
       _ensureInitialized();
+      if (_shouldRateLimit(isInfo: false)) return;
       _logger.d('📡 $message', error: error, stackTrace: stackTrace);
     }
   }
@@ -124,12 +141,14 @@ class DebugLogger {
   /// Connection related logs
   static void connection(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
+    if (_shouldRateLimit(isInfo: true)) return;
     _logger.i('🔌 $message', error: error, stackTrace: stackTrace);
   }
 
   /// Initialization related logs
   static void startup(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
+    if (_shouldRateLimit(isInfo: true)) return;
     _logger.i('🔧 $message', error: error, stackTrace: stackTrace);
   }
 
@@ -149,6 +168,7 @@ class DebugLogger {
     if (userId != null) message += '\n   User ID: $userId';
     if (userEmail != null) message += '\n   Email: $userEmail';
 
+    if (_shouldRateLimit(isInfo: false)) return;
     _logger.d(message);
   }
 
@@ -172,6 +192,7 @@ class DebugLogger {
       message.write('   Body: ${_sanitizeBody(body)}');
     }
 
+    if (_shouldRateLimit(isInfo: false)) return;
     _logger.d(message.toString().trim());
   }
 
@@ -195,6 +216,8 @@ class DebugLogger {
     if (body != null) {
       message.write('   Body Type: ${_sanitizeBody(body).runtimeType}');
     }
+
+    if (_shouldRateLimit(isInfo: true)) return;
 
     if (statusCode >= 200 && statusCode < 300) {
       _logger.i(message.toString().trim());
@@ -304,8 +327,8 @@ class DebugLogger {
     if (body is String) {
       // Remove potential passwords, tokens, etc.
       return body.replaceAllMapped(
-        RegExp(r'"(password|token|key|secret)":\s*"[^"]*"', caseSensitive: false),
-        (match) => '"${match.group(1)}": "***HIDDEN***"',
+        RegExp(r'\"(password|token|key|secret)\":\s*\"[^\"]*\"', caseSensitive: false),
+        (match) => '\"${match.group(1)}\": \"***HIDDEN***\"',
       );
     }
     return body;
@@ -315,6 +338,27 @@ class DebugLogger {
   static void _ensureInitialized() {
     if (!_initialized) {
       initialize();
+    }
+  }
+
+  /// Returns true if the current call should be skipped due to rate limiting
+  static bool _shouldRateLimit({required bool isInfo}) {
+    if (kReleaseMode) return false; // no need to rate limit in release (filter handles)
+    if (!isDebugMode) return false; // respect environment filter
+
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (nowMs - _windowStartMs > _windowMs) {
+      _windowStartMs = nowMs;
+      _infoCount = 0;
+      _debugCount = 0;
+    }
+
+    if (isInfo) {
+      _infoCount++;
+      return _infoCount > _maxInfoPerWindow;
+    } else {
+      _debugCount++;
+      return _debugCount > _maxDebugPerWindow;
     }
   }
 }

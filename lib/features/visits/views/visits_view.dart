@@ -197,9 +197,8 @@ class VisitsView extends GetView<VisitsController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(() {
-              DebugLogger.info(
-                '🖼️ Building Upcoming tab | count=${controller.upcomingVisits.length}',
-              );
+              // Reduce noisy logs during UI rebuilds
+              // DebugLogger.info('🖼️ Building Upcoming tab | count=${controller.upcomingVisits.length}');
               if (controller.upcomingVisits.isEmpty) {
                 return _buildEmptyState(
                   'no_visits'.tr,
@@ -245,7 +244,7 @@ class VisitsView extends GetView<VisitsController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(() {
-              DebugLogger.info('🖼️ Building Past tab | count=${controller.pastVisits.length}');
+              // DebugLogger.info('🖼️ Building Past tab | count=${controller.pastVisits.length}');
               if (controller.pastVisits.isEmpty) {
                 return _buildEmptyState(
                   'no_visits'.tr,

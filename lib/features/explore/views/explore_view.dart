@@ -25,7 +25,8 @@ class ExploreView extends GetView<ExploreController> {
 
   @override
   Widget build(BuildContext context) {
-    DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
+    // Avoid spamming logs during frequent UI rebuilds
+    // DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
 
     return Obx(() {
       final pageStateService = Get.find<PageStateService>();
@@ -58,10 +59,10 @@ class ExploreView extends GetView<ExploreController> {
               Expanded(
                 child: Obx(() {
                   final currentState = controller.state.value;
-                  final propertiesCount = controller.properties.length;
-                  DebugLogger.info(
-                    '🌨️ View Builder (Obx) - State: $currentState, Properties: $propertiesCount',
-                  );
+                  // final propertiesCount = controller.properties.length;
+                  // DebugLogger.info(
+                  //   '🌨️ View Builder (Obx) - State: $currentState, Properties: $propertiesCount',
+                  // );
 
                   switch (currentState) {
                     case ExploreState.loading:
@@ -69,37 +70,33 @@ class ExploreView extends GetView<ExploreController> {
                       final hasLocation =
                           Get.find<PageStateService>().exploreState.value.hasLocation;
                       if (hasLocation) {
-                        DebugLogger.info(
-                          '💻 Loading properties, rendering map with pending markers',
-                        );
+                        // DebugLogger.info('💻 Loading properties, rendering map with pending markers');
                         return _buildMapInterface(context);
                       }
-                      DebugLogger.info('💻 Rendering loading state (no location yet)');
+                      // DebugLogger.info('💻 Rendering loading state (no location yet)');
                       return _buildLoadingState(context);
 
                     case ExploreState.error:
-                      DebugLogger.info('⚠️ Rendering error state');
+                      // DebugLogger.info('⚠️ Rendering error state');
                       return _buildErrorState();
 
                     case ExploreState.empty:
-                      DebugLogger.info('💭 Rendering empty state');
+                      // DebugLogger.info('💭 Rendering empty state');
                       return _buildEmptyState(context);
 
                     case ExploreState.loaded:
                     case ExploreState.loadingMore:
-                      DebugLogger.info(
-                        '🗺️ Rendering map interface with $propertiesCount properties',
-                      );
+                      // DebugLogger.info('🗺️ Rendering map interface');
                       return _buildMapInterface(context);
 
                     default:
                       final hasLocation =
                           Get.find<PageStateService>().exploreState.value.hasLocation;
                       if (hasLocation) {
-                        DebugLogger.info('🔄 Initializing; rendering map while loading');
+                        // DebugLogger.info('🔄 Initializing; rendering map while loading');
                         return _buildMapInterface(context);
                       }
-                      DebugLogger.info('🔄 Rendering default loading state (no location yet)');
+                      // DebugLogger.info('🔄 Rendering default loading state (no location yet)');
                       return _buildLoadingState(context);
                   }
                 }),
@@ -164,7 +161,7 @@ class ExploreView extends GetView<ExploreController> {
   }
 
   Widget _buildMapInterface(BuildContext context) {
-    DebugLogger.info('🌎 Building map interface');
+    // DebugLogger.info('🌎 Building map interface');
     return Stack(
       children: [
         // Main map
@@ -244,9 +241,8 @@ class ExploreView extends GetView<ExploreController> {
                                   isSelected: marker.isSelected,
                                   label: marker.label,
                                   onTap: () {
-                                    DebugLogger.info(
-                                      'Property marker tapped: ${marker.property.title}',
-                                    );
+                                    // Reduce noisy tap logging
+                                    // DebugLogger.info('Property marker tapped: ${marker.property.title}');
                                     controller.selectProperty(marker.property);
                                   },
                                 ),
@@ -393,9 +389,9 @@ class ExploreView extends GetView<ExploreController> {
         final currentAreaText = controller.currentAreaText;
         final locationDisplayText = controller.locationDisplayText;
 
-        DebugLogger.info(
-          '📊 Info panel update - properties: $propertiesCountText, area: $currentAreaText',
-        );
+        // DebugLogger.info(
+        //   '📊 Info panel update - properties: $propertiesCountText, area: $currentAreaText',
+        // );
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
