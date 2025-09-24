@@ -5,6 +5,7 @@ import '../models/unified_property_response.dart';
 import '../providers/api_service.dart';
 import '../../utils/debug_logger.dart';
 import '../../utils/app_exceptions.dart';
+import '../../utils/offline_queue_service.dart';
 
 class SwipesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
@@ -19,6 +20,15 @@ class SwipesRepository extends GetxService {
 
       DebugLogger.success('✅ Swipe recorded successfully');
     } on AppException catch (e) {
+      // Queue the action for later retry when offline or API fails
+      try {
+        if (Get.isRegistered<OfflineQueueService>()) {
+          await OfflineQueueService.instance.enqueueSwipe(propertyId: propertyId, isLiked: isLiked);
+          DebugLogger.warning('⚠️ Swipe queued for retry due to error: ${e.message}');
+        }
+      } catch (_) {
+        // Swallow queue errors; original failure will still propagate
+      }
       DebugLogger.error('❌ Failed to record swipe: ${e.message}');
       rethrow;
     }

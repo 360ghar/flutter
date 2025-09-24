@@ -100,6 +100,21 @@ class PaginatedResponse<T> {
   }
 }
 
+// Lightweight cache entry for GET responses with ETag support
+class _CacheEntry {
+  final Map<String, dynamic> json;
+  final String? etag;
+  final DateTime storedAt;
+  final String? bodyString;
+
+  _CacheEntry({
+    required this.json,
+    this.etag,
+    required this.storedAt,
+    this.bodyString,
+  });
+}
+
 // Top-level functions for compute-based JSON parsing to offload work from main thread
 PropertyModel _parsePropertyModelCompute(String jsonString) {
   final jsonMap = Map<String, dynamic>.from(json.decode(jsonString));
@@ -168,6 +183,9 @@ class ApiService extends getx.GetConnect {
   late final SupabaseClient _supabase;
   // Track in-flight profile fetch to avoid duplicate concurrent calls
   Future<UserModel>? _getCurrentUserInFlight;
+  // Lightweight HTTP cache keyed by full URL (including query) with ETag support
+  final Map<String, _CacheEntry> _httpCache = {};
+
   // Removed token cache - trust Supabase session management
 
   @override
@@ -180,7 +198,7 @@ class ApiService extends getx.GetConnect {
     httpClient.timeout = Duration(seconds: timeoutSeconds);
     DebugLogger.startup('HTTP client timeout set to ${httpClient.timeout.inSeconds}s');
 
-    // Request modifier to add authentication token
+    // Request modifier to add authentication token and ETag cache headers
     httpClient.addRequestModifier<Object?>((request) async {
       final token = await _authToken;
       if (token != null && token.trim().isNotEmpty) {
@@ -191,6 +209,22 @@ class ApiService extends getx.GetConnect {
         DebugLogger.auth('➡️ No Authorization header for ${request.url}');
       }
       request.headers['Content-Type'] = 'application/json';
+
+      // Add If-None-Match for GET requests when we have an ETag cached
+      try {
+        if ((request.method ?? '').toUpperCase() == 'GET') {
+          final key = request.url.toString();
+          final entry = _httpCache[key];
+          final etag = entry?.etag;
+          if (etag != null && etag.isNotEmpty) {
+            request.headers['If-None-Match'] = etag;
+            DebugLogger.api('🪪 Using ETag for cache key $key');
+          }
+        }
+      } catch (_) {
+        // ignore
+      }
+
       return request;
     });
 
@@ -323,6 +357,8 @@ class ApiService extends getx.GetConnect {
       try {
         // Prepend /api/v1 to all endpoints
         final fullEndpoint = '/api/v1$endpoint';
+        // Compose absolute URL key including query for caching
+        final urlKey = _composeUrl(fullEndpoint, queryParams);
 
         // Single-line API request log for debugging
         DebugLogger.api(
@@ -361,12 +397,45 @@ class ApiService extends getx.GetConnect {
           body: response.bodyString ?? '',
         );
 
+        // Handle HTTP cache 304 Not Modified using ETag
+        if (response.statusCode == 304) {
+          final cacheEntry = _httpCache[urlKey];
+          if (cacheEntry != null) {
+            DebugLogger.api('♻️ Cache hit for $urlKey (ETag=${cacheEntry.etag})');
+            return fromJson(cacheEntry.json);
+          }
+          // If 304 without cache, treat as error
+          DebugLogger.warning('304 received but no cache entry for $urlKey');
+          throw NetworkException('Not Modified but no cache for $operation');
+        }
+
         if (response.statusCode != null &&
             response.statusCode! >= 200 &&
             response.statusCode! < 300) {
           final responseData = response.body;
           DebugLogger.api('📊 [_makeRequest] Raw response data type: ${responseData?.runtimeType}');
           DebugLogger.api('📊 [_makeRequest] Raw response data: $responseData');
+
+          // Store in cache for GET responses (with ETag if available)
+          try {
+            final etag = response.headers?['etag'] ?? response.headers?['ETag'];
+            Map<String, dynamic> jsonForCache;
+            if (responseData is Map<String, dynamic>) {
+              jsonForCache = Map<String, dynamic>.from(responseData);
+            } else if (responseData is List) {
+              jsonForCache = {'data': responseData};
+            } else {
+              jsonForCache = {'data': responseData};
+            }
+            _httpCache[urlKey] = _CacheEntry(
+              json: jsonForCache,
+              etag: etag,
+              storedAt: DateTime.now(),
+              bodyString: response.bodyString,
+            );
+          } catch (_) {
+            // ignore cache store errors
+          }
 
           try {
             if (responseData is Map<String, dynamic>) {
@@ -510,6 +579,13 @@ class ApiService extends getx.GetConnect {
     final delay = base + jitter;
     // Cap delay to reasonable upper bound
     return delay > 4000 ? 4000 : delay;
+  }
+
+  // Compose absolute URL with query to use as cache key
+  String _composeUrl(String path, Map<String, String>? queryParams) {
+    final base = httpClient.baseUrl ?? _baseUrl;
+    final uri = Uri.parse(base + path).replace(queryParameters: queryParams);
+    return uri.toString();
   }
 
   // Fetch static page content from core pages endpoint (no auth required)

@@ -9,6 +9,7 @@ import '../controllers/location_controller.dart';
 import '../controllers/localization_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../utils/debug_logger.dart';
+import '../utils/offline_queue_service.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -35,6 +36,13 @@ class InitialBinding extends Bindings {
 
     // Register Core Controllers in proper order
     _initializeCoreControllers();
+
+    // Initialize Offline Queue Service (persistent, background retry)
+    if (!Get.isRegistered<OfflineQueueService>()) {
+      final service = Get.put<OfflineQueueService>(OfflineQueueService(), permanent: true);
+      service.start();
+      DebugLogger.success('✅ OfflineQueueService started');
+    }
 
     // Note: Repositories and feature controllers will be initialized
     // in route-specific bindings to prevent unauthorized API calls

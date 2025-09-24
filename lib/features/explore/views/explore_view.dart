@@ -126,7 +126,7 @@ class ExploreView extends GetView<ExploreController> {
             return LoadingStates.progressiveLoadingIndicator(
               current: controller.loadingProgress.value,
               total: controller.totalPages.value,
-              message: 'Loading properties for map...',
+              message: 'loading'.tr,
             );
           }
           return LoadingStates.mapLoadingOverlay(context);
@@ -244,10 +244,14 @@ class ExploreView extends GetView<ExploreController> {
                                   isSelected: marker.isSelected,
                                   label: marker.label,
                                   onTap: () {
-                                    DebugLogger.info(
-                                      'Property marker tapped: ${marker.property.title}',
-                                    );
-                                    controller.selectProperty(marker.property);
+                                    if (marker.isCluster) {
+                                      controller.onClusterTap(marker);
+                                    } else {
+                                      DebugLogger.info(
+                                        'Property marker tapped: ${marker.property.title}',
+                                      );
+                                      controller.selectProperty(marker.property);
+                                    }
                                   },
                                 ),
                               ),

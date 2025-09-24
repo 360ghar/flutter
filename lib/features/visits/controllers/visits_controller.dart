@@ -7,6 +7,7 @@ import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/visit_model.dart';
 import '../../../core/data/providers/api_service.dart';
 import '../../../core/utils/debug_logger.dart'; // Added missing import
+import '../../../core/utils/offline_queue_service.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 
 class VisitsController extends GetxController {
@@ -315,6 +316,23 @@ class VisitsController extends GetxController {
       error.value = e.toString();
       DebugLogger.error('Error booking visit: $e');
 
+      // Queue offline action
+      try {
+        if (Get.isRegistered<OfflineQueueService>()) {
+          await OfflineQueueService.instance.enqueueVisitAction(
+            action: 'schedule',
+            payload: {
+              'property_id': property is PropertyModel ? int.tryParse(property.id.toString()) ?? 0 : property.id as int,
+              'scheduled_date': visitDateTime.toUtc().toIso8601String(),
+              'special_requirements': notes ?? 'Property visit scheduled through 360ghar app',
+            },
+          );
+          DebugLogger.warning('⚠️ Visit schedule queued for retry');
+        }
+      } catch (_) {
+        // ignore queue errors
+      }
+
       Get.snackbar(
         'Booking Failed',
         'Failed to schedule visit: ${e.toString()}',
@@ -395,6 +413,23 @@ class VisitsController extends GetxController {
       return true;
     } catch (e) {
       DebugLogger.error('Error cancelling visit: $e');
+
+      // Queue offline action
+      try {
+        if (Get.isRegistered<OfflineQueueService>()) {
+          await OfflineQueueService.instance.enqueueVisitAction(
+            action: 'cancel',
+            payload: {
+              'visit_id': visitIdInt,
+              'reason': reason,
+            },
+          );
+          DebugLogger.warning('⚠️ Visit cancel queued for retry');
+        }
+      } catch (_) {
+        // ignore queue errors
+      }
+
       Get.snackbar(
         'Cancellation Failed',
         'Failed to cancel visit: ${e.toString()}',
@@ -437,6 +472,24 @@ class VisitsController extends GetxController {
       return true;
     } catch (e) {
       DebugLogger.error('Error rescheduling visit: $e');
+
+      // Queue offline action
+      try {
+        if (Get.isRegistered<OfflineQueueService>()) {
+          await OfflineQueueService.instance.enqueueVisitAction(
+            action: 'reschedule',
+            payload: {
+              'visit_id': visitIdInt,
+              'new_date': newDateTime.toUtc().toIso8601String(),
+              'reason': reason,
+            },
+          );
+          DebugLogger.warning('⚠️ Visit reschedule queued for retry');
+        }
+      } catch (_) {
+        // ignore queue errors
+      }
+
       Get.snackbar(
         'Reschedule Failed',
         'Failed to reschedule visit: ${e.toString()}',

@@ -846,78 +846,149 @@ class ExploreController extends GetxController {
     return sanitized.length <= 6 ? sanitized : sanitized.substring(0, 6);
   }
 
-  // Get property markers for map with performance optimization
+  // Get property markers for map with performance optimization and clustering
   List<PropertyMarker> get propertyMarkers {
     try {
       final propsWithLocation = propertiesWithLocation;
-      DebugLogger.info('🗺️ Generating markers for ${propsWithLocation.length} properties');
 
       if (propsWithLocation.isEmpty) {
-        DebugLogger.info('⚠️ No properties with location found');
         return [];
       }
 
-      // Performance optimization: limit markers based on zoom level
+      // Memoization key based on zoom, center (rounded), selection and first N property IDs
       final zoom = currentZoom.value;
-      int maxMarkers;
+      final center = currentCenter.value;
+      final selectedId = selectedProperty.value?.id ?? -1;
+      final idSample = propsWithLocation.take(100).map((p) => p.id).join(',');
+      final cacheKey =
+          '${zoom.toStringAsFixed(2)}_${center.latitude.toStringAsFixed(3)}_${center.longitude.toStringAsFixed(3)}_${selectedId}_len=${propsWithLocation.length}_ids=$idSample';
 
+      if (_lastMarkerCacheKey == cacheKey && _cachedMarkers.isNotEmpty) {
+        return _cachedMarkers;
+      }
+
+      // Determine grid size for clustering based on zoom
+      double cellSizeDeg;
       if (zoom >= 15) {
-        maxMarkers = 200; // Very close zoom - show more markers
+        cellSizeDeg = 0.0025; // close zoom - fine grid
       } else if (zoom >= 13) {
-        maxMarkers = 100; // Medium zoom - moderate markers
+        cellSizeDeg = 0.005; // medium zoom
       } else if (zoom >= 11) {
-        maxMarkers = 50; // Far zoom - fewer markers
+        cellSizeDeg = 0.01; // far zoom
       } else {
-        maxMarkers = 25; // Very far zoom - minimal markers
+        cellSizeDeg = 0.02; // very far zoom
       }
 
-      // Take a subset of properties if too many
-      final propertiesSubset = propsWithLocation.length > maxMarkers
-          ? propsWithLocation.take(maxMarkers).toList()
-          : propsWithLocation;
-
-      if (propsWithLocation.length > maxMarkers) {
-        DebugLogger.info(
-          '🎯 Performance optimization: showing ${propertiesSubset.length}/${propsWithLocation.length} markers at zoom ${zoom.toStringAsFixed(1)}',
-        );
+      // Group properties into grid buckets
+      final Map<String, List<PropertyModel>> buckets = {};
+      for (final property in propsWithLocation) {
+        final lat = property.latitude!;
+        final lng = property.longitude!;
+        final latIndex = (lat / cellSizeDeg).floor();
+        final lngIndex = (lng / cellSizeDeg).floor();
+        final key = '$latIndex_$lngIndex';
+        (buckets[key] ??= []).add(property);
       }
 
-      final markers = <PropertyMarker>[];
-
-      for (final property in propertiesSubset) {
-        try {
-          // Additional null safety checks
-          final lat = property.latitude;
-          final lng = property.longitude;
-
-          if (lat == null || lng == null) {
-            DebugLogger.warning(
-              '⚠️ Property ${property.id} has null coordinates: lat=$lat, lng=$lng',
-            );
-            continue;
-          }
-
+      // Build markers from buckets
+      final List<PropertyMarker> markers = [];
+      for (final entry in buckets.entries) {
+        final group = entry.value;
+        if (group.length == 1) {
+          final p = group.first;
+          final lat = p.latitude!;
+          final lng = p.longitude!;
           markers.add(
             PropertyMarker(
-              property: property,
+              property: p,
               position: LatLng(lat, lng),
-              isSelected: selectedProperty.value?.id == property.id,
-              label: _deriveMarkerLabel(property),
+              isSelected: selectedProperty.value?.id == p.id,
+              label: _deriveMarkerLabel(p),
+              isCluster: false,
             ),
           );
-        } catch (e) {
-          DebugLogger.error('❌ Error creating marker for property ${property.id}: $e');
-          continue;
+        } else {
+          // Create a cluster marker at centroid
+          double sumLat = 0;
+          double sumLng = 0;
+          for (final p in group) {
+            sumLat += p.latitude!;
+            sumLng += p.longitude!;
+          }
+          final centroid = LatLng(sumLat / group.length, sumLng / group.length);
+          markers.add(
+            PropertyMarker(
+              property: group.first, // representative
+              position: centroid,
+              isSelected: false,
+              label: group.length.toString(),
+              isCluster: true,
+              members: group,
+            ),
+          );
         }
       }
 
-      DebugLogger.info(
-        '🗺️ Generated ${markers.length} property markers from ${propertiesSubset.length} properties with location',
-      );
-      return markers;
+      // Cap total render count at higher zooms to avoid overdraw (clusters already reduce at low zoom)
+      int cap;
+      if (zoom >= 15) {
+        cap = 500;
+      } else if (zoom >= 13) {
+        cap = 300;
+      } else if (zoom >= 11) {
+        cap = 200;
+      } else {
+        cap = 150;
+      }
+      final cappedMarkers = markers.length > cap ? markers.take(cap).toList() : markers;
+
+      // Memoize
+      _cachedMarkers = cappedMarkers;
+      _lastMarkerCacheKey = cacheKey;
+
+      return cappedMarkers;
     } catch (e) {
       DebugLogger.error('❌ Error generating property markers: $e');
       return [];
+    }
+  }
+
+  /// Handle tapping a cluster marker: zoom in or fit bounds to cluster members
+  void onClusterTap(PropertyMarker cluster) {
+    if (!isMapReady.value) return;
+    final members = cluster.members ?? const <PropertyModel>[];
+    if (members.isEmpty) {
+      // Zoom in towards the cluster center
+      final newZoom = (currentZoom.value + 2).clamp(3.0, 18.0);
+      _updateMapCenter(cluster.position, newZoom);
+      return;
+    }
+
+    try {
+      final lats = members.map((p) => p.latitude!).toList();
+      final lngs = members.map((p) => p.longitude!).toList();
+      final minLat = lats.reduce((a, b) => a < b ? a : b);
+      final maxLat = lats.reduce((a, b) => a > b ? a : b);
+      final minLng = lngs.reduce((a, b) => a < b ? a : b);
+      final maxLng = lngs.reduce((a, b) => a > b ? a : b);
+      final bounds = LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng));
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          mapController.fitCamera(
+            CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
+          );
+        } catch (e) {
+          DebugLogger.warning('⚠️ fitCamera on cluster failed: $e');
+          // Fallback: zoom in to centroid
+          final newZoom = (currentZoom.value + 2).clamp(3.0, 18.0);
+          _updateMapCenter(cluster.position, newZoom);
+        }
+      });
+    } catch (e) {
+      // Fallback: zoom in towards the cluster center
+      final newZoom = (currentZoom.value + 2).clamp(3.0, 18.0);
+      _updateMapCenter(cluster.position, newZoom);
     }
   }
 
@@ -931,17 +1002,21 @@ class ExploreController extends GetxController {
   bool get isLoadingMore => state.value == ExploreState.loadingMore;
 }
 
-// Helper class for property markers
+// Helper class for property markers (supports clusters)
 class PropertyMarker {
   final PropertyModel property;
   final LatLng position;
   final bool isSelected;
   final String label;
+  final bool isCluster;
+  final List<PropertyModel>? members;
 
   PropertyMarker({
     required this.property,
     required this.position,
     required this.isSelected,
     required this.label,
+    this.isCluster = false,
+    this.members,
   });
 }
