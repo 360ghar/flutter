@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/firebase/analytics_service.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'
@@ -600,6 +601,20 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       colorText: AppColors.surface,
       duration: const Duration(seconds: 2),
     );
+
+    // Minimal analytics for filters apply (sanitized snapshot)
+    AnalyticsService.applyFilter({
+      'purpose': updatedFilters.purpose ?? '',
+      'price_min': updatedFilters.priceMin ?? 0,
+      'price_max': updatedFilters.priceMax ?? 0,
+      'bedrooms_min': updatedFilters.bedroomsMin ?? 0,
+      'bedrooms_max': updatedFilters.bedroomsMax ?? 0,
+      'property_type': (updatedFilters.propertyType?.isNotEmpty ?? false)
+          ? updatedFilters.propertyType!.first
+          : 'All',
+      'amenities_count': (updatedFilters.amenities?.length ?? 0),
+      'page': currentPageType.toString(),
+    });
   }
 
   String _displayPropertyType(String type) {

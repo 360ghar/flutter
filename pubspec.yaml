@@ -39,6 +39,17 @@ dependencies:
   url_launcher: ^6.3.0
   flutter_markdown: ^0.7.3
   package_info_plus: ^8.3.1
+  # Firebase Core + services (minimal, opt-in collection)
+  firebase_core:
+  firebase_crashlytics:
+  firebase_analytics:
+  firebase_messaging:
+  firebase_performance:
+  firebase_remote_config:
+  firebase_in_app_messaging:
+  firebase_dynamic_links:
+  # Local notifications for foreground FCM and app UX
+  flutter_local_notifications:
 
 dev_dependencies:
   flutter_test:

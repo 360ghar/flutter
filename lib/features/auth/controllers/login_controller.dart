@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/auth_repository.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/debug_logger.dart';
+import '../../../core/firebase/analytics_service.dart';
 
 class LoginController extends GetxController {
   final AuthRepository _authRepository = Get.find();
@@ -50,6 +51,7 @@ class LoginController extends GetxController {
 
       // Success! The AuthController listener will handle navigation
       DebugLogger.success('Sign in successful for $phone');
+      AnalyticsService.login(method: 'phone_password');
     } on AuthException catch (e) {
       // Handle authentication errors
       if (e.message.toLowerCase().contains('invalid login credentials')) {

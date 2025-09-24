@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../core/utils/error_handler.dart';
 import '../data/auth_repository.dart';
+import '../../../core/firebase/analytics_service.dart';
 
 class SignUpController extends GetxController {
   final AuthRepository _authRepository = Get.find();
@@ -65,6 +66,7 @@ class SignUpController extends GetxController {
       Get.snackbar('verify_phone'.tr, 'otp_sent_message'.tr, snackPosition: SnackPosition.TOP);
 
       DebugLogger.success('Sign up initiated for $phone');
+      AnalyticsService.signUp(method: 'phone_password');
     } on AuthException catch (e) {
       errorMessage.value = e.message;
       ErrorHandler.handleAuthError(e);

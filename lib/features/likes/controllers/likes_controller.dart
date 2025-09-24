@@ -8,6 +8,7 @@ import '../../../core/data/models/property_model.dart';
 import '../../../core/data/repositories/swipes_repository.dart';
 import '../../../core/utils/app_exceptions.dart';
 import '../../../core/utils/debug_logger.dart';
+import '../../../core/firebase/analytics_service.dart';
 
 enum LikesSegment { liked, passed }
 
@@ -163,6 +164,7 @@ class LikesController extends GetxController {
       // Refresh the liked properties to reflect the change
       await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       DebugLogger.success('✅ Property $propertyId added to favorites');
+      AnalyticsService.likeProperty(propertyId.toString());
     } catch (e) {
       DebugLogger.error('❌ Failed to add property $propertyId to favorites: $e');
     }
@@ -178,6 +180,7 @@ class LikesController extends GetxController {
       // Refresh the liked properties to reflect the change
       await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       DebugLogger.success('✅ Property $propertyId removed from favorites');
+      // Optional: log an unlike event; keeping minimal, we do not log unlike
     } catch (e) {
       DebugLogger.error('❌ Failed to remove property $propertyId from favorites: $e');
     }

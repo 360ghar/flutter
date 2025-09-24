@@ -11,6 +11,7 @@ import '../../../core/data/models/visit_model.dart';
 import '../../../core/utils/app_colors.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:ghar360/core/widgets/property/property_details_features.dart';
+import 'package:ghar360/core/firebase/analytics_service.dart';
 
 class PropertyDetailsView extends StatelessWidget {
   const PropertyDetailsView({super.key});
@@ -65,6 +66,8 @@ class PropertyDetailsView extends StatelessWidget {
       if (!visitsController.hasLoadedVisits.value && !visitsController.isLoading.value) {
         visitsController.loadVisitsLazy();
       }
+      // Minimal analytics: mark property viewed once per session
+      AnalyticsService.viewPropertyOnce(safeProperty.id.toString());
     });
 
     return Scaffold(

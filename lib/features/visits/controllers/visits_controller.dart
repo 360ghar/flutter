@@ -6,6 +6,7 @@ import '../../../core/data/models/agent_model.dart';
 import '../../../core/data/providers/api_service.dart';
 import '../../../core/controllers/auth_controller.dart';
 import '../../../core/utils/debug_logger.dart'; // Added missing import
+import '../../../core/firebase/analytics_service.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 
 class VisitsController extends GetxController {
@@ -292,6 +293,7 @@ class VisitsController extends GetxController {
       );
 
       DebugLogger.success('✅ Visit scheduled successfully: ${visitModel.id}');
+      AnalyticsService.scheduleVisit(propertyId.toString());
 
       // The API returns the complete visit model, no need to reconstruct
       // Just reload visits to get the updated list

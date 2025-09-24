@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'core/firebase/firebase_initializer.dart';
+import 'core/firebase/push_notifications_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -64,6 +67,18 @@ void main() async {
         DebugLogger.info('Continuing without Supabase');
       }
 
+      // Initialize Firebase (minimal, privacy-first) and services
+      try {
+        await FirebaseInitializer.init();
+        await PushNotificationsService.initializeForegroundHandling();
+        // Prompt for notifications at app start (as approved)
+        await PushNotificationsService.requestUserPermission(provisional: false);
+        await PushNotificationsService.getToken();
+      } catch (e, st) {
+        DebugLogger.warning('Failed to initialize Firebase', e);
+        DebugLogger.debug('Firebase init stack', st);
+      }
+
       // Set up global error handlers
       FlutterError.onError = (FlutterErrorDetails details) {
         DebugLogger.error('🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}');
@@ -71,6 +86,11 @@ void main() async {
 
         // One-time first null-check trap capture
         NullCheckTrap.captureFlutterError(details);
+
+        // Report to Crashlytics if available
+        try {
+          FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+        } catch (_) {}
 
         // Still show the error in debug mode
         FlutterError.presentError(details);
@@ -84,6 +104,11 @@ void main() async {
         NullCheckTrap.capture(error, stack, source: 'zone');
       }
       DebugLogger.error('🚨 [GLOBAL_ERROR] Unhandled zone error', error, stack);
+
+      // Report to Crashlytics if available
+      try {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      } catch (_) {}
     },
   );
 }
