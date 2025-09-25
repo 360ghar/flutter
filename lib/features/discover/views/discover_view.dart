@@ -25,20 +25,8 @@ class DiscoverView extends GetView<DiscoverController> {
         onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'discover'),
       ),
       body: Obx(() {
-        // Debug snapshot of controller and page state for diagnosing stuck loaders
-        // ignore: unused_local_variable
-        final debug = () {
-          try {
-            final ps = pageStateService.discoverState.value;
-            // Lightweight log; avoid spamming every frame
-            if (controller.state.value == DiscoverState.loading &&
-                (DateTime.now().millisecond % 7 == 0)) {
-              DebugLogger.info(
-                '🧭 DiscoverView: state=${controller.state.value}, deck=${controller.deck.length}, ps.loading=${ps.isLoading}, ps.refreshing=${ps.isRefreshing}, ps.props=${ps.properties.length}',
-              );
-            }
-          } catch (_) {}
-        }();
+        // Avoid per-frame logging inside reactive builder
+        // Use DevTools or controller-level logs for diagnostics instead.
         final isRefreshing = pageStateService.discoverState.value.isRefreshing;
 
         return Column(

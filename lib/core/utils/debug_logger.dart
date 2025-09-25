@@ -22,6 +22,15 @@ class DebugLogger {
     }
   }
 
+  // New: verbose mode toggle for development (defaults to false)
+  static bool get isVerbose {
+    try {
+      return dotenv.env['DEBUG_VERBOSE'] == 'true';
+    } catch (e) {
+      return false;
+    }
+  }
+
   static bool get shouldLogAPICalls {
     try {
       return dotenv.env['LOG_API_CALLS'] == 'true';
@@ -372,12 +381,18 @@ class _LoggerFilter extends LogFilter {
       return event.level.value >= Level.warning.value;
     }
 
-    // In debug mode, show based on DEBUG_MODE setting
+    // In development:
+    // If not in debug mode, behave like release (warnings and errors only)
     if (!DebugLogger.isDebugMode) {
-      return event.level.value >= Level.info.value;
+      return event.level.value >= Level.warning.value;
     }
 
-    // In verbose debug mode, show everything
-    return true;
+    // If verbose debug is enabled, show everything
+    if (DebugLogger.isVerbose) {
+      return true;
+    }
+
+    // Default dev mode: limit to warnings/errors to avoid log storms
+    return event.level.value >= Level.warning.value;
   }
 }

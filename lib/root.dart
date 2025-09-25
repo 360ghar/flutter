@@ -15,7 +15,8 @@ class Root extends StatelessWidget {
     final authController = Get.find<AuthController>();
     return Obx(() {
       final currentStatus = authController.authStatus.value;
-      DebugLogger.info('🏠 Root widget rebuilding with authStatus: $currentStatus');
+      // Avoid noisy logs during frequent root rebuilds
+      // DebugLogger.info('🏠 Root widget rebuilding with authStatus: $currentStatus');
 
       switch (currentStatus) {
         case AuthStatus.initial:
@@ -24,11 +25,11 @@ class Root extends StatelessWidget {
         case AuthStatus.authenticated:
           // For all normal states, show a loading indicator while navigation worker handles routing
           // Navigation is now handled by the AuthController navigation worker, not in build method
-          DebugLogger.debug('📱 Root: Showing loading state for $currentStatus');
+          // DebugLogger.debug('📱 Root: Showing loading state for $currentStatus');
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
         case AuthStatus.error:
-          DebugLogger.debug('📱 Root: Showing error state');
+          // DebugLogger.debug('📱 Root: Showing error state');
           // User authentication error - show retry/logout options
           return ErrorStates.profileLoadError(
             onRetry: () => authController.retryProfileLoad(),
