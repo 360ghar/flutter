@@ -32,6 +32,7 @@ class AuthController extends GetxController {
   StreamSubscription<User?>? _authSubscription;
   Timer? _debounceTimer;
   User? _lastProcessedUser;
+  Worker? _authStatusWorker;
 
   @override
   void onInit() {
@@ -61,7 +62,7 @@ class AuthController extends GetxController {
 
   /// Sets up the navigation worker to handle route changes based on auth status changes
   void _setupNavigationWorker() {
-    ever(authStatus, _handleAuthNavigation);
+    _authStatusWorker = ever(authStatus, _handleAuthNavigation);
     DebugLogger.info('🧭 Navigation worker set up to listen for auth status changes');
   }
 
@@ -329,6 +330,7 @@ class AuthController extends GetxController {
   void onClose() {
     _authSubscription?.cancel();
     _debounceTimer?.cancel();
+    _authStatusWorker?.dispose();
     super.onClose();
   }
 
