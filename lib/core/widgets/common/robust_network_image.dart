@@ -173,13 +173,14 @@ class RobustNetworkImage extends StatelessWidget {
   Uint8List _sanitizeSvgBytes(Uint8List bytes) {
     try {
       final svgString = utf8.decode(bytes, allowMalformed: true);
-      final cleaned = svgString
-          .replaceAll(
-            RegExp(r'<metadata[^>]*>.*?</metadata>', dotAll: true, caseSensitive: false),
-            '',
-          )
-          .replaceAll(RegExp(r'<metadata[^>]*/?>', caseSensitive: false), '')
-          .trim();
+      final cleaned =
+          svgString
+              .replaceAll(
+                RegExp(r'<metadata[^>]*>.*?</metadata>', dotAll: true, caseSensitive: false),
+                '',
+              )
+              .replaceAll(RegExp(r'<metadata[^>]*/?>', caseSensitive: false), '')
+              .trim();
 
       if (cleaned == svgString) {
         return bytes;

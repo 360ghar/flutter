@@ -32,9 +32,10 @@ PropertyAmenityModel _$PropertyAmenityModelFromJson(Map<String, dynamic> json) =
       propertyId: (json['property_id'] as num).toInt(),
       amenityId: (json['amenity_id'] as num).toInt(),
       createdAt: DateTime.parse(json['created_at'] as String),
-      amenity: json['amenity'] == null
-          ? null
-          : AmenityModel.fromJson(json['amenity'] as Map<String, dynamic>),
+      amenity:
+          json['amenity'] == null
+              ? null
+              : AmenityModel.fromJson(json['amenity'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$PropertyAmenityModelToJson(PropertyAmenityModel instance) =>

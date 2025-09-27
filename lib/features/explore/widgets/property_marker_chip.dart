@@ -22,9 +22,8 @@ class PropertyMarkerChip extends StatelessWidget {
     final theme = Theme.of(context);
     final textColor = theme.colorScheme.onPrimary;
     final backgroundColor = isSelected ? AppColors.primaryYellow : AppColors.accentBlue;
-    final semanticLabel = property.title.isNotEmpty
-        ? 'Property marker for ${property.title}'
-        : 'Property marker';
+    final semanticLabel =
+        property.title.isNotEmpty ? 'Property marker for ${property.title}' : 'Property marker';
 
     return Semantics(
       label: semanticLabel,

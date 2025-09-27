@@ -71,9 +71,10 @@ mixin ThemeMixin {
           if (icon != null) ...[
             Icon(
               icon,
-              color: enabled
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              color:
+                  enabled
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.5),
               size: 24,
             ),
             const SizedBox(width: 16),
@@ -87,9 +88,10 @@ mixin ThemeMixin {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: enabled
-                        ? theme.colorScheme.onSurface
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    color:
+                        enabled
+                            ? theme.colorScheme.onSurface
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -150,9 +152,8 @@ mixin ThemeMixin {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
-                        color: isDestructive
-                            ? theme.colorScheme.error
-                            : theme.colorScheme.onSurface,
+                        color:
+                            isDestructive ? theme.colorScheme.error : theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),

@@ -103,33 +103,35 @@ class ProfileCompletionView extends StatelessWidget {
         Expanded(
           flex: 2,
           child: ElevatedButton(
-            onPressed: controller.isLoading.value
-                ? null
-                : (controller.currentStep.value < 1
-                      ? controller.nextStep
-                      : controller.completeProfile),
+            onPressed:
+                controller.isLoading.value
+                    ? null
+                    : (controller.currentStep.value < 1
+                        ? controller.nextStep
+                        : controller.completeProfile),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: AppColors.primaryYellow,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: controller.isLoading.value
-                ? SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      strokeWidth: 2,
+            child:
+                controller.isLoading.value
+                    ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        strokeWidth: 2,
+                      ),
+                    )
+                    : Text(
+                      controller.currentStep.value < 1 ? 'next'.tr : 'complete'.tr,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
-                  )
-                : Text(
-                    controller.currentStep.value < 1 ? 'next'.tr : 'complete'.tr,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
           ),
         ),
       ],
@@ -204,14 +206,14 @@ class ProfileCompletionView extends StatelessWidget {
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             height: 110,
             decoration: BoxDecoration(
-              color: isSelected
-                  ? selectedBg
-                  : (isDark ? AppTheme.darkCard : AppTheme.backgroundWhite),
+              color:
+                  isSelected ? selectedBg : (isDark ? AppTheme.darkCard : AppTheme.backgroundWhite),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected
-                    ? AppTheme.primaryYellowDark
-                    : (isDark ? AppTheme.darkBorder : AppTheme.cardShadow),
+                color:
+                    isSelected
+                        ? AppTheme.primaryYellowDark
+                        : (isDark ? AppTheme.darkBorder : AppTheme.cardShadow),
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: [

@@ -54,26 +54,27 @@ class VisitsView extends GetView<VisitsController> {
                             Text('scheduled_visits'.tr),
                             const SizedBox(width: 8),
                             Obx(
-                              () => controller.upcomingVisits.isNotEmpty
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primaryYellow,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        '${controller.upcomingVisits.length}',
-                                        style: TextStyle(
-                                          color: AppColors.buttonText,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
+                              () =>
+                                  controller.upcomingVisits.isNotEmpty
+                                      ? Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
                                         ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryYellow,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          '${controller.upcomingVisits.length}',
+                                          style: TextStyle(
+                                            color: AppColors.buttonText,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      )
+                                      : const SizedBox.shrink(),
                             ),
                           ],
                         ),
@@ -85,26 +86,27 @@ class VisitsView extends GetView<VisitsController> {
                             Text('past_visits'.tr),
                             const SizedBox(width: 8),
                             Obx(
-                              () => controller.pastVisits.isNotEmpty
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.inputBackground,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        '${controller.pastVisits.length}',
-                                        style: TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
+                              () =>
+                                  controller.pastVisits.isNotEmpty
+                                      ? Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
                                         ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.inputBackground,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          '${controller.pastVisits.length}',
+                                          style: TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      )
+                                      : const SizedBox.shrink(),
                             ),
                           ],
                         ),
@@ -115,13 +117,14 @@ class VisitsView extends GetView<VisitsController> {
 
                 // Subtle background refresh indicator (like other pages)
                 Obx(
-                  () => controller.isBackgroundRefreshing.value
-                      ? LinearProgressIndicator(
-                          minHeight: 2,
-                          backgroundColor: Colors.transparent,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
-                        )
-                      : const SizedBox.shrink(),
+                  () =>
+                      controller.isBackgroundRefreshing.value
+                          ? LinearProgressIndicator(
+                            minHeight: 2,
+                            backgroundColor: Colors.transparent,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                          )
+                          : const SizedBox.shrink(),
                 ),
 
                 // Relationship Manager Section - Always visible
@@ -210,23 +213,24 @@ class VisitsView extends GetView<VisitsController> {
               }
 
               return Column(
-                children: controller.upcomingVisits
-                    .map(
-                      (visit) => VisitCard(
-                        visit: visit,
-                        isUpcoming: true,
-                        dateText: controller.formatVisitDate(visit.scheduledDate),
-                        timeText: controller.formatVisitTime(visit.scheduledDate),
-                        onTap: () {
-                          if (visit.property != null) {
-                            Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
-                          }
-                        },
-                        onReschedule: () => _showRescheduleDialog(visit),
-                        onCancel: () => _showCancelDialog(visit),
-                      ),
-                    )
-                    .toList(),
+                children:
+                    controller.upcomingVisits
+                        .map(
+                          (visit) => VisitCard(
+                            visit: visit,
+                            isUpcoming: true,
+                            dateText: controller.formatVisitDate(visit.scheduledDate),
+                            timeText: controller.formatVisitTime(visit.scheduledDate),
+                            onTap: () {
+                              if (visit.property != null) {
+                                Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
+                              }
+                            },
+                            onReschedule: () => _showRescheduleDialog(visit),
+                            onCancel: () => _showCancelDialog(visit),
+                          ),
+                        )
+                        .toList(),
               );
             }),
           ],
@@ -256,23 +260,24 @@ class VisitsView extends GetView<VisitsController> {
               }
 
               return Column(
-                children: controller.pastVisits
-                    .map(
-                      (visit) => VisitCard(
-                        visit: visit,
-                        isUpcoming: false,
-                        dateText: controller.formatVisitDate(visit.scheduledDate),
-                        timeText: controller.formatVisitTime(visit.scheduledDate),
-                        onTap: () {
-                          if (visit.property != null) {
-                            Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
-                          }
-                        },
-                        onReschedule: () => _showRescheduleDialog(visit),
-                        onCancel: () => _showCancelDialog(visit),
-                      ),
-                    )
-                    .toList(),
+                children:
+                    controller.pastVisits
+                        .map(
+                          (visit) => VisitCard(
+                            visit: visit,
+                            isUpcoming: false,
+                            dateText: controller.formatVisitDate(visit.scheduledDate),
+                            timeText: controller.formatVisitTime(visit.scheduledDate),
+                            onTap: () {
+                              if (visit.property != null) {
+                                Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
+                              }
+                            },
+                            onReschedule: () => _showRescheduleDialog(visit),
+                            onCancel: () => _showCancelDialog(visit),
+                          ),
+                        )
+                        .toList(),
               );
             }),
           ],
@@ -439,13 +444,14 @@ class VisitsView extends GetView<VisitsController> {
             actions: [
               TextButton(onPressed: () => Get.back(), child: Text('no'.tr)),
               ElevatedButton(
-                onPressed: canSubmit
-                    ? () {
-                        final reason = reasonController.text.trim();
-                        controller.cancelVisit(visit.id.toString(), reason: reason);
-                        Get.back();
-                      }
-                    : null,
+                onPressed:
+                    canSubmit
+                        ? () {
+                          final reason = reasonController.text.trim();
+                          controller.cancelVisit(visit.id.toString(), reason: reason);
+                          Get.back();
+                        }
+                        : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.errorRed,
                   foregroundColor: Theme.of(context).colorScheme.onError,

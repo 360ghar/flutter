@@ -8,15 +8,17 @@ part of 'page_state_model.dart';
 
 PageStateModel _$PageStateModelFromJson(Map<String, dynamic> json) => PageStateModel(
   pageType: $enumDecode(_$PageTypeEnumMap, json['pageType']),
-  selectedLocation: json['selectedLocation'] == null
-      ? null
-      : LocationData.fromJson(json['selectedLocation'] as Map<String, dynamic>),
+  selectedLocation:
+      json['selectedLocation'] == null
+          ? null
+          : LocationData.fromJson(json['selectedLocation'] as Map<String, dynamic>),
   locationSource: json['locationSource'] as String?,
   filters: UnifiedFilterModel.fromJson(json['filters'] as Map<String, dynamic>),
   searchQuery: json['searchQuery'] as String?,
-  properties: (json['properties'] as List<dynamic>)
-      .map((e) => PropertyModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  properties:
+      (json['properties'] as List<dynamic>)
+          .map((e) => PropertyModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
   currentPage: (json['currentPage'] as num?)?.toInt() ?? 1,
   totalPages: (json['totalPages'] as num?)?.toInt() ?? 1,
   hasMore: json['hasMore'] as bool? ?? true,

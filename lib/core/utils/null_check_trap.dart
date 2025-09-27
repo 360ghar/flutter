@@ -22,9 +22,10 @@ class NullCheckTrap {
 
         DebugLogger.error('🚨 [NULL_CHECK_TRAP] Current page: ${svc.currentPageType.value}');
 
-        String locSummary(state) => state.selectedLocation == null
-            ? 'no-location'
-            : '(${state.selectedLocation!.latitude}, ${state.selectedLocation!.longitude})';
+        String locSummary(state) =>
+            state.selectedLocation == null
+                ? 'no-location'
+                : '(${state.selectedLocation!.latitude}, ${state.selectedLocation!.longitude})';
 
         DebugLogger.error(
           '🚨 [NULL_CHECK_TRAP] Explore => props:${explore.properties.length}, loading:${explore.isLoading}, error:${explore.error != null}, loc:${locSummary(explore)}',

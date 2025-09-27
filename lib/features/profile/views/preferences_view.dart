@@ -202,9 +202,10 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
         controller.changeLanguage(langCode, countryCode);
         Get.back();
       },
-      trailing: controller.getCurrentLanguage() == languageName
-          ? Icon(Icons.check, color: AppColors.primaryYellow)
-          : null,
+      trailing:
+          controller.getCurrentLanguage() == languageName
+              ? Icon(Icons.check, color: AppColors.primaryYellow)
+              : null,
     );
   }
 
@@ -285,9 +286,10 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
         controller.updateTheme(mode);
         Get.back();
       },
-      trailing: controller.currentThemeMode == mode
-          ? Icon(Icons.check, color: AppColors.primaryYellow)
-          : null,
+      trailing:
+          controller.currentThemeMode == mode
+              ? Icon(Icons.check, color: AppColors.primaryYellow)
+              : null,
     );
   }
 }

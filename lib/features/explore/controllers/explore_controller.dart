@@ -733,16 +733,18 @@ class ExploreController extends GetxController {
 
     try {
       // Safe extraction of coordinates - filter out any null values
-      final lats = propertiesWithLocation
-          .map((p) => p.latitude)
-          .where((lat) => lat != null)
-          .cast<double>()
-          .toList();
-      final lngs = propertiesWithLocation
-          .map((p) => p.longitude)
-          .where((lng) => lng != null)
-          .cast<double>()
-          .toList();
+      final lats =
+          propertiesWithLocation
+              .map((p) => p.latitude)
+              .where((lat) => lat != null)
+              .cast<double>()
+              .toList();
+      final lngs =
+          propertiesWithLocation
+              .map((p) => p.longitude)
+              .where((lng) => lng != null)
+              .cast<double>()
+              .toList();
 
       // Ensure we have valid coordinates before proceeding
       if (lats.isEmpty || lngs.isEmpty) {
@@ -815,9 +817,10 @@ class ExploreController extends GetxController {
   // Get properties for clustering (if implemented)
   List<PropertyModel> get propertiesWithLocation {
     try {
-      final result = properties
-          .where((p) => p.hasLocation && p.latitude != null && p.longitude != null)
-          .toList();
+      final result =
+          properties
+              .where((p) => p.hasLocation && p.latitude != null && p.longitude != null)
+              .toList();
       DebugLogger.info('🗺️ propertiesWithLocation: ${result.length}/${properties.length}');
       return result;
     } catch (e) {
@@ -872,9 +875,10 @@ class ExploreController extends GetxController {
       }
 
       // Take a subset of properties if too many
-      final propertiesSubset = propsWithLocation.length > maxMarkers
-          ? propsWithLocation.take(maxMarkers).toList()
-          : propsWithLocation;
+      final propertiesSubset =
+          propsWithLocation.length > maxMarkers
+              ? propsWithLocation.take(maxMarkers).toList()
+              : propsWithLocation;
 
       if (propsWithLocation.length > maxMarkers) {
         DebugLogger.info(

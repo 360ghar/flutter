@@ -138,13 +138,9 @@ class _PolicyPageViewState extends State<PolicyPageView> {
     if (_isLoading) {
       body = Center(child: CircularProgressIndicator(color: AppColors.loadingIndicator));
     } else if (_error != null) {
-      body = Center(
-        child: Text(_error!, style: TextStyle(color: AppColors.textSecondary)),
-      );
+      body = Center(child: Text(_error!, style: TextStyle(color: AppColors.textSecondary)));
     } else if (_markdownContent == null || _markdownContent!.isEmpty) {
-      body = Center(
-        child: Text('no_content'.tr, style: TextStyle(color: AppColors.textSecondary)),
-      );
+      body = Center(child: Text('no_content'.tr, style: TextStyle(color: AppColors.textSecondary)));
     } else {
       body = Markdown(
         data: _markdownContent!,

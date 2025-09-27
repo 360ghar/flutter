@@ -9,11 +9,35 @@ import '../../visits/controllers/visits_controller.dart';
 import '../../../core/data/models/property_model.dart';
 import '../../../core/data/models/visit_model.dart';
 import '../../../core/utils/app_colors.dart';
+import '../../../core/data/models/unified_filter_model.dart';
+import '../../../core/data/repositories/properties_repository.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:ghar360/core/widgets/property/property_details_features.dart';
 
 class PropertyDetailsView extends StatelessWidget {
   const PropertyDetailsView({super.key});
+
+  Widget _buildCircularIconButton({
+    required BuildContext context,
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? iconColor,
+  }) {
+    return Container(
+      margin: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.65),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: iconColor ?? Theme.of(context).colorScheme.onPrimary),
+        onPressed: onPressed,
+        splashRadius: 22,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,62 +100,44 @@ class PropertyDetailsView extends StatelessWidget {
             expandedHeight: 300,
             pinned: true,
             backgroundColor: AppColors.appBarBackground,
-            leading: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
-                onPressed: () => Get.back(),
-              ),
+            leading: _buildCircularIconButton(
+              context: context,
+              icon: Icons.arrow_back,
+              onPressed: () => Get.back(),
             ),
             actions: [
-              Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: Obx(
-                  () => IconButton(
-                    icon: Icon(
+              Obx(
+                () => _buildCircularIconButton(
+                  context: context,
+                  icon:
                       controller.isFavourite(safeProperty.id)
                           ? Icons.favorite
                           : Icons.favorite_border,
-                      color: controller.isFavourite(safeProperty.id)
+                  iconColor:
+                      controller.isFavourite(safeProperty.id)
                           ? AppColors.favoriteActive
                           : Theme.of(context).colorScheme.onPrimary,
-                    ),
-                    onPressed: () {
-                      if (controller.isFavourite(safeProperty.id)) {
-                        controller.removeFromFavourites(safeProperty.id);
-                      } else {
-                        controller.addToFavourites(safeProperty.id);
-                      }
-                    },
-                  ),
-                ),
-              ),
-              Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimary),
                   onPressed: () {
-                    Get.snackbar(
-                      'share_property'.tr,
-                      'Sharing ${safeProperty.title}',
-                      snackPosition: SnackPosition.TOP,
-                      backgroundColor: AppColors.snackbarBackground,
-                      colorText: AppColors.snackbarText,
-                    );
+                    if (controller.isFavourite(safeProperty.id)) {
+                      controller.removeFromFavourites(safeProperty.id);
+                    } else {
+                      controller.addToFavourites(safeProperty.id);
+                    }
                   },
                 ),
+              ),
+              _buildCircularIconButton(
+                context: context,
+                icon: Icons.share,
+                onPressed: () {
+                  Get.snackbar(
+                    'share_property'.tr,
+                    'Sharing ${safeProperty.title}',
+                    snackPosition: SnackPosition.TOP,
+                    backgroundColor: AppColors.snackbarBackground,
+                    colorText: AppColors.snackbarText,
+                  );
+                },
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -266,8 +272,137 @@ class PropertyDetailsView extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // Map + Get Directions (only if coordinates available)
+                    // Location & Map section
                     if (safeProperty.hasLocation) ...[
+                      Text(
+                        'Location & Map',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: AppColors.getCardShadow(),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: SizedBox(
+                                      height: 140,
+                                      child: FlutterMap(
+                                        options: MapOptions(
+                                          initialCenter: LatLng(
+                                            safeProperty.latitude!,
+                                            safeProperty.longitude!,
+                                          ),
+                                          initialZoom: 15,
+                                          interactionOptions: const InteractionOptions(
+                                            flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                                          ),
+                                        ),
+                                        children: [
+                                          TileLayer(
+                                            urlTemplate:
+                                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                            userAgentPackageName: 'com.ghar360.app',
+                                          ),
+                                          MarkerLayer(
+                                            markers: [
+                                              Marker(
+                                                point: LatLng(
+                                                  safeProperty.latitude!,
+                                                  safeProperty.longitude!,
+                                                ),
+                                                width: 40,
+                                                height: 40,
+                                                child: const Icon(
+                                                  Icons.location_on,
+                                                  size: 36,
+                                                  color: AppColors.primaryYellow,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  flex: 2,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.inputBackground,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: AppColors.border.withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(
+                                          Icons.location_on,
+                                          color: AppColors.iconColor,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            safeProperty.addressDisplay,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: AppColors.textSecondary,
+                                              height: 1.4,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 44,
+                              child: OutlinedButton.icon(
+                                onPressed:
+                                    () => _openGoogleMaps(
+                                      safeProperty.latitude!,
+                                      safeProperty.longitude!,
+                                      safeProperty.title,
+                                    ),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: AppColors.primaryYellow),
+                                  foregroundColor: AppColors.textPrimary,
+                                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                icon: const Icon(Icons.directions),
+                                label: Text('get_directions'.tr),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ] else if (safeProperty.addressDisplay.isNotEmpty) ...[
                       Text(
                         'Location',
                         style: TextStyle(
@@ -278,87 +413,27 @@ class PropertyDetailsView extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       Container(
-                        height: 220,
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: AppColors.getCardShadow(),
-                          border: Border.all(color: AppColors.border),
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child: FlutterMap(
-                          options: MapOptions(
-                            initialCenter: LatLng(safeProperty.latitude!, safeProperty.longitude!),
-                            initialZoom: 15,
-                            interactionOptions: const InteractionOptions(
-                              flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-                            ),
-                          ),
+                        child: Row(
                           children: [
-                            TileLayer(
-                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'com.ghar360.app',
-                            ),
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  point: LatLng(safeProperty.latitude!, safeProperty.longitude!),
-                                  width: 40,
-                                  height: 40,
-                                  child: const Icon(
-                                    Icons.location_on,
-                                    size: 36,
-                                    color: AppColors.primaryYellow,
-                                  ),
-                                ),
-                              ],
+                            Icon(Icons.location_on, color: AppColors.iconColor, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                safeProperty.addressDisplay,
+                                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _openGoogleMaps(
-                            safeProperty.latitude!,
-                            safeProperty.longitude!,
-                            safeProperty.title,
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppColors.primaryYellow),
-                            foregroundColor: AppColors.textPrimary,
-                          ),
-                          icon: const Icon(Icons.directions),
-                          label: Text('get_directions'.tr),
-                        ),
-                      ),
                       const SizedBox(height: 20),
                     ],
-
-                    // Address and Location
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: AppColors.getCardShadow(),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.location_on, color: AppColors.iconColor, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              safeProperty.addressDisplay,
-                              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
                     // Property Features
                     PropertyDetailsFeatures(property: safeProperty),
                     const SizedBox(height: 24),
@@ -486,6 +561,10 @@ class PropertyDetailsView extends StatelessWidget {
                       const SizedBox(height: 24),
                     ],
 
+                    // Recommended Properties
+                    RecommendedPropertiesSection(currentProperty: safeProperty),
+                    const SizedBox(height: 24),
+
                     const SizedBox(height: 100), // Space for bottom buttons
                   ],
                 ),
@@ -516,55 +595,56 @@ class PropertyDetailsView extends StatelessWidget {
           ),
           child: SizedBox(
             width: double.infinity,
-            child: (() {
-              // Prefer server-provided schedule info
-              final DateTime? scheduledDate =
-                  safeProperty.userNextVisitDate ?? scheduledVisit?.scheduledDate;
-              final bool alreadyScheduled =
-                  safeProperty.userHasScheduledVisit || scheduledDate != null;
+            child:
+                (() {
+                  // Prefer server-provided schedule info
+                  final DateTime? scheduledDate =
+                      safeProperty.userNextVisitDate ?? scheduledVisit?.scheduledDate;
+                  final bool alreadyScheduled =
+                      safeProperty.userHasScheduledVisit || scheduledDate != null;
 
-              return alreadyScheduled
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.inputBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle, color: AppColors.accentGreen),
-                          const SizedBox(width: 8),
-                          Text(
-                            scheduledDate != null
-                                ? 'Scheduled on ${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}'
-                                : 'Visit Scheduled',
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                  return alreadyScheduled
+                      ? Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.inputBackground,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle, color: AppColors.accentGreen),
+                            const SizedBox(width: 8),
+                            Text(
+                              scheduledDate != null
+                                  ? 'Scheduled on ${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}'
+                                  : 'Visit Scheduled',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ElevatedButton.icon(
-                      onPressed: () =>
-                          _showBookVisitDialog(context, safeProperty, visitsController),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryYellow,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      icon: const Icon(Icons.calendar_today),
-                      label: Text(
-                        'schedule_visit'.tr,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                    );
-            })(),
+                          ],
+                        ),
+                      )
+                      : ElevatedButton.icon(
+                        onPressed:
+                            () => _showBookVisitDialog(context, safeProperty, visitsController),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryYellow,
+                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.calendar_today),
+                        label: Text(
+                          'schedule_visit'.tr,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      );
+                })(),
           ),
         );
       }),
@@ -849,9 +929,8 @@ class PropertyDetailsView extends StatelessWidget {
                 defaultMinute,
               );
 
-              final notes = notesController.text.trim().isEmpty
-                  ? null
-                  : notesController.text.trim();
+              final notes =
+                  notesController.text.trim().isEmpty ? null : notesController.text.trim();
 
               visitsController.bookVisit(safeProperty, visitDateTime, notes: notes);
               Get.back();
@@ -963,6 +1042,230 @@ class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
   }
 }
 
+class RecommendedPropertiesSection extends StatefulWidget {
+  final PropertyModel currentProperty;
+
+  const RecommendedPropertiesSection({super.key, required this.currentProperty});
+
+  @override
+  State<RecommendedPropertiesSection> createState() => _RecommendedPropertiesSectionState();
+}
+
+class _RecommendedPropertiesSectionState extends State<RecommendedPropertiesSection> {
+  late final Future<List<PropertyModel>> _recommendedFuture;
+  late final PropertiesRepository _propertiesRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    _propertiesRepository = Get.find<PropertiesRepository>();
+    _recommendedFuture = _loadRecommendedProperties();
+  }
+
+  Future<List<PropertyModel>> _loadRecommendedProperties() async {
+    final property = widget.currentProperty;
+    try {
+      if (!property.hasLocation) {
+        return [];
+      }
+      const radiusKm = 12.0;
+
+      final filters = UnifiedFilterModel(
+        radiusKm: radiusKm,
+        purpose: property.purpose?.name,
+        propertyType: property.propertyType != null ? [property.propertyType!.name] : null,
+        bedroomsMin: property.bedrooms,
+        bathroomsMin: property.bathrooms,
+        features: property.features,
+      );
+
+      final response = await _propertiesRepository.getProperties(
+        filters: filters,
+        page: 1,
+        limit: 8,
+        latitude: property.latitude!,
+        longitude: property.longitude!,
+        radiusKm: radiusKm,
+      );
+
+      final List<PropertyModel> recommended = [];
+      for (final candidate in response.properties) {
+        if (candidate.id == property.id) continue;
+        recommended.add(candidate);
+        if (recommended.length >= 6) break;
+      }
+
+      return recommended;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recommended Properties',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 12),
+        FutureBuilder<List<PropertyModel>>(
+          future: _recommendedFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return _buildLoadingState();
+            }
+            final properties = snapshot.data ?? [];
+            if (properties.isEmpty) {
+              return _buildEmptyState();
+            }
+            return _buildRecommendedList(properties);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return SizedBox(
+      height: 220,
+      child: Center(child: CircularProgressIndicator(color: AppColors.primaryYellow)),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: AppColors.iconColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'No recommended properties found nearby right now.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecommendedList(List<PropertyModel> properties) {
+    return SizedBox(
+      height: 260,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: properties.length,
+        separatorBuilder: (context, _) => const SizedBox(width: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        itemBuilder: (context, index) {
+          return SizedBox(width: 240, child: _RecommendedPropertyCard(property: properties[index]));
+        },
+      ),
+    );
+  }
+}
+
+class _RecommendedPropertyCard extends StatelessWidget {
+  final PropertyModel property;
+
+  const _RecommendedPropertyCard({required this.property});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => Get.toNamed('/property-details', arguments: property),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: AppColors.getCardShadow(),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: RobustNetworkImage(
+                imageUrl: property.mainImage,
+                height: 140,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    property.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    property.addressDisplay,
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (property.bedroomBathroomText.isNotEmpty) ...[
+                        Icon(Icons.bed_outlined, size: 14, color: AppColors.iconColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          property.bedroomBathroomText,
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                      if (property.areaText.isNotEmpty) ...[
+                        const SizedBox(width: 12),
+                        Icon(Icons.square_foot, size: 14, color: AppColors.iconColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          property.areaText,
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    property.formattedPrice,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.propertyCardPrice,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _VirtualTourSection extends StatefulWidget {
   const _VirtualTourSection({required this.tourUrl, this.thumbnailUrl});
 
@@ -1045,58 +1348,59 @@ class _VirtualTourSectionState extends State<_VirtualTourSection> {
         const SizedBox(height: 12),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
-          child: _showEmbeddedTour
-              ? _TourContainer(
-                  key: const ValueKey('embeddedTour'),
-                  child: _Embedded360TourDetails(tourUrl: widget.tourUrl),
-                )
-              : _TourContainer(
-                  key: const ValueKey('tourPlaceholder'),
-                  child: GestureDetector(
-                    onTap: _handleLoadTour,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty)
-                          RobustNetworkImage(
-                            imageUrl: widget.thumbnailUrl!,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 800,
-                            memCacheHeight: 450,
-                          )
-                        else
-                          Container(color: AppColors.inputBackground),
-                        Container(color: Colors.black.withValues(alpha: 0.35)),
-                        Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.play_circle_fill,
-                                size: 64,
-                                color: AppColors.primaryYellow,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Tap to load virtual tour',
-                                style:
-                                    theme.textTheme.titleMedium?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ) ??
-                                    const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ],
+          child:
+              _showEmbeddedTour
+                  ? _TourContainer(
+                    key: const ValueKey('embeddedTour'),
+                    child: _Embedded360TourDetails(tourUrl: widget.tourUrl),
+                  )
+                  : _TourContainer(
+                    key: const ValueKey('tourPlaceholder'),
+                    child: GestureDetector(
+                      onTap: _handleLoadTour,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty)
+                            RobustNetworkImage(
+                              imageUrl: widget.thumbnailUrl!,
+                              fit: BoxFit.cover,
+                              memCacheWidth: 800,
+                              memCacheHeight: 450,
+                            )
+                          else
+                            Container(color: AppColors.inputBackground),
+                          Container(color: Colors.black.withValues(alpha: 0.35)),
+                          Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.play_circle_fill,
+                                  size: 64,
+                                  color: AppColors.primaryYellow,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Tap to load virtual tour',
+                                  style:
+                                      theme.textTheme.titleMedium?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ) ??
+                                      const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
         ),
       ],
     );
@@ -1148,40 +1452,40 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
       }
     ''';
 
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (String url) {
-            if (mounted) {
-              setState(() {
-                isLoading = true;
-              });
-            }
-            controller.runJavaScript(consoleSilencer);
-          },
-          onPageFinished: (String url) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-              });
-            }
-            controller.runJavaScript(consoleSilencer);
-          },
-          onWebResourceError: (WebResourceError error) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-              });
-            }
-          },
-        ),
-      );
+    controller =
+        WebViewController()
+          ..setJavaScriptMode(JavaScriptMode.unrestricted)
+          ..setBackgroundColor(const Color(0x00000000))
+          ..setNavigationDelegate(
+            NavigationDelegate(
+              onPageStarted: (String url) {
+                if (mounted) {
+                  setState(() {
+                    isLoading = true;
+                  });
+                }
+                controller.runJavaScript(consoleSilencer);
+              },
+              onPageFinished: (String url) {
+                if (mounted) {
+                  setState(() {
+                    isLoading = false;
+                  });
+                }
+                controller.runJavaScript(consoleSilencer);
+              },
+              onWebResourceError: (WebResourceError error) {
+                if (mounted) {
+                  setState(() {
+                    isLoading = false;
+                  });
+                }
+              },
+            ),
+          );
 
     final sanitizedUrl = widget.tourUrl;
-    final htmlContent =
-        '''
+    final htmlContent = '''
       <!DOCTYPE html>
       <html>
       <head>

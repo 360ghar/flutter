@@ -104,11 +104,12 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: widget.isLoadingMore
-                    ? CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                      )
-                    : const SizedBox.shrink(),
+                child:
+                    widget.isLoadingMore
+                        ? CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                        )
+                        : const SizedBox.shrink(),
               ),
             );
           }

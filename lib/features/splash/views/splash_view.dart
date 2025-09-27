@@ -76,9 +76,10 @@ class SplashView extends GetView<SplashController> {
                           width: controller.currentStep.value == index ? 24 : 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: controller.currentStep.value == index
-                                ? AppTheme.primaryYellow
-                                : AppTheme.textLight.withValues(alpha: 0.3),
+                            color:
+                                controller.currentStep.value == index
+                                    ? AppTheme.primaryYellow
+                                    : AppTheme.textLight.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -98,11 +99,11 @@ class SplashView extends GetView<SplashController> {
                           // Previous button
                           controller.currentStep.value > 0
                               ? TextButton.icon(
-                                  onPressed: controller.previousStep,
-                                  icon: const Icon(Icons.arrow_back),
-                                  label: Text('back'.tr),
-                                  style: TextButton.styleFrom(foregroundColor: AppTheme.textGray),
-                                )
+                                onPressed: controller.previousStep,
+                                icon: const Icon(Icons.arrow_back),
+                                label: Text('back'.tr),
+                                style: TextButton.styleFrom(foregroundColor: AppTheme.textGray),
+                              )
                               : const SizedBox(width: 80),
 
                           // Next/Get Started button
@@ -357,34 +358,35 @@ class SplashView extends GetView<SplashController> {
 
   Widget _buildFeatureHighlights(List<String> features) {
     return Column(
-      children: features.map((feature) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 20,
-                height: 20,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.successGreen,
-                ),
-                child: const Icon(Icons.check, size: 14, color: Colors.white),
+      children:
+          features.map((feature) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.successGreen,
+                    ),
+                    child: const Icon(Icons.check, size: 14, color: Colors.white),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    feature,
+                    style: const TextStyle(
+                      color: AppTheme.textDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text(
-                feature,
-                style: const TextStyle(
-                  color: AppTheme.textDark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
+            );
+          }).toList(),
     );
   }
 

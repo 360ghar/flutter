@@ -45,9 +45,10 @@ class LocationSearchView extends GetView<LocationSearchController> {
           hintText: 'search_city_or_area_hint'.tr,
           prefixIcon: const Icon(Icons.search),
           suffixIcon: Obx(
-            () => controller.searchQuery.value.isNotEmpty
-                ? IconButton(icon: const Icon(Icons.clear), onPressed: controller.clearSearch)
-                : const SizedBox.shrink(),
+            () =>
+                controller.searchQuery.value.isNotEmpty
+                    ? IconButton(icon: const Icon(Icons.clear), onPressed: controller.clearSearch)
+                    : const SizedBox.shrink(),
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

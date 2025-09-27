@@ -665,16 +665,17 @@ class ApiService extends getx.GetConnect {
       }
 
       // Metadata with safe fallbacks
-      final int total = (safeJson['total'] is num)
-          ? (safeJson['total'] as num).toInt()
-          : parsed.length;
-      final int limit = (safeJson['limit'] is num)
-          ? (safeJson['limit'] as num).toInt()
-          : (parsed.isNotEmpty ? parsed.length : 20);
+      final int total =
+          (safeJson['total'] is num) ? (safeJson['total'] as num).toInt() : parsed.length;
+      final int limit =
+          (safeJson['limit'] is num)
+              ? (safeJson['limit'] as num).toInt()
+              : (parsed.isNotEmpty ? parsed.length : 20);
       final int page = (safeJson['page'] is num) ? (safeJson['page'] as num).toInt() : 1;
-      final int totalPages = (safeJson['total_pages'] is num)
-          ? (safeJson['total_pages'] as num).toInt()
-          : ((limit > 0) ? ((total + limit - 1) / limit).ceil() : 1);
+      final int totalPages =
+          (safeJson['total_pages'] is num)
+              ? (safeJson['total_pages'] as num).toInt()
+              : ((limit > 0) ? ((total + limit - 1) / limit).ceil() : 1);
 
       Map<String, dynamic> filtersApplied = {};
       if (safeJson['filters_applied'] is Map<String, dynamic>) {
@@ -952,9 +953,8 @@ class ApiService extends getx.GetConnect {
           // Handle list parameters (like amenities, property_type)
           if (value.isNotEmpty) {
             // Validate list items are not empty strings
-            final cleanList = value
-                .where((item) => item != null && item.toString().trim().isNotEmpty)
-                .toList();
+            final cleanList =
+                value.where((item) => item != null && item.toString().trim().isNotEmpty).toList();
             if (cleanList.isNotEmpty) {
               queryParams[key] = cleanList.join(',');
             }

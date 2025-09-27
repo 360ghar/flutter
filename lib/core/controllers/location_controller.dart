@@ -47,12 +47,14 @@ class LocationController extends GetxController {
       final response = await http.get(uri).timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        final double? lat = (data['latitude'] is num)
-            ? (data['latitude'] as num).toDouble()
-            : double.tryParse((data['latitude'] ?? '').toString());
-        final double? lon = (data['longitude'] is num)
-            ? (data['longitude'] as num).toDouble()
-            : double.tryParse((data['longitude'] ?? '').toString());
+        final double? lat =
+            (data['latitude'] is num)
+                ? (data['latitude'] as num).toDouble()
+                : double.tryParse((data['latitude'] ?? '').toString());
+        final double? lon =
+            (data['longitude'] is num)
+                ? (data['longitude'] as num).toDouble()
+                : double.tryParse((data['longitude'] ?? '').toString());
         final String? city = (data['city'] as String?)?.trim();
         final String? region = (data['region'] as String?)?.trim();
 
@@ -428,14 +430,15 @@ class LocationController extends GetxController {
       switch (status) {
         case 'OK':
           final predictions = data['predictions'] as List;
-          final suggestions = predictions.map((prediction) {
-            return PlaceSuggestion(
-              placeId: prediction['place_id'],
-              description: prediction['description'],
-              mainText: prediction['structured_formatting']?['main_text'] ?? '',
-              secondaryText: prediction['structured_formatting']?['secondary_text'] ?? '',
-            );
-          }).toList();
+          final suggestions =
+              predictions.map((prediction) {
+                return PlaceSuggestion(
+                  placeId: prediction['place_id'],
+                  description: prediction['description'],
+                  mainText: prediction['structured_formatting']?['main_text'] ?? '',
+                  secondaryText: prediction['structured_formatting']?['secondary_text'] ?? '',
+                );
+              }).toList();
 
           placeSuggestions.value = suggestions;
           return suggestions;

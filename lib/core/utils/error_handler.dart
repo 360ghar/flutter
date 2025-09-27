@@ -105,12 +105,16 @@ class ErrorHandler {
       backgroundColor: backgroundColor,
       colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 4),
-      mainButton: onRetry != null
-          ? TextButton(
-              onPressed: onRetry,
-              child: Text('Retry', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
-            )
-          : null,
+      mainButton:
+          onRetry != null
+              ? TextButton(
+                onPressed: onRetry,
+                child: Text(
+                  'Retry',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onError),
+                ),
+              )
+              : null,
     );
   }
 
@@ -155,15 +159,16 @@ class ErrorHandler {
       backgroundColor: const Color(0xFFFFC107),
       colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 4),
-      mainButton: onRetry != null
-          ? TextButton(
-              onPressed: onRetry,
-              child: Text(
-                'retry'.tr,
-                style: TextStyle(color: Theme.of(context).colorScheme.onError),
-              ),
-            )
-          : null,
+      mainButton:
+          onRetry != null
+              ? TextButton(
+                onPressed: onRetry,
+                child: Text(
+                  'retry'.tr,
+                  style: TextStyle(color: Theme.of(context).colorScheme.onError),
+                ),
+              )
+              : null,
     );
   }
 

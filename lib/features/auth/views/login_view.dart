@@ -148,23 +148,24 @@ class LoginView extends GetView<LoginController> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: controller.isLoading.value
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: colorScheme.onPrimary,
-                                strokeWidth: 2,
+                      child:
+                          controller.isLoading.value
+                              ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: colorScheme.onPrimary,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Text(
+                                'sign_in'.tr,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onPrimary,
+                                ),
                               ),
-                            )
-                          : Text(
-                              'sign_in'.tr,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.onPrimary,
-                              ),
-                            ),
                     ),
                   ),
                   const SizedBox(height: 32),

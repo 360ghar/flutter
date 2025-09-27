@@ -112,23 +112,24 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: controller.isLoading.value
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: colorScheme.onPrimary,
-                          strokeWidth: 2,
+                child:
+                    controller.isLoading.value
+                        ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: colorScheme.onPrimary,
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : Text(
+                          'send_otp'.tr,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onPrimary,
+                          ),
                         ),
-                      )
-                    : Text(
-                        'send_otp'.tr,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onPrimary,
-                        ),
-                      ),
               ),
             ),
             const SizedBox(height: 16),
@@ -223,23 +224,24 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: controller.isLoading.value
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: colorScheme.onPrimary,
-                        strokeWidth: 2,
+              child:
+                  controller.isLoading.value
+                      ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: colorScheme.onPrimary,
+                          strokeWidth: 2,
+                        ),
+                      )
+                      : Text(
+                        'verify_otp'.tr,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onPrimary,
+                        ),
                       ),
-                    )
-                  : Text(
-                      'verify_otp'.tr,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimary,
-                      ),
-                    ),
             ),
           ),
           const SizedBox(height: 16),
@@ -365,23 +367,24 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: controller.isLoading.value
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: colorScheme.onPrimary,
-                        strokeWidth: 2,
+              child:
+                  controller.isLoading.value
+                      ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: colorScheme.onPrimary,
+                          strokeWidth: 2,
+                        ),
+                      )
+                      : Text(
+                        'update_password'.tr,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onPrimary,
+                        ),
                       ),
-                    )
-                  : Text(
-                      'update_password'.tr,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimary,
-                      ),
-                    ),
             ),
           ),
         ],

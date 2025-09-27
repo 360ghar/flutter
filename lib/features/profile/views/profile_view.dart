@@ -110,33 +110,33 @@ class ProfileView extends GetView<AuthController> {
             children: [
               user.profileImage != null && user.profileImage!.isNotEmpty
                   ? RobustNetworkImageExtension.circular(
-                      imageUrl: user.profileImage!,
-                      radius: 50,
-                      errorWidget: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: AppColors.primaryYellow,
-                        child: Text(
-                          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onPrimary,
-                          ),
-                        ),
-                      ),
-                    )
-                  : CircleAvatar(
+                    imageUrl: user.profileImage!,
+                    radius: 50,
+                    errorWidget: CircleAvatar(
                       radius: 50,
                       backgroundColor: AppColors.primaryYellow,
                       child: Text(
                         user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.buttonText,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
                     ),
+                  )
+                  : CircleAvatar(
+                    radius: 50,
+                    backgroundColor: AppColors.primaryYellow,
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.buttonText,
+                      ),
+                    ),
+                  ),
               Positioned(
                 bottom: 0,
                 right: 0,

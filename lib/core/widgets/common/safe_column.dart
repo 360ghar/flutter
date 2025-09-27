@@ -40,10 +40,7 @@ class SafeColumn extends StatelessWidget {
 
     // If maxHeight is specified, constrain the column
     if (maxHeight != null) {
-      column = ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxHeight!),
-        child: column,
-      );
+      column = ConstrainedBox(constraints: BoxConstraints(maxHeight: maxHeight!), child: column);
     }
 
     // If shrinkWrap is true, make it intrinsically sized
@@ -94,10 +91,7 @@ class SafeRow extends StatelessWidget {
 
     // If maxWidth is specified, constrain the row
     if (maxWidth != null) {
-      row = ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth!),
-        child: row,
-      );
+      row = ConstrainedBox(constraints: BoxConstraints(maxWidth: maxWidth!), child: row);
     }
 
     // If shrinkWrap is true, make it intrinsically sized

@@ -54,9 +54,10 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) => PropertyMode
   ageOfProperty: (json['age_of_property'] as num?)?.toInt(),
   maxOccupancy: (json['max_occupancy'] as num?)?.toInt(),
   minimumStayDays: (json['minimum_stay_days'] as num?)?.toInt(),
-  amenities: (json['amenities'] as List<dynamic>?)
-      ?.map((e) => PropertyAmenity.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  amenities:
+      (json['amenities'] as List<dynamic>?)
+          ?.map((e) => PropertyAmenity.fromJson(e as Map<String, dynamic>))
+          .toList(),
   features: (json['features'] as List<dynamic>?)?.map((e) => e as String).toList(),
   mainImageUrl: json['main_image_url'] as String?,
   virtualTourUrl: json['virtual_tour_url'] as String?,
@@ -72,16 +73,18 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) => PropertyMode
   interestCount: (json['interest_count'] as num?)?.toInt() ?? 0,
   createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at'] as String),
   updatedAt: json['updated_at'] == null ? null : DateTime.parse(json['updated_at'] as String),
-  images: (json['images'] as List<dynamic>?)
-      ?.map((e) => PropertyImageModel.fromJson(e as Map<String, dynamic>))
-      .toList(),
+  images:
+      (json['images'] as List<dynamic>?)
+          ?.map((e) => PropertyImageModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
   distanceKm: (json['distance_km'] as num?)?.toDouble(),
   liked: json['liked'] as bool? ?? false,
   userHasScheduledVisit: json['user_has_scheduled_visit'] as bool? ?? false,
   userScheduledVisitCount: (json['user_scheduled_visit_count'] as num?)?.toInt() ?? 0,
-  userNextVisitDate: json['user_next_visit_date'] == null
-      ? null
-      : DateTime.parse(json['user_next_visit_date'] as String),
+  userNextVisitDate:
+      json['user_next_visit_date'] == null
+          ? null
+          : DateTime.parse(json['user_next_visit_date'] as String),
 );
 
 Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) => <String, dynamic>{

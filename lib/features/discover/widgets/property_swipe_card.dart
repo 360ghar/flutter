@@ -50,9 +50,10 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
         child: Container(
           color: colorScheme.surface,
           child: SingleChildScrollView(
-            physics: _interactiveChildActive
-                ? const NeverScrollableScrollPhysics()
-                : const BouncingScrollPhysics(),
+            physics:
+                _interactiveChildActive
+                    ? const NeverScrollableScrollPhysics()
+                    : const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -61,9 +62,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                   builder: (context, constraints) {
                     // Use available parent height instead of full screen height
                     // This ensures we don't overlap with app bar or other UI elements
-                    final availableHeight = constraints.maxHeight > 0
-                        ? constraints.maxHeight
-                        : MediaQuery.of(context).size.height - 200; // Fallback with safe margins
+                    final availableHeight =
+                        constraints.maxHeight > 0
+                            ? constraints.maxHeight
+                            : MediaQuery.of(context).size.height -
+                                200; // Fallback with safe margins
 
                     return SizedBox(
                       height: math.min(availableHeight * 0.8, 600), // Cap at reasonable max height
@@ -563,31 +566,32 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: widget.property.amenitiesList
-                                .take(6)
-                                .map(
-                                  (amenity) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.accentBlue.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: AppColors.accentBlue.withValues(alpha: 0.3),
+                            children:
+                                widget.property.amenitiesList
+                                    .take(6)
+                                    .map(
+                                      (amenity) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.accentBlue.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: AppColors.accentBlue.withValues(alpha: 0.3),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          amenity,
+                                          style: theme.textTheme.labelMedium?.copyWith(
+                                            color: AppColors.accentBlue,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    child: Text(
-                                      amenity,
-                                      style: theme.textTheme.labelMedium?.copyWith(
-                                        color: AppColors.accentBlue,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                                    )
+                                    .toList(),
                           ),
                           if (widget.property.amenitiesList.length > 6)
                             Padding(
@@ -1086,25 +1090,25 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
             child: AnimatedBuilder(
               animation: _swipeAnimation,
               builder: (context, child) {
-                final swipeOffset = _isDragging
-                    ? Offset(_dragPosition.dx, 0)
-                    : Offset(_dragPosition.dx * (1 + _swipeAnimation.value * 2), 0);
+                final swipeOffset =
+                    _isDragging
+                        ? Offset(_dragPosition.dx, 0)
+                        : Offset(_dragPosition.dx * (1 + _swipeAnimation.value * 2), 0);
 
-                final swipeRotation = _isDragging
-                    ? _rotation
-                    : _rotation * (1 + _swipeAnimation.value * 2);
+                final swipeRotation =
+                    _isDragging ? _rotation : _rotation * (1 + _swipeAnimation.value * 2);
 
                 return Transform.translate(
                   offset: swipeOffset,
                   child: Transform(
                     alignment: Alignment.bottomCenter, // Rotate from bottom center like a hinge
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001) // Add perspective
-                      ..rotateZ(swipeRotation),
+                    transform:
+                        Matrix4.identity()
+                          ..setEntry(3, 2, 0.001) // Add perspective
+                          ..rotateZ(swipeRotation),
                     child: Opacity(
-                      opacity: _swipeAnimationController.isAnimating
-                          ? (1 - _swipeAnimation.value)
-                          : 1.0,
+                      opacity:
+                          _swipeAnimationController.isAnimating ? (1 - _swipeAnimation.value) : 1.0,
                       child: PropertySwipeCard(
                         property: _properties[0],
                         showSwipeInstructions: widget.showSwipeInstructions,
@@ -1153,9 +1157,10 @@ class SparklesPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.primaryYellow.withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
+    final paint =
+        Paint()
+          ..color = AppColors.primaryYellow.withValues(alpha: 0.8)
+          ..style = PaintingStyle.fill;
 
     // Create sparkles at various positions
     final sparklePositions = [
@@ -1282,8 +1287,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
         );
 
       final sanitizedUrl = widget.tourUrl;
-      final htmlContent =
-          '''
+      final htmlContent = '''
       <!DOCTYPE html>
       <html>
       <head>

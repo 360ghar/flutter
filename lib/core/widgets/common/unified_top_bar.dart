@@ -37,9 +37,8 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
       final bool supportsSearch = _shouldShowSearch();
       final bool searchVisible = supportsSearch && controller.isSearchVisible(pageType);
 
-      final PreferredSizeWidget? bottomWidget = searchVisible
-          ? _buildBottomSearchBar(controller)
-          : bottom; // fallback to injected bottom
+      final PreferredSizeWidget? bottomWidget =
+          searchVisible ? _buildBottomSearchBar(controller) : bottom; // fallback to injected bottom
 
       return AppBar(
         backgroundColor: AppColors.appBarBackground,
@@ -48,15 +47,16 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
         automaticallyImplyLeading: false,
         toolbarHeight: kToolbarHeight,
         titleSpacing: 16,
-        systemOverlayStyle: theme.brightness == Brightness.dark
-            ? const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: Brightness.light,
-              )
-            : const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: Brightness.dark,
-              ),
+        systemOverlayStyle:
+            theme.brightness == Brightness.dark
+                ? const SystemUiOverlayStyle(
+                  statusBarColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.light,
+                )
+                : const SystemUiOverlayStyle(
+                  statusBarColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.dark,
+                ),
         title: Row(
           children: [
             // Location selector
@@ -116,15 +116,16 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
                 hintText: _getSearchHint(),
                 hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
                 prefixIcon: Icon(Icons.search, color: AppColors.iconColor, size: 18),
-                suffixIcon: searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.clear, color: AppColors.iconColor, size: 18),
-                        onPressed: () {
-                          pageStateService.clearPageSearch(pageType);
-                          onSearchClear?.call();
-                        },
-                      )
-                    : null,
+                suffixIcon:
+                    searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: Icon(Icons.clear, color: AppColors.iconColor, size: 18),
+                          onPressed: () {
+                            pageStateService.clearPageSearch(pageType);
+                            onSearchClear?.call();
+                          },
+                        )
+                        : null,
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 isDense: true,

@@ -290,8 +290,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
         );
 
       final sanitizedUrl = widget.tourUrl;
-      final htmlContent =
-          '''
+      final htmlContent = '''
       <!DOCTYPE html>
       <html>
       <head>

@@ -139,8 +139,8 @@ class DiscoverView extends GetView<DiscoverController> {
   Widget _buildEmptyState(BuildContext context) {
     return ErrorStates.swipeDeckEmpty(
       onRefresh: controller.refreshDeck,
-      onChangeFilters: () =>
-          showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'discover'),
+      onChangeFilters:
+          () => showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'discover'),
     );
   }
 

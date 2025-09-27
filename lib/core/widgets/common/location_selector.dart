@@ -374,9 +374,10 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         title,
         style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary),
       ),
-      subtitle: subtitle.isNotEmpty
-          ? Text(subtitle, style: TextStyle(color: AppColors.textSecondary, fontSize: 12))
-          : null,
+      subtitle:
+          subtitle.isNotEmpty
+              ? Text(subtitle, style: TextStyle(color: AppColors.textSecondary, fontSize: 12))
+              : null,
       onTap: onTap,
     );
   }

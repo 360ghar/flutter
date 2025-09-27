@@ -117,29 +117,30 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: controller.isSubmitting.value
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: AppColors.buttonText,
+                    child:
+                        controller.isSubmitting.value
+                            ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: AppColors.buttonText,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'sending_feedback'.tr,
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          )
-                        : Text(
-                            'send_feedback'.tr,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'sending_feedback'.tr,
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            )
+                            : Text(
+                              'send_feedback'.tr,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
                   ),
                 ),
               ),
@@ -231,9 +232,10 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
       icon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.iconColor),
       dropdownColor: AppColors.cardBackground,
       style: TextStyle(color: AppColors.textPrimary, fontSize: 15),
-      items: items
-          .map((item) => DropdownMenuItem<T>(value: item, child: Text(itemLabel(item))))
-          .toList(),
+      items:
+          items
+              .map((item) => DropdownMenuItem<T>(value: item, child: Text(itemLabel(item))))
+              .toList(),
     );
   }
 

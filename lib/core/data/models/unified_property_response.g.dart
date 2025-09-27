@@ -8,17 +8,19 @@ part of 'unified_property_response.dart';
 
 UnifiedPropertyResponse _$UnifiedPropertyResponseFromJson(Map<String, dynamic> json) =>
     UnifiedPropertyResponse(
-      properties: (json['properties'] as List<dynamic>)
-          .map((e) => PropertyModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      properties:
+          (json['properties'] as List<dynamic>)
+              .map((e) => PropertyModel.fromJson(e as Map<String, dynamic>))
+              .toList(),
       total: (json['total'] as num).toInt(),
       page: (json['page'] as num).toInt(),
       limit: (json['limit'] as num).toInt(),
       totalPages: (json['total_pages'] as num).toInt(),
       filtersApplied: json['filters_applied'] as Map<String, dynamic>,
-      searchCenter: json['search_center'] == null
-          ? null
-          : SearchCenter.fromJson(json['search_center'] as Map<String, dynamic>),
+      searchCenter:
+          json['search_center'] == null
+              ? null
+              : SearchCenter.fromJson(json['search_center'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$UnifiedPropertyResponseToJson(UnifiedPropertyResponse instance) =>

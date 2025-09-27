@@ -43,11 +43,12 @@ class ProfileCompletionController extends GetxController {
       final profileData = {
         'full_name': fullNameController.text.trim(),
         'email': emailController.text.trim(),
-        'date_of_birth': selectedDateOfBirth != null
-            ? '${selectedDateOfBirth!.year.toString().padLeft(4, '0')}-'
-                  '${selectedDateOfBirth!.month.toString().padLeft(2, '0')}-'
-                  '${selectedDateOfBirth!.day.toString().padLeft(2, '0')}'
-            : null,
+        'date_of_birth':
+            selectedDateOfBirth != null
+                ? '${selectedDateOfBirth!.year.toString().padLeft(4, '0')}-'
+                    '${selectedDateOfBirth!.month.toString().padLeft(2, '0')}-'
+                    '${selectedDateOfBirth!.day.toString().padLeft(2, '0')}'
+                : null,
         'property_purpose': selectedPropertyPurpose.value,
       };
 

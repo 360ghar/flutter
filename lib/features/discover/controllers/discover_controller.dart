@@ -224,9 +224,10 @@ class DiscoverController extends GetxController {
       _updatePaginationInfo(response);
 
       // Add new properties to deck (avoiding duplicates)
-      final newProperties = response.properties.where((newProp) {
-        return !deck.any((existingProp) => existingProp.id == newProp.id);
-      }).toList();
+      final newProperties =
+          response.properties.where((newProp) {
+            return !deck.any((existingProp) => existingProp.id == newProp.id);
+          }).toList();
 
       deck.addAll(newProperties);
       DebugLogger.success(

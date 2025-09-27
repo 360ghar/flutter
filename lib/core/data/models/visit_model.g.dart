@@ -33,21 +33,21 @@ VisitModel _$VisitModelFromJson(Map<String, dynamic> json) => VisitModel(
   visitorFeedback: json['visitor_feedback'] as String?,
   interestLevel: json['interest_level'] as String?,
   followUpRequired: json['follow_up_required'] as bool? ?? false,
-  followUpDate: json['follow_up_date'] == null
-      ? null
-      : DateTime.parse(json['follow_up_date'] as String),
+  followUpDate:
+      json['follow_up_date'] == null ? null : DateTime.parse(json['follow_up_date'] as String),
   cancellationReason: json['cancellation_reason'] as String?,
-  rescheduledFrom: json['rescheduled_from'] == null
-      ? null
-      : DateTime.parse(json['rescheduled_from'] as String),
+  rescheduledFrom:
+      json['rescheduled_from'] == null ? null : DateTime.parse(json['rescheduled_from'] as String),
   createdAt: DateTime.parse(json['created_at'] as String),
   updatedAt: json['updated_at'] == null ? null : DateTime.parse(json['updated_at'] as String),
-  property: json['property'] == null
-      ? null
-      : PropertyModel.fromJson(json['property'] as Map<String, dynamic>),
-  agents: json['agents'] == null
-      ? null
-      : VisitAgentInfo.fromJson(json['agents'] as Map<String, dynamic>),
+  property:
+      json['property'] == null
+          ? null
+          : PropertyModel.fromJson(json['property'] as Map<String, dynamic>),
+  agents:
+      json['agents'] == null
+          ? null
+          : VisitAgentInfo.fromJson(json['agents'] as Map<String, dynamic>),
   propertyTitleApi: json['property_title'] as String?,
   agentNameApi: json['agent_name'] as String?,
 );

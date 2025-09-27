@@ -233,26 +233,27 @@ class ExploreView extends GetView<ExploreController> {
                       final markers = controller.propertyMarkers;
                       if (markers.isEmpty) return const SizedBox.shrink();
                       return MarkerLayer(
-                        markers: markers
-                            .map(
-                              (marker) => Marker(
-                                point: marker.position,
-                                width: 40,
-                                height: 40,
-                                child: PropertyMarkerChip(
-                                  property: marker.property,
-                                  isSelected: marker.isSelected,
-                                  label: marker.label,
-                                  onTap: () {
-                                    DebugLogger.info(
-                                      'Property marker tapped: ${marker.property.title}',
-                                    );
-                                    controller.selectProperty(marker.property);
-                                  },
-                                ),
-                              ),
-                            )
-                            .toList(),
+                        markers:
+                            markers
+                                .map(
+                                  (marker) => Marker(
+                                    point: marker.position,
+                                    width: 40,
+                                    height: 40,
+                                    child: PropertyMarkerChip(
+                                      property: marker.property,
+                                      isSelected: marker.isSelected,
+                                      label: marker.label,
+                                      onTap: () {
+                                        DebugLogger.info(
+                                          'Property marker tapped: ${marker.property.title}',
+                                        );
+                                        controller.selectProperty(marker.property);
+                                      },
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                       );
                     }),
                   ],

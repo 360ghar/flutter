@@ -140,9 +140,10 @@ class DebugLogger {
     _ensureInitialized();
 
     // Only log first and last few characters for security
-    final tokenPreview = token.length > 20
-        ? '${token.substring(0, 10)}...${token.substring(token.length - 10)}'
-        : token;
+    final tokenPreview =
+        token.length > 20
+            ? '${token.substring(0, 10)}...${token.substring(token.length - 10)}'
+            : token;
 
     String message = '🔑 JWT Token: $tokenPreview';
     if (expiresAt != null) message += '\n   Expires: $expiresAt';

@@ -30,24 +30,9 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                       Obx(() {
                         return controller.profileImageUrl.value.isNotEmpty
                             ? RobustNetworkImageExtension.circular(
-                                imageUrl: controller.profileImageUrl.value,
-                                radius: 60,
-                                errorWidget: CircleAvatar(
-                                  radius: 60,
-                                  backgroundColor: AppColors.primaryYellow,
-                                  child: Text(
-                                    controller.nameController.text.isNotEmpty
-                                        ? controller.nameController.text[0].toUpperCase()
-                                        : 'U',
-                                    style: TextStyle(
-                                      fontSize: 40,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.buttonText,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : CircleAvatar(
+                              imageUrl: controller.profileImageUrl.value,
+                              radius: 60,
+                              errorWidget: CircleAvatar(
                                 radius: 60,
                                 backgroundColor: AppColors.primaryYellow,
                                 child: Text(
@@ -60,7 +45,22 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                                     color: AppColors.buttonText,
                                   ),
                                 ),
-                              );
+                              ),
+                            )
+                            : CircleAvatar(
+                              radius: 60,
+                              backgroundColor: AppColors.primaryYellow,
+                              child: Text(
+                                controller.nameController.text.isNotEmpty
+                                    ? controller.nameController.text[0].toUpperCase()
+                                    : 'U',
+                                style: TextStyle(
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.buttonText,
+                                ),
+                              ),
+                            );
                       }),
                       Positioned(
                         bottom: 0,
@@ -157,9 +157,10 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                                         : 'select_your_date_of_birth'.tr,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: controller.dateOfBirth.value != null
-                                          ? AppColors.textPrimary
-                                          : AppColors.textSecondary,
+                                      color:
+                                          controller.dateOfBirth.value != null
+                                              ? AppColors.textPrimary
+                                              : AppColors.textSecondary,
                                     ),
                                   ),
                                 ),

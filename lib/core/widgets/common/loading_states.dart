@@ -102,64 +102,65 @@ class LoadingStates {
         mainAxisSpacing: 12,
       ),
       itemCount: itemCount,
-      itemBuilder: (context, index) => Shimmer.fromColors(
-        baseColor: baseColor,
-        highlightColor: highlightColor,
-        child: Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: baseColor,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      itemBuilder:
+          (context, index) => Shimmer.fromColors(
+            baseColor: baseColor,
+            highlightColor: highlightColor,
+            child: Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: baseColor,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 16,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: baseColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 16,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: baseColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            height: 12,
+                            width: 100,
+                            decoration: BoxDecoration(
+                              color: baseColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            height: 14,
+                            width: 80,
+                            decoration: BoxDecoration(
+                              color: baseColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 6),
-                      Container(
-                        height: 12,
-                        width: 100,
-                        decoration: BoxDecoration(
-                          color: baseColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        height: 14,
-                        width: 80,
-                        decoration: BoxDecoration(
-                          color: baseColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 

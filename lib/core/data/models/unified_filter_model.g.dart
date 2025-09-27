@@ -24,15 +24,12 @@ UnifiedFilterModel _$UnifiedFilterModelFromJson(Map<String, dynamic> json) => Un
   ageMax: (json['age_max'] as num?)?.toInt(),
   amenities: (json['amenities'] as List<dynamic>?)?.map((e) => e as String).toList(),
   features: (json['features'] as List<dynamic>?)?.map((e) => e as String).toList(),
-  availableFrom: json['available_from'] == null
-      ? null
-      : DateTime.parse(json['available_from'] as String),
-  checkInDate: json['check_in_date'] == null
-      ? null
-      : DateTime.parse(json['check_in_date'] as String),
-  checkOutDate: json['check_out_date'] == null
-      ? null
-      : DateTime.parse(json['check_out_date'] as String),
+  availableFrom:
+      json['available_from'] == null ? null : DateTime.parse(json['available_from'] as String),
+  checkInDate:
+      json['check_in_date'] == null ? null : DateTime.parse(json['check_in_date'] as String),
+  checkOutDate:
+      json['check_out_date'] == null ? null : DateTime.parse(json['check_out_date'] as String),
   guests: (json['guests'] as num?)?.toInt(),
   sortBy: $enumDecodeNullable(_$SortByEnumMap, json['sort_by']),
   searchQuery: json['search_query'] as String?,

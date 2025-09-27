@@ -19,9 +19,8 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   preferences: json['preferences'] as Map<String, dynamic>?,
   currentLatitude: (json['current_latitude'] as num?)?.toDouble(),
   currentLongitude: (json['current_longitude'] as num?)?.toDouble(),
-  preferredLocations: (json['preferred_locations'] as List<dynamic>?)
-      ?.map((e) => e as String)
-      .toList(),
+  preferredLocations:
+      (json['preferred_locations'] as List<dynamic>?)?.map((e) => e as String).toList(),
   notificationSettings: (json['notification_settings'] as Map<String, dynamic>?)?.map(
     (k, e) => MapEntry(k, e as bool),
   ),

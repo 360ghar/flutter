@@ -168,9 +168,10 @@ class VisitsController extends GetxController {
       }
 
       final now = DateTime.now();
-      final upcomingVisits = allVisits
-          .where((v) => now.isBefore(v.scheduledDate) && v.status != VisitStatus.completed)
-          .toList();
+      final upcomingVisits =
+          allVisits
+              .where((v) => now.isBefore(v.scheduledDate) && v.status != VisitStatus.completed)
+              .toList();
       final pastVisits = allVisits.where((v) => !now.isBefore(v.scheduledDate)).toList();
 
       // Sort per spec
@@ -284,12 +285,12 @@ class VisitsController extends GetxController {
       error.value = '';
 
       // Extract property ID based on type
-      final int propertyId = property is PropertyModel
-          ? int.tryParse(property.id.toString()) ?? 0
-          : property.id as int;
-      final String propertyTitle = property is PropertyModel
-          ? property.title
-          : property.title as String;
+      final int propertyId =
+          property is PropertyModel
+              ? int.tryParse(property.id.toString()) ?? 0
+              : property.id as int;
+      final String propertyTitle =
+          property is PropertyModel ? property.title : property.title as String;
 
       final visitModel = await _apiService.scheduleVisit(
         propertyId: propertyId,
@@ -329,12 +330,10 @@ class VisitsController extends GetxController {
 
   // Fallback method for non-authenticated users
   void bookVisitLocal(dynamic property, DateTime visitDateTime) {
-    final int propertyId = property is PropertyModel
-        ? int.tryParse(property.id.toString()) ?? 0
-        : property.id as int;
-    final String propertyTitle = property is PropertyModel
-        ? property.title
-        : property.title as String;
+    final int propertyId =
+        property is PropertyModel ? int.tryParse(property.id.toString()) ?? 0 : property.id as int;
+    final String propertyTitle =
+        property is PropertyModel ? property.title : property.title as String;
 
     final visit = VisitModel(
       id: DateTime.now().millisecondsSinceEpoch,
@@ -455,10 +454,12 @@ class VisitsController extends GetxController {
   }
 
   void _sortVisits() {
-    final upcoming = visits.where((v) => v.isUpcoming).toList()
-      ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate)); // ascending
-    final past = visits.where((v) => !v.isUpcoming).toList()
-      ..sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate)); // descending
+    final upcoming =
+        visits.where((v) => v.isUpcoming).toList()
+          ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate)); // ascending
+    final past =
+        visits.where((v) => !v.isUpcoming).toList()
+          ..sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate)); // descending
     visits.assignAll([...upcoming, ...past]);
   }
 
@@ -489,8 +490,9 @@ class VisitsController extends GetxController {
     }
     // Fallback compute: all dates in the past, any status
     final now = DateTime.now();
-    final list = visits.where((v) => !now.isBefore(v.scheduledDate)).toList()
-      ..sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
+    final list =
+        visits.where((v) => !now.isBefore(v.scheduledDate)).toList()
+          ..sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
     DebugLogger.info('📊 Getter pastVisits fallback computed=${list.length}');
     return list;
   }

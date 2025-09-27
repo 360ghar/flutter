@@ -81,11 +81,7 @@ class WebViewHelper {
         },
       );
 
-      return SizedBox(
-        width: width,
-        height: height,
-        child: WebViewWidget(controller: controller),
-      );
+      return SizedBox(width: width, height: height, child: WebViewWidget(controller: controller));
     } catch (e) {
       DebugLogger.error('Error creating safe WebView', e);
       return errorWidget ?? _buildErrorWidget(width, height, url);

@@ -171,9 +171,10 @@ class AuthController extends GetxController {
       DebugLogger.success('Successfully loaded user profile: ${userProfile.fullName}');
 
       // Determine the final auth status based on profile completeness
-      final newStatus = userProfile.isProfileComplete
-          ? AuthStatus.authenticated
-          : AuthStatus.requiresProfileCompletion;
+      final newStatus =
+          userProfile.isProfileComplete
+              ? AuthStatus.authenticated
+              : AuthStatus.requiresProfileCompletion;
 
       // Only update if status actually changed to prevent unnecessary rebuilds
       if (authStatus.value != newStatus) {
