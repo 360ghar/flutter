@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Ensure pub-cache bin is in PATH for FVM
 export PATH="$HOME/.pub-cache/bin:$PATH"
 

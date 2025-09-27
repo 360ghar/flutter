@@ -40,6 +40,11 @@ flutter:
 - **Code signing**: Proper certificates for each platform
 
 ## Environment Setup
-- Run `scripts/setup.sh` for initial project setup
-- Configure pre-commit hooks with `scripts/setup_hooks.sh`
-- Use `.pre-commit-config.yaml` for automated code quality checks
+- Install pre-commit and enable hooks:
+  ```bash
+  pip install pre-commit
+  pre-commit install
+  ```
+- Hooks are cross-platform and use `hooks/flutter_tools.py` (Python) to run `dart format`, `flutter analyze`, and `flutter test` with FVM fallback.
+- `.gitattributes` enforces consistent line endings (LF for code/shell; CRLF for Windows scripts).
+- `.pre-commit-config.yaml` defines automated code quality checks.

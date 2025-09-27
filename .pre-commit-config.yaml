@@ -28,28 +28,29 @@ repos:
       - id: check-case-conflict
       - id: mixed-line-ending
         args: ["--fix=lf"]
+        exclude: \.(bat|cmd|ps1)$
 
   # Flutter/Dart specific hooks
   - repo: local
     hooks:
       - id: dart-format-check
         name: dart format (check only)
-        entry: ./scripts/pre-commit-dart-format.sh
-        language: script
+        entry: python hooks/flutter_tools.py format
+        language: python
         files: \.dart$
         pass_filenames: false
 
       - id: flutter-analyze
         name: flutter analyze
-        entry: ./scripts/pre-commit-flutter-analyze.sh
-        language: script
+        entry: python hooks/flutter_tools.py analyze
+        language: python
         files: \.dart$
         pass_filenames: false
 
       - id: flutter-test
         name: flutter test
-        entry: ./scripts/pre-commit-flutter-test.sh
-        language: script
+        entry: python hooks/flutter_tools.py test
+        language: python
         files: \.dart$
         pass_filenames: false
         stages: [pre-push] # Only run on push to avoid slowing down commits

@@ -165,6 +165,20 @@ This project enforces consistent formatting and linting across all environments.
    pre-commit install
    ```
 
+#### Cross-Platform Hooks (Windows/macOS/Linux)
+
+Pre-commit hooks run via a Python wrapper to ensure they work the same on all systems:
+
+- Entry point: `hooks/flutter_tools.py` (no bash required)
+- Format: runs `fvm dart format` → `dart format` → `flutter format` (first available)
+- Analyze/Test: runs `fvm flutter` → `flutter` (first available)
+- Run on demand: `pre-commit run --all-files`
+
+Notes:
+- Ensure Python 3 is installed (required by pre-commit).
+- FVM is optional but recommended for consistent Flutter/Dart versions.
+- Line endings are normalized via `.gitattributes` and a pre-commit mixed-line-ending hook (Windows scripts keep CRLF; shell scripts use LF).
+
 3. **VS Code**:
    - Format on save is enabled
    - Line endings set to LF

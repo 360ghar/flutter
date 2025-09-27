@@ -6,6 +6,9 @@
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
 
+# POSIX shell scripts should keep LF (even on Windows)
+*.sh text eol=lf
+
 # Binary files
 *.png binary
 *.jpg binary
