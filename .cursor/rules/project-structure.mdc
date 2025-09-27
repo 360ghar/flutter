@@ -1,0 +1,40 @@
+---
+alwaysApply: true
+description: Flutter project structure with feature-first GetX architecture
+---
+
+# Flutter Project Structure
+
+This is a Flutter application using **feature-first GetX architecture**. Follow this structure:
+
+## Core Structure
+- **`lib/core/`**: Shared utilities and base functionality
+  - `core/data/models/`: Data models and DTOs
+  - `core/data/providers/`: API providers and data sources
+  - `core/routing/`: Route definitions and navigation
+  - `core/widgets/`: Reusable UI components
+  - `core/controllers/`: Base controllers and shared state management
+  - `core/bindings/`: Global bindings
+  - `core/middlewares/`: Route middlewares
+  - `core/mixins/`: Shared mixins
+  - `core/translations/`: Localization files
+  - `core/utils/`: Helper functions and utilities
+
+## Feature Structure
+- **`lib/features/<feature>/{views,controllers,bindings}/`**: Feature-specific code
+  - `views/`: UI screens and widgets (e.g., `property_details_view.dart`)
+  - `controllers/`: Business logic and state management
+  - `bindings/`: Feature-specific dependency injection
+
+## Examples
+- `lib/features/auth/{views,controllers,bindings}/`
+- `lib/features/discover/{views,controllers,bindings}/`
+- `lib/features/profile/{views,controllers,bindings}/`
+
+## File Naming
+- Use `snake_case.dart` for all files
+- Suffix conventions: `*_view.dart`, `*_controller.dart`, `*_binding.dart`
+
+## Assets
+- **`assets/images/`**: Static images (declare in `pubspec.yaml`)
+- Platforms: `android/`, `ios/`, `web/` for platform-specific configs

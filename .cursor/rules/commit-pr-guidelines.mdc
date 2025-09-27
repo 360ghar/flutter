@@ -1,0 +1,44 @@
+---
+alwaysApply: true
+description: Commit and pull request guidelines
+---
+
+# Commit & Pull Request Guidelines
+
+## Commit Messages
+- Use **imperative mood**: "Add feature", "Fix bug", "Update docs"
+- **Scope-first format**: "Refactor filters: unify models"
+- Keep commits focused on single changes
+- Reference issue numbers when applicable: "Fix login issue #123"
+
+## Pre-commit Checklist
+Run these commands before committing:
+```bash
+flutter analyze                   # Fix all warnings
+dart format .                     # Format code
+flutter test                      # Run tests
+flutter pub run build_runner build --delete-conflicting-outputs  # Regenerate code
+```
+
+## Pull Request Guidelines
+- **Title**: Clear, descriptive summary
+- **Description**: Include context, changes made, testing done
+- **Link issues**: Reference related issues or user stories
+- **Screenshots**: Include for UI changes
+- **Test plan**: Describe how changes were tested
+
+## PR Template Checklist
+- [ ] Code follows project structure guidelines
+- [ ] All `flutter analyze` warnings resolved
+- [ ] Code formatted with `dart format .`
+- [ ] Tests pass (`flutter test`)
+- [ ] Code generation updated (`build_runner`)
+- [ ] Documentation updated if needed
+- [ ] Breaking changes documented
+- [ ] Screenshots included for UI changes
+
+## Branch Naming
+- `feature/feature-name`: New features
+- `bugfix/bug-description`: Bug fixes
+- `refactor/component-name`: Code refactoring
+- `docs/update-readme`: Documentation updates

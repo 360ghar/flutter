@@ -1,7 +1,8 @@
 {
-  "dart.flutterSdkPath": null,
-  "dart.sdkPath": null,
+  "dart.flutterSdkPath": ".fvm/versions/3.24.0",
+  "dart.sdkPath": ".fvm/flutter_sdk/bin/cache/dart-sdk",
   "dart.lineLength": 100,
+  "files.eol": "\n",
   "dart.analysisExcludedFolders": [
     "build/",
     ".dart_tool/",
