@@ -1,8 +1,9 @@
 import 'package:get/get.dart';
-import '../models/user_model.dart';
-import '../providers/api_service.dart';
-import '../../utils/debug_logger.dart';
-import '../../utils/app_exceptions.dart';
+
+import 'package:ghar360/core/data/models/user_model.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 /// Repository for managing user profile operations
 /// Handles all profile-related API calls and data management
@@ -69,21 +70,25 @@ class ProfileRepository extends GetxService {
 
   /// Calculates the profile completion percentage
   int calculateProfileCompletion(UserModel user) {
-    int completed = 0;
-    int total = 10; // Total number of profile fields
+    // Create a list of completion conditions for each field
+    final completionChecks = [
+      user.fullName?.isNotEmpty == true,
+      user.email.isNotEmpty,
+      user.phone?.isNotEmpty == true,
+      user.dateOfBirth?.isNotEmpty == true,
+      user.profileImageUrl?.isNotEmpty == true,
+      // Add more profile field checks as needed
+      // Example additional fields:
+      // user.address?.isNotEmpty == true,
+      // user.city?.isNotEmpty == true,
+      // user.occupation?.isNotEmpty == true,
+      // user.bio?.isNotEmpty == true,
+      // user.preferences != null,
+    ];
 
-    if (user.fullName?.isNotEmpty == true) completed++;
-    if (user.email.isNotEmpty) completed++;
-    if (user.phone?.isNotEmpty == true) completed++;
-    if (user.dateOfBirth?.isNotEmpty == true) completed++;
-    if (user.profileImageUrl?.isNotEmpty == true) completed++;
-    // Add more profile field checks as needed
-    // Example additional fields:
-    // if (user.address?.isNotEmpty == true) completed++;
-    // if (user.city?.isNotEmpty == true) completed++;
-    // if (user.occupation?.isNotEmpty == true) completed++;
-    // if (user.bio?.isNotEmpty == true) completed++;
-    // if (user.preferences != null) completed++;
+    // Count the number of true conditions
+    final completed = completionChecks.where((check) => check).length;
+    final total = completionChecks.length;
 
     return ((completed / total) * 100).round();
   }

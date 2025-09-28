@@ -1,26 +1,25 @@
 import 'dart:async';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'core/firebase/firebase_initializer.dart';
-import 'core/firebase/push_notifications_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:ghar360/core/bindings/initial_binding.dart';
+import 'package:ghar360/core/controllers/localization_controller.dart';
+import 'package:ghar360/core/controllers/theme_controller.dart';
+import 'package:ghar360/core/firebase/firebase_initializer.dart';
+import 'package:ghar360/core/firebase/push_notifications_service.dart';
+import 'package:ghar360/core/routes/app_pages.dart';
+import 'package:ghar360/core/translations/app_translations.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/null_check_trap.dart';
+import 'package:ghar360/core/utils/theme.dart';
+import 'package:ghar360/core/utils/webview_helper.dart';
+import 'package:ghar360/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:ghar360/root.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'core/bindings/initial_binding.dart';
-import 'core/controllers/localization_controller.dart';
-import 'core/controllers/theme_controller.dart';
-import 'core/routes/app_pages.dart';
-import 'core/translations/app_translations.dart';
-import 'core/utils/debug_logger.dart';
-import 'core/utils/null_check_trap.dart';
-import 'core/utils/theme.dart';
-import 'core/utils/webview_helper.dart';
-import 'features/dashboard/controllers/dashboard_controller.dart';
-import 'root.dart';
 
 void main() async {
   runZonedGuarded(
@@ -32,7 +31,7 @@ void main() async {
 
       // Load environment variables first (before DebugLogger initialization)
       try {
-        await dotenv.load(fileName: ".env.development");
+        await dotenv.load(fileName: '.env.development');
       } catch (e) {
         // Continue without .env file - will use defaults
       }
@@ -59,13 +58,28 @@ void main() async {
         await Supabase.initialize(
           url: dotenv.env['SUPABASE_URL'] ?? '',
           anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
-          authOptions: FlutterAuthClientOptions(detectSessionInUri: false),
+          authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
         );
         DebugLogger.success('Supabase initialized successfully');
       } catch (e) {
         DebugLogger.warning('Failed to initialize Supabase', e);
         DebugLogger.info('Continuing without Supabase');
       }
+
+      // Set up global error handlers
+      FlutterError.onError = (FlutterErrorDetails details) {
+        DebugLogger.error('🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}');
+        DebugLogger.error('🚨 [GLOBAL_ERROR] Stack trace: ${details.stack}');
+
+        // One-time first null-check trap capture
+        NullCheckTrap.captureFlutterError(details);
+        // Report to Crashlytics if available
+        try {
+          FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+        } catch (_) {}
+        // Still show the error in debug mode
+        FlutterError.presentError(details);
+      };
 
       // Initialize Firebase (minimal, privacy-first) and services
       try {
@@ -79,23 +93,6 @@ void main() async {
         DebugLogger.debug('Firebase init stack', st);
       }
 
-      // Set up global error handlers
-      FlutterError.onError = (FlutterErrorDetails details) {
-        DebugLogger.error('🚨 [GLOBAL_ERROR] Flutter Error: ${details.exception}');
-        DebugLogger.error('🚨 [GLOBAL_ERROR] Stack trace: ${details.stack}');
-
-        // One-time first null-check trap capture
-        NullCheckTrap.captureFlutterError(details);
-
-        // Report to Crashlytics if available
-        try {
-          FirebaseCrashlytics.instance.recordFlutterFatalError(details);
-        } catch (_) {}
-
-        // Still show the error in debug mode
-        FlutterError.presentError(details);
-      };
-
       runApp(const MyApp());
     },
     (error, stack) {
@@ -104,7 +101,6 @@ void main() async {
         NullCheckTrap.capture(error, stack, source: 'zone');
       }
       DebugLogger.error('🚨 [GLOBAL_ERROR] Unhandled zone error', error, stack);
-
       // Report to Crashlytics if available
       try {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);

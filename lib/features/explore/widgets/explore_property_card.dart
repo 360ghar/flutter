@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../../../core/data/models/property_model.dart';
-import '../../../core/utils/app_colors.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class ExplorePropertyCard extends StatelessWidget {
@@ -61,7 +62,7 @@ class ExplorePropertyCard extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SizedBox(
+                              const SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
@@ -160,7 +161,7 @@ class ExplorePropertyCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      property.addressDisplay,
+                      property.shortAddressDisplay,
                       style: TextStyle(fontSize: 12, color: AppColors.propertyCardSubtext),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -195,66 +196,6 @@ class ExplorePropertyCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    if (property.floorText.isNotEmpty || property.ageText.isNotEmpty) ...[
-                      const SizedBox(height: 1),
-                      Flexible(
-                        child: Row(
-                          children: [
-                            if (property.floorText.isNotEmpty) ...[
-                              Flexible(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.layers_outlined,
-                                      size: 12,
-                                      color: AppColors.propertyFeatureText,
-                                    ),
-                                    const SizedBox(width: 2),
-                                    Flexible(
-                                      child: Text(
-                                        property.floorText,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: AppColors.propertyFeatureText,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            if (property.ageText.isNotEmpty) ...[
-                              if (property.floorText.isNotEmpty) const SizedBox(width: 8),
-                              Flexible(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.access_time_outlined,
-                                      size: 12,
-                                      color: AppColors.propertyFeatureText,
-                                    ),
-                                    const SizedBox(width: 2),
-                                    Flexible(
-                                      child: Text(
-                                        property.ageText,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: AppColors.propertyFeatureText,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),

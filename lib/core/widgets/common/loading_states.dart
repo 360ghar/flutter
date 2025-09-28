@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -260,7 +261,7 @@ class LoadingStates {
             ),
             const SizedBox(height: 16),
             Text(
-              'Loading properties...',
+              'loading_properties'.tr,
               style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
             ),
           ],
@@ -299,7 +300,8 @@ class LoadingStates {
           ),
           const SizedBox(height: 12),
           Text(
-            message ?? 'Loading page $current of $total...',
+            message ??
+                'loading_page'.trParams({'current': current.toString(), 'total': total.toString()}),
             style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
           ),
         ],
@@ -418,7 +420,7 @@ class LoadingStates {
           ),
           const SizedBox(height: 16),
           Text(
-            'Searching properties...',
+            'searching_properties'.tr,
             style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
           ),
         ],
@@ -440,10 +442,7 @@ class LoadingStates {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            'Getting your location...',
-            style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
-          ),
+          Text('getting_location'.tr, style: TextStyle(fontSize: 16, color: AppColors.textPrimary)),
         ],
       ),
     );

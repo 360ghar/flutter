@@ -1,17 +1,20 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-import '../data/models/page_state_model.dart';
-import '../data/models/property_model.dart';
-import '../data/models/unified_filter_model.dart';
-import '../data/repositories/properties_repository.dart';
-import '../data/repositories/swipes_repository.dart';
-import '../utils/app_exceptions.dart';
-import '../utils/debug_logger.dart';
-import 'auth_controller.dart';
-import 'location_controller.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/controllers/location_controller.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/data/repositories/properties_repository.dart';
+import 'package:ghar360/core/data/repositories/swipes_repository.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_mapper.dart';
 
 class PageStateService extends GetxController {
   static PageStateService get instance => Get.find<PageStateService>();
@@ -20,6 +23,7 @@ class PageStateService extends GetxController {
   final _storage = GetStorage();
   final _propertiesRepository = Get.find<PropertiesRepository>();
   final _swipesRepository = Get.find<SwipesRepository>();
+  final _apiService = Get.find<ApiService>();
   final _locationController = Get.find<LocationController>();
   final _authController = Get.find<AuthController>();
 
@@ -36,10 +40,16 @@ class PageStateService extends GetxController {
   final RxBool _discoverRefreshing = false.obs;
   final RxBool _likesRefreshing = false.obs;
 
+  // Search controllers (persistent per page type)
+  final _controllers = <PageType, TextEditingController>{};
+
   // Debounce timers
   Timer? _exploreDebouncer;
   Timer? _discoverDebouncer;
   Timer? _likesDebouncer;
+
+  // Stream subscriptions (to prevent memory leaks)
+  StreamSubscription? _locationSubscription;
 
   @override
   void onInit() {
@@ -54,6 +64,13 @@ class PageStateService extends GetxController {
     _exploreDebouncer?.cancel();
     _discoverDebouncer?.cancel();
     _likesDebouncer?.cancel();
+    // Cancel location subscription to prevent memory leaks
+    _locationSubscription?.cancel();
+    // Dispose search controllers to prevent memory leaks
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    _controllers.clear();
     super.onClose();
   }
 
@@ -187,7 +204,7 @@ class PageStateService extends GetxController {
     });
 
     // Listen to location updates; update only current page to keep independence
-    _locationController.currentPosition.listen((position) async {
+    _locationSubscription = _locationController.currentPosition.listen((position) async {
       if (position != null) {
         // Get real address from coordinates
         final locationName = await _locationController.getAddressFromCoordinates(
@@ -285,8 +302,10 @@ class PageStateService extends GetxController {
 
       DebugLogger.success('✅ Location updated: ${location.name}');
 
-      // Trigger data refresh just for current page
-      _debounceRefresh(currentPageType.value);
+      // Trigger data refresh just for current page (only for non-initial sources)
+      if (source != 'initial' && source != 'hydrate') {
+        _debounceRefresh(currentPageType.value);
+      }
     } catch (e) {
       DebugLogger.error('Failed to update location: $e');
     }
@@ -392,6 +411,15 @@ class PageStateService extends GetxController {
     updatePageSearch(pageType, '');
   }
 
+  // Search controller management (prevents leaks and cursor jumps)
+  TextEditingController getOrCreateSearchController(PageType pageType, {String? seedText}) {
+    return _controllers.putIfAbsent(pageType, () {
+      final controller = TextEditingController(text: seedText ?? '');
+      controller.addListener(() => updatePageSearch(pageType, controller.text));
+      return controller;
+    });
+  }
+
   // Data loading
   Future<void> loadPageData(
     PageType pageType, {
@@ -400,136 +428,44 @@ class PageStateService extends GetxController {
   }) async {
     try {
       final state = _getStateForPage(pageType);
-      if (state.isLoading) return;
+      if (state.isLoading || state.isRefreshing) return;
 
-      if (!forceRefresh &&
-          !backgroundRefresh &&
-          !state.isDataStale &&
-          state.properties.isNotEmpty) {
-        return;
-      }
+      final hasCached = state.properties.isNotEmpty;
+      final isStale = state.isDataStale;
 
-      if (!backgroundRefresh) {
+      // If there's no cached data at all, do a foreground load
+      if (!hasCached) {
         _updatePageState(pageType, state.copyWith(isLoading: true, error: null));
+        await _fetchAndUpdatePage(pageType, page: 1);
       } else {
-        notifyPageRefreshing(pageType, true);
-        _updatePageState(pageType, state.copyWith(isRefreshing: true, error: null));
-      }
-
-      // --- ROBUST LOCATION HANDLING ---
-      LocationData? locationToUse = state.selectedLocation;
-      if (locationToUse == null) {
-        DebugLogger.warning('⚠️ No location set for ${pageType.name}. Bootstrapping location...');
-        try {
-          locationToUse = await _locationController.getInitialLocation();
-        } catch (e) {
-          final friendlyError = 'Location not available. Please enable location or choose a place.';
-          _updatePageState(
-            pageType,
-            state.copyWith(
-              isLoading: false,
-              isRefreshing: false,
-              error: AppError(error: friendlyError, stackTrace: StackTrace.current),
-            ),
+        // We have cached data: return immediately and revalidate in background when asked or stale
+        if (forceRefresh || backgroundRefresh || isStale) {
+          notifyPageRefreshing(pageType, true);
+          _updatePageState(pageType, state.copyWith(isRefreshing: true, error: null));
+          // Use ETag only for time-based/background revalidation; skip for explicit forceRefresh to avoid mismatched keys
+          final useEtag = !forceRefresh;
+          unawaited(
+            _fetchAndUpdatePage(pageType, page: 1, useEtag: useEtag).whenComplete(() {
+              notifyPageRefreshing(pageType, false);
+            }),
           );
-          DebugLogger.error('❌ Failed to load ${pageType.name}: $friendlyError', e);
-          notifyPageRefreshing(pageType, false);
+        } else {
+          // Fresh enough; nothing to do
           return;
         }
-      }
-      // --- END ROBUST LOCATION HANDLING ---
-
-      if (pageType == PageType.likes) {
-        final isLikedSegment =
-            (state.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
-
-        DebugLogger.api(
-          '📊 [PAGE_STATE_SERVICE] About to call getSwipeHistoryProperties for likes',
-        );
-        DebugLogger.api('📊 [PAGE_STATE_SERVICE] isLikedSegment: $isLikedSegment');
-        DebugLogger.api(
-          '📊 [PAGE_STATE_SERVICE] Location: (${locationToUse.latitude}, ${locationToUse.longitude})',
-        );
-        DebugLogger.api('📊 [PAGE_STATE_SERVICE] Filters: ${state.filters.toJson()}');
-
-        final response = await _swipesRepository.getSwipeHistoryProperties(
-          filters: state.filters.copyWith(searchQuery: state.searchQuery),
-          latitude: locationToUse.latitude,
-          longitude: locationToUse.longitude,
-          page: 1,
-          limit: 50,
-          isLiked: isLikedSegment,
-        );
-        DebugLogger.api('📊 [PAGE_STATE_SERVICE] getSwipeHistoryProperties completed successfully');
-
-        _updatePageState(
-          pageType,
-          state.copyWith(
-            properties: response.properties,
-            selectedLocation: locationToUse, // Persist the location used
-            currentPage: 1,
-            totalPages: response.totalPages,
-            hasMore: response.hasMore,
-            isLoading: false,
-            isRefreshing: false,
-            lastFetched: DateTime.now(),
-            error: null, // clear any previous error on success
-          ),
-        );
-      } else {
-        final response = await _propertiesRepository.getProperties(
-          filters: state.filters.copyWith(searchQuery: state.searchQuery),
-          page: 1,
-          limit: pageType == PageType.discover ? 20 : 50,
-          latitude: locationToUse.latitude,
-          longitude: locationToUse.longitude,
-          radiusKm: state.filters.radiusKm ?? 10.0,
-          excludeSwiped: pageType == PageType.discover,
-        );
-
-        _updatePageState(
-          pageType,
-          state.copyWith(
-            properties: response.properties,
-            selectedLocation: locationToUse, // Persist the location used
-            currentPage: 1,
-            totalPages: response.totalPages,
-            hasMore: response.hasMore,
-            isLoading: false,
-            isRefreshing: false,
-            lastFetched: DateTime.now(),
-            error: null, // clear any previous error on success
-          ),
-        );
       }
 
       final updatedCount = _getStateForPage(pageType).properties.length;
       DebugLogger.success('✅ Loaded $updatedCount properties for ${pageType.name}');
     } catch (e, stackTrace) {
-      // Now we log with the full context
       DebugLogger.error('❌ Failed to load ${pageType.name} data', e, stackTrace);
-
-      if (e.toString().contains('Null check operator used on a null value')) {
-        DebugLogger.error(
-          '🚨 [PAGE_STATE_SERVICE] NULL CHECK OPERATOR ERROR during ${pageType.name} data load!',
-        );
-        if (pageType == PageType.likes) {
-          DebugLogger.error(
-            '🚨 [PAGE_STATE_SERVICE] This error occurred in SwipesRepository.getSwipeHistoryProperties()',
-          );
-          DebugLogger.error(
-            '🚨 [PAGE_STATE_SERVICE] Check the detailed API parsing logs above for the root cause',
-          );
-        }
-      }
-
       final state = _getStateForPage(pageType);
       _updatePageState(
         pageType,
         state.copyWith(
           isLoading: false,
           isRefreshing: false,
-          error: AppError(error: e, stackTrace: stackTrace),
+          error: ErrorMapper.mapApiError(e, stackTrace),
         ),
       );
     } finally {
@@ -556,45 +492,74 @@ class PageStateService extends GetxController {
       if (pageType == PageType.likes) {
         final isLikedSegment =
             (state.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
-        final response = await _swipesRepository.getSwipeHistoryProperties(
-          filters: state.filters.copyWith(searchQuery: state.searchQuery),
-          latitude: loc.latitude,
-          longitude: loc.longitude,
+        final response = await _apiService.getSwipesWithCacheValidation(
+          lat: loc.latitude,
+          lng: loc.longitude,
+          radius: state.filters.radiusKm?.toInt(),
+          q: state.searchQuery,
+          propertyType: state.filters.propertyType,
+          purpose: state.filters.purpose,
+          priceMin: state.filters.priceMin,
+          priceMax: state.filters.priceMax,
+          bedroomsMin: state.filters.bedroomsMin,
+          bedroomsMax: state.filters.bedroomsMax,
+          bathroomsMin: state.filters.bathroomsMin,
+          bathroomsMax: state.filters.bathroomsMax,
+          areaMin: state.filters.areaMin,
+          areaMax: state.filters.areaMax,
+          amenities: state.filters.amenities,
+          parkingSpacesMin: state.filters.parkingSpacesMin,
+          floorNumberMin: state.filters.floorNumberMin,
+          floorNumberMax: state.filters.floorNumberMax,
+          ageMax: state.filters.ageMax,
+          checkIn: state.filters.checkInDate?.toIso8601String().split('T').first,
+          checkOut: state.filters.checkOutDate?.toIso8601String().split('T').first,
+          guests: state.filters.guests,
+          isLiked: isLikedSegment,
+          sortBy: state.filters.sortBy?.toString().split('.').last,
           page: state.currentPage + 1,
           limit: 50,
-          isLiked: isLikedSegment,
         );
 
-        final newProperties = [...state.properties, ...response.properties];
+        final raw = response.data ?? {};
+        final List<PropertyModel> pageProps = (raw['properties'] as List<dynamic>? ?? [])
+            .map((e) => PropertyModel.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+        final totalPages = raw['total_pages'] ?? state.totalPages;
+        final hasMore = raw['has_next'] ?? (state.currentPage + 1 < totalPages);
+
+        final newProperties = [...state.properties, ...pageProps];
         _updatePageState(
           pageType,
           state.copyWith(
             properties: newProperties,
             currentPage: state.currentPage + 1,
-            totalPages: response.totalPages,
-            hasMore: response.hasMore,
+            totalPages: totalPages,
+            hasMore: hasMore,
             isLoadingMore: false,
           ),
         );
       } else {
-        final response = await _propertiesRepository.getProperties(
+        final response = await _apiService.searchPropertiesWithCacheValidation(
           filters: state.filters.copyWith(searchQuery: state.searchQuery),
-          page: state.currentPage + 1,
-          limit: pageType == PageType.discover ? 20 : 50,
           latitude: loc.latitude,
           longitude: loc.longitude,
-          radiusKm: state.filters.radiusKm ?? 10.0,
+          radiusKm: (state.filters.radiusKm ?? 10.0).clamp(5.0, 50.0),
+          page: state.currentPage + 1,
+          limit: pageType == PageType.discover ? 20 : 50,
           excludeSwiped: pageType == PageType.discover,
+          useCache: true,
         );
 
-        final newProperties = [...state.properties, ...response.properties];
+        final unified = response.data;
+        final newProperties = [...state.properties, ...?unified?.properties];
         _updatePageState(
           pageType,
           state.copyWith(
             properties: newProperties,
             currentPage: state.currentPage + 1,
-            totalPages: response.totalPages,
-            hasMore: response.hasMore,
+            totalPages: unified?.totalPages ?? state.totalPages,
+            hasMore: unified?.hasMore ?? state.hasMore,
             isLoadingMore: false,
           ),
         );
@@ -607,6 +572,160 @@ class PageStateService extends GetxController {
       final state = _getStateForPage(pageType);
       _updatePageState(pageType, state.copyWith(isLoadingMore: false));
     }
+  }
+
+  // Alias for controllers
+  Future<void> loadMoreData(PageType pageType) => loadMorePageData(pageType);
+
+  // Central swipe action to maintain unidirectional data flow
+  Future<void> recordSwipe({required int propertyId, required bool isLiked}) async {
+    try {
+      // Maintain likes list optimistically
+      if (isLiked) {
+        final prop = _findPropertyInAnyList(propertyId);
+        if (prop != null) addPropertyToLikes(prop);
+      } else {
+        removePropertyFromLikes(propertyId);
+      }
+
+      // Also remove from discover deck optimistically
+      removePropertyFromDiscover(propertyId);
+
+      // Background network sync
+      unawaited(_swipesRepository.recordSwipe(propertyId: propertyId, isLiked: isLiked));
+    } catch (e) {
+      DebugLogger.error('Failed to record swipe: $e');
+    }
+  }
+
+  PropertyModel? _findPropertyInAnyList(int propertyId) {
+    for (final p in exploreState.value.properties) {
+      if (p.id == propertyId) return p;
+    }
+    for (final p in discoverState.value.properties) {
+      if (p.id == propertyId) return p;
+    }
+    for (final p in likesState.value.properties) {
+      if (p.id == propertyId) return p;
+    }
+    return null;
+  }
+
+  // Internal: fetch page data (page 1) and update state, with optional ETag
+  Future<void> _fetchAndUpdatePage(
+    PageType pageType, {
+    required int page,
+    bool useEtag = false,
+  }) async {
+    final state = _getStateForPage(pageType);
+    LocationData? loc = state.selectedLocation;
+    loc ??= await _locationController.getInitialLocation();
+
+    final ifNoneMatch = useEtag ? state.getAdditionalData<String>('etag') : null;
+
+    if (pageType == PageType.likes) {
+      final isLikedSegment =
+          (state.getAdditionalData<String>('currentSegment') ?? 'liked') == 'liked';
+      final resp = await _apiService.getSwipesWithCacheValidation(
+        lat: loc.latitude,
+        lng: loc.longitude,
+        radius: state.filters.radiusKm?.toInt(),
+        q: state.searchQuery,
+        propertyType: state.filters.propertyType,
+        purpose: state.filters.purpose,
+        priceMin: state.filters.priceMin,
+        priceMax: state.filters.priceMax,
+        bedroomsMin: state.filters.bedroomsMin,
+        bedroomsMax: state.filters.bedroomsMax,
+        bathroomsMin: state.filters.bathroomsMin,
+        bathroomsMax: state.filters.bathroomsMax,
+        areaMin: state.filters.areaMin,
+        areaMax: state.filters.areaMax,
+        amenities: state.filters.amenities,
+        parkingSpacesMin: state.filters.parkingSpacesMin,
+        floorNumberMin: state.filters.floorNumberMin,
+        floorNumberMax: state.filters.floorNumberMax,
+        ageMax: state.filters.ageMax,
+        checkIn: state.filters.checkInDate?.toIso8601String().split('T').first,
+        checkOut: state.filters.checkOutDate?.toIso8601String().split('T').first,
+        guests: state.filters.guests,
+        isLiked: isLikedSegment,
+        sortBy: state.filters.sortBy?.toString().split('.').last,
+        page: 1,
+        limit: 50,
+        ifNoneMatch: ifNoneMatch,
+      );
+
+      if (resp.notModified) {
+        _updatePageState(
+          pageType,
+          state.copyWith(isLoading: false, isRefreshing: false, error: null),
+        );
+        return;
+      }
+
+      final raw = resp.data ?? {};
+      final List<PropertyModel> props = (raw['properties'] as List<dynamic>? ?? [])
+          .map((e) => PropertyModel.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+      final totalPages = raw['total_pages'] ?? 1;
+      final hasMore = raw['has_next'] ?? (1 < totalPages);
+
+      _updatePageState(
+        pageType,
+        state
+            .copyWith(
+              properties: props,
+              selectedLocation: loc,
+              currentPage: 1,
+              totalPages: totalPages,
+              hasMore: hasMore,
+              isLoading: false,
+              isRefreshing: false,
+              lastFetched: DateTime.now(),
+              error: null,
+            )
+            .updateAdditionalData('etag', resp.etag),
+      );
+      return;
+    }
+
+    // Explore/Discover
+    final resp = await _apiService.searchPropertiesWithCacheValidation(
+      filters: state.filters.copyWith(searchQuery: state.searchQuery),
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      radiusKm: (state.filters.radiusKm ?? 10.0).clamp(5.0, 50.0),
+      page: 1,
+      limit: pageType == PageType.discover ? 20 : 50,
+      excludeSwiped: pageType == PageType.discover,
+      useCache: true,
+      ifNoneMatch: ifNoneMatch,
+    );
+    if (resp.notModified) {
+      _updatePageState(
+        pageType,
+        state.copyWith(isLoading: false, isRefreshing: false, error: null),
+      );
+      return;
+    }
+    final unified = resp.data!;
+    _updatePageState(
+      pageType,
+      state
+          .copyWith(
+            properties: unified.properties,
+            selectedLocation: loc,
+            currentPage: 1,
+            totalPages: unified.totalPages,
+            hasMore: unified.hasMore,
+            isLoading: false,
+            isRefreshing: false,
+            lastFetched: DateTime.now(),
+            error: null,
+          )
+          .updateAdditionalData('etag', resp.etag),
+    );
   }
 
   // Reset methods

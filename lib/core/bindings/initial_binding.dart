@@ -1,14 +1,16 @@
 import 'package:get/get.dart';
+
+import 'package:ghar360/core/controllers/app_update_controller.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/controllers/localization_controller.dart';
+import 'package:ghar360/core/controllers/location_controller.dart';
+import 'package:ghar360/core/controllers/offline_queue_service.dart';
+import 'package:ghar360/core/controllers/theme_controller.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/data/repositories/app_update_repository.dart';
+import 'package:ghar360/core/data/repositories/profile_repository.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/features/auth/data/auth_repository.dart';
-import '../data/providers/api_service.dart';
-import '../data/repositories/app_update_repository.dart';
-import '../data/repositories/profile_repository.dart';
-import '../controllers/auth_controller.dart';
-import '../controllers/app_update_controller.dart';
-import '../controllers/location_controller.dart';
-import '../controllers/localization_controller.dart';
-import '../controllers/theme_controller.dart';
-import '../utils/debug_logger.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -35,6 +37,14 @@ class InitialBinding extends Bindings {
 
     // Register Core Controllers in proper order
     _initializeCoreControllers();
+
+    // Initialize offline queue early (connectivity listener + storage)
+    try {
+      Get.put<OfflineQueueService>(OfflineQueueService(), permanent: true).init();
+      DebugLogger.success('✅ OfflineQueueService registered');
+    } catch (e) {
+      DebugLogger.error('💥 Failed to initialize OfflineQueueService: $e');
+    }
 
     // Note: Repositories and feature controllers will be initialized
     // in route-specific bindings to prevent unauthorized API calls

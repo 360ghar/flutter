@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
-import '../controllers/discover_controller.dart';
+
+import 'package:ghar360/features/discover/controllers/discover_controller.dart';
 
 class DiscoverBinding extends Bindings {
   @override

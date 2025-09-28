@@ -1,22 +1,24 @@
+import 'dart:convert';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart' as getx;
+import 'package:get_storage/get_storage.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/data/models/agent_model.dart';
+import 'package:ghar360/core/data/models/amenity_model.dart';
+import 'package:ghar360/core/data/models/api_response_models.dart';
+import 'package:ghar360/core/data/models/app_update_models.dart';
+import 'package:ghar360/core/data/models/bug_report_model.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/static_page_model.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/data/models/unified_property_response.dart';
+import 'package:ghar360/core/data/models/user_model.dart';
+import 'package:ghar360/core/data/models/visit_model.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_mapper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../controllers/auth_controller.dart';
-import '../../utils/app_exceptions.dart';
-import '../../utils/debug_logger.dart';
-import '../../utils/error_mapper.dart';
-import '../models/agent_model.dart';
-import '../models/app_update_models.dart';
-import '../models/amenity_model.dart';
-import '../models/api_response_models.dart';
-import '../models/bug_report_model.dart';
-import '../models/property_model.dart';
-import '../models/static_page_model.dart';
-import '../models/unified_filter_model.dart';
-import '../models/unified_property_response.dart';
-import '../models/user_model.dart';
-import '../models/visit_model.dart';
 
 class ApiAuthException implements Exception {
   final String message;
@@ -152,42 +154,46 @@ class ApiService extends getx.GetConnect {
 
   late final String _baseUrl;
   late final SupabaseClient _supabase;
+  final GetStorage _cacheStorage = GetStorage();
   // Track in-flight profile fetch to avoid duplicate concurrent calls
   Future<UserModel>? _getCurrentUserInFlight;
   // Removed token cache - trust Supabase session management
 
   @override
-  Future<void> onInit() async {
+  void onInit() {
     super.onInit();
-    await _initializeService();
-    httpClient.baseUrl = _baseUrl;
-    // Configure a sensible default timeout, overridable via env
-    final timeoutSeconds = int.tryParse(dotenv.env['API_TIMEOUT_SECONDS'] ?? '') ?? 15;
-    httpClient.timeout = Duration(seconds: timeoutSeconds);
-    DebugLogger.startup('HTTP client timeout set to ${httpClient.timeout.inSeconds}s');
+    // Defer async init to avoid changing the method signature
+    Future.microtask(() async {
+      await _initializeService();
+      httpClient.baseUrl = _baseUrl;
+      // Configure a sensible default timeout, overridable via env
+      final timeoutSeconds = int.tryParse(dotenv.env['API_TIMEOUT_SECONDS'] ?? '') ?? 15;
+      httpClient.timeout = Duration(seconds: timeoutSeconds);
+      DebugLogger.startup('HTTP client timeout set to ${httpClient.timeout.inSeconds}s');
 
-    // Request modifier to add authentication token
-    httpClient.addRequestModifier<Object?>((request) async {
-      final token = await _authToken;
-      if (token != null && token.trim().isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer ${token.trim()}';
-        DebugLogger.auth('➡️ Attaching Authorization header to ${request.url}');
-      } else {
-        request.headers.remove('Authorization');
-        DebugLogger.auth('➡️ No Authorization header for ${request.url}');
-      }
-      request.headers['Content-Type'] = 'application/json';
-      return request;
-    });
+      // Request modifier to add authentication token
+      httpClient.addRequestModifier<Object?>((request) async {
+        final token = await _authToken;
+        if (token != null && token.trim().isNotEmpty) {
+          request.headers['Authorization'] = 'Bearer ${token.trim()}';
+          DebugLogger.auth('➡️ Attaching Authorization header to ${request.url}');
+        } else {
+          request.headers.remove('Authorization');
+          DebugLogger.auth('➡️ No Authorization header for ${request.url}');
+        }
+        request.headers['Content-Type'] = 'application/json';
+        return request;
+      });
 
-    // Simplified response interceptor - trust Supabase's automatic refresh
-    httpClient.addResponseModifier((request, response) async {
-      if (response.statusCode == 401) {
-        DebugLogger.warning('🔐 Received 401 response, clearing authentication');
-        _handleAuthenticationFailure();
-        throw ApiAuthException('Authentication failed', statusCode: 401);
-      }
-      return response;
+      // Simplified response interceptor - trust Supabase's automatic refresh
+      httpClient.addResponseModifier((request, response) async {
+        if (response.statusCode == 401) {
+          DebugLogger.warning('🔐 Received 401 response, clearing authentication');
+          _handleAuthenticationFailure();
+          throw ApiAuthException('Authentication failed', statusCode: 401);
+        }
+        return response;
+      });
     });
   }
 
@@ -199,20 +205,9 @@ class ApiService extends getx.GetConnect {
       _baseUrl = fullApiUrl.replaceAll('/api/v1', '');
       DebugLogger.startup('API Service initialized with base URL: $_baseUrl');
 
-      // Check if Supabase is already initialized
-      try {
-        _supabase = Supabase.instance.client;
-        DebugLogger.success('Supabase client found');
-      } catch (e) {
-        DebugLogger.warning('Supabase not initialized, attempting to initialize...');
-        // Initialize Supabase if not already initialized
-        await Supabase.initialize(
-          url: dotenv.env['SUPABASE_URL'] ?? '',
-          anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
-        );
-        _supabase = Supabase.instance.client;
-        DebugLogger.success('Supabase initialized successfully');
-      }
+      // Get existing Supabase client (initialized in main.dart)
+      _supabase = Supabase.instance.client;
+      DebugLogger.success('Supabase client acquired');
     } catch (e, stackTrace) {
       DebugLogger.error('Error initializing API service', e, stackTrace);
       // Create a mock client or handle the error appropriately
@@ -281,6 +276,9 @@ class ApiService extends getx.GetConnect {
     Map<String, String>? queryParams,
     int retries = 2,
     String? operationName,
+    Map<String, String>? headers,
+    bool allowNotModified = false,
+    void Function(Map<String, String?> headers)? onHeaders,
   }) async {
     AppException? lastAppException;
     final operation = operationName ?? '$method $endpoint';
@@ -290,6 +288,30 @@ class ApiService extends getx.GetConnect {
       try {
         // Prepend /api/v1 to all endpoints
         final fullEndpoint = '/api/v1$endpoint';
+
+        // Prepare headers (and inject If-None-Match for GET when cached)
+        final effectiveHeaders = <String, String>{...?(headers)};
+
+        // Build a canonical cache key for GET requests
+        String? cacheKey;
+        String? cachedEtag;
+        if (method.toUpperCase() == 'GET') {
+          cacheKey = _buildCacheKey(
+            method,
+            // Include base to avoid collisions across envs
+            '$_baseUrl$fullEndpoint',
+            queryParams,
+            userScope: _supabase.auth.currentUser?.id,
+          );
+          // Attempt to read an existing cache entry
+          final cachedEntry = _readCacheEntry(cacheKey);
+          cachedEtag = cachedEntry?['etag'] as String?;
+          if (cachedEtag != null &&
+              !effectiveHeaders.keys.any((k) => k.toLowerCase() == 'if-none-match')) {
+            effectiveHeaders['If-None-Match'] = cachedEtag;
+            DebugLogger.api('🧠 Added If-None-Match for $fullEndpoint (etag=$cachedEtag)');
+          }
+        }
 
         // Single-line API request log for debugging
         DebugLogger.api(
@@ -302,16 +324,21 @@ class ApiService extends getx.GetConnect {
 
         switch (method.toUpperCase()) {
           case 'GET':
-            response = await get(fullEndpoint, query: queryParams);
+            response = await get(fullEndpoint, query: queryParams, headers: effectiveHeaders);
             break;
           case 'POST':
-            response = await post(fullEndpoint, body, query: queryParams);
+            response = await post(
+              fullEndpoint,
+              body,
+              query: queryParams,
+              headers: effectiveHeaders,
+            );
             break;
           case 'PUT':
-            response = await put(fullEndpoint, body, query: queryParams);
+            response = await put(fullEndpoint, body, query: queryParams, headers: effectiveHeaders);
             break;
           case 'DELETE':
-            response = await delete(fullEndpoint, query: queryParams);
+            response = await delete(fullEndpoint, query: queryParams, headers: effectiveHeaders);
             break;
           default:
             throw Exception('Unsupported HTTP method: $method');
@@ -328,9 +355,59 @@ class ApiService extends getx.GetConnect {
           body: response.bodyString ?? '',
         );
 
+        // Handle 304 Not Modified: return cached data when available
+        if (response.statusCode == 304) {
+          // Preserve legacy behavior for explicit allowNotModified callers
+          if (allowNotModified) {
+            throw NotModifiedException('Not Modified', code: 'NOT_MODIFIED');
+          }
+
+          if (method.toUpperCase() == 'GET' && cacheKey != null) {
+            final cachedEntry = _readCacheEntry(cacheKey);
+            final cachedBody = cachedEntry?['body'] as String?;
+            if (cachedBody != null) {
+              DebugLogger.api('🔁 304 for $fullEndpoint → serving cached response');
+              // Provide headers (e.g., ETag) to caller if requested
+              if (onHeaders != null) {
+                try {
+                  onHeaders(response.headers ?? const {});
+                } catch (_) {}
+              }
+
+              final cachedData = jsonDecode(cachedBody);
+              try {
+                if (cachedData is Map<String, dynamic>) {
+                  final result = fromJson(cachedData);
+                  return result;
+                } else if (cachedData is List) {
+                  final normalizedData = {'data': cachedData};
+                  final result = fromJson(normalizedData);
+                  return result;
+                } else {
+                  final normalizedData = {'data': cachedData};
+                  final result = fromJson(normalizedData);
+                  return result;
+                }
+              } catch (e) {
+                DebugLogger.error('🚨 Error parsing cached data for $operation: $e');
+                rethrow;
+              }
+            }
+          }
+          // No cache available; escalate as cache error
+          DebugLogger.warning('⚠️ 304 received but no cache found for $operation');
+          throw CacheException('No cached data available for 304 Not Modified');
+        }
+
         if (response.statusCode != null &&
             response.statusCode! >= 200 &&
             response.statusCode! < 300) {
+          // Provide headers (e.g., ETag) to caller if requested
+          if (onHeaders != null) {
+            try {
+              onHeaders(response.headers ?? const {});
+            } catch (_) {}
+          }
           final responseData = response.body;
           DebugLogger.api('📊 [_makeRequest] Raw response data type: ${responseData?.runtimeType}');
           DebugLogger.api('📊 [_makeRequest] Raw response data: $responseData');
@@ -341,6 +418,10 @@ class ApiService extends getx.GetConnect {
                 '📊 [_makeRequest] Calling fromJson with Map<String, dynamic>: $responseData',
               );
               final result = fromJson(responseData);
+              // Cache successful GET responses with ETag
+              if (method.toUpperCase() == 'GET' && cacheKey != null) {
+                _maybeCacheResponse(cacheKey, response);
+              }
               DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             } else if (responseData is List) {
@@ -350,6 +431,9 @@ class ApiService extends getx.GetConnect {
                 '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
               );
               final result = fromJson(normalizedData);
+              if (method.toUpperCase() == 'GET' && cacheKey != null) {
+                _maybeCacheResponse(cacheKey, response);
+              }
               DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             } else {
@@ -361,6 +445,9 @@ class ApiService extends getx.GetConnect {
                 '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
               );
               final result = fromJson(normalizedData);
+              if (method.toUpperCase() == 'GET' && cacheKey != null) {
+                _maybeCacheResponse(cacheKey, response);
+              }
               DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             }
@@ -479,6 +566,64 @@ class ApiService extends getx.GetConnect {
     return delay > 4000 ? 4000 : delay;
   }
 
+  // ===== HTTP ETag cache helpers =====
+  String _buildCacheKey(
+    String method,
+    String url,
+    Map<String, String>? queryParams, {
+    String? userScope,
+  }) {
+    final qp = Map<String, String>.from(queryParams ?? const {});
+    final keys = qp.keys.toList()..sort();
+    final qpString = keys.map((k) => '$k=${qp[k]}').join('&');
+    final scope = (userScope != null && userScope.isNotEmpty) ? '|uid=$userScope' : '|uid=anon';
+    return 'HTTP_CACHE|${method.toUpperCase()}|$url|$qpString$scope';
+  }
+
+  Map<String, dynamic>? _readCacheEntry(String key) {
+    try {
+      final v = _cacheStorage.read(key);
+      if (v is Map) {
+        return Map<String, dynamic>.from(v);
+      }
+    } catch (e) {
+      DebugLogger.warning('Failed to read cache entry', e);
+    }
+    return null;
+  }
+
+  void _maybeCacheResponse(String cacheKey, getx.Response response) {
+    try {
+      final etag = _getHeaderValue(response.headers, 'etag');
+      if (etag == null || etag.isEmpty) {
+        DebugLogger.api('🗂️ No ETag present; skipping cache for $cacheKey');
+        return;
+      }
+      final bodyStr = response.bodyString ?? jsonEncode(response.body);
+      if (bodyStr.isEmpty || bodyStr.trim() == 'null') {
+        DebugLogger.api('🗂️ Empty body; skipping cache for $cacheKey');
+        return;
+      }
+      _cacheStorage.write(cacheKey, {
+        'etag': etag,
+        'body': bodyStr,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+      DebugLogger.api('✅ Cached response (etag=$etag) for $cacheKey');
+    } catch (e) {
+      DebugLogger.warning('Failed to cache response for $cacheKey', e);
+    }
+  }
+
+  String? _getHeaderValue(Map<String, String?>? headers, String name) {
+    if (headers == null) return null;
+    final target = name.toLowerCase();
+    for (final entry in headers.entries) {
+      if (entry.key.toLowerCase() == target) return entry.value;
+    }
+    return null;
+  }
+
   // Fetch static page content from core pages endpoint (no auth required)
   Future<StaticPageModel> fetchStaticPage(String uniqueName) async {
     return _makeRequest<StaticPageModel>(
@@ -501,11 +646,11 @@ class ApiService extends getx.GetConnect {
 
   Future<AppVersionCheckResponse> checkAppVersion({required AppVersionCheckRequest request}) async {
     return _makeRequest<AppVersionCheckResponse>(
-      '/core/versions/check',
+      '/versions/check',
       (json) => AppVersionCheckResponse.fromJson(json),
       method: 'POST',
       body: request.toJson(),
-      operationName: 'POST /core/versions/check',
+      operationName: 'POST /versions/check',
     );
   }
 
@@ -869,6 +1014,7 @@ class ApiService extends getx.GetConnect {
     int page = 1,
     int limit = 20,
     bool excludeSwiped = false,
+    bool useCache = true,
   }) async {
     // Validate parameters to prevent 422 errors
     if (latitude < -90 || latitude > 90) {
@@ -899,6 +1045,11 @@ class ApiService extends getx.GetConnect {
       'lng': longitude.toStringAsFixed(6),
       'radius': radiusKm.toInt().toString(),
     };
+
+    // Simple cache-busting when fresh data is required
+    if (!useCache) {
+      queryParams['_'] = DateTime.now().millisecondsSinceEpoch.toString();
+    }
 
     DebugLogger.api('🔍 Search parameters - lat: $latitude, lng: $longitude, radius: $radiusKm km');
 
@@ -947,6 +1098,73 @@ class ApiService extends getx.GetConnect {
       queryParams: queryParams,
       operationName: 'Search Properties',
     );
+  }
+
+  // Same as searchProperties but supports If-None-Match and returns ETag
+  Future<ApiWithEtag<UnifiedPropertyResponse>> searchPropertiesWithCacheValidation({
+    required UnifiedFilterModel filters,
+    required double latitude,
+    required double longitude,
+    double radiusKm = 10,
+    int page = 1,
+    int limit = 20,
+    bool excludeSwiped = false,
+    bool useCache = true,
+    String? ifNoneMatch,
+  }) async {
+    // Build query params same as searchProperties
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+      'lat': latitude.toStringAsFixed(6),
+      'lng': longitude.toStringAsFixed(6),
+      'radius': radiusKm.toInt().toString(),
+    };
+
+    if (!useCache) {
+      queryParams['_'] = DateTime.now().millisecondsSinceEpoch.toString();
+    }
+
+    final filterMap = filters.toJson();
+    filterMap.forEach((key, value) {
+      if (value != null) {
+        if (key == 'search_query') {
+          final q = value.toString().trim();
+          if (q.isNotEmpty) queryParams['q'] = q;
+          return;
+        }
+        if (value is List) {
+          final cleanList = value
+              .where((item) => item != null && item.toString().trim().isNotEmpty)
+              .toList();
+          if (cleanList.isNotEmpty) queryParams[key] = cleanList.join(',');
+        } else if (value.toString().trim().isNotEmpty) {
+          queryParams[key] = value.toString().trim();
+        }
+      }
+    });
+    if (excludeSwiped) {
+      queryParams['exclude_swiped'] = 'true';
+    }
+
+    String? responseEtag;
+    try {
+      final data = await _makeRequest<UnifiedPropertyResponse>(
+        '/properties/',
+        (json) => _parseUnifiedPropertyResponse(json),
+        method: 'GET',
+        queryParams: queryParams,
+        operationName: 'Search Properties (ETag)',
+        headers: ifNoneMatch != null ? {'If-None-Match': ifNoneMatch} : null,
+        allowNotModified: true,
+        onHeaders: (headers) {
+          responseEtag = headers['etag'] ?? headers['ETag'];
+        },
+      );
+      return ApiWithEtag(data: data, etag: responseEtag, notModified: false, statusCode: 200);
+    } on NotModifiedException {
+      return ApiWithEtag(data: null, etag: ifNoneMatch, notModified: true, statusCode: 304);
+    }
   }
 
   // Property Discovery using unified search
@@ -1240,6 +1458,98 @@ class ApiService extends getx.GetConnect {
     );
   }
 
+  // Same as getSwipes but supports If-None-Match and returns ETag
+  Future<ApiWithEtag<Map<String, dynamic>>> getSwipesWithCacheValidation({
+    // Location & Search
+    double? lat,
+    double? lng,
+    int? radius,
+    String? q,
+
+    // Property Filters
+    List<String>? propertyType,
+    String? purpose,
+    double? priceMin,
+    double? priceMax,
+    int? bedroomsMin,
+    int? bedroomsMax,
+    int? bathroomsMin,
+    int? bathroomsMax,
+    double? areaMin,
+    double? areaMax,
+
+    // Additional Filters
+    List<String>? amenities,
+    int? parkingSpacesMin,
+    int? floorNumberMin,
+    int? floorNumberMax,
+    int? ageMax,
+
+    // Short Stay Filters
+    String? checkIn,
+    String? checkOut,
+    int? guests,
+
+    // Swipe Filters
+    bool? isLiked,
+
+    // Sorting & Pagination
+    String? sortBy,
+    int page = 1,
+    int limit = 20,
+    String? ifNoneMatch,
+  }) async {
+    final queryParams = <String, String>{'page': page.toString(), 'limit': limit.toString()};
+
+    if (lat != null) queryParams['lat'] = lat.toString();
+    if (lng != null) queryParams['lng'] = lng.toString();
+    if (radius != null) queryParams['radius'] = radius.toString();
+    if (q != null && q.isNotEmpty) queryParams['q'] = q;
+
+    if (propertyType != null && propertyType.isNotEmpty) {
+      queryParams['property_type'] = propertyType.join(',');
+    }
+    if (purpose != null) queryParams['purpose'] = purpose;
+    if (priceMin != null) queryParams['price_min'] = priceMin.toString();
+    if (priceMax != null) queryParams['price_max'] = priceMax.toString();
+    if (bedroomsMin != null) queryParams['bedrooms_min'] = bedroomsMin.toString();
+    if (bedroomsMax != null) queryParams['bedrooms_max'] = bedroomsMax.toString();
+    if (bathroomsMin != null) queryParams['bathrooms_min'] = bathroomsMin.toString();
+    if (bathroomsMax != null) queryParams['bathrooms_max'] = bathroomsMax.toString();
+    if (areaMin != null) queryParams['area_min'] = areaMin.toString();
+    if (areaMax != null) queryParams['area_max'] = areaMax.toString();
+    if (amenities != null && amenities.isNotEmpty) {
+      queryParams['amenities'] = amenities.join(',');
+    }
+    if (parkingSpacesMin != null) queryParams['parking_spaces_min'] = parkingSpacesMin.toString();
+    if (floorNumberMin != null) queryParams['floor_number_min'] = floorNumberMin.toString();
+    if (floorNumberMax != null) queryParams['floor_number_max'] = floorNumberMax.toString();
+    if (ageMax != null) queryParams['age_max'] = ageMax.toString();
+    if (checkIn != null) queryParams['check_in'] = checkIn;
+    if (checkOut != null) queryParams['check_out'] = checkOut;
+    if (guests != null) queryParams['guests'] = guests.toString();
+    if (isLiked != null) queryParams['is_liked'] = isLiked.toString();
+    if (sortBy != null) queryParams['sort_by'] = sortBy;
+
+    String? responseEtag;
+    try {
+      final data = await _makeRequest<Map<String, dynamic>>(
+        '/swipes/',
+        (json) => json,
+        queryParams: queryParams,
+        operationName: 'Get Swipes (ETag)',
+        headers: ifNoneMatch != null ? {'If-None-Match': ifNoneMatch} : null,
+        allowNotModified: true,
+        onHeaders: (headers) {
+          responseEtag = headers['etag'] ?? headers['ETag'];
+        },
+      );
+      return ApiWithEtag(data: data, etag: responseEtag, notModified: false, statusCode: 200);
+    } on NotModifiedException {
+      return ApiWithEtag(data: null, etag: ifNoneMatch, notModified: true, statusCode: 304);
+    }
+  }
+
   // Get swipe statistics
   Future<Map<String, dynamic>> getSwipeStats() async {
     return await _makeRequest(
@@ -1403,4 +1713,14 @@ class ApiService extends getx.GetConnect {
       return PrivacySettings.fromJson(settingsData);
     }, operationName: 'Get Privacy Settings');
   }
+}
+
+// Lightweight wrapper to return parsed data with caching metadata
+class ApiWithEtag<T> {
+  final T? data;
+  final String? etag;
+  final bool notModified;
+  final int? statusCode;
+
+  ApiWithEtag({this.data, this.etag, this.notModified = false, this.statusCode});
 }

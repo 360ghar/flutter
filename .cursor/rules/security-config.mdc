@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+description: Security and configuration best practices
+---
+
+# Security & Configuration
+
+## Environment Variables
+- **Never commit secrets** to version control
+- Use `.env.development` and `.env.production` files
+- Load secrets via environment variables or secure stores
+- Add `.env.*` files to `.gitignore`
+
+## Asset Management
+- Declare all assets in `pubspec.yaml`:
+```yaml
+flutter:
+  assets:
+    - assets/images/
+    - assets/icons/
+```
+- Verify assets exist in both dev and prod builds
+- Use appropriate image formats and sizes
+
+## Security Best Practices
+- **Input validation**: Validate all user inputs
+- **API security**: Use HTTPS, authenticate requests
+- **Data storage**: Encrypt sensitive local data
+- **Dependencies**: Keep packages updated, audit for vulnerabilities
+- **Code obfuscation**: Enable for production builds
+
+## Platform Configuration
+- **Android**: `android/app/build.gradle` - versioning, signing
+- **iOS**: `ios/Runner/Info.plist` - permissions, capabilities
+- **Web**: `web/manifest.json` - PWA configuration
+
+## Build Configuration
+- **Debug builds**: Development features enabled
+- **Release builds**: Optimizations enabled, debug features disabled
+- **Code signing**: Proper certificates for each platform
+
+## Environment Setup
+- Install pre-commit and enable hooks:
+  ```bash
+  pip install pre-commit
+  pre-commit install
+  ```
+- Hooks are cross-platform and use `hooks/flutter_tools.py` (Python) to run `dart format`, `flutter analyze`, and `flutter test` with FVM fallback.
+- `.gitattributes` enforces consistent line endings (LF for code/shell; CRLF for Windows scripts).
+- `.pre-commit-config.yaml` defines automated code quality checks.

@@ -2,20 +2,17 @@ import 'dart:async';
 
 import 'package:get/get.dart';
 
-import '../../../core/controllers/page_state_service.dart';
-import '../../../core/data/models/page_state_model.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/data/repositories/swipes_repository.dart';
-import '../../../core/utils/app_exceptions.dart';
-import '../../../core/utils/debug_logger.dart';
-import '../../../core/firebase/analytics_service.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 enum LikesSegment { liked, passed }
 
 enum LikesState { initial, loading, loaded, empty, error, loadingMore }
 
 class LikesController extends GetxController {
-  final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
   final PageStateService _pageStateService = Get.find<PageStateService>();
 
   // Current segment (Liked or Passed)
@@ -38,7 +35,7 @@ class LikesController extends GetxController {
   Timer? _searchDebouncer;
 
   // Error handling
-  final Rxn<AppError> error = Rxn<AppError>();
+  final Rxn<AppException> error = Rxn<AppException>();
 
   // Pagination totals tracked via server pages; counts not required per spec
 
@@ -157,14 +154,13 @@ class LikesController extends GetxController {
   Future<void> addToFavourites(dynamic propertyId) async {
     try {
       DebugLogger.info('💖 Adding property $propertyId to favorites');
-      await _swipesRepository.recordSwipe(
+      await _pageStateService.recordSwipe(
         propertyId: int.parse(propertyId.toString()),
         isLiked: true,
       );
       // Refresh the liked properties to reflect the change
       await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       DebugLogger.success('✅ Property $propertyId added to favorites');
-      AnalyticsService.likeProperty(propertyId.toString());
     } catch (e) {
       DebugLogger.error('❌ Failed to add property $propertyId to favorites: $e');
     }
@@ -173,14 +169,13 @@ class LikesController extends GetxController {
   Future<void> removeFromFavourites(dynamic propertyId) async {
     try {
       DebugLogger.info('💔 Removing property $propertyId from favorites');
-      await _swipesRepository.recordSwipe(
+      await _pageStateService.recordSwipe(
         propertyId: int.parse(propertyId.toString()),
         isLiked: false,
       );
       // Refresh the liked properties to reflect the change
       await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
       DebugLogger.success('✅ Property $propertyId removed from favorites');
-      // Optional: log an unlike event; keeping minimal, we do not log unlike
     } catch (e) {
       DebugLogger.error('❌ Failed to remove property $propertyId from favorites: $e');
     }
@@ -240,10 +235,7 @@ class LikesController extends GetxController {
       // Optimistically update central page state
       _pageStateService.removePropertyFromLikes(property.id);
       // Record a "dislike" swipe to remove it from liked properties
-      await _swipesRepository.recordSwipe(
-        propertyId: property.id,
-        isLiked: false, // This will unlike the property
-      );
+      await _pageStateService.recordSwipe(propertyId: property.id, isLiked: false);
 
       DebugLogger.success('✅ Property successfully removed from likes');
 
@@ -323,8 +315,8 @@ class LikesController extends GetxController {
     }
 
     return currentSegment.value == LikesSegment.liked
-        ? 'no_liked_properties'.tr + '\n' + 'no_favorites_message'.tr
-        : 'no_passed_properties'.tr + '\n' + 'no_more_properties_message'.tr;
+        ? '${'no_liked_properties'.tr}\n${'no_favorites_message'.tr}'
+        : '${'no_passed_properties'.tr}\n${'no_more_properties_message'.tr}';
   }
 
   // Helper getters

@@ -1,10 +1,11 @@
 import 'package:get/get.dart';
-import '../models/property_model.dart';
-import '../models/unified_property_response.dart';
-import '../models/unified_filter_model.dart';
-import '../providers/api_service.dart';
-import '../../utils/debug_logger.dart';
-import '../../utils/app_exceptions.dart';
+
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/data/models/unified_property_response.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class PropertiesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
@@ -33,6 +34,7 @@ class PropertiesRepository extends GetxService {
         page: page,
         limit: limit,
         excludeSwiped: excludeSwiped,
+        useCache: useCache,
       );
 
       DebugLogger.success(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'package:get/get.dart';
+
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
@@ -34,7 +36,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
     return Obx(() {
       final theme = Theme.of(context);
       // Determine bottom search row visibility
-      final bool supportsSearch = _shouldShowSearch();
+      final bool supportsSearch = showSearch && _shouldShowSearch();
       final bool searchVisible = supportsSearch && controller.isSearchVisible(pageType);
 
       final PreferredSizeWidget? bottomWidget = searchVisible
@@ -50,11 +52,11 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
         titleSpacing: 16,
         systemOverlayStyle: theme.brightness == Brightness.dark
             ? const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
+                statusBarColor: AppColors.transparent,
                 statusBarIconBrightness: Brightness.light,
               )
             : const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
+                statusBarColor: AppColors.transparent,
                 statusBarIconBrightness: Brightness.dark,
               ),
         title: Row(
@@ -109,8 +111,10 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
                 pageStateService.updatePageSearch(pageType, value);
                 onSearchChanged?.call(value);
               },
-              controller: TextEditingController(text: searchQuery)
-                ..selection = TextSelection.fromPosition(TextPosition(offset: searchQuery.length)),
+              controller: pageStateService.getOrCreateSearchController(
+                pageType,
+                seedText: searchQuery,
+              ),
               style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 hintText: _getSearchHint(),
@@ -189,8 +193,8 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
     return Obx(() {
       final refreshing = pageStateService.isPageRefreshing(pageType);
       if (!refreshing) return const SizedBox.shrink();
-      return Padding(
-        padding: const EdgeInsets.only(right: 8.0),
+      return const Padding(
+        padding: EdgeInsets.only(right: 8.0),
         child: SizedBox(
           width: 18,
           height: 18,
@@ -228,7 +232,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
   @override
   Size get preferredSize {
     double height = kToolbarHeight;
-    final bool supportsSearch = _shouldShowSearch();
+    final bool supportsSearch = showSearch && _shouldShowSearch();
     final bool searchVisible = supportsSearch && controller.isSearchVisible(pageType);
 
     if (searchVisible) {
@@ -249,18 +253,29 @@ extension UnifiedTopBarBuilder on Widget {
     VoidCallback? onSearchClear,
     List<Widget>? additionalActions,
   }) {
-    return Scaffold(
-      appBar: UnifiedTopBar(
-        pageType: pageType,
-        title: title,
-        showSearch: showSearch,
-        onSearchChanged: onSearchChanged,
-        onFilterTap: onFilterTap,
-        onSearchClear: onSearchClear,
-        additionalActions: additionalActions,
-        bottom: null,
-      ),
-      body: this,
+    return GetX<PageStateService>(
+      builder: (c) {
+        final supportsSearch =
+            (pageType == PageType.explore || pageType == PageType.likes) && showSearch;
+        final searchVisible = supportsSearch && c.isSearchVisible(pageType);
+        final height = kToolbarHeight + (searchVisible ? 52 : 0);
+        return Scaffold(
+          appBar: PreferredSize(
+            preferredSize: Size.fromHeight(height),
+            child: UnifiedTopBar(
+              pageType: pageType,
+              title: title,
+              showSearch: showSearch,
+              onSearchChanged: onSearchChanged,
+              onFilterTap: onFilterTap,
+              onSearchClear: onSearchClear,
+              additionalActions: additionalActions,
+              bottom: null,
+            ),
+          ),
+          body: this,
+        );
+      },
     );
   }
 }

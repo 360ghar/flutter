@@ -6,13 +6,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:ghar360/core/data/models/app_update_models.dart';
+import 'package:ghar360/core/data/repositories/app_update_repository.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/widgets/common/app_update_dialog.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../data/models/app_update_models.dart';
-import '../data/repositories/app_update_repository.dart';
-import '../utils/debug_logger.dart';
-import '../widgets/common/app_update_dialog.dart';
 
 class AppUpdateController extends GetxService with WidgetsBindingObserver {
   AppUpdateController({GetStorage? storage}) : _storage = storage ?? GetStorage();
@@ -164,6 +163,7 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
           _lastResponse = response;
         } else {
           // Mandatory dialog should not be dismissible, but handle defensively
+          _isDialogVisible = false;
           await _showUpdateDialog(response, versionInfo);
         }
         return;

@@ -1,0 +1,41 @@
+---
+globs: *.dart
+description: Dart coding style and naming conventions
+---
+
+# Dart Coding Style & Naming Conventions
+
+## Indentation & Formatting
+- Use **2 spaces** for indentation
+- Follow `analysis_options.yaml` rules
+- Run `dart format .` to auto-format code
+
+## Naming Conventions
+- **Files**: `snake_case.dart` (e.g., `property_details_view.dart`)
+- **Classes**: `UpperCamelCase` (e.g., `PropertyDetailsController`)
+- **Variables/Methods**: `lowerCamelCase` (e.g., `userProfile`, `getUserData()`)
+- **Constants**: `lowerCamelCase` (e.g., `apiBaseUrl`)
+
+## File Structure Patterns
+- **Views**: `*_view.dart` (UI screens and components)
+- **Controllers**: `*_controller.dart` (business logic, extends GetxController)
+- **Bindings**: `*_binding.dart` (dependency injection, extends Bindings)
+
+## Import Organization
+```dart
+// Flutter imports first
+import 'package:flutter/material.dart';
+
+// Third-party packages
+import 'package:get/get.dart';
+
+// Local imports (relative paths)
+import '../../core/utils/helpers.dart';
+import '../controllers/property_controller.dart';
+```
+
+## Code Quality
+- Fix all `flutter analyze` warnings before committing
+- Use meaningful variable and method names
+- Add documentation comments for public APIs
+- Keep methods focused on single responsibilities

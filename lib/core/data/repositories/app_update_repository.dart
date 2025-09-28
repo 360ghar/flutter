@@ -2,10 +2,10 @@
 
 import 'package:get/get.dart';
 
-import '../../utils/debug_logger.dart';
-import '../../utils/app_exceptions.dart';
-import '../models/app_update_models.dart';
-import '../providers/api_service.dart';
+import 'package:ghar360/core/data/models/app_update_models.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class AppUpdateRepository extends GetxService {
   final ApiService _apiService = Get.find();
@@ -17,7 +17,7 @@ class AppUpdateRepository extends GetxService {
       return response;
     } on NotFoundException catch (e, stackTrace) {
       DebugLogger.warning('App update endpoint unavailable, skipping check', e, stackTrace);
-      return AppVersionCheckResponse(updateAvailable: false, isMandatory: false);
+      return const AppVersionCheckResponse(updateAvailable: false, isMandatory: false);
     } catch (e, stackTrace) {
       DebugLogger.warning('Failed to check for app updates', e, stackTrace);
       rethrow;

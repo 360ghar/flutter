@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// Unified image caching service that works across web and mobile platforms

@@ -1,0 +1,18 @@
+# Default to LF in the repository (and convert on checkout if needed)
+* text=auto eol=lf
+
+# Windows scripts that must be CRLF in the working tree
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# POSIX shell scripts should keep LF (even on Windows)
+*.sh text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary

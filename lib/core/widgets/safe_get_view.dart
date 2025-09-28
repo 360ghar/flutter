@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
-import '../controllers/auth_controller.dart';
+
+import 'package:ghar360/core/controllers/auth_controller.dart';
 
 /// A safe version of GetView that ensures controllers are registered before access
 abstract class SafeGetView<T> extends GetView<T> {

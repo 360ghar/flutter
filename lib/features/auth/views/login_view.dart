@@ -1,9 +1,12 @@
 // lib/features/auth/views/login_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'package:get/get.dart';
-import '../controllers/login_controller.dart';
-import '../../../core/routes/app_routes.dart';
+
+import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/features/auth/controllers/login_controller.dart';
 
 class LoginView extends GetView<LoginController> {
   const LoginView({super.key});
@@ -51,15 +54,15 @@ class LoginView extends GetView<LoginController> {
                       hintText: 'phone_hint'.tr,
                     ),
                     keyboardType: TextInputType.phone,
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r"[0-9+\s]"))],
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s]'))],
                     validator: (value) {
                       final raw = (value ?? '').trim();
                       if (raw.isEmpty) {
                         return 'phone_required'.tr;
                       }
-                      final cleaned = raw.replaceAll(RegExp(r"\s+"), "");
-                      final tenDigits = RegExp(r"^[0-9]{10}$");
-                      final e164IN = RegExp(r"^\+91[0-9]{10}$");
+                      final cleaned = raw.replaceAll(RegExp(r'\s+'), '');
+                      final tenDigits = RegExp(r'^[0-9]{10}$');
+                      final e164IN = RegExp(r'^\+91[0-9]{10}$');
                       if (!(tenDigits.hasMatch(cleaned) || e164IN.hasMatch(cleaned))) {
                         return 'phone_invalid'.tr;
                       }

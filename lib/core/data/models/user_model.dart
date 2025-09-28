@@ -41,7 +41,7 @@ class UserModel {
   // Client-side fields (not from backend)
   final String? fcmToken;
 
-  UserModel({
+  const UserModel({
     required this.id,
     required this.supabaseUserId,
     required this.email,

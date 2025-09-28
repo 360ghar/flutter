@@ -3,17 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
-import 'package:latlong2/latlong.dart';
-
-import '../../../core/controllers/location_controller.dart';
-import '../../../core/controllers/page_state_service.dart';
-import '../../../core/data/models/page_state_model.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/data/models/unified_filter_model.dart';
-import '../../../core/data/repositories/swipes_repository.dart';
-import '../../../core/utils/app_exceptions.dart';
-import '../../../core/utils/debug_logger.dart';
+import 'package:ghar360/core/controllers/location_controller.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/data/repositories/swipes_repository.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_mapper.dart';
 import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
+import 'package:latlong2/latlong.dart';
 
 enum ExploreState { initial, loading, loaded, empty, error, loadingMore }
 
@@ -30,7 +30,7 @@ class ExploreController extends GetxController {
   // Reactive state
   final Rx<ExploreState> state = ExploreState.initial.obs;
   final RxList<PropertyModel> properties = <PropertyModel>[].obs;
-  final Rxn<AppError> error = Rxn<AppError>();
+  final Rxn<AppException> error = Rxn<AppException>();
 
   // Local liked overrides to reflect immediate UI without mutating model
   final RxMap<int, bool> likedOverrides = <int, bool>{}.obs;
@@ -57,6 +57,10 @@ class ExploreController extends GetxController {
   // Page activation listener
   Worker? _pageActivationWorker;
 
+  // Memoized markers cache
+  List<PropertyMarker>? _cachedPropertyMarkers;
+  bool _markersDirty = true;
+
   @override
   void onInit() {
     super.onInit();
@@ -71,14 +75,19 @@ class ExploreController extends GetxController {
       DebugLogger.info('📊 Has error: ${error.value != null}');
     });
 
-    // Add properties listener for debugging
+    // Add properties listener for debugging and cache invalidation
     ever(properties, (List<PropertyModel> props) {
       DebugLogger.info('🏠 Properties list updated: ${props.length} properties');
       if (props.isNotEmpty) {
         final withLocation = props.where((p) => p.hasLocation).length;
         DebugLogger.info('🗺️ Properties with location: $withLocation/${props.length}');
       }
+      _invalidateMarkers('properties changed');
     });
+
+    // Invalidate markers cache when selection or zoom changes
+    ever<PropertyModel?>(selectedProperty, (_) => _invalidateMarkers('selection changed'));
+    ever<double>(currentZoom, (_) => _invalidateMarkers('zoom changed'));
 
     _setupFilterListener();
     _setupLocationListener();
@@ -423,9 +432,8 @@ class ExploreController extends GetxController {
     } catch (e, stackTrace) {
       DebugLogger.error('❌ CRITICAL: Failed during initialization', e, stackTrace);
       state.value = ExploreState.error;
-      error.value = AppError(
-        error: "Failed to initialize the map. Please check location services and try again.",
-        stackTrace: stackTrace,
+      error.value = ErrorMapper.mapApiError(
+        'Failed to initialize the map. Please check location services and try again.',
       );
     }
   }
@@ -467,7 +475,7 @@ class ExploreController extends GetxController {
         DebugLogger.warning('⚠️ LocationController returned null position, using default location');
         // Use default location (Delhi) if location is not available
         _updateMapCenter(const LatLng(28.6139, 77.2090), 12.0);
-        final locationData = LocationData(
+        final locationData = const LocationData(
           name: 'Delhi, India',
           latitude: 28.6139,
           longitude: 77.2090,
@@ -480,7 +488,7 @@ class ExploreController extends GetxController {
 
         await _pageStateService.updateLocationForPage(
           PageType.explore,
-          LocationData(name: 'Delhi', latitude: 28.6139, longitude: 77.2090),
+          const LocationData(name: 'Delhi', latitude: 28.6139, longitude: 77.2090),
           source: 'fallback',
         );
       }
@@ -489,7 +497,7 @@ class ExploreController extends GetxController {
       // Always fallback to default location
       DebugLogger.info('🗺️ Falling back to default location (Delhi)');
       _updateMapCenter(const LatLng(28.6139, 77.2090), 12.0);
-      final locationData = LocationData(
+      final locationData = const LocationData(
         name: 'Delhi, India',
         latitude: 28.6139,
         longitude: 77.2090,
@@ -502,7 +510,7 @@ class ExploreController extends GetxController {
 
       await _pageStateService.updateLocationForPage(
         PageType.explore,
-        LocationData(name: 'Delhi', latitude: 28.6139, longitude: 77.2090),
+        const LocationData(name: 'Delhi', latitude: 28.6139, longitude: 77.2090),
         source: 'fallback',
       );
     }
@@ -827,64 +835,60 @@ class ExploreController extends GetxController {
   }
 
   String _deriveMarkerLabel(PropertyModel property) {
-    final price = property.formattedPrice.trim();
-    if (price.isEmpty) return '--';
+    // Build an Indian-style compact price like ₹15k, ₹75L, ₹1.2Cr
+    try {
+      final price = property.getEffectivePrice();
+      if (price <= 0) return '₹--';
 
-    final sanitized = price.replaceAll(RegExp(r'\s+'), ' ');
-    final match = RegExp(
-      r'([\u20A8\u20B9\$\u20AC\u00A3])?\s*([\d.,]+)\s*([A-Za-z]+)?',
-    ).firstMatch(sanitized);
-    if (match != null) {
-      final symbol = match.group(1)?.trim() ?? '';
-      final value = match.group(2)?.replaceAll(',', '') ?? '';
-      final suffix = match.group(3);
-      final suffixInitial = suffix != null && suffix.isNotEmpty ? suffix[0].toUpperCase() : '';
-      final label = '$symbol$value$suffixInitial';
-      return label.length <= 6 ? label : label.substring(0, 6);
+      String withPrecision(double v) {
+        // Keep one decimal under 10; otherwise, no decimals
+        final str = (v < 10 ? v.toStringAsFixed(1) : v.toStringAsFixed(0));
+        return str.endsWith('.0') ? str.substring(0, str.length - 2) : str;
+      }
+
+      if (price >= 10000000) {
+        // Crore
+        final val = price / 10000000.0;
+        return '₹${withPrecision(val)}Cr';
+      } else if (price >= 100000) {
+        // Lakh
+        final val = price / 100000.0;
+        return '₹${withPrecision(val)}L';
+      } else if (price >= 1000) {
+        // Thousand
+        final val = price / 1000.0;
+        return '₹${withPrecision(val)}k';
+      } else {
+        return '₹${price.toStringAsFixed(0)}';
+      }
+    } catch (_) {
+      // Fallback to model's formattedPrice if anything goes wrong
+      return property.formattedPrice;
     }
-
-    return sanitized.length <= 6 ? sanitized : sanitized.substring(0, 6);
   }
 
   // Get property markers for map with performance optimization
   List<PropertyMarker> get propertyMarkers {
     try {
+      // Return cached markers when nothing relevant changed
+      if (!_markersDirty && _cachedPropertyMarkers != null) {
+        DebugLogger.debug('⚡ Returning cached property markers: ${_cachedPropertyMarkers!.length}');
+        return _cachedPropertyMarkers!;
+      }
+
       final propsWithLocation = propertiesWithLocation;
       DebugLogger.info('🗺️ Generating markers for ${propsWithLocation.length} properties');
 
       if (propsWithLocation.isEmpty) {
         DebugLogger.info('⚠️ No properties with location found');
-        return [];
-      }
-
-      // Performance optimization: limit markers based on zoom level
-      final zoom = currentZoom.value;
-      int maxMarkers;
-
-      if (zoom >= 15) {
-        maxMarkers = 200; // Very close zoom - show more markers
-      } else if (zoom >= 13) {
-        maxMarkers = 100; // Medium zoom - moderate markers
-      } else if (zoom >= 11) {
-        maxMarkers = 50; // Far zoom - fewer markers
-      } else {
-        maxMarkers = 25; // Very far zoom - minimal markers
-      }
-
-      // Take a subset of properties if too many
-      final propertiesSubset = propsWithLocation.length > maxMarkers
-          ? propsWithLocation.take(maxMarkers).toList()
-          : propsWithLocation;
-
-      if (propsWithLocation.length > maxMarkers) {
-        DebugLogger.info(
-          '🎯 Performance optimization: showing ${propertiesSubset.length}/${propsWithLocation.length} markers at zoom ${zoom.toStringAsFixed(1)}',
-        );
+        _cachedPropertyMarkers = const <PropertyMarker>[];
+        _markersDirty = false;
+        return _cachedPropertyMarkers!;
       }
 
       final markers = <PropertyMarker>[];
 
-      for (final property in propertiesSubset) {
+      for (final property in propsWithLocation) {
         try {
           // Additional null safety checks
           final lat = property.latitude;
@@ -911,14 +915,21 @@ class ExploreController extends GetxController {
         }
       }
 
-      DebugLogger.info(
-        '🗺️ Generated ${markers.length} property markers from ${propertiesSubset.length} properties with location',
-      );
-      return markers;
+      DebugLogger.info('🗺️ Generated ${markers.length} property markers.');
+      _cachedPropertyMarkers = markers;
+      _markersDirty = false;
+      return _cachedPropertyMarkers!;
     } catch (e) {
       DebugLogger.error('❌ Error generating property markers: $e');
-      return [];
+      _cachedPropertyMarkers = const <PropertyMarker>[];
+      _markersDirty = false;
+      return _cachedPropertyMarkers!;
     }
+  }
+
+  void _invalidateMarkers(String reason) {
+    _markersDirty = true;
+    DebugLogger.debug('🧠 propertyMarkers cache invalidated: $reason');
   }
 
   // Helper getters

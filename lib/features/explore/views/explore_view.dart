@@ -2,21 +2,20 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:get/get.dart';
-import 'package:latlong2/latlong.dart';
-
-import '../../../core/controllers/page_state_service.dart';
-import '../../../core/data/models/page_state_model.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/debug_logger.dart';
-import '../../../core/utils/error_mapper.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/widgets/common/error_states.dart';
 import 'package:ghar360/core/widgets/common/loading_states.dart';
 import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
 import 'package:ghar360/core/widgets/common/unified_top_bar.dart';
-import '../controllers/explore_controller.dart';
-import '../widgets/property_horizontal_list.dart';
-import '../widgets/property_marker_chip.dart';
+import 'package:ghar360/features/explore/controllers/explore_controller.dart';
+import 'package:ghar360/features/explore/widgets/property_horizontal_list.dart';
+import 'package:ghar360/features/explore/widgets/property_marker_chip.dart';
+import 'package:latlong2/latlong.dart';
 
 class ExploreView extends GetView<ExploreController> {
   const ExploreView({super.key});
@@ -27,88 +26,67 @@ class ExploreView extends GetView<ExploreController> {
   Widget build(BuildContext context) {
     DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
 
-    return Obx(() {
-      final pageStateService = Get.find<PageStateService>();
+    final pageStateService = Get.find<PageStateService>();
 
-      // Make Scaffold reactive to search visibility changes for proper space allocation
-      final searchVisible = pageStateService.isSearchVisible(PageType.explore);
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
+      appBar: const _ReactiveExploreAppBar(),
+      body: Column(
+        children: [
+          // Subtle refresh indicator (reactive only)
+          Obx(() {
+            final isRefreshing = pageStateService.exploreState.value.isRefreshing;
+            if (!isRefreshing) return const SizedBox.shrink();
+            return const LinearProgressIndicator(
+              minHeight: 2,
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+            );
+          }),
+          // Main content (reactive state switch)
+          Expanded(
+            child: Obx(() {
+              final currentState = controller.state.value;
+              DebugLogger.info('🌨️ View Builder (Obx) - State: $currentState');
 
-      return Scaffold(
-        backgroundColor: AppColors.scaffoldBackground,
-        appBar: ExploreTopBar(
-          key: ValueKey(
-            'explore_topbar_$searchVisible',
-          ), // Force recreation when visibility changes
-          onSearchChanged: (query) => controller.updateSearchQuery(query),
-          onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
-        ),
-        body: Obx(() {
-          final isRefreshing = pageStateService.exploreState.value.isRefreshing;
-
-          return Column(
-            children: [
-              // Subtle refresh indicator
-              if (isRefreshing)
-                LinearProgressIndicator(
-                  minHeight: 2,
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
-                ),
-              // Main content
-              Expanded(
-                child: Obx(() {
-                  final currentState = controller.state.value;
-                  final propertiesCount = controller.properties.length;
-                  DebugLogger.info(
-                    '🌨️ View Builder (Obx) - State: $currentState, Properties: $propertiesCount',
-                  );
-
-                  switch (currentState) {
-                    case ExploreState.loading:
-                      // If location is available, keep the map visible and let markers update
-                      final hasLocation =
-                          Get.find<PageStateService>().exploreState.value.hasLocation;
-                      if (hasLocation) {
-                        DebugLogger.info(
-                          '💻 Loading properties, rendering map with pending markers',
-                        );
-                        return _buildMapInterface(context);
-                      }
-                      DebugLogger.info('💻 Rendering loading state (no location yet)');
-                      return _buildLoadingState(context);
-
-                    case ExploreState.error:
-                      DebugLogger.info('⚠️ Rendering error state');
-                      return _buildErrorState();
-
-                    case ExploreState.empty:
-                      DebugLogger.info('💭 Rendering empty state');
-                      return _buildEmptyState(context);
-
-                    case ExploreState.loaded:
-                    case ExploreState.loadingMore:
-                      DebugLogger.info(
-                        '🗺️ Rendering map interface with $propertiesCount properties',
-                      );
-                      return _buildMapInterface(context);
-
-                    default:
-                      final hasLocation =
-                          Get.find<PageStateService>().exploreState.value.hasLocation;
-                      if (hasLocation) {
-                        DebugLogger.info('🔄 Initializing; rendering map while loading');
-                        return _buildMapInterface(context);
-                      }
-                      DebugLogger.info('🔄 Rendering default loading state (no location yet)');
-                      return _buildLoadingState(context);
+              switch (currentState) {
+                case ExploreState.loading:
+                  // If location is available, keep the map visible and let markers update
+                  final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                  if (hasLocation) {
+                    DebugLogger.info('💻 Loading properties, rendering map with pending markers');
+                    return _buildMapInterface(context);
                   }
-                }),
-              ),
-            ],
-          );
-        }),
-      );
-    });
+                  DebugLogger.info('💻 Rendering loading state (no location yet)');
+                  return _buildLoadingState(context);
+
+                case ExploreState.error:
+                  DebugLogger.info('⚠️ Rendering error state');
+                  return _buildErrorState();
+
+                case ExploreState.empty:
+                  DebugLogger.info('💭 Rendering empty state');
+                  return _buildEmptyState(context);
+
+                case ExploreState.loaded:
+                case ExploreState.loadingMore:
+                  DebugLogger.info('🗺️ Rendering map interface');
+                  return _buildMapInterface(context);
+
+                default:
+                  final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                  if (hasLocation) {
+                    DebugLogger.info('🔄 Initializing; rendering map while loading');
+                    return _buildMapInterface(context);
+                  }
+                  DebugLogger.info('🔄 Rendering default loading state (no location yet)');
+                  return _buildLoadingState(context);
+              }
+            }),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildLoadingState(BuildContext context) {
@@ -137,19 +115,10 @@ class ExploreView extends GetView<ExploreController> {
 
   Widget _buildErrorState() {
     return Obx(() {
-      final appError = controller.error.value;
-      if (appError == null) return const SizedBox();
+      final appException = controller.error.value;
+      if (appException == null) return const SizedBox();
 
-      try {
-        // Pass the actual error object and its stack trace
-        final exception = ErrorMapper.mapApiError(appError.error, appError.stackTrace);
-        return ErrorStates.genericError(error: exception, onRetry: controller.retryLoading);
-      } catch (e) {
-        return ErrorStates.networkError(
-          onRetry: controller.retryLoading,
-          customMessage: appError.error.toString(),
-        );
-      }
+      return ErrorStates.genericError(error: appException, onRetry: controller.retryLoading);
     });
   }
 
@@ -208,8 +177,8 @@ class ExploreView extends GetView<ExploreController> {
                       userAgentPackageName: 'com.ghar360.app',
                       maxZoom: 18,
                     ),
-                    RichAttributionWidget(
-                      attributions: const [TextSourceAttribution('© OpenStreetMap contributors')],
+                    const RichAttributionWidget(
+                      attributions: [TextSourceAttribution('© OpenStreetMap contributors')],
                     ),
                     // Search radius circle (reactive)
                     Obx(() {
@@ -228,31 +197,49 @@ class ExploreView extends GetView<ExploreController> {
                         ],
                       );
                     }),
-                    // Property markers (reactive)
+                    // Property markers with clustering (reactive)
                     Obx(() {
                       final markers = controller.propertyMarkers;
                       if (markers.isEmpty) return const SizedBox.shrink();
-                      return MarkerLayer(
-                        markers: markers
-                            .map(
-                              (marker) => Marker(
-                                point: marker.position,
-                                width: 40,
-                                height: 40,
-                                child: PropertyMarkerChip(
-                                  property: marker.property,
-                                  isSelected: marker.isSelected,
-                                  label: marker.label,
-                                  onTap: () {
-                                    DebugLogger.info(
-                                      'Property marker tapped: ${marker.property.title}',
-                                    );
-                                    controller.selectProperty(marker.property);
-                                  },
-                                ),
-                              ),
-                            )
-                            .toList(),
+
+                      // Convert our lightweight marker models to flutter_map Markers
+                      final mapMarkers = markers.map((marker) {
+                        final label = marker.label;
+                        final estWidth = _estimateChipWidth(label);
+                        return Marker(
+                          point: marker.position,
+                          width: estWidth,
+                          height: 40,
+                          child: PropertyMarkerChip(
+                            property: marker.property,
+                            isSelected: marker.isSelected,
+                            label: label,
+                            onTap: () {
+                              DebugLogger.info('Property marker tapped: ${marker.property.title}');
+                              controller.selectProperty(marker.property);
+                            },
+                          ),
+                        );
+                      }).toList();
+
+                      return MarkerClusterLayerWidget(
+                        options: MarkerClusterLayerOptions(
+                          markers: mapMarkers,
+                          maxClusterRadius: 60,
+                          size: const Size(44, 44),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.all(60),
+                          maxZoom: 18,
+                          showPolygon: false,
+                          spiderfyCircleRadius: 60,
+                          spiderfySpiralDistanceMultiplier: 1,
+                          circleSpiralSwitchover: 12,
+                          zoomToBoundsOnClick: true,
+                          builder: (context, clusterMarkers) {
+                            final count = clusterMarkers.length;
+                            return _ClusterChip(count: count);
+                          },
+                        ),
                       );
                     }),
                   ],
@@ -294,7 +281,7 @@ class ExploreView extends GetView<ExploreController> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
@@ -357,7 +344,7 @@ class ExploreView extends GetView<ExploreController> {
             boxShadow: AppColors.getCardShadow(),
           ),
           child: IconButton(
-            icon: Icon(Icons.my_location, color: AppColors.primaryYellow),
+            icon: const Icon(Icons.my_location, color: AppColors.primaryYellow),
             onPressed: controller.recenterToCurrentLocation,
           ),
         ),
@@ -372,7 +359,7 @@ class ExploreView extends GetView<ExploreController> {
             boxShadow: AppColors.getCardShadow(),
           ),
           child: IconButton(
-            icon: Icon(Icons.center_focus_strong, color: AppColors.accentBlue),
+            icon: const Icon(Icons.center_focus_strong, color: AppColors.accentBlue),
             onPressed: controller.fitBoundsToProperties,
           ),
         ),
@@ -416,7 +403,7 @@ class ExploreView extends GetView<ExploreController> {
               const SizedBox(height: 4),
               Text(
                 locationDisplayText,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.primaryYellow,
                   fontWeight: FontWeight.w500,
@@ -442,5 +429,68 @@ class ExploreView extends GetView<ExploreController> {
         math.cos(lat1Rad) * math.cos(lat2Rad) * (math.sin(deltaLng / 2) * math.sin(deltaLng / 2));
     final double c = 2 * math.asin(math.sqrt(a));
     return earthRadius * c;
+  }
+
+  double _estimateChipWidth(String label) {
+    // Rough estimate to size Marker width to avoid clipping dynamic chip
+    final base = 30; // padding and borders
+    final perChar = 7; // approx average glyph width
+    final est = base + (label.length * perChar);
+    return est.clamp(44, 160).toDouble();
+  }
+}
+
+class _ClusterChip extends StatelessWidget {
+  final int count;
+  const _ClusterChip({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.accentBlue,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.onPrimary, width: 2),
+        boxShadow: AppColors.getCardShadow(),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '$count',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onPrimary,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
+
+// PreferredSizeWidget wrapper which only rebuilds the AppBar when search visibility toggles
+class _ReactiveExploreAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _ReactiveExploreAppBar();
+
+  @override
+  Size get preferredSize {
+    final pageStateService = Get.find<PageStateService>();
+    final searchVisible = pageStateService.isSearchVisible(PageType.explore);
+    final height = kToolbarHeight + (searchVisible ? 52 : 0);
+    return Size.fromHeight(height);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final pageStateService = Get.find<PageStateService>();
+      final searchVisible = pageStateService.isSearchVisible(PageType.explore);
+      return ExploreTopBar(
+        key: ValueKey('explore_topbar_$searchVisible'),
+        onSearchChanged: (query) => Get.find<ExploreController>().updateSearchQuery(query),
+        onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
+      );
+    });
   }
 }

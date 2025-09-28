@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
-import '../../../core/data/models/visit_model.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/debug_logger.dart';
+import 'package:ghar360/core/data/models/visit_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class VisitCard extends StatelessWidget {
   final VisitModel visit;
@@ -150,7 +150,6 @@ class VisitCard extends StatelessWidget {
               ],
             ),
           ),
-
           if (visit.property != null) ...[
             const SizedBox(height: 10),
             Row(
@@ -176,7 +175,6 @@ class VisitCard extends StatelessWidget {
               ],
             ),
           ],
-
           if (isUpcoming && (visit.canCancel || visit.canReschedule)) ...[
             const SizedBox(height: 12),
             if ((visit.specialRequirements ?? '').isNotEmpty) ...[
@@ -203,11 +201,11 @@ class VisitCard extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: onReschedule,
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primaryYellow),
+                      side: const BorderSide(color: AppColors.primaryYellow),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Reschedule',
                       style: TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.w600),
                     ),
@@ -218,11 +216,11 @@ class VisitCard extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: onCancel,
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.errorRed),
+                      side: const BorderSide(color: AppColors.errorRed),
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Cancel',
                       style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.w600),
                     ),

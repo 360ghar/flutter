@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/data/models/property_model.dart';
-import '../../../core/utils/app_colors.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 class PropertyMarkerChip extends StatelessWidget {
   final PropertyModel property;
@@ -20,11 +20,14 @@ class PropertyMarkerChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textColor = theme.colorScheme.onPrimary;
-    final backgroundColor = isSelected ? AppColors.primaryYellow : AppColors.accentBlue;
+    final bool selected = isSelected;
+    final Color bg = selected ? AppColors.primaryYellow : AppColors.surface;
+    final Color border = selected ? AppColors.accentOrange : AppColors.accentBlue;
+    final Color text = selected ? Colors.black : AppColors.textPrimary;
+
     final semanticLabel = property.title.isNotEmpty
-        ? 'Property marker for ${property.title}'
-        : 'Property marker';
+        ? 'Property price marker for ${property.title}'
+        : 'Property price marker';
 
     return Semantics(
       label: semanticLabel,
@@ -34,23 +37,24 @@ class PropertyMarkerChip extends StatelessWidget {
         onTap: onTap,
         child: RepaintBoundary(
           child: Container(
-            width: 44,
-            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            constraints: const BoxConstraints(minHeight: 36, minWidth: 44),
             decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: textColor, width: 2),
+              color: bg,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: border, width: 1.5),
               boxShadow: AppColors.getCardShadow(),
             ),
             alignment: Alignment.center,
             child: Text(
               label,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: textColor,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
+              overflow: TextOverflow.visible,
+              softWrap: false,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: text,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0.2,
               ),
             ),

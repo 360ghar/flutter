@@ -1,7 +1,7 @@
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'unified_filter_model.dart';
-import 'property_model.dart';
-import '../../utils/app_exceptions.dart';
 
 part 'page_state_model.g.dart';
 
@@ -31,13 +31,13 @@ class PageStateModel {
   final bool isLoadingMore;
   final bool isRefreshing;
   @JsonKey(ignore: true) // We won't serialize the error object
-  final AppError? error;
+  final AppException? error;
   final DateTime? lastFetched;
 
   // Additional state for specific pages
   final Map<String, dynamic>? additionalData;
 
-  PageStateModel({
+  const PageStateModel({
     required this.pageType,
     this.selectedLocation,
     this.locationSource,
@@ -81,7 +81,7 @@ class PageStateModel {
     bool? isLoading,
     bool? isLoadingMore,
     bool? isRefreshing,
-    AppError? error,
+    AppException? error,
     DateTime? lastFetched,
     Map<String, dynamic>? additionalData,
   }) {
@@ -122,7 +122,7 @@ class PageStateModel {
   bool get isDataStale {
     if (lastFetched == null) return true;
     final now = DateTime.now();
-    final staleThreshold = Duration(minutes: 5);
+    final staleThreshold = const Duration(minutes: 5);
     return now.difference(lastFetched!) > staleThreshold;
   }
 

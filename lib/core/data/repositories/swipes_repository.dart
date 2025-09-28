@@ -1,10 +1,12 @@
 import 'package:get/get.dart';
-import '../models/property_model.dart';
-import '../models/unified_filter_model.dart';
-import '../models/unified_property_response.dart';
-import '../providers/api_service.dart';
-import '../../utils/debug_logger.dart';
-import '../../utils/app_exceptions.dart';
+
+import 'package:ghar360/core/controllers/offline_queue_service.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/data/models/unified_property_response.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class SwipesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
@@ -19,6 +21,17 @@ class SwipesRepository extends GetxService {
 
       DebugLogger.success('✅ Swipe recorded successfully');
     } on AppException catch (e) {
+      // If it's a network error, enqueue for retry instead of failing hard
+      if (e is NetworkException) {
+        DebugLogger.warning('🌐 Network error, queuing swipe for retry: ${e.message}');
+        try {
+          final queue = Get.find<OfflineQueueService>();
+          await queue.enqueueSwipe(propertyId: propertyId, isLiked: isLiked);
+        } catch (qErr) {
+          DebugLogger.error('💥 Failed to enqueue swipe: $qErr');
+        }
+        return; // swallow network errors after enqueueing
+      }
       DebugLogger.error('❌ Failed to record swipe: ${e.message}');
       rethrow;
     }
@@ -113,10 +126,12 @@ class SwipesRepository extends GetxService {
           try {
             final searchCenterData = responseJson['search_center'];
             if (searchCenterData != null) {
-              final lat = searchCenterData['latitude'];
-              final lng = searchCenterData['longitude'];
-              if (lat != null && lng != null) {
-                return SearchCenter(latitude: lat.toDouble(), longitude: lng.toDouble());
+              final lat = searchCenterData['latitude'] ?? searchCenterData['lat'];
+              final lng = searchCenterData['longitude'] ?? searchCenterData['lng'];
+              num? toNum(dynamic v) => v is num ? v : (v is String ? num.tryParse(v) : null);
+              final nLat = toNum(lat), nLng = toNum(lng);
+              if (nLat != null && nLng != null) {
+                return SearchCenter(latitude: nLat.toDouble(), longitude: nLng.toDouble());
               }
             }
             return null;

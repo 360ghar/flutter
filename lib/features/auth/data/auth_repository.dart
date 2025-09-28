@@ -1,8 +1,8 @@
 // lib/features/auth/data/auth_repository.dart
 
 import 'package:get/get.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/utils/debug_logger.dart';
 
 class AuthRepository extends GetxService {
   final _supabase = Supabase.instance.client;

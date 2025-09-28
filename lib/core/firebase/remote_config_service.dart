@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import '../utils/debug_logger.dart';
+import 'package:flutter/foundation.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class RemoteConfigService {
   static FirebaseRemoteConfig get _rc => FirebaseRemoteConfig.instance;

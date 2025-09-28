@@ -1,7 +1,7 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/image_cache_service.dart';
 
@@ -61,16 +61,16 @@ class RobustNetworkImage extends StatelessWidget {
     // Validate image URL first
     final validUrl = ImageLoadingService.getValidImageUrl(imageUrl);
 
-    // If no valid URL, show error widget immediately
-    if (validUrl == null) {
-      final errorFallback = errorWidget ?? _buildDefaultErrorWidget();
+    // If no valid URL, show placeholder immediately
+    if (validUrl == null || validUrl.isEmpty) {
+      final placeholderFallback = placeholder ?? _buildDefaultPlaceholder();
       if (borderRadius != null) {
-        return ClipRRect(borderRadius: borderRadius!, child: errorFallback);
+        return ClipRRect(borderRadius: borderRadius!, child: placeholderFallback);
       }
-      return errorFallback;
+      return placeholderFallback;
     }
 
-    // Use unified caching approach for both web and mobile
+    // Use unified image builder with SVG support
     final imageWidget = _buildUnifiedImage(validUrl);
 
     // Apply border radius if specified
@@ -82,61 +82,35 @@ class RobustNetworkImage extends StatelessWidget {
   }
 
   Widget _buildUnifiedImage(String url) {
-    return FutureBuilder<File?>(
-      future: ImageCacheService.instance.getImageFile(url),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return placeholder ?? _buildDefaultPlaceholder();
-        }
+    if (_isSvgUrl(url)) {
+      return _buildSvgImage(url);
+    }
 
-        if (snapshot.hasError || snapshot.data == null) {
-          return errorWidget ?? _buildDefaultErrorWidget();
-        }
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: width,
+      height: height,
+      fit: fit,
+      filterQuality: FilterQuality.medium,
+      memCacheWidth: memCacheWidth,
+      memCacheHeight: memCacheHeight,
+      placeholder: (context, _) => placeholder ?? _buildDefaultPlaceholder(),
+      errorWidget: (context, _, __) => errorWidget ?? _buildDefaultErrorWidget(),
+    );
+  }
 
-        final file = snapshot.data!;
+  bool _isSvgUrl(String url) {
+    final lower = url.toLowerCase();
+    return lower.endsWith('.svg') || lower.contains('/svg?') || lower.contains('format=svg');
+  }
 
-        if (kIsWeb) {
-          // For web, we need to load the file as bytes and use Image.memory
-          return FutureBuilder<Uint8List?>(
-            future: file.readAsBytes(),
-            builder: (context, bytesSnapshot) {
-              if (bytesSnapshot.connectionState == ConnectionState.waiting) {
-                return placeholder ?? _buildDefaultPlaceholder();
-              }
-
-              if (bytesSnapshot.hasError || bytesSnapshot.data == null) {
-                return errorWidget ?? _buildDefaultErrorWidget();
-              }
-
-              return Image.memory(
-                bytesSnapshot.data!,
-                width: width,
-                height: height,
-                fit: fit,
-                filterQuality: FilterQuality.medium,
-                cacheWidth: memCacheWidth,
-                cacheHeight: memCacheHeight,
-                gaplessPlayback: true,
-                errorBuilder: (context, error, stackTrace) =>
-                    errorWidget ?? _buildDefaultErrorWidget(),
-              );
-            },
-          );
-        } else {
-          // For mobile platforms, use Image.file with cached file
-          return Image.file(
-            file,
-            width: width,
-            height: height,
-            fit: fit,
-            filterQuality: FilterQuality.medium,
-            cacheWidth: memCacheWidth,
-            cacheHeight: memCacheHeight,
-            gaplessPlayback: true,
-            errorBuilder: (context, error, stackTrace) => errorWidget ?? _buildDefaultErrorWidget(),
-          );
-        }
-      },
+  Widget _buildSvgImage(String url) {
+    return SvgPicture.network(
+      url,
+      width: width,
+      height: height,
+      fit: fit,
+      placeholderBuilder: (_) => placeholder ?? _buildDefaultPlaceholder(),
     );
   }
 
@@ -189,7 +163,7 @@ class RobustNetworkImage extends StatelessWidget {
             if (width != null && width! > 100) ...[
               const SizedBox(height: 8),
               Text(
-                'Property Image',
+                'property_image'.tr,
                 style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 11,

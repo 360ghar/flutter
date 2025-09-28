@@ -1,12 +1,15 @@
 // lib/features/auth/controllers/forgot_password_controller.dart
+
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_handler.dart';
+import 'package:ghar360/core/utils/formatters.dart';
+import 'package:ghar360/features/auth/data/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../data/auth_repository.dart';
-import '../../../core/utils/error_handler.dart';
-import '../../../core/utils/debug_logger.dart';
-import '../../../core/routes/app_routes.dart';
 
 class ForgotPasswordController extends GetxController {
   final AuthRepository _authRepository = Get.find();
@@ -35,16 +38,6 @@ class ForgotPasswordController extends GetxController {
     isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
   }
 
-  String _normalizeIndianPhone(String phone) {
-    if (phone.startsWith('+91')) {
-      return phone;
-    }
-    if (phone.length == 10) {
-      return '+91$phone';
-    }
-    return phone; // Return as-is if it doesn't match expected formats
-  }
-
   // Step 1: Send OTP for password reset
   Future<void> sendResetOtp() async {
     if (!formKey.currentState!.validate()) return;
@@ -53,7 +46,7 @@ class ForgotPasswordController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final phone = _normalizeIndianPhone(phoneController.text.trim());
+      final phone = Formatters.normalizeIndianPhone(phoneController.text.trim());
       await _authRepository.sendPhoneOtp(phone);
 
       currentStep.value = 1; // Move to OTP step
@@ -82,7 +75,7 @@ class ForgotPasswordController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final phone = _normalizeIndianPhone(phoneController.text.trim());
+      final phone = Formatters.normalizeIndianPhone(phoneController.text.trim());
       await _authRepository.verifyPhoneOtp(phone: phone, token: otpController.text.trim());
 
       // This creates a temporary session for password reset
@@ -151,7 +144,7 @@ class ForgotPasswordController extends GetxController {
     if (canResendOtp.value) {
       try {
         isLoading.value = true;
-        final phone = _normalizeIndianPhone(phoneController.text.trim());
+        final phone = Formatters.normalizeIndianPhone(phoneController.text.trim());
         await _authRepository.sendPhoneOtp(phone);
 
         _startOtpCountdown();

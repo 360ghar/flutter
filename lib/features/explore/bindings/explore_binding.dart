@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
-import '../controllers/explore_controller.dart';
-import '../../../core/utils/debug_logger.dart';
+
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/features/explore/controllers/explore_controller.dart';
 
 class ExploreBinding extends Bindings {
   @override

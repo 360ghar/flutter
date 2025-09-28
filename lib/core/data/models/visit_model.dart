@@ -1,5 +1,5 @@
+import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'property_model.dart';
 
 part 'visit_model.g.dart';
 
@@ -24,7 +24,7 @@ class VisitAgentInfo {
   final String agentCode;
   final String phone;
 
-  VisitAgentInfo({
+  const VisitAgentInfo({
     required this.id,
     required this.name,
     required this.agentCode,
@@ -80,7 +80,7 @@ class VisitModel {
   @JsonKey(name: 'agent_name')
   final String? agentNameApi;
 
-  VisitModel({
+  const VisitModel({
     required this.id,
     required this.propertyId,
     required this.userId,

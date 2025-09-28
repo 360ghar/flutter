@@ -137,13 +137,75 @@ Contributions are what make the open-source community such an amazing place to l
 4.  Push to the Branch (`git push origin feature/AmazingFeature`)
 5.  Open a Pull Request
 
-**Formatting & Hooks**
-- Line length: 100 for Dart formatting.
-- On save: workspace `.vscode/settings.json` enables `editor.formatOnSave` for `[dart]` and sets `editor.rulers` to 100.
-- Formatter: uses `Dart-Code.dart-code` (official Dart/Flutter VS Code/Cursor extension).
-- Shared hook: `.githooks/pre-commit` auto-formats staged `.dart` files and re-stages them.
-- One-time setup: run `bash scripts/setup_hooks.sh` to set `core.hooksPath`.
-- Manual format: run `dart format -o write --line-length 100 .` at repo root.
+## 🔧 Code Style & Quality
+
+This project enforces consistent formatting and linting across all environments.
+
+### Formatter & Lint Configuration
+
+- **Formatter**: `dart format` with page width of 100 characters
+- **Linter**: `flutter_lints` with additional rules:
+  - `directives_ordering`: Import organization
+  - `require_trailing_commas`: Consistent trailing commas
+  - `avoid_print`: Use logging instead
+  - `prefer_const_constructors`: Use const where possible
+  - `prefer_single_quotes`: Use single quotes for strings
+
+### Setup Instructions
+
+1. **FVM (Flutter Version Manager)**:
+   ```bash
+   dart pub global activate fvm
+   fvm install
+   ```
+
+2. **Pre-commit hooks**:
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+#### Cross-Platform Hooks (Windows/macOS/Linux)
+
+Pre-commit hooks run via a Python wrapper to ensure they work the same on all systems:
+
+- Entry point: `hooks/flutter_tools.py` (no bash required)
+- Format: runs `fvm dart format` → `dart format` → `flutter format` (first available)
+- Analyze/Test: runs `fvm flutter` → `flutter` (first available)
+- Run on demand: `pre-commit run --all-files`
+
+Notes:
+- Ensure Python 3 is installed (required by pre-commit).
+- FVM is optional but recommended for consistent Flutter/Dart versions.
+- Line endings are normalized via `.gitattributes` and a pre-commit mixed-line-ending hook (Windows scripts keep CRLF; shell scripts use LF).
+
+3. **VS Code**:
+   - Format on save is enabled
+   - Line endings set to LF
+   - Ruler at 100 characters
+
+### CI/CD
+
+- GitHub Actions runs on every PR and push
+- Checks formatting (`dart format --set-exit-if-changed`)
+- Runs static analysis (`flutter analyze`)
+- Executes tests (`flutter test`)
+
+### Manual Commands
+
+```bash
+# Format code
+dart format .
+
+# Check formatting
+dart format -o none --set-exit-if-changed .
+
+# Analyze code
+flutter analyze
+
+# Apply automatic fixes
+dart fix --apply
+```
 
 ## 📄 License
 

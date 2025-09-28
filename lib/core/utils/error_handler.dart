@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'debug_logger.dart';
 
 class ErrorHandler {
   /// Safely gets a context for UI operations, preferring overlay context for reliability
@@ -21,7 +21,7 @@ class ErrorHandler {
 
     String message;
     String title = 'Error';
-    Color backgroundColor = const Color(0xFFDC3545); // error red
+    Color backgroundColor = AppColors.errorRed;
 
     if (error is AuthException) {
       title = 'Authentication Error';
@@ -40,7 +40,7 @@ class ErrorHandler {
         case 'Phone not confirmed':
         case 'User not confirmed':
           message = 'Please verify your phone number before signing in.';
-          backgroundColor = const Color(0xFFFFC107);
+          backgroundColor = AppColors.warningAmber;
           break;
         case 'User already registered':
           message = 'An account with this phone already exists. Please sign in instead.';
@@ -68,11 +68,11 @@ class ErrorHandler {
         case 'Email rate limit exceeded':
         case 'SMS rate limit exceeded':
           message = 'Too many attempts. Please wait before trying again.';
-          backgroundColor = const Color(0xFFFFC107);
+          backgroundColor = AppColors.warningAmber;
           break;
         case 'Token has expired or is invalid':
           message = 'OTP has expired or is invalid. Please request a new code.';
-          backgroundColor = const Color(0xFFFFC107);
+          backgroundColor = AppColors.warningAmber;
           break;
         case 'Session not found':
           message = 'Your session has expired. Please sign in again.';
@@ -81,7 +81,7 @@ class ErrorHandler {
           // Map by code if available
           if (code == 'otp_expired') {
             message = 'OTP has expired. Please request a new code.';
-            backgroundColor = Colors.orange;
+            backgroundColor = AppColors.warningAmber;
           } else {
             message = msg;
           }
@@ -108,7 +108,10 @@ class ErrorHandler {
       mainButton: onRetry != null
           ? TextButton(
               onPressed: onRetry,
-              child: Text('Retry', style: TextStyle(color: Theme.of(context).colorScheme.onError)),
+              child: Text(
+                'retry'.tr,
+                style: TextStyle(color: Theme.of(context).colorScheme.onError),
+              ),
             )
           : null,
     );
@@ -152,7 +155,7 @@ class ErrorHandler {
       'network_error'.tr,
       message,
       snackPosition: SnackPosition.TOP,
-      backgroundColor: const Color(0xFFFFC107),
+      backgroundColor: AppColors.warningAmber,
       colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 4),
       mainButton: onRetry != null
@@ -178,7 +181,7 @@ class ErrorHandler {
       'validation_error'.tr,
       '$field: $message',
       snackPosition: SnackPosition.TOP,
-      backgroundColor: const Color(0xFFFFC107),
+      backgroundColor: AppColors.warningAmber,
       colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 3),
     );
@@ -195,7 +198,7 @@ class ErrorHandler {
       'success'.tr,
       message,
       snackPosition: SnackPosition.TOP,
-      backgroundColor: const Color(0xFF28A745),
+      backgroundColor: AppColors.successGreen,
       colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 3),
     );
@@ -212,7 +215,7 @@ class ErrorHandler {
       'info'.tr,
       message,
       snackPosition: SnackPosition.TOP,
-      backgroundColor: const Color(0xFF4A90E2),
+      backgroundColor: AppColors.accentBlue,
       colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 3),
     );

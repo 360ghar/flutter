@@ -1,0 +1,16 @@
+# Import Sorter configuration
+# Aligns import ordering with analyzer's `directives_ordering` and VS Code organize imports
+
+line_length: 100
+comments: false
+ascii_case_insensitive: true
+group_rules:
+  - dart
+  - flutter
+  - package:ghar360
+  - package
+  - project
+  - relative
+
+# Keep a blank line between groups
+separate_groups: true

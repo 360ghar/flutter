@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/data/models/bug_report_model.dart';
+import 'package:ghar360/core/data/repositories/support_repository.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-
-import '../../../core/data/models/bug_report_model.dart';
-import '../../../core/data/repositories/support_repository.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/app_exceptions.dart';
-import '../../../core/utils/debug_logger.dart';
 
 class FeedbackController extends GetxController {
   FeedbackController({SupportRepository? supportRepository})

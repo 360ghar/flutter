@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
+
+import 'package:ghar360/core/controllers/auth_controller.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
-import '../../../core/controllers/auth_controller.dart';
 
 class EditProfileController extends GetxController {
   final AuthController _authController = Get.find<AuthController>();
@@ -57,7 +59,7 @@ class EditProfileController extends GetxController {
     Get.dialog(
       AlertDialog(
         title: Text('profile_picture'.tr),
-        content: Text(
+        content: const Text(
           'Image picker functionality would be implemented here using image_picker package.',
         ),
         actions: [TextButton(onPressed: () => Get.back(), child: Text('ok'.tr))],

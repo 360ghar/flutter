@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../../../core/controllers/auth_controller.dart';
-import '../../../core/utils/app_colors.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class ProfileView extends GetView<AuthController> {
@@ -13,86 +14,80 @@ class ProfileView extends GetView<AuthController> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Obx(
-      () => Scaffold(
-        backgroundColor: AppColors.scaffoldBackground,
-        appBar: AppBar(
-          backgroundColor: AppColors.appBarBackground,
-          elevation: 0,
-          title: Text(
-            'profile'.tr,
-            style: TextStyle(
-              color: AppColors.appBarText,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          // Removed gear/theme toggle icon per updated design direction
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.appBarBackground,
+        elevation: 0,
+        title: Text(
+          'profile'.tr,
+          style: TextStyle(color: AppColors.appBarText, fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        body: Obx(() {
-          if (controller.isLoading.value) {
-            return Center(child: CircularProgressIndicator(color: AppColors.loadingIndicator));
-          }
+        // Removed gear/theme toggle icon per updated design direction
+      ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return Center(child: CircularProgressIndicator(color: AppColors.loadingIndicator));
+        }
 
-          final user = controller.currentUser.value;
-          if (user == null) {
-            return Center(
-              child: Text(
-                'No user data available',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            );
-          }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Profile Header
-                _buildProfileHeader(context, user),
-                const SizedBox(height: 30),
-
-                // Menu Items
-                _buildMenuItem(
-                  icon: Icons.person_outline,
-                  title: 'edit_profile'.tr,
-                  subtitle: 'Update your personal information',
-                  onTap: () => Get.toNamed('/edit-profile'),
-                ),
-                _buildMenuItem(
-                  icon: Icons.favorite_outline,
-                  title: 'my_preferences'.tr,
-                  subtitle: 'Property preferences and filters',
-                  onTap: () => Get.toNamed('/preferences'),
-                ),
-                _buildMenuItem(
-                  icon: Icons.security,
-                  title: 'Privacy & Security',
-                  subtitle: 'Account security settings',
-                  onTap: () => Get.toNamed('/privacy'),
-                ),
-                _buildMenuItem(
-                  icon: Icons.help_outline,
-                  title: 'help'.tr,
-                  subtitle: 'Get help and contact support',
-                  onTap: () => Get.toNamed('/help'),
-                ),
-                _buildMenuItem(
-                  icon: Icons.info_outline,
-                  title: 'about'.tr,
-                  subtitle: 'App version and information',
-                  onTap: () => Get.toNamed('/about'),
-                ),
-                const SizedBox(height: 20),
-
-                // Logout Button
-                _buildLogoutButton(),
-                const SizedBox(height: 40),
-              ],
+        final user = controller.currentUser.value;
+        if (user == null) {
+          return Center(
+            child: Text(
+              'no_user_data_available'.tr,
+              style: TextStyle(color: AppColors.textSecondary),
             ),
           );
-        }),
-      ),
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              // Profile Header
+              _buildProfileHeader(context, user),
+              const SizedBox(height: 30),
+
+              // Menu Items
+              _buildMenuItem(
+                icon: Icons.person_outline,
+                title: 'edit_profile'.tr,
+                subtitle: 'update_personal_information'.tr,
+                onTap: () => Get.toNamed('/edit-profile'),
+              ),
+              _buildMenuItem(
+                icon: Icons.favorite_outline,
+                title: 'my_preferences'.tr,
+                subtitle: 'property_preferences_filters'.tr,
+                onTap: () => Get.toNamed('/preferences'),
+              ),
+              _buildMenuItem(
+                icon: Icons.security,
+                title: 'privacy_security'.tr,
+                subtitle: 'account_security_settings'.tr,
+                onTap: () => Get.toNamed('/privacy'),
+              ),
+              _buildMenuItem(
+                icon: Icons.help_outline,
+                title: 'help'.tr,
+                subtitle: 'get_help_contact_support'.tr,
+                onTap: () => Get.toNamed('/help'),
+              ),
+              _buildMenuItem(
+                icon: Icons.info_outline,
+                title: 'about'.tr,
+                subtitle: 'app_version_information'.tr,
+                onTap: () => Get.toNamed('/about'),
+              ),
+              const SizedBox(height: 20),
+
+              // Logout Button
+              _buildLogoutButton(),
+              const SizedBox(height: 40),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -159,7 +154,7 @@ class ProfileView extends GetView<AuthController> {
 
           // Name
           Text(
-            user.name.isNotEmpty ? user.name : 'User Name',
+            user.name.isNotEmpty ? user.name : 'user_name'.tr,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -220,13 +215,17 @@ class ProfileView extends GetView<AuthController> {
       child: OutlinedButton(
         onPressed: () => _showLogoutDialog(),
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: AppColors.errorRed),
+          side: const BorderSide(color: AppColors.errorRed),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: Text(
           'logout'.tr,
-          style: TextStyle(color: AppColors.errorRed, fontSize: 16, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: AppColors.errorRed,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -251,7 +250,7 @@ class ProfileView extends GetView<AuthController> {
               Get.back();
               controller.signOut();
             },
-            child: Text('logout'.tr, style: TextStyle(color: AppColors.errorRed)),
+            child: Text('logout'.tr, style: const TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),

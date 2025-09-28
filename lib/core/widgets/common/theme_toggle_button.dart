@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
+
 import 'package:ghar360/core/controllers/theme_controller.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 
@@ -32,11 +34,11 @@ class ThemeToggleButton extends StatelessWidget {
       String getThemeLabel() {
         switch (currentMode) {
           case AppThemeMode.light:
-            return 'Light Mode';
+            return 'light_mode'.tr;
           case AppThemeMode.dark:
-            return 'Dark Mode';
+            return 'dark_mode'.tr;
           case AppThemeMode.system:
-            return 'System Mode';
+            return 'system_mode'.tr;
         }
       }
 
@@ -44,11 +46,11 @@ class ThemeToggleButton extends StatelessWidget {
       String getTooltip() {
         switch (currentMode) {
           case AppThemeMode.light:
-            return 'Switch to Dark Mode';
+            return 'switch_to_dark_mode'.tr;
           case AppThemeMode.dark:
-            return 'Switch to System Mode';
+            return 'switch_to_system_mode'.tr;
           case AppThemeMode.system:
-            return 'Switch to Light Mode';
+            return 'switch_to_light_mode'.tr;
         }
       }
 
@@ -60,7 +62,7 @@ class ThemeToggleButton extends StatelessWidget {
           case AppThemeMode.light:
             return colorScheme.primary;
           case AppThemeMode.dark:
-            return colorScheme.onPrimary;
+            return colorScheme.onSurface;
           case AppThemeMode.system:
             return colorScheme.secondary;
         }

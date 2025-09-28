@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
-import '../../../core/data/repositories/support_repository.dart';
-import '../controllers/feedback_controller.dart';
+import 'package:ghar360/core/data/repositories/support_repository.dart';
+import 'package:ghar360/features/profile/controllers/feedback_controller.dart';
 
 class FeedbackBinding extends Bindings {
   @override

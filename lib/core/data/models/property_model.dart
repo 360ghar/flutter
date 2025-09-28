@@ -1,6 +1,5 @@
+import 'package:ghar360/core/data/models/property_image_model.dart';
 import 'package:json_annotation/json_annotation.dart';
-
-import 'property_image_model.dart';
 
 part 'property_model.g.dart';
 
@@ -51,24 +50,26 @@ class PropertyAmenity {
   final String? icon;
   final String? category;
 
-  PropertyAmenity({required this.id, required this.title, this.icon, this.category});
+  const PropertyAmenity({required this.id, required this.title, this.icon, this.category});
 
   factory PropertyAmenity.fromJson(Map<String, dynamic> json) => _$PropertyAmenityFromJson(json);
   Map<String, dynamic> toJson() => _$PropertyAmenityToJson(this);
 }
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, checked: true)
 class PropertyModel {
   @JsonKey(defaultValue: -1)
   final int id;
   @JsonKey(defaultValue: 'Unknown Property')
   final String title;
   final String? description;
-  @JsonKey(name: 'property_type')
+  @JsonKey(name: 'property_type', unknownEnumValue: PropertyType.house)
   final PropertyType? propertyType;
+  @JsonKey(unknownEnumValue: PropertyPurpose.buy)
   final PropertyPurpose? purpose;
   @JsonKey(name: 'base_price', defaultValue: 0.0)
   final double basePrice;
+  @JsonKey(unknownEnumValue: PropertyStatus.available)
   final PropertyStatus? status;
 
   // Location fields
@@ -182,7 +183,7 @@ class PropertyModel {
   @JsonKey(name: 'user_next_visit_date')
   final DateTime? userNextVisitDate;
 
-  PropertyModel({
+  const PropertyModel({
     required this.id,
     required this.title,
     this.description,
@@ -337,19 +338,32 @@ class PropertyModel {
     return city ?? 'Unknown Location';
   }
 
+  // Short address that never exposes full_address. Prefer locality/subLocality + city.
+  String get shortAddressDisplay {
+    final parts = <String>[];
+    if (locality != null && locality!.isNotEmpty) parts.add(locality!);
+    if (subLocality != null && subLocality!.isNotEmpty) parts.add(subLocality!);
+    if (city != null && city!.isNotEmpty) parts.add(city!);
+    if (parts.isEmpty) return city ?? 'Unknown Location';
+    return parts.join(', ');
+  }
+
   String get mainImage {
-    return mainImageUrl?.isNotEmpty == true
-        ? mainImageUrl!
-        : images?.firstOrNull?.imageUrl ?? 'https://via.placeholder.com/400x300?text=No+Image';
+    if (mainImageUrl?.isNotEmpty == true) return mainImageUrl!;
+    final firstImageUrl = (images != null && images!.isNotEmpty) ? images!.first.imageUrl : null;
+    return (firstImageUrl?.isNotEmpty == true)
+        ? firstImageUrl!
+        : 'https://via.placeholder.com/400x300?text=No+Image';
   }
 
   // Also make the imageUrls getter safer
   List<String> get imageUrls {
-    final urls = images?.map((e) => e.imageUrl).toList() ?? [];
-    if (urls.isEmpty && mainImageUrl != null) {
-      urls.add(mainImageUrl!);
+    final urls = <String>[];
+    if (mainImageUrl?.isNotEmpty == true) urls.add(mainImageUrl!);
+    for (final img in images ?? const <PropertyImageModel>[]) {
+      if (img.imageUrl.isNotEmpty) urls.add(img.imageUrl);
     }
-    return urls;
+    return urls.toSet().toList();
   }
 
   // Images suitable for gallery (filter out known non-image URLs like 360 tour links)
@@ -373,11 +387,12 @@ class PropertyModel {
   bool _looksLikeImageUrl(String url) {
     final lower = url.toLowerCase();
     if (lower.contains('kuula.co/share')) return false;
-    return lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.png') ||
-        lower.endsWith('.webp') ||
-        lower.endsWith('.gif');
+    final path = Uri.tryParse(lower)?.path ?? lower;
+    return path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.png') ||
+        path.endsWith('.webp') ||
+        path.endsWith('.gif');
   }
 
   // Location convenience methods
@@ -469,4 +484,15 @@ class PropertyModel {
 
   // User visit helpers
   bool get hasUserScheduled => userHasScheduledVisit || userNextVisitDate != null;
+
+  // Parsed availability date helper
+  DateTime? get availableFromDate {
+    final v = availableFrom;
+    if (v == null || v.isEmpty) return null;
+    try {
+      return DateTime.parse(v);
+    } catch (_) {
+      return null;
+    }
+  }
 }

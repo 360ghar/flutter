@@ -1,11 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
-import '../utils/debug_logger.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class PushNotificationsService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;

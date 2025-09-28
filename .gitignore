@@ -33,6 +33,16 @@ migrate_working_dir/
 .pub/
 /build/
 
+# FVM (Flutter Version Manager) related
+.fvm/
+.fvm.flutter_sdk
+.flutter_sdk
+versions/
+
+# Pre-commit cache
+.pre-commit/
+.cache/
+
 # Symbolication related
 app.*.symbols
 
@@ -54,3 +64,5 @@ digest.txt
 # Environment templates - safe to commit (no sensitive data)
 !.env.development.example
 !.env.staging.example
+
+venv/

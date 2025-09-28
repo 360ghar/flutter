@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/data/models/property_model.dart';
-import 'property_card.dart';
+
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/features/discover/widgets/property_card.dart';
 
 class SwipeStack extends StatefulWidget {
   final List<PropertyModel> properties;

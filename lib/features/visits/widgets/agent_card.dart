@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/data/models/agent_model.dart';
+
+import 'package:ghar360/core/data/models/agent_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class AgentCard extends StatelessWidget {
@@ -54,7 +56,7 @@ class AgentCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.support_agent, color: AppColors.primaryYellow, size: 16),
+                    const Icon(Icons.support_agent, color: AppColors.primaryYellow, size: 16),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -84,7 +86,7 @@ class AgentCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    Icon(Icons.star, size: 14, color: AppColors.primaryYellow),
+                    const Icon(Icons.star, size: 14, color: AppColors.primaryYellow),
                     const SizedBox(width: 3),
                     Text(
                       agent.userSatisfactionRating.toStringAsFixed(1),
