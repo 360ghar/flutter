@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/mixins/theme_mixin.dart';
-import '../controllers/edit_profile_controller.dart';
+
+import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
+import 'package:ghar360/features/profile/controllers/edit_profile_controller.dart';
 
 class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
   const EditProfileView({super.key});
@@ -89,7 +91,6 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                     children: [
                       buildSectionTitle('personal_information'.tr),
                       const SizedBox(height: 20),
-
                       _buildTextField(
                         controller: controller.nameController,
                         label: 'full_name'.tr,
@@ -102,7 +103,6 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                         },
                       ),
                       const SizedBox(height: 16),
-
                       _buildTextField(
                         controller: controller.emailController,
                         label: 'email_address'.tr,
@@ -116,7 +116,6 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                         },
                       ),
                       const SizedBox(height: 16),
-
                       _buildTextField(
                         controller: controller.locationController,
                         label: 'location'.tr,
@@ -135,7 +134,6 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                     children: [
                       buildSectionTitle('additional_information'.tr),
                       const SizedBox(height: 20),
-
                       GestureDetector(
                         onTap: () => controller.selectDateOfBirth(context),
                         child: Container(
@@ -230,7 +228,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+          borderSide: const BorderSide(color: AppColors.primaryYellow, width: 2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

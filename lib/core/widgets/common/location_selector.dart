@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+
 import 'package:ghar360/core/controllers/location_controller.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 class LocationSelector extends GetView<LocationController> {
   final PageType pageType;
@@ -12,8 +14,6 @@ class LocationSelector extends GetView<LocationController> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final pageStateService = Get.find<PageStateService>();
 
     return Obx(() {
@@ -32,7 +32,7 @@ class LocationSelector extends GetView<LocationController> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.location_on, size: 16, color: AppColors.primaryYellow),
+              const Icon(Icons.location_on, size: 16, color: AppColors.primaryYellow),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
@@ -110,7 +110,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
     locationController.clearPlaceSuggestions();
     // Initialize radius from current page filters (default 10km)
     final pageState = _getPageState(pageStateService);
-    _radiusKm = (pageState.filters.radiusKm ?? 10.0).clamp(5.0, 50.0);
+    _radiusKm = (pageState.filters.radiusKm ?? 10.0).clamp(5.0, 50.0).toDouble();
   }
 
   @override
@@ -145,11 +145,11 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.location_on, color: AppColors.primaryYellow),
+                const Icon(Icons.location_on, color: AppColors.primaryYellow),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Select Location',
+                    'select_location'.tr,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -193,7 +193,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                       width: 20,
                       height: 20,
                       margin: const EdgeInsets.all(12),
-                      child: CircularProgressIndicator(
+                      child: const CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
                       ),
@@ -251,7 +251,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                       Icon(Icons.location_off, size: 48, color: AppColors.textSecondary),
                       const SizedBox(height: 16),
                       Text(
-                        'No locations found',
+                        'no_locations_found'.tr,
                         style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
                       ),
                     ],
@@ -279,7 +279,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
 
   Widget _buildRadiusSelector() {
     final current = _getPageState(pageStateService);
-    final radiusValue = (_radiusKm ?? current.filters.radiusKm ?? 10.0).clamp(5.0, 50.0);
+    final radiusValue = (_radiusKm ?? current.filters.radiusKm ?? 10.0).clamp(5.0, 50.0).toDouble();
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
@@ -295,7 +295,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Search radius',
+                'search_radius'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -370,7 +370,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
           color: AppColors.accentBlue.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(Icons.location_on, color: AppColors.accentBlue, size: 20),
+        child: const Icon(Icons.location_on, color: AppColors.accentBlue, size: 20),
       ),
       title: Text(
         title,
@@ -389,15 +389,15 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       await pageStateService.useCurrentLocationForPage(widget.pageType);
 
       Get.snackbar(
-        'Location Updated',
-        'Using your current location',
+        'location_updated'.tr,
+        'using_current_location'.tr,
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 2),
       );
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Unable to get current location',
+        'error'.tr,
+        'unable_to_get_current_location'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.errorRed,
         colorText: Theme.of(context).colorScheme.onError,
@@ -422,7 +422,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         );
 
         Get.snackbar(
-          'Location Selected',
+          'location_selected'.tr,
           suggestion.mainText,
           snackPosition: SnackPosition.BOTTOM,
           duration: const Duration(seconds: 2),
@@ -430,8 +430,8 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       }
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Unable to select location',
+        'error'.tr,
+        'unable_to_select_location'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.errorRed,
         colorText: Theme.of(context).colorScheme.onError,

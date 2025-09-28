@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../../../core/controllers/location_controller.dart';
-import '../../../core/controllers/page_state_service.dart';
-import '../../../core/data/models/unified_filter_model.dart';
+
+import 'package:ghar360/core/controllers/location_controller.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
 
 class LocationSearchController extends GetxController {
   late final LocationController locationController;
@@ -75,28 +77,6 @@ class LocationSearchController extends GetxController {
     } finally {
       isLoading.value = false;
     }
-  }
-
-  Future<void> selectCity(String cityName, String stateName) async {
-    // Create location data for the selected city
-    // In a real app, you might want to geocode this to get actual coordinates
-    final locationData = LocationData(
-      name: '$cityName, $stateName',
-      latitude: 0.0, // These would be fetched from geocoding API
-      longitude: 0.0,
-    );
-
-    // For now, just update the location without coordinates
-    // You could enhance this by geocoding the city name
-    await pageStateService.updateLocation(locationData, source: 'search');
-
-    Get.back();
-    Get.snackbar(
-      'City Selected',
-      'Selected: $cityName',
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 2),
-    );
   }
 
   Future<void> useCurrentLocation() async {

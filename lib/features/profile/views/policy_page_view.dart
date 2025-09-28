@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/data/models/static_page_model.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../../../core/data/models/static_page_model.dart';
-import '../../../core/data/providers/api_service.dart';
-import '../../../core/mixins/theme_mixin.dart';
-import '../../../core/utils/app_colors.dart';
 
 class PolicyPageView extends StatefulWidget with ThemeMixin {
   final String uniqueName;
@@ -79,7 +78,7 @@ class _PolicyPageViewState extends State<PolicyPageView> {
       ),
       blockquoteDecoration: BoxDecoration(
         color: AppColors.cardBackground,
-        border: Border(left: BorderSide(color: AppColors.primaryYellow, width: 4)),
+        border: const Border(left: BorderSide(color: AppColors.primaryYellow, width: 4)),
       ),
       blockSpacing: 16,
       listBulletPadding: const EdgeInsets.only(right: 8),

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
 import 'package:ghar360/core/utils/app_colors.dart';
 
 // 360 Tour Illustration with rotating animation
@@ -166,9 +168,13 @@ class VirtualToursIllustration extends StatelessWidget {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: AppColors.accentBlue.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: const BorderRadius.all(Radius.circular(12)),
                                 ),
-                                child: Icon(Icons.apartment, size: 40, color: AppColors.accentBlue),
+                                child: const Icon(
+                                  Icons.apartment,
+                                  size: 40,
+                                  color: AppColors.accentBlue,
+                                ),
                               ),
                             ),
                             // Play button for virtual tour

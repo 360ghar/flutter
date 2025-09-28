@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
-import '../controllers/location_search_controller.dart';
+
+import 'package:ghar360/features/location_search/controllers/location_search_controller.dart';
 
 class LocationSearchBinding extends Bindings {
   @override

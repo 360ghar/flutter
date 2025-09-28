@@ -1,10 +1,11 @@
 import 'package:get/get.dart';
 
-import '../../../core/controllers/auth_controller.dart';
-import '../../../core/controllers/page_state_service.dart';
-import '../../../core/data/models/page_state_model.dart';
-import '../../../core/utils/app_exceptions.dart';
-import '../../../core/utils/debug_logger.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_mapper.dart';
 
 class DashboardController extends GetxController {
   late final AuthController _authController;
@@ -15,7 +16,7 @@ class DashboardController extends GetxController {
   final RxMap<String, dynamic> userStats = <String, dynamic>{}.obs;
   final RxBool isLoading = false.obs;
   final RxBool isRefreshing = false.obs;
-  final Rxn<AppError> error = Rxn<AppError>();
+  final Rxn<AppException> error = Rxn<AppException>();
 
   // Bottom navigation state
   final RxInt currentIndex = 2.obs; // Default to Discover tab (index 2)
@@ -88,7 +89,7 @@ class DashboardController extends GetxController {
       // Clear analytics data that's no longer available
       dashboardData.value = {};
     } catch (e, stackTrace) {
-      error.value = AppError(error: 'Failed to load dashboard data', stackTrace: stackTrace);
+      error.value = ErrorMapper.mapApiError('Failed to load dashboard data');
       DebugLogger.error('Error loading dashboard data', e, stackTrace);
 
       Get.snackbar(

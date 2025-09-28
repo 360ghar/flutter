@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+
 import 'package:ghar360/core/controllers/page_state_service.dart';
-import 'package:ghar360/core/firebase/analytics_service.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'
@@ -83,9 +84,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   @override
   void initState() {
     super.initState();
-    // Ensure controllers are available
-    pageStateService = Get.find<PageStateService>();
-    _initializeFilters();
+    // Guard PageStateService lookup to prevent runtime exceptions
+    if (Get.isRegistered<PageStateService>()) {
+      pageStateService = Get.find<PageStateService>();
+      _initializeFilters();
+    } else {
+      // Initialize with defaults if PageStateService is not available
+      _initializeFiltersWithDefaults();
+    }
   }
 
   void _initializeFilters() {
@@ -107,6 +113,17 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         ? currentFilter.propertyType!.first
         : 'All';
     _selectedAmenities = List<String>.from(currentFilter.amenities ?? []);
+  }
+
+  void _initializeFiltersWithDefaults() {
+    // Initialize with sensible defaults when PageStateService is not available
+    _selectedPurpose = 'buy';
+    _minPrice = _getPriceMin('buy');
+    _maxPrice = _getPriceMax('buy');
+    _minBedrooms = 0;
+    _maxBedrooms = 10;
+    _propertyType = 'All';
+    _selectedAmenities = <String>[];
   }
 
   String _mapPurpose(String purpose) {
@@ -240,6 +257,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
   Widget _buildPriceFilter() {
     final priceLabel = _selectedPurpose == 'rent' ? 'price_per_month'.tr : 'property_price'.tr;
+    final minRange = _getPriceMin(_mapPurposeToApi(_selectedPurpose));
+    final maxRange = _getPriceMax(_mapPurposeToApi(_selectedPurpose));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,17 +270,11 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         const SizedBox(height: 15),
         RangeSlider(
           values: RangeValues(
-            _minPrice.clamp(
-              _selectedPurpose == 'Rent' ? 5000.0 : 500000.0,
-              _selectedPurpose == 'Rent' ? 5000000.0 : 150000000.0,
-            ),
-            _maxPrice.clamp(
-              _selectedPurpose == 'Rent' ? 5000.0 : 500000.0,
-              _selectedPurpose == 'Rent' ? 5000000.0 : 150000000.0,
-            ),
+            _minPrice.clamp(minRange, maxRange),
+            _maxPrice.clamp(minRange, maxRange),
           ),
-          min: _selectedPurpose == 'Rent' ? 5000.0 : 500000.0,
-          max: _selectedPurpose == 'Rent' ? 5000000.0 : 150000000.0,
+          min: minRange,
+          max: maxRange,
           divisions: 100,
           activeColor: AppColors.primaryYellow,
           inactiveColor: AppColors.primaryYellow.withValues(alpha: 0.2),
@@ -518,12 +531,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               onPressed: _clearFilters,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: BorderSide(color: AppColors.primaryYellow),
+                side: const BorderSide(color: AppColors.primaryYellow),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
                 'clear_filters'.tr,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   color: AppColors.primaryYellow,
                   fontWeight: FontWeight.w600,
@@ -558,9 +571,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
 
   void _clearFilters() {
     setState(() {
-      _selectedPurpose = 'buy';
-      _minPrice = 500000.0;
-      _maxPrice = 150000000.0;
+      final p = Get.isRegistered<PageStateService>()
+          ? _mapPurpose(pageStateService.getCurrentPageState().filters.purpose ?? 'buy')
+          : 'buy';
+      _selectedPurpose = p;
+      _minPrice = _getPriceMin(p);
+      _maxPrice = _getPriceMax(p);
       _minBedrooms = 0;
       _maxBedrooms = 10;
       _propertyType = 'All';
@@ -569,22 +585,23 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   void _applyFilters() {
-    // Apply filters to FilterController
-    // Apply all filters to PageStateService
-    final currentPageType = pageStateService.currentPageType.value;
-    final currentFilters = pageStateService.getCurrentPageState().filters;
+    // Apply filters only if PageStateService is available
+    if (Get.isRegistered<PageStateService>()) {
+      final currentPageType = pageStateService.currentPageType.value;
+      final currentFilters = pageStateService.getCurrentPageState().filters;
 
-    final updatedFilters = currentFilters.copyWith(
-      purpose: _mapPurposeToApi(_selectedPurpose),
-      priceMin: _minPrice,
-      priceMax: _maxPrice,
-      bedroomsMin: _minBedrooms,
-      bedroomsMax: _maxBedrooms,
-      propertyType: _propertyType != 'All' ? [_propertyType] : [],
-      amenities: _selectedAmenities,
-    );
+      final updatedFilters = currentFilters.copyWith(
+        purpose: _mapPurposeToApi(_selectedPurpose),
+        priceMin: _minPrice,
+        priceMax: _maxPrice,
+        bedroomsMin: _minBedrooms,
+        bedroomsMax: _maxBedrooms,
+        propertyType: _propertyType != 'All' ? [_propertyType] : [],
+        amenities: _selectedAmenities,
+      );
 
-    pageStateService.updatePageFilters(currentPageType, updatedFilters);
+      pageStateService.updatePageFilters(currentPageType, updatedFilters);
+    }
 
     Navigator.pop(context);
 
@@ -601,20 +618,6 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       colorText: AppColors.surface,
       duration: const Duration(seconds: 2),
     );
-
-    // Minimal analytics for filters apply (sanitized snapshot)
-    AnalyticsService.applyFilter({
-      'purpose': updatedFilters.purpose ?? '',
-      'price_min': updatedFilters.priceMin ?? 0,
-      'price_max': updatedFilters.priceMax ?? 0,
-      'bedrooms_min': updatedFilters.bedroomsMin ?? 0,
-      'bedrooms_max': updatedFilters.bedroomsMax ?? 0,
-      'property_type': (updatedFilters.propertyType?.isNotEmpty ?? false)
-          ? updatedFilters.propertyType!.first
-          : 'All',
-      'amenities_count': (updatedFilters.amenities?.length ?? 0),
-      'page': currentPageType.toString(),
-    });
   }
 
   String _displayPropertyType(String type) {

@@ -42,6 +42,11 @@ class CacheException extends AppException {
   CacheException(super.message, {super.code, super.details});
 }
 
+// HTTP caching: 304 Not Modified signal
+class NotModifiedException extends AppException {
+  NotModifiedException(super.message, {super.code, super.details});
+}
+
 /// A wrapper class to hold an error and its associated stack trace.
 class AppError {
   final Object error;

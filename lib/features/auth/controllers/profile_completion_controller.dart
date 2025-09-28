@@ -1,11 +1,13 @@
 // lib/features/auth/controllers/profile_completion_controller.dart
+
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../../../core/controllers/auth_controller.dart';
-import '../../../core/controllers/page_state_service.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/auth_status.dart';
-import '../../../core/utils/error_handler.dart';
+import 'package:ghar360/core/utils/error_handler.dart';
 
 class ProfileCompletionController extends GetxController {
   final formKey = GlobalKey<FormState>();

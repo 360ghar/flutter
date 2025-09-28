@@ -1,6 +1,7 @@
 // lib/features/splash/controllers/splash_controller.dart
 
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
 class SplashController extends GetxController with GetTickerProviderStateMixin {

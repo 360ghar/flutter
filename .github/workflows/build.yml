@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+# Grant the minimal permissions needed. The default GITHUB_TOKEN is read-only.
+# We need write access to comment on PRs/issues.
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -66,6 +73,12 @@ jobs:
         flutter-version: '3.35.2'
         channel: 'stable'
 
+    - name: Capture Flutter/Dart versions
+      id: versions
+      run: |
+        echo "flutter_version=$(flutter --version | head -n1 | sed 's/Flutter /Flutter /')" >> $GITHUB_OUTPUT
+        echo "dart_version=$(dart --version | sed 's/Dart /Dart /')" >> $GITHUB_OUTPUT
+
     - name: Verify Flutter and Dart versions
       run: |
         echo "Flutter version: $(flutter --version)"
@@ -82,7 +95,7 @@ jobs:
         fi
 
     - name: Cache Flutter dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.pub-cache
@@ -95,7 +108,7 @@ jobs:
           flutter-dart-${{ runner.os }}-
 
     - name: Cache Gradle dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.gradle/caches
@@ -106,7 +119,7 @@ jobs:
           gradle-${{ runner.os }}-
 
     - name: Cache Android SDK
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ${{ env.ANDROID_SDK_ROOT }}/platforms
@@ -167,9 +180,11 @@ jobs:
         if-no-files-found: warn
 
     - name: Comment on PR with build status
-      if: github.event_name == 'pull_request'
+      # Skip for PRs from forks (GITHUB_TOKEN cannot write to upstream repo from forks)
+      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
       uses: actions/github-script@v7
       with:
+        github-token: ${{ github.token }}
         script: |
           const artifactName = '${{ steps.artifact-name.outputs.name }}';
           const runId = '${{ github.run_id }}';
@@ -183,6 +198,7 @@ jobs:
                   `📋 **Build Details:**\n` +
                   `- Branch: \`${context.payload.pull_request.head.ref}\`\n` +
                   `- Commit: \`${context.sha.substring(0, 7)}\`\n` +
-                  `- Flutter Version: \`3.35.2\`\n\n` +
+                  `- ${process.env['FLUTTER_VERSION'] || `${{ steps.versions.outputs.flutter_version }}`}\n` +
+                  `- ${process.env['DART_VERSION'] || `${{ steps.versions.outputs.dart_version }}`}\n\n` +
                   `💡 *The APK will be available for download from the Artifacts section above.*`
           });

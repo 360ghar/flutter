@@ -1,13 +1,14 @@
-import 'package:get/get.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../data/models/unified_filter_model.dart';
-import '../utils/debug_logger.dart';
-import 'auth_controller.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:http/http.dart' as http;
 
 class LocationController extends GetxController {
   late final AuthController _authController;

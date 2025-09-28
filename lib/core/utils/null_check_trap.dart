@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
-import '../controllers/page_state_service.dart';
-import 'debug_logger.dart';
+
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class NullCheckTrap {
   static bool _fired = false;

@@ -1,5 +1,5 @@
+import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'property_model.dart';
 
 part 'unified_property_response.g.dart';
 
@@ -16,7 +16,7 @@ class UnifiedPropertyResponse {
   @JsonKey(name: 'search_center')
   final SearchCenter? searchCenter;
 
-  UnifiedPropertyResponse({
+  const UnifiedPropertyResponse({
     required this.properties,
     required this.total,
     required this.page,
@@ -41,7 +41,7 @@ class SearchCenter {
   final double latitude;
   final double longitude;
 
-  SearchCenter({required this.latitude, required this.longitude});
+  const SearchCenter({required this.latitude, required this.longitude});
 
   factory SearchCenter.fromJson(Map<String, dynamic> json) => _$SearchCenterFromJson(json);
 

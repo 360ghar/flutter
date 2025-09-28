@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../../../core/mixins/theme_mixin.dart';
-import '../../../core/utils/app_colors.dart';
-import 'policy_page_view.dart';
+import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/features/profile/views/policy_page_view.dart';
 
 class PrivacyView extends StatelessWidget with ThemeMixin {
   const PrivacyView({super.key});
@@ -44,7 +45,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
   @override
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
-      title: 'Privacy & Security',
+      title: 'privacy_security'.tr,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -54,12 +55,12 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  buildSectionTitle('Account Security'),
+                  buildSectionTitle('account_security'.tr),
                   const SizedBox(height: 16),
                   _buildSecurityItem(
                     icon: Icons.lock_outline,
-                    title: 'Change Password',
-                    subtitle: 'Update your account password',
+                    title: 'change_password'.tr,
+                    subtitle: 'update_account_password'.tr,
                     onTap: _changePassword,
                   ),
                 ],
@@ -70,7 +71,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  buildSectionTitle('Policies & Legal'),
+                  buildSectionTitle('policies_legal'.tr),
                   const SizedBox(height: 16),
                   ..._policyItems.map(
                     (item) => _buildPolicyItem(
@@ -88,10 +89,10 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  buildSectionTitle('Account Management'),
+                  buildSectionTitle('account_management'.tr),
                   const SizedBox(height: 12),
                   Text(
-                    'Need to leave 360ghar? Submit a deletion request and our team will erase your profile and personal data after completing the verification steps.',
+                    'delete_account_description'.tr,
                     style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
                   ),
                   const SizedBox(height: 16),
@@ -105,9 +106,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text(
-                        'Delete Account',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      child: Text(
+                        'delete_account'.tr,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -176,8 +177,8 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
 
   void _changePassword() {
     Get.snackbar(
-      'Change Password',
-      'Password change functionality would be implemented here',
+      'change_password_snackbar_title'.tr,
+      'change_password_snackbar_message'.tr,
       backgroundColor: AppColors.snackbarBackground,
       colorText: AppColors.snackbarText,
     );
@@ -187,27 +188,30 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text('Delete Account', style: TextStyle(color: AppColors.errorRed)),
+        title: Text(
+          'delete_account_dialog_title'.tr,
+          style: const TextStyle(color: AppColors.errorRed),
+        ),
         content: Text(
-          'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be removed from our systems.',
+          'delete_account_dialog_content'.tr,
           style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('cancel'.tr, style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               Get.back();
               Get.snackbar(
-                'Account Deletion',
-                'Account deletion process would be initiated here',
+                'account_deletion_snackbar_title'.tr,
+                'account_deletion_snackbar_message'.tr,
                 backgroundColor: AppColors.snackbarBackground,
                 colorText: AppColors.snackbarText,
               );
             },
-            child: Text('Delete', style: TextStyle(color: AppColors.errorRed)),
+            child: Text('delete'.tr, style: const TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),

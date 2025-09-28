@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../../../core/controllers/app_update_controller.dart';
-import '../../../core/data/models/app_update_models.dart';
-import '../../../core/mixins/theme_mixin.dart';
-import '../../../core/utils/app_colors.dart';
+import 'package:ghar360/core/controllers/app_update_controller.dart';
+import 'package:ghar360/core/data/models/app_update_models.dart';
+import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 class AboutView extends StatelessWidget with ThemeMixin {
   const AboutView({super.key});

@@ -1,7 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
-
-import '../utils/debug_logger.dart';
-import 'remote_config_service.dart';
+import 'package:ghar360/core/firebase/remote_config_service.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class AnalyticsService {
   static final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;

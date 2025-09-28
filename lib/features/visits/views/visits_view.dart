@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../controllers/visits_controller.dart';
-import '../../../core/data/models/visit_model.dart';
-import '../../../core/utils/app_colors.dart';
-import '../widgets/visits_skeleton_loaders.dart';
-import '../widgets/visit_card.dart';
-import '../widgets/agent_card.dart';
-import '../../../core/routes/app_routes.dart';
-import '../../../core/utils/debug_logger.dart';
+
+import 'package:ghar360/core/data/models/visit_model.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/features/visits/controllers/visits_controller.dart';
+import 'package:ghar360/features/visits/widgets/agent_card.dart';
+import 'package:ghar360/features/visits/widgets/visit_card.dart';
+import 'package:ghar360/features/visits/widgets/visits_skeleton_loaders.dart';
 
 class VisitsView extends GetView<VisitsController> {
   const VisitsView({super.key});
@@ -116,7 +118,7 @@ class VisitsView extends GetView<VisitsController> {
                 // Subtle background refresh indicator (like other pages)
                 Obx(
                   () => controller.isBackgroundRefreshing.value
-                      ? LinearProgressIndicator(
+                      ? const LinearProgressIndicator(
                           minHeight: 2,
                           backgroundColor: Colors.transparent,
                           valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
@@ -358,7 +360,7 @@ class VisitsView extends GetView<VisitsController> {
 
                 // Date Selection
                 ListTile(
-                  leading: Icon(Icons.calendar_today, color: AppColors.primaryYellow),
+                  leading: const Icon(Icons.calendar_today, color: AppColors.primaryYellow),
                   title: Text('date'.tr),
                   subtitle: Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
                   onTap: () async {

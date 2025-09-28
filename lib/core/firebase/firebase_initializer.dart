@@ -1,21 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:firebase_performance/firebase_performance.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
-
-import '../utils/debug_logger.dart';
-import 'remote_config_service.dart';
-import 'push_notifications_service.dart';
-import 'dynamic_links_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_performance/firebase_performance.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:ghar360/core/firebase/dynamic_links_service.dart';
+import 'package:ghar360/core/firebase/remote_config_service.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 /// Background FCM handler (required to be a top-level function)
 @pragma('vm:entry-point')

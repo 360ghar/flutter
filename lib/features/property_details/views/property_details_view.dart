@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../likes/controllers/likes_controller.dart';
-import '../../visits/controllers/visits_controller.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/data/models/visit_model.dart';
-import '../../../core/utils/app_colors.dart';
+import 'package:get/get.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/visit_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:ghar360/core/widgets/property/property_details_features.dart';
-import 'package:ghar360/core/firebase/analytics_service.dart';
+import 'package:ghar360/features/likes/controllers/likes_controller.dart';
+import 'package:ghar360/features/visits/controllers/visits_controller.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class PropertyDetailsView extends StatelessWidget {
   const PropertyDetailsView({super.key});
@@ -66,8 +65,6 @@ class PropertyDetailsView extends StatelessWidget {
       if (!visitsController.hasLoadedVisits.value && !visitsController.isLoading.value) {
         visitsController.loadVisitsLazy();
       }
-      // Minimal analytics: mark property viewed once per session
-      AnalyticsService.viewPropertyOnce(safeProperty.id.toString());
     });
 
     return Scaffold(
@@ -269,14 +266,178 @@ class PropertyDetailsView extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // Map + Get Directions (only if coordinates available)
+                    // 360° Tour: priority after basic info
+                    if (safeProperty.virtualTourUrl != null &&
+                        safeProperty.virtualTourUrl!.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      _VirtualTourSection(
+                        tourUrl: safeProperty.virtualTourUrl!,
+                        thumbnailUrl: safeProperty.mainImage,
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Property Features
+                    PropertyDetailsFeatures(property: safeProperty),
+                    const SizedBox(height: 24),
+
+                    // Description
+                    Text(
+                      'Description',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      safeProperty.description ?? 'No description available',
+                      style: TextStyle(fontSize: 16, color: AppColors.textSecondary, height: 1.5),
+                    ),
+                    const SizedBox(height: 16),
+                    if ((safeProperty.features?.isNotEmpty ?? false)) ...[
+                      Text(
+                        'Highlights',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: (safeProperty.features ?? [])
+                            .take(6)
+                            .map(
+                              (t) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.primaryYellow.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  t,
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    const SizedBox(height: 24),
+
+                    // Additional Property Information
+                    _buildPropertyInfoSection(safeProperty),
+                    const SizedBox(height: 24),
+
+                    // Pricing Details
+                    _buildPricingSection(safeProperty),
+                    const SizedBox(height: 24),
+
+                    // Builder Information (no owner details shown)
+                    if (safeProperty.builderName?.isNotEmpty == true) ...[
+                      _buildContactSection(safeProperty),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Amenities
+                    Text(
+                      'Amenities',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          safeProperty.amenities?.map((amenity) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.primaryYellow.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (amenity.icon != null && amenity.icon!.startsWith('http')) ...[
+                                    Image.network(
+                                      amenity.icon!,
+                                      width: 16,
+                                      height: 16,
+                                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                                    ),
+                                    const SizedBox(width: 6),
+                                  ] else ...[
+                                    Icon(
+                                      Icons.check_circle_outline,
+                                      size: 16,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                  ],
+                                  Text(
+                                    amenity.title,
+                                    style: TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList() ??
+                          [],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Location + Get Directions at the very end
                     if (safeProperty.hasLocation) ...[
+                      const SizedBox(height: 8),
                       Text(
                         'Location',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: AppColors.getCardShadow(),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on, color: AppColors.iconColor, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                safeProperty.shortAddressDisplay,
+                                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -329,164 +490,14 @@ class PropertyDetailsView extends StatelessWidget {
                             safeProperty.title,
                           ),
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppColors.primaryYellow),
+                            side: const BorderSide(color: AppColors.primaryYellow),
                             foregroundColor: AppColors.textPrimary,
                           ),
                           icon: const Icon(Icons.directions),
                           label: Text('get_directions'.tr),
                         ),
                       ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Address and Location
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: AppColors.getCardShadow(),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.location_on, color: AppColors.iconColor, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              safeProperty.addressDisplay,
-                              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Property Features
-                    PropertyDetailsFeatures(property: safeProperty),
-                    const SizedBox(height: 24),
-
-                    // Description
-                    Text(
-                      'Description',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      safeProperty.description ?? 'No description available',
-                      style: TextStyle(fontSize: 16, color: AppColors.textSecondary, height: 1.5),
-                    ),
-                    const SizedBox(height: 16),
-                    if ((safeProperty.features?.isNotEmpty ?? false) ||
-                        (safeProperty.tags?.isNotEmpty ?? false)) ...[
-                      Text(
-                        'Highlights',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
                       const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children:
-                            ((safeProperty.features != null && safeProperty.features!.isNotEmpty)
-                                    ? safeProperty.features!
-                                    : (safeProperty.tags ?? []))
-                                .take(6)
-                                .map(
-                                  (t) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: AppColors.primaryYellow.withValues(alpha: 0.3),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      t,
-                                      style: TextStyle(
-                                        color: AppColors.textPrimary,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                    const SizedBox(height: 24),
-
-                    // Additional Property Information
-                    _buildPropertyInfoSection(safeProperty),
-                    const SizedBox(height: 24),
-
-                    // Pricing Details
-                    _buildPricingSection(safeProperty),
-                    const SizedBox(height: 24),
-
-                    // Owner/Agent Information
-                    if (safeProperty.hasOwner || safeProperty.builderName?.isNotEmpty == true) ...[
-                      _buildContactSection(safeProperty),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Amenities
-                    Text(
-                      'Amenities',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          safeProperty.amenities?.map((amenity) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: AppColors.primaryYellow.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Text(
-                                amenity.title,
-                                style: TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            );
-                          }).toList() ??
-                          [],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // 360° Tour Embedded Section
-                    if (safeProperty.virtualTourUrl != null &&
-                        safeProperty.virtualTourUrl!.isNotEmpty) ...[
-                      _VirtualTourSection(
-                        tourUrl: safeProperty.virtualTourUrl!,
-                        thumbnailUrl: safeProperty.mainImage,
-                      ),
-                      const SizedBox(height: 24),
                     ],
 
                     const SizedBox(height: 100), // Space for bottom buttons
@@ -537,7 +548,7 @@ class PropertyDetailsView extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle, color: AppColors.accentGreen),
+                          const Icon(Icons.check_circle, color: AppColors.accentGreen),
                           const SizedBox(width: 8),
                           Text(
                             scheduledDate != null
@@ -587,7 +598,7 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: AppColors.primaryYellow, size: 20),
+              const Icon(Icons.info_outline, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Property Information',
@@ -600,16 +611,8 @@ class PropertyDetailsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-
-          _buildInfoRow('Status', property.statusString),
           _buildInfoRow('Purpose', property.purposeString),
           if (property.ageText.isNotEmpty) _buildInfoRow('Age', property.ageText),
-          if (property.maxOccupancy != null)
-            _buildInfoRow('Max Occupancy', '${property.maxOccupancy} people'),
-          if (property.minimumStayDays != null)
-            _buildInfoRow('Minimum Stay', '${property.minimumStayDays} days'),
-          if (property.availableFrom?.isNotEmpty == true)
-            _buildInfoRow('Available From', _formatDate(property.availableFrom!)),
         ],
       ),
     );
@@ -628,7 +631,7 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.payments_outlined, color: AppColors.primaryYellow, size: 20),
+              const Icon(Icons.payments_outlined, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Pricing Details',
@@ -641,18 +644,58 @@ class PropertyDetailsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-
-          _buildInfoRow('Base Price', '₹${property.basePrice.toStringAsFixed(0)}'),
-          if (property.monthlyRent != null)
-            _buildInfoRow('Monthly Rent', '₹${property.monthlyRent!.toStringAsFixed(0)}'),
-          if (property.dailyRate != null)
-            _buildInfoRow('Daily Rate', '₹${property.dailyRate!.toStringAsFixed(0)}'),
-          if (property.securityDeposit != null)
-            _buildInfoRow('Security Deposit', '₹${property.securityDeposit!.toStringAsFixed(0)}'),
-          if (property.maintenanceCharges != null)
-            _buildInfoRow('Maintenance', '₹${property.maintenanceCharges!.toStringAsFixed(0)}'),
-          if (property.pricePerSqft != null)
-            _buildInfoRow('Price per Sq Ft', '₹${property.pricePerSqft!.toStringAsFixed(0)}'),
+          ...(() {
+            final purpose = property.purpose;
+            final rows = <Widget>[];
+            if (purpose == PropertyPurpose.rent) {
+              final rent = property.monthlyRent ?? property.basePrice;
+              rows.add(_buildInfoRow('Monthly Rent', '₹${rent.toStringAsFixed(0)}'));
+              if (property.securityDeposit != null) {
+                rows.add(
+                  _buildInfoRow(
+                    'Security Deposit',
+                    '₹${property.securityDeposit!.toStringAsFixed(0)}',
+                  ),
+                );
+              }
+              if (property.maintenanceCharges != null) {
+                rows.add(
+                  _buildInfoRow(
+                    'Maintenance',
+                    '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
+                  ),
+                );
+              }
+            } else if (purpose == PropertyPurpose.shortStay) {
+              final rate = property.dailyRate ?? property.basePrice;
+              rows.add(_buildInfoRow('Daily Rate', '₹${rate.toStringAsFixed(0)}'));
+              if (property.securityDeposit != null) {
+                rows.add(
+                  _buildInfoRow(
+                    'Security Deposit',
+                    '₹${property.securityDeposit!.toStringAsFixed(0)}',
+                  ),
+                );
+              }
+            } else {
+              // Buy/default
+              rows.add(_buildInfoRow('Sale Price', '₹${property.basePrice.toStringAsFixed(0)}'));
+              if (property.pricePerSqft != null) {
+                rows.add(
+                  _buildInfoRow('Price per Sq Ft', '₹${property.pricePerSqft!.toStringAsFixed(0)}'),
+                );
+              }
+              if (property.maintenanceCharges != null) {
+                rows.add(
+                  _buildInfoRow(
+                    'Maintenance',
+                    '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
+                  ),
+                );
+              }
+            }
+            return rows;
+          })(),
         ],
       ),
     );
@@ -671,10 +714,10 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.contact_phone, color: AppColors.primaryYellow, size: 20),
+              const Icon(Icons.contact_phone, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Contact Information',
+                'Builder Information',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -684,11 +727,6 @@ class PropertyDetailsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-
-          if (property.hasOwner) ...[
-            _buildInfoRow('Owner', property.ownerDisplayName),
-            if (property.hasOwnerContact) _buildInfoRow('Contact', property.ownerContact!),
-          ],
           if (property.builderName?.isNotEmpty == true)
             _buildInfoRow('Builder', property.builderName!),
         ],
@@ -1004,7 +1042,7 @@ class _VirtualTourSectionState extends State<_VirtualTourSection> {
             Expanded(
               child: Row(
                 children: [
-                  Icon(Icons.threesixty, size: 24, color: AppColors.primaryYellow),
+                  const Icon(Icons.threesixty, size: 24, color: AppColors.primaryYellow),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1030,7 +1068,7 @@ class _VirtualTourSectionState extends State<_VirtualTourSection> {
             const SizedBox(width: 12),
             TextButton.icon(
               onPressed: _openFullScreen,
-              icon: Icon(Icons.fullscreen, size: 18, color: AppColors.primaryYellow),
+              icon: const Icon(Icons.fullscreen, size: 18, color: AppColors.primaryYellow),
               label: const Text('Fullscreen'),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1074,7 +1112,7 @@ class _VirtualTourSectionState extends State<_VirtualTourSection> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.play_circle_fill,
                                 size: 64,
                                 color: AppColors.primaryYellow,
@@ -1234,7 +1272,7 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 3),
+                  const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 3),
                   const SizedBox(height: 12),
                   Text(
                     'Loading 360° Tour...',

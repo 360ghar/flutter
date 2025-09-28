@@ -5,8 +5,11 @@ class AppTranslations extends Translations {
   Map<String, Map<String, String>> get keys => {
     'en_US': {
       // General
-      'app_name': '360ghar',
+      'app_name': '360 Ghar',
       'loading': 'Loading...',
+      'loading_properties': 'Loading properties...',
+      'loading_page': 'Loading page {current} of {total}...',
+      'searching_properties': 'Searching properties...',
       'error': 'Error',
       'success': 'Success',
       'cancel': 'Cancel',
@@ -28,7 +31,6 @@ class AppTranslations extends Translations {
       // Navigation
       'profile': 'Profile',
       'discover': 'Discover',
-      'properties': 'Properties',
       'liked': 'Liked',
       'visits': 'Visits',
       'home': 'Home',
@@ -37,7 +39,10 @@ class AppTranslations extends Translations {
       'property_details': 'Property Details',
       'bedrooms': 'Bedrooms',
       'bathrooms': 'Bathrooms',
+      'sq_ft': 'Sq Ft',
       'sqft': 'Sq Ft',
+      'balconies': 'Balconies',
+      'floor': 'Floor',
       'price': 'Price',
       'rent': 'Rent',
       'sale': 'Sale',
@@ -54,6 +59,7 @@ class AppTranslations extends Translations {
       'remove_from_favorites': 'Remove from Favorites',
       'share_property': 'Share Property',
       'property_type': 'Property Type',
+      'property_image': 'Property Image',
       'location': 'Location',
       'area': 'Area',
 
@@ -119,11 +125,17 @@ class AppTranslations extends Translations {
       'location_selected_message': 'Selected: ',
       'unable_to_open_location_settings': 'Unable to open location settings',
       'unable_to_open_app_settings': 'Unable to open app settings',
-      'getting_location': 'Getting location...',
+      'getting_location': 'Getting your location...',
       'location_found': 'Location found',
       'location_not_available': 'Location not available',
       'auto_complete_search': 'Auto-complete Search',
       'auto_complete_search_desc': 'Show search suggestions while typing',
+      'select_location': 'Select Location',
+      'search_radius': 'Search radius',
+      'location_updated': 'Location Updated',
+      'using_current_location': 'Using your current location',
+      'unable_to_get_current_location': 'Unable to get current location',
+      'unable_to_select_location': 'Unable to select location',
 
       'dark_theme': 'Dark Theme',
       'dark_theme_desc': 'Use dark theme for the app',
@@ -150,6 +162,12 @@ class AppTranslations extends Translations {
       // Theme
       'app_theme': 'App Theme',
       'app_theme_desc': 'Choose light, dark, or system theme',
+      'light_mode': 'Light Mode',
+      'dark_mode': 'Dark Mode',
+      'system_mode': 'System Mode',
+      'switch_to_dark_mode': 'Switch to Dark Mode',
+      'switch_to_system_mode': 'Switch to System Mode',
+      'switch_to_light_mode': 'Switch to Light Mode',
 
       // Explore/Map
       'explore_properties': 'Explore',
@@ -296,6 +314,7 @@ class AppTranslations extends Translations {
       'connection_error_title': 'Connection Error',
       'connection_error_message': 'Please check your internet connection and try again.',
       'no_results_found': 'No Results Found',
+      'no_results_message': 'No results for "@query"',
       'no_results_message_prefix': 'We couldn\'t find any properties matching',
       'location_access_needed': 'Location Access Needed',
       'location_access_needed_message': 'We need location access to show properties near you.',
@@ -408,6 +427,8 @@ class AppTranslations extends Translations {
       'share_tour': 'Share Tour',
       'tour_link_copied': 'Tour link copied to clipboard',
       'loading_virtual_tour': 'Loading 360° Tour...',
+      'tour_unavailable_title': '360° Tour Unavailable',
+      'tour_unavailable_body': 'Virtual tour could not be loaded',
       // Edit profile
       'additional_information': 'Additional Information',
       'name_required': 'Name is required',
@@ -415,11 +436,44 @@ class AppTranslations extends Translations {
       'select_your_date_of_birth': 'Select your date of birth',
       'saving': 'Saving...',
       'save_changes': 'Save Changes',
+
+      // Profile menu subtitles
+      'update_personal_information': 'Update your personal information',
+      'property_preferences_filters': 'Property preferences and filters',
+      'privacy_security': 'Privacy & Security',
+      'account_security_settings': 'Account security settings',
+      'get_help_contact_support': 'Get help and contact support',
+      'app_version_information': 'App version and information',
+
+      // Profile view
+      'user_name': 'User Name',
+      'no_user_data_available': 'No user data available',
+
+      // Privacy & Security
+      'account_security': 'Account Security',
+      'change_password': 'Change Password',
+      'update_account_password': 'Update your account password',
+      'policies_legal': 'Policies & Legal',
+      'account_management': 'Account Management',
+      'delete_account_description':
+          'Need to leave 360ghar? Submit a deletion request and our team will erase your profile and personal data after completing the verification steps.',
+      'delete_account': 'Delete Account',
+      'change_password_snackbar_title': 'Change Password',
+      'change_password_snackbar_message': 'Password change functionality would be implemented here',
+      'delete_account_dialog_title': 'Delete Account',
+      'delete_account_dialog_content':
+          'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be removed from our systems.',
+      'delete': 'Delete',
+      'account_deletion_snackbar_title': 'Account Deletion',
+      'account_deletion_snackbar_message': 'Account deletion process would be initiated here',
     },
     'hi_IN': {
       // General
-      'app_name': '360गहर',
+      'app_name': '360 Ghar',
       'loading': 'लोड हो रहा है...',
+      'loading_properties': 'संपत्तियाँ लोड हो रही हैं...',
+      'loading_page': 'पृष्ठ {current} का {total} लोड हो रहा है...',
+      'searching_properties': 'संपत्तियाँ खोजी जा रही हैं...',
       'error': 'त्रुटि',
       'success': 'सफलता',
       'cancel': 'रद्द करें',
@@ -441,7 +495,6 @@ class AppTranslations extends Translations {
       // Navigation
       'profile': 'प्रोफाइल',
       'discover': 'खोजें',
-      'properties': 'संपत्तियां',
       'liked': 'पसंदीदा',
       'visits': 'दौरे',
       'home': 'होम',
@@ -450,7 +503,10 @@ class AppTranslations extends Translations {
       'property_details': 'संपत्ति विवरण',
       'bedrooms': 'बेडरूम',
       'bathrooms': 'बाथरूम',
+      'sq_ft': 'वर्ग फीट',
       'sqft': 'वर्ग फीट',
+      'balconies': 'बालकनी',
+      'floor': 'मंजिल',
       'price': 'कीमत',
       'rent': 'किराया',
       'sale': 'बिक्री',
@@ -467,6 +523,7 @@ class AppTranslations extends Translations {
       'remove_from_favorites': 'पसंदीदा से हटाएं',
       'share_property': 'संपत्ति साझा करें',
       'property_type': 'संपत्ति का प्रकार',
+      'property_image': 'संपत्ति छवि',
       'location': 'स्थान',
       'area': 'क्षेत्रफल',
 
@@ -533,11 +590,17 @@ class AppTranslations extends Translations {
       'location_selected_message': 'चुना गया: ',
       'unable_to_open_location_settings': 'स्थान सेटिंग्स खोलने में असमर्थ',
       'unable_to_open_app_settings': 'ऐप सेटिंग्स खोलने में असमर्थ',
-      'getting_location': 'स्थान प्राप्त हो रहा है...',
+      'getting_location': 'आपका स्थान प्राप्त हो रहा है...',
       'location_found': 'स्थान मिला',
       'location_not_available': 'स्थान उपलब्ध नहीं',
       'auto_complete_search': 'ऑटो-कंप्लीट खोज',
       'auto_complete_search_desc': 'टाइप करते समय खोज सुझाव दिखाएं',
+      'select_location': 'स्थान चुनें',
+      'search_radius': 'खोज दूरी',
+      'location_updated': 'स्थान अपडेट किया गया',
+      'using_current_location': 'आपका वर्तमान स्थान उपयोग कर रहे हैं',
+      'unable_to_get_current_location': 'वर्तमान स्थान प्राप्त करने में असमर्थ',
+      'unable_to_select_location': 'स्थान चुनने में असमर्थ',
 
       'dark_theme': 'डार्क थीम',
       'dark_theme_desc': 'ऐप के लिए डार्क थीम का उपयोग करें',
@@ -668,6 +731,12 @@ class AppTranslations extends Translations {
       // Theme
       'app_theme': 'एप थीम',
       'app_theme_desc': 'लाइट, डार्क या सिस्टम थीम चुनें',
+      'light_mode': 'लाइट मोड',
+      'dark_mode': 'डार्क मोड',
+      'system_mode': 'सिस्टम मोड',
+      'switch_to_dark_mode': 'डार्क मोड पर स्विच करें',
+      'switch_to_system_mode': 'सिस्टम मोड पर स्विच करें',
+      'switch_to_light_mode': 'लाइट मोड पर स्विच करें',
 
       'passed': 'पास',
       'my_location': 'मेरा स्थान',
@@ -710,6 +779,7 @@ class AppTranslations extends Translations {
       'connection_error_title': 'कनेक्शन त्रुटि',
       'connection_error_message': 'कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।',
       'no_results_found': 'कोई परिणाम नहीं मिला',
+      'no_results_message': '"@query" के लिए कोई परिणाम नहीं',
       'no_results_message_prefix': 'हम इस खोज से मेल खाने वाली कोई संपत्ति नहीं ढूंढ सके',
       'location_access_needed': 'स्थान पहुंच आवश्यक',
       'location_access_needed_message':
@@ -824,6 +894,8 @@ class AppTranslations extends Translations {
       'share_tour': 'टूर साझा करें',
       'tour_link_copied': 'टूर लिंक क्लिपबोर्ड पर कॉपी किया गया',
       'loading_virtual_tour': '360° टूर लोड हो रहा है...',
+      'tour_unavailable_title': '360° टूर अनुपलब्ध',
+      'tour_unavailable_body': 'वर्चुअल टूर लोड नहीं किया जा सका',
       // Edit profile
       'additional_information': 'अतिरिक्त जानकारी',
       'name_required': 'नाम आवश्यक है',
@@ -831,6 +903,36 @@ class AppTranslations extends Translations {
       'select_your_date_of_birth': 'अपनी जन्म तिथि चुनें',
       'saving': 'सहेजा जा रहा है...',
       'save_changes': 'परिवर्तन सहेजें',
+
+      // Profile menu subtitles
+      'update_personal_information': 'अपनी व्यक्तिगत जानकारी अपडेट करें',
+      'property_preferences_filters': 'संपत्ति प्राथमिकताएं और फिल्टर',
+      'privacy_security': 'गोपनीयता और सुरक्षा',
+      'account_security_settings': 'खाता सुरक्षा सेटिंग्स',
+      'get_help_contact_support': 'सहायता प्राप्त करें और सहायता से संपर्क करें',
+      'app_version_information': 'ऐप संस्करण और जानकारी',
+
+      // Profile view
+      'user_name': 'उपयोगकर्ता नाम',
+      'no_user_data_available': 'कोई उपयोगकर्ता डेटा उपलब्ध नहीं',
+
+      // Privacy & Security
+      'account_security': 'खाता सुरक्षा',
+      'change_password': 'पासवर्ड बदलें',
+      'update_account_password': 'अपना खाता पासवर्ड अपडेट करें',
+      'policies_legal': 'नीतियाँ और कानूनी',
+      'account_management': 'खाता प्रबंधन',
+      'delete_account_description':
+          '360ghar छोड़ना चाहते हैं? एक हटाने का अनुरोध सबमिट करें और हमारी टीम सत्यापन चरणों को पूरा करने के बाद आपकी प्रोफ़ाइल और व्यक्तिगत डेटा को हटा देगी।',
+      'delete_account': 'खाता हटाएं',
+      'change_password_snackbar_title': 'पासवर्ड बदलें',
+      'change_password_snackbar_message': 'पासवर्ड बदलने की कार्यक्षमता यहां लागू की जाएगी',
+      'delete_account_dialog_title': 'खाता हटाएं',
+      'delete_account_dialog_content':
+          'क्या आप वाकई अपना खाता स्थायी रूप से हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती और आपका सभी डेटा हमारे सिस्टम से हटा दिया जाएगा।',
+      'delete': 'हटाएं',
+      'account_deletion_snackbar_title': 'खाता हटाना',
+      'account_deletion_snackbar_message': 'खाता हटाने की प्रक्रिया यहां शुरू की जाएगी',
     },
   };
 }

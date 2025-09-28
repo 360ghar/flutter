@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:get/get.dart';
-import '../../../core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class TourView extends StatefulWidget {
   const TourView({super.key});
@@ -166,7 +166,10 @@ class _TourViewState extends State<TourView> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 3),
+                      const CircularProgressIndicator(
+                        color: AppColors.primaryYellow,
+                        strokeWidth: 3,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'loading_virtual_tour'.tr,

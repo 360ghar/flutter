@@ -15,7 +15,7 @@ class PropertyImageModel {
   @JsonKey(name: 'is_main_image', defaultValue: false)
   final bool isMainImage;
 
-  PropertyImageModel({
+  const PropertyImageModel({
     required this.id,
     required this.propertyId,
     required this.imageUrl,

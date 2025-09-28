@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../../../core/controllers/theme_controller.dart';
-import '../../../core/mixins/theme_mixin.dart';
-import '../../../core/utils/app_colors.dart';
-import '../controllers/preferences_controller.dart';
+import 'package:ghar360/core/controllers/theme_controller.dart';
+import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/features/profile/controllers/preferences_controller.dart';
 
 class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
   const PreferencesView({super.key});
@@ -13,60 +14,64 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
       title: 'my_preferences'.tr,
-      body: Obx(() {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSection('property_preferences'.tr, [
-                _buildSwitchTile(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSection('property_preferences'.tr, [
+              Obx(
+                () => _buildSwitchTile(
                   'push_notifications'.tr,
                   'push_notifications_desc'.tr,
                   controller.pushNotifications.value,
                   (value) => controller.pushNotifications.value = value,
                 ),
-                _buildSwitchTile(
+              ),
+              Obx(
+                () => _buildSwitchTile(
                   'email_notifications'.tr,
                   'email_notifications_desc'.tr,
                   controller.emailNotifications.value,
                   (value) => controller.emailNotifications.value = value,
                 ),
-                _buildSwitchTile(
+              ),
+              Obx(
+                () => _buildSwitchTile(
                   'similar_properties'.tr,
                   'similar_properties_desc'.tr,
                   controller.similarProperties.value,
                   (value) => controller.similarProperties.value = value,
                 ),
-              ]),
-              const SizedBox(height: 24),
-              _buildSection('display_preferences'.tr, [_buildThemeSelector()]),
-              const SizedBox(height: 24),
-              _buildSection('language_preferences'.tr, [_buildLanguageSelector()]),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: controller.savePreferences,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryYellow,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(
-                    'save_preferences'.tr,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+              ),
+            ]),
+            const SizedBox(height: 24),
+            _buildSection('display_preferences'.tr, [Obx(_buildThemeSelector)]),
+            const SizedBox(height: 24),
+            _buildSection('language_preferences'.tr, [Obx(_buildLanguageSelector)]),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: controller.savePreferences,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryYellow,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  'save_preferences'.tr,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ),
-            ],
-          ),
-        );
-      }),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -119,7 +124,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: Theme.of(Get.context!).colorScheme.primary,
+            activeThumbColor: Theme.of(Get.context!).colorScheme.primary,
             activeTrackColor: Theme.of(Get.context!).colorScheme.primary.withValues(alpha: 0.3),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
@@ -165,10 +170,13 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 children: [
                   Text(
                     controller.getCurrentLanguage(),
-                    style: TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: AppColors.primaryYellow,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.keyboard_arrow_down, color: AppColors.primaryYellow, size: 20),
+                  const Icon(Icons.keyboard_arrow_down, color: AppColors.primaryYellow, size: 20),
                 ],
               ),
             ),
@@ -203,7 +211,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
         Get.back();
       },
       trailing: controller.getCurrentLanguage() == languageName
-          ? Icon(Icons.check, color: AppColors.primaryYellow)
+          ? const Icon(Icons.check, color: AppColors.primaryYellow)
           : null,
     );
   }
@@ -245,10 +253,13 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 children: [
                   Text(
                     controller.currentThemeName,
-                    style: TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: AppColors.primaryYellow,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.keyboard_arrow_down, color: AppColors.primaryYellow, size: 20),
+                  const Icon(Icons.keyboard_arrow_down, color: AppColors.primaryYellow, size: 20),
                 ],
               ),
             ),
@@ -286,7 +297,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
         Get.back();
       },
       trailing: controller.currentThemeMode == mode
-          ? Icon(Icons.check, color: AppColors.primaryYellow)
+          ? const Icon(Icons.check, color: AppColors.primaryYellow)
           : null,
     );
   }

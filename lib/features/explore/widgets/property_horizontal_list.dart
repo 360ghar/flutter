@@ -1,11 +1,14 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/debug_logger.dart';
-import '../../../core/data/models/property_model.dart';
-import 'explore_property_card.dart';
-import '../controllers/explore_controller.dart';
+
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/features/explore/controllers/explore_controller.dart';
+import 'package:ghar360/features/explore/widgets/explore_property_card.dart';
 
 class PropertyHorizontalList extends StatefulWidget {
   final ExploreController controller;
