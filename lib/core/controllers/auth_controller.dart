@@ -1,215 +1,252 @@
+// lib/core/controllers/auth_controller.dart
+
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/data/models/auth_status.dart';
+import 'package:ghar360/core/data/models/user_model.dart';
+import 'package:ghar360/core/data/repositories/profile_repository.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_handler.dart';
+import 'package:ghar360/features/auth/data/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../data/providers/api_service.dart';
-import '../data/models/user_model.dart';
-import '../routes/app_routes.dart';
-import '../utils/debug_logger.dart';
-import '../utils/error_handler.dart';
 
 class AuthController extends GetxController {
-  static AuthController get instance => Get.find<AuthController>();
+  // Dependencies (Lazy loaded to avoid circular dependency issues)
+  final AuthRepository _authRepository = Get.find();
+  // Using lazy getter for repositories with error handling
+  ProfileRepository? get _profileRepository {
+    try {
+      return Get.find<ProfileRepository>();
+    } catch (e) {
+      DebugLogger.warning('ProfileRepository not yet registered: $e');
+      return null;
+    }
+  }
 
-  final _supabase = Supabase.instance.client;
-  late final ApiService apiService;
-
-  final RxBool isLoading = false.obs;
-  final RxBool isLoggedIn = false.obs;
-  final Rxn<User> currentSupabaseUser = Rxn<User>();
+  // --- Reactive State ---
+  final Rx<AuthStatus> authStatus = AuthStatus.initial.obs;
   final Rxn<UserModel> currentUser = Rxn<UserModel>();
-  final RxString errorMessage = ''.obs;
-  
-  // Notification settings
-  final RxMap<String, bool> notificationSettings = <String, bool>{
-    'email_notifications': true,
-    'push_notifications': true,
-    'visit_reminders': true,
-    'price_alerts': false,
-    'new_properties': true,
-  }.obs;
-  
+  final RxBool isLoading = false.obs;
+  final Rxn<RouteSettings> redirectRoute = Rxn<RouteSettings>();
+  final RxInt _profileCompletionPercentage = 0.obs;
+
+  StreamSubscription<User?>? _authSubscription;
+  Timer? _debounceTimer;
+  User? _lastProcessedUser;
+  Worker? _authStatusWorker;
+  Worker? _currentUserWorker;
 
   @override
   void onInit() {
     super.onInit();
-    try {
-      apiService = Get.find<ApiService>();
-      _initializeAuth();
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error initializing AuthController', e, stackTrace);
+    // Set up navigation worker BEFORE initializing so initial state changes trigger navigation
+    _setupNavigationWorker();
+    _setupCurrentUserWorker();
+    _initialize();
+
+    // Ensure we handle the current state once (in case no change occurs after setup)
+    _handleAuthNavigation(authStatus.value);
+  }
+
+  /// Initialize the controller and listen to auth state changes.
+  void _initialize() {
+    // Listen to the stream from the repository
+    _authSubscription = _authRepository.onAuthStateChange.listen(_onAuthStateChanged);
+    DebugLogger.auth('AuthController initialized and listening for auth changes.');
+
+    // Perform an initial check in case the stream has already emitted a value
+    final initialUser = _authRepository.currentUser;
+    if (initialUser != null) {
+      _onAuthStateChanged(initialUser);
+    } else {
+      authStatus.value = AuthStatus.unauthenticated;
     }
   }
 
+  /// Sets up the navigation worker to handle route changes based on auth status changes
+  void _setupNavigationWorker() {
+    _authStatusWorker = ever(authStatus, _handleAuthNavigation);
+    DebugLogger.info('🧭 Navigation worker set up to listen for auth status changes');
+  }
 
-  void _initializeAuth() {
-    // Check initial session
-    final session = _supabase.auth.currentSession;
-    if (session != null) {
-      currentSupabaseUser.value = session.user;
-      isLoggedIn.value = true;
-      _loadUserProfile();
-    }
+  /// Sets up the current user worker to update profile completion percentage
+  void _setupCurrentUserWorker() {
+    _currentUserWorker = ever(currentUser, (UserModel? user) {
+      _profileCompletionPercentage.value = user?.profileCompletionPercentage ?? 0;
+    });
+    DebugLogger.info('👤 Current user worker set up to update profile completion percentage');
+  }
 
-    // Listen to auth changes
-    _supabase.auth.onAuthStateChange.listen((data) {
-      final AuthChangeEvent event = data.event;
-      final Session? session = data.session;
+  /// Handles navigation based on auth status changes
+  /// This is called outside of the build cycle to prevent build-time navigation issues
+  void _handleAuthNavigation(AuthStatus status) {
+    // Add a small delay to ensure UI is not in a build phase and to prevent race conditions
+    Future.microtask(() {
+      DebugLogger.info('🧭 Navigation worker: Handling auth status change to $status');
 
-      switch (event) {
-        case AuthChangeEvent.signedIn:
-          if (session?.user != null) {
-            currentSupabaseUser.value = session!.user;
-            isLoggedIn.value = true;
-            errorMessage.value = '';
-            _loadUserProfile().then((_) {
-              // Only navigate if not already on dashboard screen
-              if (Get.currentRoute != AppRoutes.dashboard) {
-                Get.offAllNamed(AppRoutes.dashboard);
-              }
-            });
+      switch (status) {
+        case AuthStatus.initial:
+          if (Get.currentRoute != AppRoutes.splash) {
+            DebugLogger.debug('📱 Navigation worker: Navigating to Splash route');
+            Get.offAllNamed(AppRoutes.splash);
           }
           break;
-        case AuthChangeEvent.signedOut:
-          currentSupabaseUser.value = null;
-          currentUser.value = null;
-          isLoggedIn.value = false;
-          _resetNotificationSettings();
-          // Only navigate to login if not already on auth screens
-          if (!_isOnAuthScreen()) {
-            Get.offAllNamed(AppRoutes.onboarding);
+
+        case AuthStatus.unauthenticated:
+          if (Get.currentRoute != AppRoutes.login) {
+            DebugLogger.debug('📱 Navigation worker: Navigating to Login route');
+            Get.offAllNamed(AppRoutes.login);
           }
           break;
-        case AuthChangeEvent.tokenRefreshed:
-          if (session?.user != null) {
-            currentSupabaseUser.value = session!.user;
-            // Optionally refresh user profile on token refresh
-            _loadUserProfile();
+
+        case AuthStatus.requiresProfileCompletion:
+          if (Get.currentRoute != AppRoutes.profileCompletion) {
+            DebugLogger.debug('📱 Navigation worker: Navigating to Profile Completion route');
+            Get.offAllNamed(AppRoutes.profileCompletion);
           }
           break;
-        default:
+
+        case AuthStatus.authenticated:
+          // Check if there's a stored redirect route
+          if (redirectRoute.value != null) {
+            DebugLogger.debug(
+              '📱 Navigation worker: Navigating to stored redirect route: ${redirectRoute.value!.name}',
+            );
+            navigateToRedirectRoute();
+          } else if (Get.currentRoute != AppRoutes.dashboard) {
+            DebugLogger.debug('📱 Navigation worker: Navigating to Dashboard route');
+            Get.offAllNamed(AppRoutes.dashboard);
+          }
+          break;
+
+        case AuthStatus.error:
+          // Error state doesn't trigger navigation - it's handled by UI display
+          DebugLogger.debug('📱 Navigation worker: Auth error state - no navigation needed');
           break;
       }
     });
   }
 
+  /// Callback triggered when Supabase auth state changes (sign-in, sign-out, token refresh).
+  /// Uses debouncing to prevent duplicate processing.
+  Future<void> _onAuthStateChanged(User? supabaseUser) async {
+    // Cancel any existing debounce timer
+    _debounceTimer?.cancel();
 
-  bool _isOnAuthScreen() {
-    final currentRoute = Get.currentRoute;
-    return currentRoute == AppRoutes.login ||
-           currentRoute == AppRoutes.register ||
-           currentRoute == AppRoutes.onboarding ||
-           currentRoute == AppRoutes.splash ||
-           currentRoute == AppRoutes.profileCompletion;
+    // Debounce rapid auth state changes to prevent duplicate processing
+    _debounceTimer = Timer(const Duration(milliseconds: 100), () {
+      _processAuthStateChange(supabaseUser);
+    });
   }
 
-  Future<void> _loadUserProfile() async {
-    try {
-      final userProfile = await apiService.getCurrentUser();
-      currentUser.value = userProfile;
-      _loadNotificationSettings();
-    } catch (e, stackTrace) {
-      DebugLogger.error('Failed to load user profile', e, stackTrace);
+  /// Process the actual auth state change after debouncing
+  Future<void> _processAuthStateChange(User? supabaseUser) async {
+    // Skip if we've already processed this user
+    if (_lastProcessedUser?.id == supabaseUser?.id && _lastProcessedUser?.id != null) {
+      DebugLogger.debug('Skipping duplicate auth state change for user: ${supabaseUser?.id}');
+      return;
+    }
+
+    _lastProcessedUser = supabaseUser;
+
+    if (supabaseUser == null) {
+      // --- USER IS SIGNED OUT ---
+      DebugLogger.auth('Auth state changed: User is signed out.');
+      currentUser.value = null;
+      authStatus.value = AuthStatus.unauthenticated;
+    } else {
+      // --- USER IS SIGNED IN ---
+      DebugLogger.auth('Auth state changed: User is signed in. UID: ${supabaseUser.id}');
+      // A Supabase user exists, now we need to fetch our application-specific user profile
+      // from our own backend.
+      await _loadUserProfile();
     }
   }
 
-  Future<bool> signUp({
-    required String email,
-    required String password,
-    String? fullName,
-    String? phone,
-  }) async {
+  /// Fetches the user profile from our backend and updates the app's auth status.
+  /// Adds a bounded retry when `ProfileRepository` is not yet registered to avoid infinite loops.
+  Future<void> _loadUserProfile({int retryCount = 0}) async {
     try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      final response = await apiService.signUp(
-        email,
-        password,
-        fullName: fullName,
-        phone: phone,
-      );
-
-      if (response.user != null) {
-        DebugLogger.success('Signup successful!');
-        DebugLogger.user('New User: ${response.user!.email}');
-        
-        Get.snackbar(
-          'Success',
-          'Account created successfully! Please check your email to verify your account.',
-          snackPosition: SnackPosition.TOP,
-        );
-        
-        // If auto-confirm is enabled, user will be signed in automatically
-        // Otherwise, they need to verify their email first
-        if (response.session != null) {
-          currentSupabaseUser.value = response.user;
-          isLoggedIn.value = true;
-          await _loadUserProfile();
-          Get.offAllNamed(AppRoutes.dashboard);
-        } else {
-          DebugLogger.info('Email verification required');
-          Get.toNamed(AppRoutes.login);
+      // Check if ProfileRepository is available
+      final profileRepo = _profileRepository;
+      if (profileRepo == null) {
+        if (retryCount >= 5) {
+          DebugLogger.error('Failed to load user profile after 5 retries. Setting state to error.');
+          authStatus.value = AuthStatus.error;
+          return;
         }
-        return true;
-      } else {
-        errorMessage.value = 'Failed to create account';
-        return false;
-      }
-    } catch (e, stackTrace) {
-      DebugLogger.error('Signup error', e, stackTrace);
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      final response = await apiService.signIn(email, password);
-
-      if (response.user != null && response.session != null) {
-        // Log JWT Token
-        DebugLogger.success('Login successful!');
-        DebugLogger.user('User: ${response.user!.email}');
-        DebugLogger.logJWTToken(
-          response.session!.accessToken,
-          expiresAt: response.session!.expiresAt != null 
-              ? DateTime.fromMillisecondsSinceEpoch(response.session!.expiresAt! * 1000)
-              : DateTime.now().add(const Duration(hours: 2)),
-          userEmail: response.user!.email,
+        DebugLogger.warning(
+          'ProfileRepository not available, retrying in 1 second... (Attempt ${retryCount + 1})',
         );
-        
-        currentSupabaseUser.value = response.user;
-        isLoggedIn.value = true;
-        await _loadUserProfile();
-        Get.offAllNamed(AppRoutes.discover);
-        return true;
-      } else {
-        errorMessage.value = 'Failed to sign in';
-        return false;
+        await Future.delayed(const Duration(seconds: 1));
+        return _loadUserProfile(retryCount: retryCount + 1); // Retry with limit
+      }
+
+      // Use ProfileRepository to fetch user data from your backend
+      final userProfile = await profileRepo.getCurrentUserProfile();
+      currentUser.value = userProfile;
+      DebugLogger.success('Successfully loaded user profile: ${userProfile.fullName}');
+
+      // Determine the final auth status based on profile completeness
+      final newStatus = userProfile.isProfileComplete
+          ? AuthStatus.authenticated
+          : AuthStatus.requiresProfileCompletion;
+
+      // Only update if status actually changed to prevent unnecessary rebuilds
+      if (authStatus.value != newStatus) {
+        DebugLogger.auth('Changing auth status from ${authStatus.value} to $newStatus');
+        authStatus.value = newStatus;
+
+        if (newStatus == AuthStatus.authenticated) {
+          DebugLogger.auth('User is fully authenticated and profile is complete.');
+        } else {
+          DebugLogger.auth('User authenticated, but profile completion is required.');
+          // Force a UI rebuild to ensure navigation happens
+          Future.delayed(const Duration(milliseconds: 50), () {
+            authStatus.refresh();
+          });
+        }
       }
     } catch (e, stackTrace) {
-      DebugLogger.error('Login error', e, stackTrace);
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
+      DebugLogger.error('Failed to load user profile after sign-in.', e, stackTrace);
+
+      // If we already have a user and were authenticated, treat this as a transient refresh failure.
+      // Do not knock the app into an error state; keep current auth status.
+      if (currentUser.value != null && authStatus.value == AuthStatus.authenticated) {
+        DebugLogger.warning('Transient profile refresh failure; preserving authenticated state.');
+        try {
+          if (Get.context != null) {
+            ErrorHandler.showInfo('Could not refresh profile. Will retry later.');
+          }
+        } catch (_) {}
+        return;
+      }
+
+      // Otherwise, this is initial load failure; set error state so user can retry or sign out.
+      authStatus.value = AuthStatus.error;
+
+      try {
+        if (Get.context != null) {
+          ErrorHandler.showInfo('Could not retrieve your profile. Please try again.');
+        } else {
+          DebugLogger.warning('Cannot show snackbar: GetX context not available');
+        }
+      } catch (snackbarError) {
+        DebugLogger.error('Failed to show error snackbar', snackbarError);
+      }
     }
   }
 
+  /// Signs out the user from Supabase. The `_onAuthStateChanged` listener will handle the rest.
   Future<void> signOut() async {
     try {
       isLoading.value = true;
-      await apiService.signOut();
-      
-      // The auth state listener will handle the UI updates
+      await _authRepository.signOut();
+      // The listener will automatically set the state to unauthenticated and navigation worker will handle routing
     } catch (e) {
       ErrorHandler.handleAuthError(e);
     } finally {
@@ -217,307 +254,121 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<bool> resetPassword(String email) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      await apiService.resetPassword(email);
-      
-      Get.snackbar(
-        'Success',
-        'Password reset email sent! Please check your inbox.',
-        snackPosition: SnackPosition.TOP,
-      );
-      return true;
-    } catch (e) {
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<bool> updatePassword(String newPassword) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      await _supabase.auth.updateUser(
-        UserAttributes(password: newPassword),
-      );
-
-      Get.snackbar(
-        'Success',
-        'Password updated successfully!',
-        snackPosition: SnackPosition.TOP,
-      );
-      return true;
-    } catch (e) {
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<bool> updateEmail(String newEmail) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      await _supabase.auth.updateUser(
-        UserAttributes(email: newEmail),
-      );
-
-      Get.snackbar(
-        'Success',
-        'Email update requested! Please check both old and new email addresses.',
-        snackPosition: SnackPosition.TOP,
-      );
-      return true;
-    } catch (e) {
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> refreshUserProfile() async {
-    try {
+  /// Allows the UI to retry loading the profile if it fails.
+  Future<void> retryProfileLoad() async {
+    if (authStatus.value == AuthStatus.error) {
+      DebugLogger.info('Retrying user profile load...');
       await _loadUserProfile();
-    } catch (e, stackTrace) {
-      DebugLogger.error('Failed to refresh user profile', e, stackTrace);
     }
   }
 
+  /// Updates the user profile and refreshes the auth state.
   Future<bool> updateUserProfile(Map<String, dynamic> profileData) async {
     try {
       isLoading.value = true;
-      
-      final updatedUser = await apiService.updateUserProfile(profileData);
-      currentUser.value = updatedUser;
-      
-      Get.snackbar(
-        'Success',
-        'Profile updated successfully!',
-        snackPosition: SnackPosition.TOP,
-      );
-      return true;
-    } catch (e) {
-      ErrorHandler.handleNetworkError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<bool> updateUserPreferences(Map<String, dynamic> preferences) async {
-    try {
-      await apiService.updateUserPreferences(preferences);
-      
-      // Update local user object
-      final user = currentUser.value;
-      if (user != null) {
-        currentUser.value = user.copyWith(preferences: preferences);
-      }
-      
-      Get.snackbar(
-        'Success',
-        'Preferences updated successfully!',
-        snackPosition: SnackPosition.TOP,
-      );
-      return true;
-    } catch (e) {
-      ErrorHandler.handleNetworkError(e);
-      return false;
-    }
-  }
-
-  Future<bool> updateUserLocation(double latitude, double longitude) async {
-    try {
-      await apiService.updateUserLocation(latitude, longitude);
-      return true;
-    } catch (e, stackTrace) {
-      DebugLogger.error('Failed to update user location', e, stackTrace);
-      return false;
-    }
-  }
-
-  // Session management
-  Future<bool> checkSessionValidity() async {
-    try {
-      final session = _supabase.auth.currentSession;
-      if (session == null) {
+      final profileRepo = _profileRepository;
+      if (profileRepo == null) {
+        DebugLogger.error('ProfileRepository not available for profile update');
         return false;
       }
 
-      // Check if session is expired
-      if (session.expiresAt != null) {
-        final expiryTime = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
-        if (DateTime.now().isAfter(expiryTime)) {
-          await signOut();
-          return false;
-        }
+      final updatedUser = await profileRepo.updateUserProfile(profileData);
+      currentUser.value = updatedUser;
+
+      // Debug profile completion check
+      DebugLogger.info('🔍 Profile completion check:');
+      DebugLogger.info('  - Email: "${updatedUser.email}" (isEmpty: ${updatedUser.email.isEmpty})');
+      DebugLogger.info(
+        '  - Full Name: "${updatedUser.fullName}" (null/empty: ${updatedUser.fullName == null || updatedUser.fullName!.isEmpty})',
+      );
+      DebugLogger.info(
+        '  - Date of Birth: "${updatedUser.dateOfBirth}" (null/empty: ${updatedUser.dateOfBirth == null || updatedUser.dateOfBirth!.isEmpty})',
+      );
+      DebugLogger.info('  - isProfileComplete: ${updatedUser.isProfileComplete}');
+      DebugLogger.info('  - Current auth status: ${authStatus.value}');
+
+      // After updating, re-evaluate the auth status.
+      if (updatedUser.isProfileComplete &&
+          authStatus.value == AuthStatus.requiresProfileCompletion) {
+        DebugLogger.success('✅ Profile is complete! Changing auth status to authenticated');
+        authStatus.value = AuthStatus.authenticated;
+      } else if (!updatedUser.isProfileComplete) {
+        DebugLogger.warning('⚠️ Profile is still incomplete after update');
+      } else if (authStatus.value != AuthStatus.requiresProfileCompletion) {
+        DebugLogger.info(
+          'ℹ️ Auth status is not requiresProfileCompletion, current: ${authStatus.value}',
+        );
       }
 
-      // Session is valid - backend sync removed
+      Get.snackbar('Success', 'Profile updated successfully!', snackPosition: SnackPosition.TOP);
       return true;
-    } catch (e, stackTrace) {
-      DebugLogger.error('Session validation failed', e, stackTrace);
-      return false;
-    }
-  }
-
-  Future<void> restoreSession() async {
-    try {
-      final session = _supabase.auth.currentSession;
-      if (session != null) {
-        final isValid = await checkSessionValidity();
-        if (isValid) {
-          currentSupabaseUser.value = session.user;
-          isLoggedIn.value = true;
-          await _loadUserProfile();
-        } else {
-          await signOut();
-        }
-      }
-    } catch (e, stackTrace) {
-      DebugLogger.error('Session restoration failed', e, stackTrace);
-      await signOut();
-    }
-  }
-
-  // Helper methods
-  bool get isAuthenticated {
-    final loggedIn = isLoggedIn.value;
-    final user = currentSupabaseUser.value;
-    return loggedIn && user != null;
-  }
-  
-  String? get userEmail {
-    final user = currentSupabaseUser.value;
-    return user?.email;
-  }
-  
-  String? get userId {
-    final user = currentSupabaseUser.value;
-    return user?.id;
-  }
-  
-  bool get isEmailVerified {
-    final user = currentSupabaseUser.value;
-    return user?.emailConfirmedAt != null;
-  }
-
-  // Removed custom error handling - using centralized ErrorHandler instead
-
-  void clearError() {
-    errorMessage.value = '';
-  }
-
-  // Social authentication methods (optional - can be implemented later)
-  Future<bool> signInWithGoogle() async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      final response = await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: 'com.360ghar.app://login-callback/',
-      );
-
-      return response;
-    } catch (e) {
-      ErrorHandler.handleAuthError(e);
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  // For development/testing - remove in production
-  Future<void> deleteAccount() async {
-    try {
-      isLoading.value = true;
-      
-      // Note: This requires additional backend implementation
-      // Supabase doesn't provide direct user deletion from client
-      
-      Get.snackbar(
-        'Info',
-        'Account deletion requires contacting support',
-        snackPosition: SnackPosition.TOP,
-      );
     } catch (e) {
       ErrorHandler.handleNetworkError(e);
+      return false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Notification Settings Management (from UserController)
-  Future<bool> updateNotificationSettings(Map<String, bool> settings) async {
+  /// Updates the user's location using ProfileRepository
+  Future<bool> updateUserLocation(Map<String, dynamic> locationData) async {
     try {
-      final profileData = {
-        'notification_settings': settings,
-      };
-      
-      final success = await updateUserProfile(profileData);
-      if (success) {
-        notificationSettings.addAll(settings);
+      final profileRepo = _profileRepository;
+      if (profileRepo == null) {
+        DebugLogger.error('ProfileRepository not available for location update');
+        return false;
       }
-      return success;
+
+      final updatedUser = await profileRepo.updateUserLocation(locationData);
+      currentUser.value = updatedUser;
+      return true;
     } catch (e) {
-      Get.snackbar('Error', 'Failed to update notification settings', snackPosition: SnackPosition.TOP);
+      DebugLogger.error('Failed to update user location', e);
       return false;
     }
   }
 
-  void _loadNotificationSettings() {
-    if (currentUser.value?.toJson()['notification_settings'] != null) {
-      final settings = Map<String, bool>.from(
-        currentUser.value!.toJson()['notification_settings'] as Map
-      );
-      notificationSettings.addAll(settings);
+  /// Updates the user's preferences using ProfileRepository
+  Future<bool> updateUserPreferences(Map<String, dynamic> preferences) async {
+    try {
+      final profileRepo = _profileRepository;
+      if (profileRepo == null) {
+        DebugLogger.error('ProfileRepository not available for preferences update');
+        return false;
+      }
+
+      final updatedUser = await profileRepo.updateUserPreferences(preferences);
+      currentUser.value = updatedUser;
+      return true;
+    } catch (e) {
+      DebugLogger.error('Failed to update user preferences', e);
+      return false;
     }
   }
 
-  void _resetNotificationSettings() {
-    notificationSettings.assignAll({
-      'email_notifications': true,
-      'push_notifications': true,
-      'visit_reminders': true,
-      'price_alerts': false,
-      'new_properties': true,
-    });
+  /// Navigates to the stored redirect route after successful authentication
+  void navigateToRedirectRoute() {
+    final route = redirectRoute.value;
+    if (route != null) {
+      DebugLogger.info('🔄 Navigating to stored redirect route: ${route.name}');
+      Get.offAllNamed(route.name!, arguments: route.arguments);
+      // Clear the stored route after navigation
+      redirectRoute.value = null;
+    }
   }
 
-  // Profile completion percentage (from UserController)
-  RxInt get profileCompletionPercentage {
-    if (currentUser.value == null) return 0.obs;
-    
-    int completedFields = 0;
-    int totalFields = 4; // name, email, phone, profileImage
-    
-    final user = currentUser.value!;
-    
-    if (user.name.isNotEmpty) completedFields++;
-    if (user.email.isNotEmpty) completedFields++;
-    if (user.phone != null && user.phone!.isNotEmpty) completedFields++;
-    if (user.profileImage != null && user.profileImage!.isNotEmpty) completedFields++;
-    
-    return ((completedFields / totalFields) * 100).round().obs;
+  @override
+  void onClose() {
+    _authSubscription?.cancel();
+    _debounceTimer?.cancel();
+    _authStatusWorker?.dispose();
+    _currentUserWorker?.dispose();
+    super.onClose();
   }
 
-  // Profile picture upload (from UserController)
-  Future<bool> updateProfilePicture(String imageUrl) async {
-    return await updateUserProfile({
-      'profile_image_url': imageUrl,
-    });
-  }
-
-  // Additional helpers (from UserController)
-  Map<String, dynamic>? get preferences => currentUser.value?.preferences;
+  // Convenience Getters
+  bool get isAuthenticated => authStatus.value == AuthStatus.authenticated;
+  String? get userEmail => currentUser.value?.email;
+  String? get userId => _authRepository.currentUser?.id;
+  RxInt get profileCompletionPercentage => _profileCompletionPercentage;
 }

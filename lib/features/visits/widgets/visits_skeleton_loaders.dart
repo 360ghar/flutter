@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../../core/utils/app_colors.dart';
 
 class VisitSkeletonLoader extends StatelessWidget {
   final double? width;
@@ -8,20 +8,18 @@ class VisitSkeletonLoader extends StatelessWidget {
   final BorderRadius? borderRadius;
   final Widget? child;
 
-  const VisitSkeletonLoader({
-    super.key,
-    this.width,
-    this.height,
-    this.borderRadius,
-    this.child,
-  });
+  const VisitSkeletonLoader({super.key, this.width, this.height, this.borderRadius, this.child});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Shimmer.fromColors(
       baseColor: AppColors.inputBackground,
       highlightColor: AppColors.surface,
-      child: child ??
+      child:
+          child ??
           Container(
             width: width,
             height: height,
@@ -40,13 +38,7 @@ class VisitCardSkeleton extends StatelessWidget {
   final EdgeInsets? padding;
   final EdgeInsets? margin;
 
-  const VisitCardSkeleton({
-    super.key,
-    this.width,
-    this.height,
-    this.padding,
-    this.margin,
-  });
+  const VisitCardSkeleton({super.key, this.width, this.height, this.padding, this.margin});
 
   @override
   Widget build(BuildContext context) {
@@ -65,11 +57,7 @@ class VisitCardSkeleton extends StatelessWidget {
         children: [
           Row(
             children: [
-              VisitSkeletonLoader(
-                width: 60,
-                height: 60,
-                borderRadius: BorderRadius.circular(8),
-              ),
+              VisitSkeletonLoader(width: 60, height: 60, borderRadius: BorderRadius.circular(8)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -95,11 +83,7 @@ class VisitCardSkeleton extends StatelessWidget {
                   ],
                 ),
               ),
-              VisitSkeletonLoader(
-                width: 80,
-                height: 24,
-                borderRadius: BorderRadius.circular(12),
-              ),
+              VisitSkeletonLoader(width: 80, height: 24, borderRadius: BorderRadius.circular(12)),
             ],
           ),
           const SizedBox(height: 12),
@@ -109,11 +93,7 @@ class VisitCardSkeleton extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
           ),
           const SizedBox(height: 8),
-          VisitSkeletonLoader(
-            width: 250,
-            height: 14,
-            borderRadius: BorderRadius.circular(4),
-          ),
+          VisitSkeletonLoader(width: 250, height: 14, borderRadius: BorderRadius.circular(4)),
         ],
       ),
     );
@@ -126,115 +106,54 @@ class RelationshipManagerSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryYellow.withOpacity(0.1),
-            AppColors.primaryYellow.withOpacity(0.05),
+            AppColors.primaryYellow.withValues(alpha: 0.1),
+            AppColors.primaryYellow.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.primaryYellow.withOpacity(0.2),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.2), width: 1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              VisitSkeletonLoader(
-                width: 24,
-                height: 24,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              const SizedBox(width: 8),
-              VisitSkeletonLoader(
-                width: 200,
-                height: 18,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              VisitSkeletonLoader(
-                width: 60,
-                height: 60,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          VisitSkeletonLoader(width: 44, height: 44, borderRadius: BorderRadius.circular(22)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
                     VisitSkeletonLoader(
-                      width: 150,
-                      height: 18,
-                      borderRadius: BorderRadius.circular(4),
+                      width: 16,
+                      height: 16,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(width: 6),
                     VisitSkeletonLoader(
-                      width: 120,
-                      height: 14,
+                      width: 140,
+                      height: 12,
                       borderRadius: BorderRadius.circular(4),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        VisitSkeletonLoader(
-                          width: 16,
-                          height: 16,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        const SizedBox(width: 4),
-                        VisitSkeletonLoader(
-                          width: 30,
-                          height: 14,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        const SizedBox(width: 16),
-                        VisitSkeletonLoader(
-                          width: 16,
-                          height: 16,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        const SizedBox(width: 4),
-                        VisitSkeletonLoader(
-                          width: 60,
-                          height: 14,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                VisitSkeletonLoader(width: 160, height: 16, borderRadius: BorderRadius.circular(4)),
+                const SizedBox(height: 4),
+                VisitSkeletonLoader(width: 120, height: 12, borderRadius: BorderRadius.circular(4)),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: VisitSkeletonLoader(
-                  height: 40,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: VisitSkeletonLoader(
-                  height: 40,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(width: 8),
+          VisitSkeletonLoader(width: 36, height: 36, borderRadius: BorderRadius.circular(18)),
+          const SizedBox(width: 8),
+          VisitSkeletonLoader(width: 36, height: 36, borderRadius: BorderRadius.circular(18)),
         ],
       ),
     );

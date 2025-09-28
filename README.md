@@ -28,7 +28,6 @@ This project is built with a modern, scalable technology stack and follows a cle
 -   **Framework:** [Flutter](https://flutter.dev/)
 -   **State Management:** [GetX](https://pub.dev/packages/get) (for state, dependency, and route management)
 -   **Backend:** [Supabase](https://supabase.io/) (Authentication, Database, Storage)
--   **Networking:** [Dio](https://pub.dev/packages/dio)
 -   **Mapping:** [flutter_map](https://pub.dev/packages/flutter_map)
 -   **Code Generation:** [json_serializable](https://pub.dev/packages/json_serializable) for type-safe models
 -   **Local Storage:** [get_storage](https://pub.dev/packages/get_storage)
@@ -137,6 +136,76 @@ Contributions are what make the open-source community such an amazing place to l
 3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 4.  Push to the Branch (`git push origin feature/AmazingFeature`)
 5.  Open a Pull Request
+
+## 🔧 Code Style & Quality
+
+This project enforces consistent formatting and linting across all environments.
+
+### Formatter & Lint Configuration
+
+- **Formatter**: `dart format` with page width of 100 characters
+- **Linter**: `flutter_lints` with additional rules:
+  - `directives_ordering`: Import organization
+  - `require_trailing_commas`: Consistent trailing commas
+  - `avoid_print`: Use logging instead
+  - `prefer_const_constructors`: Use const where possible
+  - `prefer_single_quotes`: Use single quotes for strings
+
+### Setup Instructions
+
+1. **FVM (Flutter Version Manager)**:
+   ```bash
+   dart pub global activate fvm
+   fvm install
+   ```
+
+2. **Pre-commit hooks**:
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   ```
+
+#### Cross-Platform Hooks (Windows/macOS/Linux)
+
+Pre-commit hooks run via a Python wrapper to ensure they work the same on all systems:
+
+- Entry point: `hooks/flutter_tools.py` (no bash required)
+- Format: runs `fvm dart format` → `dart format` → `flutter format` (first available)
+- Analyze/Test: runs `fvm flutter` → `flutter` (first available)
+- Run on demand: `pre-commit run --all-files`
+
+Notes:
+- Ensure Python 3 is installed (required by pre-commit).
+- FVM is optional but recommended for consistent Flutter/Dart versions.
+- Line endings are normalized via `.gitattributes` and a pre-commit mixed-line-ending hook (Windows scripts keep CRLF; shell scripts use LF).
+
+3. **VS Code**:
+   - Format on save is enabled
+   - Line endings set to LF
+   - Ruler at 100 characters
+
+### CI/CD
+
+- GitHub Actions runs on every PR and push
+- Checks formatting (`dart format --set-exit-if-changed`)
+- Runs static analysis (`flutter analyze`)
+- Executes tests (`flutter test`)
+
+### Manual Commands
+
+```bash
+# Format code
+dart format .
+
+# Check formatting
+dart format -o none --set-exit-if-changed .
+
+# Analyze code
+flutter analyze
+
+# Apply automatic fixes
+dart fix --apply
+```
 
 ## 📄 License
 

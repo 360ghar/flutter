@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/data/models/property_model.dart';
-import 'property_card.dart';
+
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/features/discover/widgets/property_card.dart';
 
 class SwipeStack extends StatefulWidget {
   final List<PropertyModel> properties;
@@ -21,7 +23,7 @@ class SwipeStack extends StatefulWidget {
 class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateMixin {
   late List<PropertyModel> _properties;
   late AnimationController _animationController;
-  late Animation<double> _animation;
+
   Offset _dragStart = Offset.zero;
   Offset _dragPosition = Offset.zero;
   bool _isDragging = false;
@@ -34,17 +36,6 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _animation = Tween<double>(begin: 0, end: 1).animate(_animationController)
-      ..addListener(() {
-        setState(() {});
-      })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _properties.removeAt(0);
-          _animationController.reset();
-          setState(() {});
-        }
-      });
   }
 
   @override
@@ -55,9 +46,15 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (_properties.isEmpty) {
-      return const Center(
-        child: Text('No more properties to show'),
+      return Center(
+        child: Text(
+          'No more properties to show',
+          style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
+        ),
       );
     }
 
@@ -124,4 +121,4 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
       ),
     );
   }
-} 
+}

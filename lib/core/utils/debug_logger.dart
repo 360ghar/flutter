@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
 
@@ -13,7 +14,7 @@ class DebugLogger {
       return kDebugMode; // Fallback to Flutter's debug mode
     }
   }
-  
+
   static bool get shouldLogAPICalls {
     try {
       return dotenv.env['LOG_API_CALLS'] == 'true';
@@ -68,7 +69,9 @@ class DebugLogger {
   /// Error level - Errors and exceptions
   static void error(String message, [dynamic error, StackTrace? stackTrace]) {
     _ensureInitialized();
-    _logger.e('❌ $message', error: error, stackTrace: stackTrace);
+    // Always capture stack trace if not provided for errors
+    final effectiveStackTrace = stackTrace ?? (error != null ? StackTrace.current : null);
+    _logger.e('❌ $message', error: error, stackTrace: effectiveStackTrace);
   }
 
   /// WTF level - What a Terrible Failure - Should never happen
@@ -78,7 +81,7 @@ class DebugLogger {
   }
 
   // Categorized logging methods
-  
+
   /// API related logs
   static void api(String message, [dynamic error, StackTrace? stackTrace]) {
     if (shouldLogAPICalls) {
@@ -134,19 +137,19 @@ class DebugLogger {
   /// Log JWT token details securely (only in debug mode)
   static void logJWTToken(String token, {DateTime? expiresAt, String? userId, String? userEmail}) {
     if (!isDebugMode) return;
-    
+
     _ensureInitialized();
-    
+
     // Only log first and last few characters for security
-    final tokenPreview = token.length > 20 
+    final tokenPreview = token.length > 20
         ? '${token.substring(0, 10)}...${token.substring(token.length - 10)}'
         : token;
-    
+
     String message = '🔑 JWT Token: $tokenPreview';
     if (expiresAt != null) message += '\n   Expires: $expiresAt';
     if (userId != null) message += '\n   User ID: $userId';
     if (userEmail != null) message += '\n   Email: $userEmail';
-    
+
     _logger.d(message);
   }
 
@@ -158,9 +161,9 @@ class DebugLogger {
     dynamic body,
   }) {
     if (!shouldLogAPICalls) return;
-    
+
     _ensureInitialized();
-    
+
     StringBuffer message = StringBuffer('🌐 API REQUEST\n');
     message.write('   $method $endpoint\n');
     if (headers != null && headers.isNotEmpty) {
@@ -169,7 +172,7 @@ class DebugLogger {
     if (body != null) {
       message.write('   Body: ${_sanitizeBody(body)}');
     }
-    
+
     _logger.d(message.toString().trim());
   }
 
@@ -181,9 +184,9 @@ class DebugLogger {
     int? responseTime,
   }) {
     if (!shouldLogAPICalls) return;
-    
+
     _ensureInitialized();
-    
+
     StringBuffer message = StringBuffer('📨 API RESPONSE\n');
     message.write('   Status: $statusCode\n');
     message.write('   Endpoint: $endpoint\n');
@@ -193,7 +196,7 @@ class DebugLogger {
     if (body != null) {
       message.write('   Body Type: ${_sanitizeBody(body).runtimeType}');
     }
-    
+
     if (statusCode >= 200 && statusCode < 300) {
       _logger.i(message.toString().trim());
     } else if (statusCode >= 400) {
@@ -211,20 +214,90 @@ class DebugLogger {
     Map<String, dynamic>? additionalData,
   }) {
     _ensureInitialized();
-    
+
+    // Always capture stack trace if not provided
+    final effectiveStackTrace = stackTrace ?? StackTrace.current;
+
     StringBuffer message = StringBuffer('💥 DETAILED ERROR\n');
     message.write('   Operation: $operation\n');
     message.write('   Error: ${error.toString()}\n');
     message.write('   Type: ${error.runtimeType}');
-    
+
     if (additionalData != null && additionalData.isNotEmpty) {
       message.write('\n   Additional Data:');
       additionalData.forEach((key, value) {
         message.write('\n     $key: $value');
       });
     }
-    
-    _logger.e(message.toString(), error: error, stackTrace: stackTrace);
+
+    _logger.e(message.toString(), error: error, stackTrace: effectiveStackTrace);
+  }
+
+  /// Comprehensive error reporting method
+  static void reportError({
+    required String context,
+    required dynamic error,
+    StackTrace? stackTrace,
+    String? userId,
+    String? operationId,
+    Map<String, dynamic>? metadata,
+  }) {
+    _ensureInitialized();
+
+    final effectiveStackTrace = stackTrace ?? StackTrace.current;
+    final timestamp = DateTime.now().toIso8601String();
+
+    StringBuffer report = StringBuffer('🚨 ERROR REPORT\n');
+    report.write('   Timestamp: $timestamp\n');
+    report.write('   Context: $context\n');
+    report.write('   Error: ${error.toString()}\n');
+    report.write('   Error Type: ${error.runtimeType}');
+
+    if (userId != null) {
+      report.write('\n   User ID: $userId');
+    }
+    if (operationId != null) {
+      report.write('\n   Operation ID: $operationId');
+    }
+
+    if (metadata != null && metadata.isNotEmpty) {
+      report.write('\n   Metadata:');
+      metadata.forEach((key, value) {
+        report.write('\n     $key: ${_sanitizeForLogging(value)}');
+      });
+    }
+
+    // Extract key info from stack trace
+    if (effectiveStackTrace.toString().isNotEmpty) {
+      final lines = effectiveStackTrace.toString().split('\n');
+      if (lines.isNotEmpty) {
+        report.write('\n   Stack (top 3 frames):');
+        for (int i = 0; i < 3 && i < lines.length; i++) {
+          report.write('\n     ${lines[i].trim()}');
+        }
+      }
+    }
+
+    _logger.f(report.toString(), error: error, stackTrace: effectiveStackTrace);
+  }
+
+  /// Sanitize sensitive values for logging
+  static String _sanitizeForLogging(dynamic value) {
+    if (value == null) return 'null';
+    final str = value.toString();
+
+    // Check for potential sensitive data
+    final sensitive = ['password', 'token', 'key', 'secret', 'auth'];
+    final lowerStr = str.toLowerCase();
+
+    for (final keyword in sensitive) {
+      if (lowerStr.contains(keyword)) {
+        return '***SANITIZED***';
+      }
+    }
+
+    // Truncate very long strings
+    return str.length > 200 ? '${str.substring(0, 200)}...' : str;
   }
 
   /// Sanitize sensitive data from logs
@@ -233,7 +306,7 @@ class DebugLogger {
       // Remove potential passwords, tokens, etc.
       return body.replaceAllMapped(
         RegExp(r'"(password|token|key|secret)":\s*"[^"]*"', caseSensitive: false),
-        (match) => '"${match.group(1)}": "***HIDDEN***"'
+        (match) => '"${match.group(1)}": "***HIDDEN***"',
       );
     }
     return body;
@@ -255,12 +328,12 @@ class _LoggerFilter extends LogFilter {
     if (kReleaseMode) {
       return event.level.value >= Level.warning.value;
     }
-    
+
     // In debug mode, show based on DEBUG_MODE setting
     if (!DebugLogger.isDebugMode) {
       return event.level.value >= Level.info.value;
     }
-    
+
     // In verbose debug mode, show everything
     return true;
   }

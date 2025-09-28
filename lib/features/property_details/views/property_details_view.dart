@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/visit_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
+import 'package:ghar360/core/widgets/property/property_details_features.dart';
+import 'package:ghar360/features/likes/controllers/likes_controller.dart';
+import 'package:ghar360/features/visits/controllers/visits_controller.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../controllers/property_controller.dart';
-import '../../visits/controllers/visits_controller.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../../widgets/common/robust_network_image.dart';
 
 class PropertyDetailsView extends StatelessWidget {
   const PropertyDetailsView({super.key});
@@ -15,7 +20,7 @@ class PropertyDetailsView extends StatelessWidget {
     // Handle both PropertyModel object and String ID
     final dynamic arguments = Get.arguments;
     PropertyModel? property;
-    
+
     if (arguments is PropertyModel) {
       property = arguments;
     } else if (arguments is String) {
@@ -36,31 +41,31 @@ class PropertyDetailsView extends StatelessWidget {
           ),
           title: Text(
             'property_details'.tr,
-            style: TextStyle(
-              color: AppColors.appBarText, 
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: AppColors.appBarText, fontWeight: FontWeight.bold),
           ),
         ),
         body: Center(
           child: Text(
             'Property not found',
-            style: TextStyle(
-              fontSize: 18, 
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
           ),
         ),
       );
     }
 
-    // Ensure PropertyController is available
-    // PropertyController should be registered via PropertyDetailsBinding
-    final controller = Get.find<PropertyController>();
+    // Use LikesController for favorite management
+    final controller = Get.find<LikesController>();
     final visitsController = Get.find<VisitsController>();
-    
+
     // Add null check to ensure property is not null
     final PropertyModel safeProperty = property;
+
+    // Ensure visits are loaded to reflect scheduled state in UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!visitsController.hasLoadedVisits.value && !visitsController.isLoading.value) {
+        visitsController.loadVisitsLazy();
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -74,11 +79,11 @@ class PropertyDetailsView extends StatelessWidget {
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
                 onPressed: () => Get.back(),
               ),
             ),
@@ -86,35 +91,37 @@ class PropertyDetailsView extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
-                child: Obx(() => IconButton(
-                  icon: Icon(
-                    controller.isFavourite(safeProperty.id)
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                    color: controller.isFavourite(safeProperty.id)
-                        ? AppColors.favoriteActive
-                        : Colors.white,
+                child: Obx(
+                  () => IconButton(
+                    icon: Icon(
+                      controller.isFavourite(safeProperty.id)
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: controller.isFavourite(safeProperty.id)
+                          ? AppColors.favoriteActive
+                          : Theme.of(context).colorScheme.onPrimary,
+                    ),
+                    onPressed: () {
+                      if (controller.isFavourite(safeProperty.id)) {
+                        controller.removeFromFavourites(safeProperty.id);
+                      } else {
+                        controller.addToFavourites(safeProperty.id);
+                      }
+                    },
                   ),
-                  onPressed: () {
-                    if (controller.isFavourite(safeProperty.id)) {
-                      controller.removeFromFavourites(safeProperty.id);
-                    } else {
-                      controller.addToFavourites(safeProperty.id);
-                    }
-                  },
-                )),
+                ),
               ),
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.share, color: Colors.white),
+                  icon: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimary),
                   onPressed: () {
                     Get.snackbar(
                       'share_property'.tr,
@@ -128,26 +135,10 @@ class PropertyDetailsView extends StatelessWidget {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: PageView.builder(
-                itemCount: safeProperty.images?.length ?? 0,
-                itemBuilder: (context, index) {
-                  return RobustNetworkImage(
-                    imageUrl: safeProperty.images?[index].imageUrl ?? safeProperty.mainImage,
-                    fit: BoxFit.cover,
-                    errorWidget: Container(
-                      color: AppColors.inputBackground,
-                      child: Icon(
-                        Icons.image, 
-                        size: 50, 
-                        color: AppColors.disabledColor,
-                      ),
-                    ),
-                  );
-                },
-              ),
+              background: _PropertyImageGallery(property: safeProperty),
             ),
           ),
-          
+
           // Property Details Content
           SliverToBoxAdapter(
             child: Container(
@@ -172,12 +163,36 @@ class PropertyDetailsView extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  '₹${safeProperty.getEffectivePrice().toStringAsFixed(0)}',
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.propertyCardPrice,
+                                RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: safeProperty.formattedPrice,
+                                        style: TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.propertyCardPrice,
+                                        ),
+                                      ),
+                                      if (safeProperty.purpose == PropertyPurpose.rent)
+                                        TextSpan(
+                                          text: ' /mo',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      if (safeProperty.purpose == PropertyPurpose.shortStay)
+                                        TextSpan(
+                                          text: ' /day',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -189,243 +204,302 @@ class PropertyDetailsView extends StatelessWidget {
                                     color: AppColors.textPrimary,
                                   ),
                                 ),
+                                const SizedBox(height: 8),
+                                // Quick pricing chips
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    if (safeProperty.pricePerSqft != null)
+                                      _chip(
+                                        '₹${safeProperty.pricePerSqft!.toStringAsFixed(0)}/sqft',
+                                      ),
+                                    if (safeProperty.securityDeposit != null)
+                                      _chip(
+                                        'Deposit ₹${safeProperty.securityDeposit!.toStringAsFixed(0)}',
+                                      ),
+                                    if (safeProperty.maintenanceCharges != null)
+                                      _chip(
+                                        'Maintenance ₹${safeProperty.maintenanceCharges!.toStringAsFixed(0)}',
+                                      ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryYellow,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              safeProperty.propertyTypeString,
-                              style: TextStyle(
-                                color: AppColors.buttonText,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Address and Location
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: AppColors.getCardShadow(),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.location_on, 
-                            color: AppColors.iconColor, 
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              safeProperty.addressDisplay,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Property Features
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: AppColors.getCardShadow(),
-                      ),
-                      child: Column(
-                        children: [
-                          // Primary features row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              if (safeProperty.bedrooms != null)
-                                _buildFeature(Icons.bed, '${safeProperty.bedrooms}', 'Bedrooms'),
-                              if (safeProperty.bathrooms != null)
-                                _buildFeature(Icons.bathtub_outlined, '${safeProperty.bathrooms}', 'Bathrooms'),
-                              if (safeProperty.areaSqft != null)
-                                _buildFeature(Icons.square_foot, '${safeProperty.areaSqft?.toInt()}', 'Sq Ft'),
-                            ],
-                          ),
-                          
-                          // Secondary features row
-                          if (safeProperty.balconies != null || safeProperty.parkingSpaces != null || safeProperty.floorNumber != null) ...[
-                            const SizedBox(height: 16),
-                            const Divider(),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                if (safeProperty.balconies != null)
-                                  _buildFeature(Icons.balcony, '${safeProperty.balconies}', 'Balconies'),
-                                if (safeProperty.parkingSpaces != null)
-                                  _buildFeature(Icons.local_parking, '${safeProperty.parkingSpaces}', 'Parking'),
-                                if (safeProperty.floorNumber != null)
-                                  _buildFeature(Icons.layers, '${safeProperty.floorNumber}/${safeProperty.totalFloors ?? "?"}', 'Floor'),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    
-                                         // Description
-                     Text(
-                       'Description',
-                       style: TextStyle(
-                         fontSize: 20,
-                         fontWeight: FontWeight.bold,
-                         color: AppColors.textPrimary,
-                       ),
-                     ),
-                     const SizedBox(height: 12),
-                     Text(
-                       safeProperty.description ?? 'No description available',
-                       style: TextStyle(
-                         fontSize: 16,
-                         color: AppColors.textSecondary,
-                         height: 1.5,
-                       ),
-                     ),
-                     const SizedBox(height: 24),
-                     
-                     // Additional Property Information
-                     _buildPropertyInfoSection(safeProperty),
-                     const SizedBox(height: 24),
-                     
-                     // Pricing Details
-                     _buildPricingSection(safeProperty),
-                     const SizedBox(height: 24),
-                     
-                     // Owner/Agent Information
-                     if (safeProperty.hasOwner || safeProperty.builderName?.isNotEmpty == true) ...[
-                       _buildContactSection(safeProperty),
-                       const SizedBox(height: 24),
-                     ],
-                     
-                     // Amenities
-                     Text(
-                       'Amenities',
-                       style: TextStyle(
-                         fontSize: 20,
-                         fontWeight: FontWeight.bold,
-                         color: AppColors.textPrimary,
-                       ),
-                     ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: safeProperty.amenities?.map((amenity) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryYellow.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
-                          ),
-                                                     child: Text(
-                             amenity.title,
-                             style: TextStyle(
-                               color: AppColors.textPrimary,
-                               fontWeight: FontWeight.w500,
-                             ),
-                           ),
-                        );
-                      }).toList() ?? [],
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    // 360° Tour Embedded Section
-                    if (safeProperty.virtualTourUrl != null && safeProperty.virtualTourUrl!.isNotEmpty) ...[
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.threesixty,
-                                size: 24,
-                                color: AppColors.primaryYellow,
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryYellow,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  safeProperty.propertyTypeString,
+                                  style: TextStyle(
+                                    color: AppColors.buttonText,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '360° Virtual Tour',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.inputBackground,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  safeProperty.purposeString,
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                          InkWell(
-                            onTap: () {
-                              Get.toNamed('/tour', arguments: safeProperty.virtualTourUrl);
-                            },
-                            child: Container(
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 360° Tour: priority after basic info
+                    if (safeProperty.virtualTourUrl != null &&
+                        safeProperty.virtualTourUrl!.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      _VirtualTourSection(
+                        tourUrl: safeProperty.virtualTourUrl!,
+                        thumbnailUrl: safeProperty.mainImage,
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Property Features
+                    PropertyDetailsFeatures(property: safeProperty),
+                    const SizedBox(height: 24),
+
+                    // Description
+                    Text(
+                      'Description',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      safeProperty.description ?? 'No description available',
+                      style: TextStyle(fontSize: 16, color: AppColors.textSecondary, height: 1.5),
+                    ),
+                    const SizedBox(height: 16),
+                    if ((safeProperty.features?.isNotEmpty ?? false)) ...[
+                      Text(
+                        'Highlights',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: (safeProperty.features ?? [])
+                            .take(6)
+                            .map(
+                              (t) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.primaryYellow.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  t,
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    const SizedBox(height: 24),
+
+                    // Additional Property Information
+                    _buildPropertyInfoSection(safeProperty),
+                    const SizedBox(height: 24),
+
+                    // Pricing Details
+                    _buildPricingSection(safeProperty),
+                    const SizedBox(height: 24),
+
+                    // Builder Information (no owner details shown)
+                    if (safeProperty.builderName?.isNotEmpty == true) ...[
+                      _buildContactSection(safeProperty),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Amenities
+                    Text(
+                      'Amenities',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          safeProperty.amenities?.map((amenity) {
+                            return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryYellow.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
+                                color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppColors.primaryYellow.withValues(alpha: 0.3),
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    Icons.fullscreen,
-                                    size: 16,
-                                    color: AppColors.primaryYellow,
-                                  ),
-                                  const SizedBox(width: 6),
+                                  if (amenity.icon != null && amenity.icon!.startsWith('http')) ...[
+                                    Image.network(
+                                      amenity.icon!,
+                                      width: 16,
+                                      height: 16,
+                                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                                    ),
+                                    const SizedBox(width: 6),
+                                  ] else ...[
+                                    Icon(
+                                      Icons.check_circle_outline,
+                                      size: 16,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                  ],
                                   Text(
-                                    'Fullscreen View',
+                                    amenity.title,
                                     style: TextStyle(
-                                      fontSize: 14,
-                                      color: AppColors.primaryYellow,
-                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ),
-                        ],
+                            );
+                          }).toList() ??
+                          [],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Location + Get Directions at the very end
+                    if (safeProperty.hasLocation) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Location',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Container(
-                        height: 450,
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
+                          color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border),
                           boxShadow: AppColors.getCardShadow(),
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: _Embedded360TourDetails(tourUrl: safeProperty.virtualTourUrl!),
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on, color: AppColors.iconColor, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                safeProperty.shortAddressDisplay,
+                                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 220,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: AppColors.getCardShadow(),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: FlutterMap(
+                          options: MapOptions(
+                            initialCenter: LatLng(safeProperty.latitude!, safeProperty.longitude!),
+                            initialZoom: 15,
+                            interactionOptions: const InteractionOptions(
+                              flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                            ),
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.ghar360.app',
+                            ),
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: LatLng(safeProperty.latitude!, safeProperty.longitude!),
+                                  width: 40,
+                                  height: 40,
+                                  child: const Icon(
+                                    Icons.location_on,
+                                    size: 36,
+                                    color: AppColors.primaryYellow,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openGoogleMaps(
+                            safeProperty.latitude!,
+                            safeProperty.longitude!,
+                            safeProperty.title,
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.primaryYellow),
+                            foregroundColor: AppColors.textPrimary,
+                          ),
+                          icon: const Icon(Icons.directions),
+                          label: Text('get_directions'.tr),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                     ],
-                    
+
                     const SizedBox(height: 100), // Space for bottom buttons
                   ],
                 ),
@@ -434,68 +508,80 @@ class PropertyDetailsView extends StatelessWidget {
           ),
         ],
       ),
-      
-      // Bottom Action Buttons
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadowColor,
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _showBookVisitDialog(context, safeProperty, visitsController),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryYellow,
-              foregroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            icon: const Icon(Icons.calendar_today),
-            label: const Text(
-              'Book Visit',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildFeature(IconData icon, String value, String label) {
-    return Column(
-      children: [
-        Icon(icon, size: 24, color: AppColors.primaryYellow),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+      // Bottom Action Buttons
+      bottomNavigationBar: Obx(() {
+        // Find any upcoming scheduled visit for this property
+        VisitModel? scheduledVisit;
+        for (final v in visitsController.upcomingVisitsList) {
+          if (v.propertyId == safeProperty.id) {
+            scheduledVisit = v;
+            break;
+          }
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            boxShadow: [
+              BoxShadow(color: AppColors.shadowColor, blurRadius: 10, offset: const Offset(0, -5)),
+            ],
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
+          child: SizedBox(
+            width: double.infinity,
+            child: (() {
+              // Prefer server-provided schedule info
+              final DateTime? scheduledDate =
+                  safeProperty.userNextVisitDate ?? scheduledVisit?.scheduledDate;
+              final bool alreadyScheduled =
+                  safeProperty.userHasScheduledVisit || scheduledDate != null;
+
+              return alreadyScheduled
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.inputBackground,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle, color: AppColors.accentGreen),
+                          const SizedBox(width: 8),
+                          Text(
+                            scheduledDate != null
+                                ? 'Scheduled on ${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}'
+                                : 'Visit Scheduled',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: () =>
+                          _showBookVisitDialog(context, safeProperty, visitsController),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryYellow,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.calendar_today),
+                      label: Text(
+                        'schedule_visit'.tr,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    );
+            })(),
           ),
-        ),
-      ],
+        );
+      }),
     );
   }
 
@@ -512,7 +598,7 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: AppColors.primaryYellow, size: 20),
+              const Icon(Icons.info_outline, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Property Information',
@@ -525,17 +611,8 @@ class PropertyDetailsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
-          _buildInfoRow('Status', property.statusString),
           _buildInfoRow('Purpose', property.purposeString),
-          if (property.ageText.isNotEmpty)
-            _buildInfoRow('Age', property.ageText),
-          if (property.maxOccupancy != null)
-            _buildInfoRow('Max Occupancy', '${property.maxOccupancy} people'),
-          if (property.minimumStayDays != null)
-            _buildInfoRow('Minimum Stay', '${property.minimumStayDays} days'),
-          if (property.availableFrom?.isNotEmpty == true)
-            _buildInfoRow('Available From', property.availableFrom!),
+          if (property.ageText.isNotEmpty) _buildInfoRow('Age', property.ageText),
         ],
       ),
     );
@@ -554,7 +631,7 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.payments_outlined, color: AppColors.primaryYellow, size: 20),
+              const Icon(Icons.payments_outlined, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Pricing Details',
@@ -567,18 +644,58 @@ class PropertyDetailsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
-          _buildInfoRow('Base Price', '₹${property.basePrice.toStringAsFixed(0)}'),
-          if (property.monthlyRent != null)
-            _buildInfoRow('Monthly Rent', '₹${property.monthlyRent!.toStringAsFixed(0)}'),
-          if (property.dailyRate != null)
-            _buildInfoRow('Daily Rate', '₹${property.dailyRate!.toStringAsFixed(0)}'),
-          if (property.securityDeposit != null)
-            _buildInfoRow('Security Deposit', '₹${property.securityDeposit!.toStringAsFixed(0)}'),
-          if (property.maintenanceCharges != null)
-            _buildInfoRow('Maintenance', '₹${property.maintenanceCharges!.toStringAsFixed(0)}'),
-          if (property.pricePerSqft != null)
-            _buildInfoRow('Price per Sq Ft', '₹${property.pricePerSqft!.toStringAsFixed(0)}'),
+          ...(() {
+            final purpose = property.purpose;
+            final rows = <Widget>[];
+            if (purpose == PropertyPurpose.rent) {
+              final rent = property.monthlyRent ?? property.basePrice;
+              rows.add(_buildInfoRow('Monthly Rent', '₹${rent.toStringAsFixed(0)}'));
+              if (property.securityDeposit != null) {
+                rows.add(
+                  _buildInfoRow(
+                    'Security Deposit',
+                    '₹${property.securityDeposit!.toStringAsFixed(0)}',
+                  ),
+                );
+              }
+              if (property.maintenanceCharges != null) {
+                rows.add(
+                  _buildInfoRow(
+                    'Maintenance',
+                    '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
+                  ),
+                );
+              }
+            } else if (purpose == PropertyPurpose.shortStay) {
+              final rate = property.dailyRate ?? property.basePrice;
+              rows.add(_buildInfoRow('Daily Rate', '₹${rate.toStringAsFixed(0)}'));
+              if (property.securityDeposit != null) {
+                rows.add(
+                  _buildInfoRow(
+                    'Security Deposit',
+                    '₹${property.securityDeposit!.toStringAsFixed(0)}',
+                  ),
+                );
+              }
+            } else {
+              // Buy/default
+              rows.add(_buildInfoRow('Sale Price', '₹${property.basePrice.toStringAsFixed(0)}'));
+              if (property.pricePerSqft != null) {
+                rows.add(
+                  _buildInfoRow('Price per Sq Ft', '₹${property.pricePerSqft!.toStringAsFixed(0)}'),
+                );
+              }
+              if (property.maintenanceCharges != null) {
+                rows.add(
+                  _buildInfoRow(
+                    'Maintenance',
+                    '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
+                  ),
+                );
+              }
+            }
+            return rows;
+          })(),
         ],
       ),
     );
@@ -597,10 +714,10 @@ class PropertyDetailsView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.contact_phone, color: AppColors.primaryYellow, size: 20),
+              const Icon(Icons.contact_phone, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Contact Information',
+                'Builder Information',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -610,12 +727,6 @@ class PropertyDetailsView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
-          if (property.hasOwner) ...[
-            _buildInfoRow('Owner', property.ownerDisplayName),
-            if (property.hasOwnerContact)
-              _buildInfoRow('Contact', property.ownerContact!),
-          ],
           if (property.builderName?.isNotEmpty == true)
             _buildInfoRow('Builder', property.builderName!),
         ],
@@ -655,17 +766,61 @@ class PropertyDetailsView extends StatelessWidget {
     );
   }
 
-  void _showBookVisitDialog(BuildContext context, PropertyModel safeProperty, VisitsController visitsController) {
+  // Small UI helpers
+  Widget _chip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  String _formatDate(String iso) {
+    try {
+      final dt = DateTime.tryParse(iso);
+      if (dt == null) return iso;
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+    } catch (_) {
+      return iso;
+    }
+  }
+
+  void _showBookVisitDialog(
+    BuildContext context,
+    PropertyModel safeProperty,
+    VisitsController visitsController,
+  ) {
+    // Default to next day and a fixed time for backend
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
-    TimeOfDay selectedTime = const TimeOfDay(hour: 10, minute: 0);
-    
+    const defaultHour = 10; // 10:00 AM default
+    const defaultMinute = 0;
+    final TextEditingController notesController = TextEditingController();
+
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text(
-          'Book Property Visit',
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
+        title: Text('Schedule Visit', style: TextStyle(color: AppColors.textPrimary)),
         content: StatefulBuilder(
           builder: (context, setState) {
             return Column(
@@ -673,20 +828,14 @@ class PropertyDetailsView extends StatelessWidget {
               children: [
                 Text(
                   'Schedule a visit to ${safeProperty.title}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Date Selection
                 ListTile(
                   leading: const Icon(Icons.calendar_today, color: AppColors.primaryYellow),
-                  title: Text(
-                    'Date',
-                    style: TextStyle(color: AppColors.textPrimary),
-                  ),
+                  title: Text('Date', style: TextStyle(color: AppColors.textPrimary)),
                   subtitle: Text(
                     '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                     style: TextStyle(color: AppColors.textSecondary),
@@ -705,29 +854,22 @@ class PropertyDetailsView extends StatelessWidget {
                     }
                   },
                 ),
-                
-                // Time Selection
-                ListTile(
-                  leading: const Icon(Icons.access_time, color: AppColors.primaryYellow),
-                  title: Text(
-                    'Time',
-                    style: TextStyle(color: AppColors.textPrimary),
+                const SizedBox(height: 12),
+                // Special requirements / notes
+                TextField(
+                  controller: notesController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'special_requirements_label'.tr,
+                    hintText: 'special_requirements_hint'.tr,
+                    filled: true,
+                    fillColor: AppColors.inputBackground,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
                   ),
-                  subtitle: Text(
-                    selectedTime.format(context),
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                  onTap: () async {
-                    final TimeOfDay? picked = await showTimePicker(
-                      context: context,
-                      initialTime: selectedTime,
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        selectedTime = picked;
-                      });
-                    }
-                  },
+                  style: TextStyle(color: AppColors.textPrimary),
                 ),
               ],
             );
@@ -736,10 +878,7 @@ class PropertyDetailsView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
+            child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -747,27 +886,31 @@ class PropertyDetailsView extends StatelessWidget {
                 selectedDate.year,
                 selectedDate.month,
                 selectedDate.day,
-                selectedTime.hour,
-                selectedTime.minute,
+                defaultHour,
+                defaultMinute,
               );
-              
-              visitsController.bookVisit(safeProperty, visitDateTime);
+
+              final notes = notesController.text.trim().isEmpty
+                  ? null
+                  : notesController.text.trim();
+
+              visitsController.bookVisit(safeProperty, visitDateTime, notes: notes);
               Get.back();
-              
+
               Get.snackbar(
-                'Visit Booked!',
-                'Your visit to ${safeProperty.title} is scheduled for ${selectedDate.day}/${selectedDate.month} at ${selectedTime.format(context)}',
+                'visit_scheduled'.tr,
+                '${'visit_scheduled_message_prefix'.tr} ${safeProperty.title} ${'visit_scheduled_message_infix'.tr} ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                 snackPosition: SnackPosition.TOP,
                 backgroundColor: AppColors.accentGreen,
-                colorText: Colors.white,
+                colorText: AppColors.snackbarText,
                 duration: const Duration(seconds: 3),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryYellow,
-              foregroundColor: Colors.black,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
-            child: const Text('Book Visit'),
+            child: Text('schedule_visit'.tr),
           ),
         ],
       ),
@@ -775,11 +918,256 @@ class PropertyDetailsView extends StatelessWidget {
   }
 }
 
+// Opens Google Maps with directions to the given coordinates
+Future<void> _openGoogleMaps(double latitude, double longitude, String label) async {
+  final url = Uri.parse(
+    'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude&travelmode=driving',
+  );
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  } else {
+    Get.snackbar(
+      'Unable to open maps',
+      'Please check your device settings',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: AppColors.snackbarBackground,
+      colorText: AppColors.snackbarText,
+    );
+  }
+}
+
+// Image gallery for the header
+class _PropertyImageGallery extends StatefulWidget {
+  final PropertyModel property;
+  const _PropertyImageGallery({required this.property});
+
+  @override
+  State<_PropertyImageGallery> createState() => _PropertyImageGalleryState();
+}
+
+class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
+  late final PageController _pageController;
+  int _current = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final images = widget.property.galleryImageUrls;
+    final itemCount = images.isNotEmpty ? images.length : 1;
+    return Stack(
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          itemCount: itemCount,
+          onPageChanged: (i) => setState(() => _current = i),
+          itemBuilder: (context, index) {
+            final url = images.isNotEmpty ? images[index] : widget.property.mainImage;
+            return RobustNetworkImage(
+              imageUrl: url,
+              fit: BoxFit.cover,
+              errorWidget: Container(
+                color: AppColors.inputBackground,
+                child: Icon(Icons.image, size: 50, color: AppColors.disabledColor),
+              ),
+            );
+          },
+        ),
+        if (itemCount > 1)
+          Positioned(
+            right: 12,
+            bottom: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.shadowColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_current + 1}/$itemCount',
+                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _VirtualTourSection extends StatefulWidget {
+  const _VirtualTourSection({required this.tourUrl, this.thumbnailUrl});
+
+  final String tourUrl;
+  final String? thumbnailUrl;
+
+  @override
+  State<_VirtualTourSection> createState() => _VirtualTourSectionState();
+}
+
+class _VirtualTourSectionState extends State<_VirtualTourSection> {
+  bool _showEmbeddedTour = false;
+
+  void _openFullScreen() {
+    Get.toNamed('/tour', arguments: widget.tourUrl);
+  }
+
+  void _handleLoadTour() {
+    if (!_showEmbeddedTour) {
+      setState(() {
+        _showEmbeddedTour = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  const Icon(Icons.threesixty, size: 24, color: AppColors.primaryYellow),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '360° Virtual Tour',
+                      style:
+                          theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ) ??
+                          TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            TextButton.icon(
+              onPressed: _openFullScreen,
+              icon: const Icon(Icons.fullscreen, size: 18, color: AppColors.primaryYellow),
+              label: const Text('Fullscreen'),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                backgroundColor: AppColors.primaryYellow.withValues(alpha: 0.1),
+                foregroundColor: AppColors.primaryYellow,
+                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: _showEmbeddedTour
+              ? _TourContainer(
+                  key: const ValueKey('embeddedTour'),
+                  child: _Embedded360TourDetails(tourUrl: widget.tourUrl),
+                )
+              : _TourContainer(
+                  key: const ValueKey('tourPlaceholder'),
+                  child: GestureDetector(
+                    onTap: _handleLoadTour,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty)
+                          RobustNetworkImage(
+                            imageUrl: widget.thumbnailUrl!,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 800,
+                            memCacheHeight: 450,
+                          )
+                        else
+                          Container(color: AppColors.inputBackground),
+                        Container(color: Colors.black.withValues(alpha: 0.35)),
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.play_circle_fill,
+                                size: 64,
+                                color: AppColors.primaryYellow,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Tap to load virtual tour',
+                                style:
+                                    theme.textTheme.titleMedium?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ) ??
+                                    const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TourContainer extends StatelessWidget {
+  const _TourContainer({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 450,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.getCardShadow(),
+      ),
+      child: ClipRRect(borderRadius: BorderRadius.circular(16), child: child),
+    );
+  }
+}
+
 class _Embedded360TourDetails extends StatefulWidget {
   final String tourUrl;
-  
+
   const _Embedded360TourDetails({required this.tourUrl});
-  
+
   @override
   State<_Embedded360TourDetails> createState() => _Embedded360TourDetailsState();
 }
@@ -787,21 +1175,40 @@ class _Embedded360TourDetails extends StatefulWidget {
 class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
   late final WebViewController controller;
   bool isLoading = true;
-  
+
   @override
   void initState() {
     super.initState();
+    const consoleSilencer = '''
+      if (window && window.console) {
+        window.console.log = function() {};
+        window.console.warn = function() {};
+        window.console.error = function() {};
+        window.console.info = function() {};
+        window.console.debug = function() {};
+      }
+    ''';
+
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
         NavigationDelegate(
+          onPageStarted: (String url) {
+            if (mounted) {
+              setState(() {
+                isLoading = true;
+              });
+            }
+            controller.runJavaScript(consoleSilencer);
+          },
           onPageFinished: (String url) {
             if (mounted) {
               setState(() {
                 isLoading = false;
               });
             }
+            controller.runJavaScript(consoleSilencer);
           },
           onWebResourceError: (WebResourceError error) {
             if (mounted) {
@@ -812,43 +1219,47 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
           },
         ),
       );
-    
-    // Create optimized HTML for embedded Kuula tour
-    final htmlContent = '''
+
+    final sanitizedUrl = widget.tourUrl;
+    final htmlContent =
+        '''
       <!DOCTYPE html>
       <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          body { 
-            margin: 0; 
-            padding: 0; 
+          body {
+            margin: 0;
+            padding: 0;
             background: #f0f0f0;
             overflow: hidden;
           }
-          iframe { 
-            width: 100vw; 
-            height: 100vh; 
+          iframe {
+            width: 100vw;
+            height: 100vh;
             border: none;
             display: block;
           }
         </style>
+        <script type="text/javascript">
+          $consoleSilencer
+        </script>
       </head>
       <body>
-        <iframe class="ku-embed" 
-                frameborder="0" 
-                allow="xr-spatial-tracking; gyroscope; accelerometer" 
-                allowfullscreen 
-                scrolling="no" 
-                src="${widget.tourUrl}">
+        <iframe class="ku-embed"
+                frameborder="0"
+                allow="xr-spatial-tracking; gyroscope; accelerometer"
+                allowfullscreen
+                scrolling="no"
+                src="$sanitizedUrl">
         </iframe>
       </body>
       </html>
     ''';
-    
+
     controller.loadHtmlString(htmlContent);
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -861,10 +1272,7 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(
-                    color: AppColors.primaryYellow,
-                    strokeWidth: 3,
-                  ),
+                  const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 3),
                   const SizedBox(height: 12),
                   Text(
                     'Loading 360° Tour...',
@@ -881,4 +1289,4 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
       ],
     );
   }
-} 
+}

@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../../../core/controllers/auth_controller.dart';
+
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 class EditProfileController extends GetxController {
   final AuthController _authController = Get.find<AuthController>();
-  
+
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  
+
   // Form controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
-  
+
   // Observable fields
   final RxString profileImageUrl = ''.obs;
   final Rx<DateTime?> dateOfBirth = Rx<DateTime?>(null);
@@ -28,7 +30,6 @@ class EditProfileController extends GetxController {
   void onClose() {
     nameController.dispose();
     emailController.dispose();
-    phoneController.dispose();
     locationController.dispose();
     super.onClose();
   }
@@ -38,24 +39,16 @@ class EditProfileController extends GetxController {
     if (user != null) {
       nameController.text = user.name;
       emailController.text = user.email;
-      phoneController.text = user.phone ?? '';
       profileImageUrl.value = user.profileImage ?? '';
-      
+
+      // Load date of birth from top-level field if present
+      dateOfBirth.value = user.dateOfBirthAsDate;
+
       // Load additional fields from preferences if available
       final prefs = user.preferences;
       if (prefs?.containsKey('location') == true) {
         final location = prefs!['location'];
         locationController.text = location is String ? location : '';
-      }
-      if (prefs?.containsKey('dateOfBirth') == true) {
-        final dobString = prefs!['dateOfBirth'];
-        if (dobString is String) {
-          try {
-            dateOfBirth.value = DateTime.parse(dobString);
-          } catch (e) {
-            // Invalid date format, ignore
-          }
-        }
       }
     }
   }
@@ -65,14 +58,11 @@ class EditProfileController extends GetxController {
     // For now, just show a placeholder dialog
     Get.dialog(
       AlertDialog(
-        title: const Text('Profile Picture'),
-        content: const Text('Image picker functionality would be implemented here using image_picker package.'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('OK'),
-          ),
-        ],
+        title: Text('profile_picture'.tr),
+        content: const Text(
+          'Image picker functionality would be implemented here using image_picker package.',
+        ),
+        actions: [TextButton(onPressed: () => Get.back(), child: Text('ok'.tr))],
       ),
     );
   }
@@ -94,7 +84,7 @@ class EditProfileController extends GetxController {
         );
       },
     );
-    
+
     if (picked != null) {
       dateOfBirth.value = picked;
     }
@@ -122,25 +112,28 @@ class EditProfileController extends GetxController {
         return;
       }
 
-      // Prepare updated preferences
+      // Prepare updated preferences (keep app-specific data like location)
       final updatedPreferences = Map<String, dynamic>.from(currentUser.preferences ?? {});
       updatedPreferences['location'] = locationController.text.trim();
-      if (dateOfBirth.value != null) {
-        updatedPreferences['dateOfBirth'] = dateOfBirth.value!.toIso8601String();
-      } else {
-        updatedPreferences.remove('dateOfBirth');
-      }
 
-      // Prepare profile data for update
-      final profileData = {
+      // Prepare profile data for update (align with backend fields)
+      final profileData = <String, dynamic>{
         'full_name': nameController.text.trim(),
-        'phone': phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
         'profile_image_url': profileImageUrl.value.isEmpty ? null : profileImageUrl.value,
       };
 
+      // Save date of birth to top-level user field
+      if (dateOfBirth.value != null) {
+        final dob = dateOfBirth.value!;
+        profileData['date_of_birth'] =
+            '${dob.year.toString().padLeft(4, '0')}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}';
+      } else {
+        profileData['date_of_birth'] = null;
+      }
+
       // Update user profile
       await _authController.updateUserProfile(profileData);
-      
+
       // Update preferences separately
       await _authController.updateUserPreferences(updatedPreferences);
 
@@ -149,8 +142,8 @@ class EditProfileController extends GetxController {
         'Success',
         'Profile updated successfully',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: const Color(0xFF50C878), // AppTheme.accentGreen
-        colorText: Colors.white,
+        backgroundColor: const Color(0xFF50C878), // accentGreen
+        colorText: AppColors.snackbarText,
         duration: const Duration(seconds: 2),
       );
     } catch (e) {
@@ -158,12 +151,12 @@ class EditProfileController extends GetxController {
         'Error',
         'Failed to update profile: $e',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: AppColors.errorRed,
+        colorText: AppColors.snackbarText,
         duration: const Duration(seconds: 3),
       );
     } finally {
       isLoading.value = false;
     }
   }
-} 
+}

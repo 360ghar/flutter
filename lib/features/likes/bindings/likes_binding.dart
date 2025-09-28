@@ -1,15 +1,12 @@
 import 'package:get/get.dart';
-import '../controllers/likes_controller.dart';
-import '../../../core/data/repositories/properties_repository.dart';
-import '../../../core/data/repositories/swipes_repository.dart';
+
+import 'package:ghar360/features/likes/controllers/likes_controller.dart';
 
 class LikesBinding extends Bindings {
   @override
   void dependencies() {
-    // Repositories (ApiService is already registered in InitialBinding)
-    Get.lazyPut<PropertiesRepository>(() => PropertiesRepository(), fenix: true);
-    Get.lazyPut<SwipesRepository>(() => SwipesRepository(), fenix: true);
-    
+    // Repositories and core services are registered in DashboardBinding
+
     // Screen controller
     Get.lazyPut<LikesController>(() => LikesController());
   }

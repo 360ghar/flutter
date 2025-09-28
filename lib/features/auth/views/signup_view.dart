@@ -1,173 +1,134 @@
+// lib/features/auth/views/signup_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../controllers/signup_controller.dart';
-import '../../../core/utils/theme.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/features/auth/controllers/signup_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class SignupView extends StatelessWidget {
-  const SignupView({super.key});
+class SignUpView extends GetView<SignUpController> {
+  const SignUpView({super.key});
+
+  static final Uri _termsUri = Uri.parse('https://360ghar.com/policies');
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(SignupController());
-    
     return Scaffold(
       body: SafeArea(
-        child: Obx(() {
-          switch (controller.currentStep.value) {
-            case 0:
-              return _buildSignupForm(controller);
-            case 1:
-              return _buildEmailOtpVerification(controller);
-            case 2:
-              return _buildPhoneOtpVerification(controller);
-            default:
-              return _buildSignupForm(controller);
-          }
-        }),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Obx(() {
+            return controller.currentStep.value == 0
+                ? _buildSignUpForm(context)
+                : _buildOtpForm(context);
+          }),
+        ),
       ),
     );
   }
 
-  Widget _buildSignupForm(SignupController controller) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Form(
-        key: controller.formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: const Icon(Icons.arrow_back),
-                  ),
-                  const Expanded(
-                    child: Text(
-                      'Create Account',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(width: 48), // Balance the back button
-                ],
+  Future<void> _openTerms() async {
+    try {
+      final launched = await launchUrl(_termsUri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        Get.snackbar('error'.tr, 'unable_to_open_link'.tr);
+      }
+    } catch (_) {
+      Get.snackbar('error'.tr, 'unable_to_open_link'.tr);
+    }
+  }
+
+  Widget _buildSignUpForm(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Form(
+      key: controller.formKey,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 24),
+
+            // Header
+            Text(
+              'create_account'.tr,
+              style: theme.textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'signup_subtitle'.tr,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Join 360Ghar to find your perfect home',
-                style: Theme.of(Get.context!).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey,
-                    ),
-                textAlign: TextAlign.center,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+
+            // Phone Field
+            TextFormField(
+              controller: controller.phoneController,
+              decoration: InputDecoration(
+                labelText: 'phone_number'.tr,
+                prefixIcon: const Icon(Icons.phone_outlined),
+                border: const OutlineInputBorder(),
+                hintText: 'phone_hint'.tr,
               ),
-              const SizedBox(height: 32),
-              
-              // Full Name Field
-              TextFormField(
-                controller: controller.fullNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_outline),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your full name';
-                  }
-                  if (value.trim().length < 2) {
-                    return 'Name must be at least 2 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Email Field
-              TextFormField(
-                controller: controller.emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your email address';
-                  }
-                  if (!GetUtils.isEmail(value.trim())) {
-                    return 'Please enter a valid email address';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Phone Field
-              TextFormField(
-                controller: controller.phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  border: OutlineInputBorder(),
-                  hintText: '+91 98765 43210',
-                ),
-                keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]')),
-                ],
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your phone number';
-                  }
-                  if (value.trim().length < 10) {
-                    return 'Please enter a valid phone number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Password Field
-              Obx(() => TextFormField(
+              keyboardType: TextInputType.phone,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s]'))],
+              validator: (value) {
+                final raw = (value ?? '').trim();
+                if (raw.isEmpty) {
+                  return 'phone_required'.tr;
+                }
+                final cleaned = raw.replaceAll(RegExp(r'\s+'), '');
+                final tenDigits = RegExp(r'^[0-9]{10}$');
+                final e164IN = RegExp(r'^\+91[0-9]{10}$');
+                if (!(tenDigits.hasMatch(cleaned) || e164IN.hasMatch(cleaned))) {
+                  return 'phone_invalid'.tr;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Password Field
+            Obx(
+              () => TextFormField(
                 controller: controller.passwordController,
                 decoration: InputDecoration(
-                  labelText: 'Password',
+                  labelText: 'password'.tr,
                   prefixIcon: const Icon(Icons.lock_outline),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     onPressed: controller.togglePasswordVisibility,
                     icon: Icon(
-                      controller.isPasswordVisible.value
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      controller.isPasswordVisible.value ? Icons.visibility_off : Icons.visibility,
                     ),
                   ),
                 ),
                 obscureText: !controller.isPasswordVisible.value,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a password';
+                    return 'password_required'.tr;
                   }
                   if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
+                    return 'password_min_length'.tr;
                   }
                   return null;
                 },
-              )),
-              const SizedBox(height: 16),
-              
-              // Confirm Password Field
-              Obx(() => TextFormField(
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Confirm Password Field
+            Obx(
+              () => TextFormField(
                 controller: controller.confirmPasswordController,
                 decoration: InputDecoration(
-                  labelText: 'Confirm Password',
+                  labelText: 'confirm_password'.tr,
                   prefixIcon: const Icon(Icons.lock_outline),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
@@ -182,279 +143,257 @@ class SignupView extends StatelessWidget {
                 obscureText: !controller.isConfirmPasswordVisible.value,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
+                    return 'confirm_password_required'.tr;
                   }
                   if (value != controller.passwordController.text) {
-                    return 'Passwords do not match';
+                    return 'passwords_dont_match'.tr;
                   }
                   return null;
                 },
-              )),
-              const SizedBox(height: 24),
-              
-              // Terms and Privacy
-              Text(
-                'By creating an account, you agree to our Terms of Service and Privacy Policy',
-                style: Theme.of(Get.context!).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
-              
-              // Sign Up Button
-              Obx(() => ElevatedButton(
+            ),
+            const SizedBox(height: 16),
+
+            // Terms and Conditions Checkbox
+            Obx(
+              () => FormField<bool>(
+                initialValue: controller.isTermsAccepted.value,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) {
+                  if (value != true) {
+                    return 'terms_consent_required'.tr;
+                  }
+                  return null;
+                },
+                builder: (state) {
+                  final isChecked = controller.isTermsAccepted.value;
+                  final prefixText = 'agree_terms_prefix'.tr;
+                  final suffixText = 'agree_terms_suffix'.tr;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ListTileTheme(
+                        data: const ListTileThemeData(horizontalTitleGap: 12),
+                        child: CheckboxListTile(
+                          value: isChecked,
+                          onChanged: (value) {
+                            final accepted = value ?? false;
+                            controller.isTermsAccepted.value = accepted;
+                            state.didChange(accepted);
+                            state.validate();
+                          },
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            runAlignment: WrapAlignment.center,
+                            spacing: 4,
+                            runSpacing: 2,
+                            children: [
+                              Text(prefixText, style: theme.textTheme.bodyMedium),
+                              TextButton(
+                                onPressed: () => _openTerms(),
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: const Size(0, 0),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'terms_and_conditions'.tr,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                              if (suffixText.isNotEmpty)
+                                Text(suffixText, style: theme.textTheme.bodyMedium),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (state.hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12, top: 4),
+                          child: Text(
+                            state.errorText ?? '',
+                            style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.error),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Error Message
+            Obx(() {
+              if (controller.errorMessage.value.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  controller.errorMessage.value,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            }),
+
+            // Sign Up Button
+            Obx(
+              () => ElevatedButton(
                 onPressed: controller.isLoading.value ? null : controller.signUp,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppTheme.primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: controller.isLoading.value
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Create Account',
-                        style: TextStyle(
+                    : Text(
+                        'create_account'.tr,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
-              )),
-              const SizedBox(height: 16),
-              
-              // Login Link
-              TextButton(
-                onPressed: controller.goToLogin,
-                child: const Text('Already have an account? Sign In'),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+
+            // Login Link
+            TextButton(
+              onPressed: () => Get.offNamed(AppRoutes.login),
+              child: Text('already_have_account'.tr),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildEmailOtpVerification(SignupController controller) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              IconButton(
-                onPressed: controller.goBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const Expanded(
-                child: Text(
-                  'Verify Email',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(width: 48),
-            ],
-          ),
-          const SizedBox(height: 32),
-          
-          const Icon(
-            Icons.email_outlined,
-            size: 80,
-            color: AppTheme.primaryColor,
-          ),
-          const SizedBox(height: 24),
-          
-          Text(
-            'We\'ve sent a verification code to',
-            style: Theme.of(Get.context!).textTheme.bodyLarge,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            controller.emailController.text,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          
-          // OTP Input
-          TextFormField(
-            controller: controller.emailOtpController,
-            decoration: const InputDecoration(
-              labelText: 'Enter 6-digit code',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.security),
-            ),
-            keyboardType: TextInputType.number,
-            maxLength: 6,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 18, letterSpacing: 2),
-          ),
-          const SizedBox(height: 24),
-          
-          // Verify Button
-          Obx(() => ElevatedButton(
-            onPressed: controller.isLoading.value ? null : controller.verifyEmailOtp,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppTheme.primaryColor,
-            ),
-            child: controller.isLoading.value
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
-                    'Verify Email',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-          )),
-          const SizedBox(height: 16),
-          
-          // Resend Code
-          Obx(() => TextButton(
-            onPressed: controller.canResendEmailOtp.value 
-                ? controller.resendEmailOtp 
-                : null,
-            child: Text(
-              controller.canResendEmailOtp.value
-                  ? 'Resend Code'
-                  : 'Resend in ${controller.emailOtpCountdown.value}s',
-            ),
-          )),
-        ],
-      ),
-    );
-  }
+  Widget _buildOtpForm(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-  Widget _buildPhoneOtpVerification(SignupController controller) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
+    return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
+
+          // Back Button and Header
           Row(
             children: [
-              IconButton(
-                onPressed: controller.goBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const Expanded(
+              IconButton(onPressed: controller.goBackToForm, icon: const Icon(Icons.arrow_back)),
+              Expanded(
                 child: Text(
-                  'Verify Phone',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  'verify_phone_number'.tr,
+                  style: theme.textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
               ),
               const SizedBox(width: 48),
             ],
           ),
-          const SizedBox(height: 32),
-          
-          const Icon(
-            Icons.phone_android,
-            size: 80,
-            color: AppTheme.primaryColor,
-          ),
-          const SizedBox(height: 24),
-          
-          Text(
-            'We\'ve sent a verification code to',
-            style: Theme.of(Get.context!).textTheme.bodyLarge,
-            textAlign: TextAlign.center,
-          ),
           const SizedBox(height: 8),
           Text(
-            controller.phoneController.text,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+            'otp_verification_subtitle'.tr,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          
-          // OTP Input
+
+          // OTP Field
           TextFormField(
-            controller: controller.phoneOtpController,
-            decoration: const InputDecoration(
-              labelText: 'Enter 6-digit code',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.security),
+            controller: controller.otpController,
+            decoration: InputDecoration(
+              labelText: 'enter_otp'.tr,
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.security),
+              hintText: '000000',
             ),
             keyboardType: TextInputType.number,
             maxLength: 6,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 18, letterSpacing: 2),
           ),
-          const SizedBox(height: 24),
-          
-          // Verify Button
-          Obx(() => ElevatedButton(
-            onPressed: controller.isLoading.value ? null : controller.verifyPhoneOtp,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppTheme.primaryColor,
-            ),
-            child: controller.isLoading.value
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
-                    'Verify Phone',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-          )),
           const SizedBox(height: 16),
-          
-          // Skip Phone Verification
-          TextButton(
-            onPressed: controller.skipPhoneVerification,
-            child: const Text(
-              'Skip Phone Verification',
-              style: TextStyle(color: Colors.grey),
+
+          // Error Message
+          Obx(() {
+            if (controller.errorMessage.value.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text(
+                controller.errorMessage.value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            );
+          }),
+
+          // Verify Button
+          Obx(
+            () => ElevatedButton(
+              onPressed: controller.isLoading.value ? null : controller.verifyOtp,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: controller.isLoading.value
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: colorScheme.onPrimary,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(
+                      'verify_otp'.tr,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onPrimary,
+                      ),
+                    ),
             ),
           ),
           const SizedBox(height: 16),
-          
-          // Resend Code
-          Obx(() => TextButton(
-            onPressed: controller.canResendPhoneOtp.value 
-                ? controller.resendPhoneOtp 
-                : null,
-            child: Text(
-              controller.canResendPhoneOtp.value
-                  ? 'Resend Code'
-                  : 'Resend in ${controller.phoneOtpCountdown.value}s',
+
+          // Resend OTP Button
+          Obx(
+            () => TextButton(
+              onPressed: controller.canResendOtp.value ? controller.resendOtp : null,
+              child: Text(
+                controller.canResendOtp.value
+                    ? 'resend_code'.tr
+                    : '${'resend_in'.tr} ${controller.otpCountdown.value}s',
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );

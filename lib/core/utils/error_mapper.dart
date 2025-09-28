@@ -1,20 +1,137 @@
-import 'package:dio/dio.dart';
+import 'dart:async';
+
 import 'package:get/get.dart';
-import '../data/providers/api_service.dart';
-import 'app_exceptions.dart';
-import 'debug_logger.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/null_check_trap.dart';
+import 'package:universal_io/io.dart';
 
 class ErrorMapper {
   // Map API errors to user-friendly messages
-  static AppException mapApiError(dynamic error) {
-    DebugLogger.error('🗺️ Mapping error: type=${error.runtimeType}, error=$error');
+  static AppException mapApiError(Object error, [StackTrace? stackTrace]) {
+    // Log the incoming error being normalized to an AppException (informational, not a failure)
+    DebugLogger.info(
+      '🗺️ [ERROR_MAPPER] Mapping incoming error: type=${error.runtimeType}, error=$error',
+      error,
+      stackTrace,
+    );
 
-    if (error is DioException) {
-      return _mapDioException(error);
+    // Special handling for null check operator errors
+    // Only emit deep stack analysis for non-String errors to reduce log noise
+    if (error.toString().contains('Null check operator used on a null value')) {
+      if (error is String) {
+        // Capture a one-time stack to identify where this mapping is triggered
+        NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError');
+      } else if (error is Error || error is Exception) {
+        DebugLogger.error('🚨 [ERROR_MAPPER] NULL CHECK OPERATOR ERROR DETECTED!');
+        DebugLogger.error('🚨 [ERROR_MAPPER] Error type: ${error.runtimeType}');
+        DebugLogger.error('🚨 [ERROR_MAPPER] Error string: ${error.toString()}');
+
+        // CRITICAL: Get the current stack trace to see where this error is coming from
+        DebugLogger.error(
+          '🚨 [ERROR_MAPPER] CURRENT STACK TRACE (where ErrorMapper.map was called):',
+        );
+        final currentStackTrace = StackTrace.current;
+        DebugLogger.error('🚨 [ERROR_MAPPER] ${currentStackTrace.toString()}');
+
+        // Try to get original stack trace if available
+        try {
+          if (error is Error) {
+            DebugLogger.error('🚨 [ERROR_MAPPER] ORIGINAL ERROR STACK TRACE:');
+            DebugLogger.error('🚨 [ERROR_MAPPER] ${error.stackTrace}');
+          }
+        } catch (e) {
+          DebugLogger.error('🚨 [ERROR_MAPPER] Could not get original stack trace: $e');
+        }
+
+        // Log error source analysis
+        final stackString = currentStackTrace.toString();
+        if (stackString.contains('property_model.g.dart')) {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_model.g.dart (generated code)',
+          );
+        } else if (stackString.contains('property_image_model.g.dart')) {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_image_model.g.dart (generated code)',
+          );
+        } else if (stackString.contains('explore_controller.dart')) {
+          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: explore_controller.dart');
+        } else if (stackString.contains('likes_controller.dart')) {
+          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: likes_controller.dart');
+        } else if (stackString.contains('page_state_service.dart')) {
+          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: page_state_service.dart');
+        } else {
+          DebugLogger.error(
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: Unknown location - check full stack trace above',
+          );
+        }
+
+        // Extract and log the specific lines from the stack trace
+        final lines = stackString.split('\n');
+        DebugLogger.error('🚨 [ERROR_MAPPER] STACK TRACE ANALYSIS:');
+        for (int i = 0; i < lines.length && i < 10; i++) {
+          final line = lines[i].trim();
+          if (line.contains('.dart')) {
+            DebugLogger.error('🚨 [ERROR_MAPPER] [$i] $line');
+          }
+        }
+      }
     }
-    
+
+    // Handle string error messages by wrapping them appropriately
+    if (error is String) {
+      // Check if it's a specific error pattern
+      if (error.contains('Null check operator used on a null value')) {
+        // Also ensure the one-time string trap captures the call site
+        NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError(String)');
+        return NetworkException(
+          'A data processing error occurred. Please try again.',
+          details: error,
+        );
+      }
+      // Return as a generic network exception for string errors
+      return NetworkException(error, details: error);
+    }
+
+    // Map common platform/network exceptions
+    if (error is SocketException) {
+      return NetworkException(
+        'Unable to connect to server. Please check your internet connection.',
+        code: 'CONNECTION_ERROR',
+        details: error.message,
+      );
+    }
+
+    if (error is TimeoutException) {
+      return NetworkException(
+        'Connection timeout. Please check your internet connection and try again.',
+        code: 'TIMEOUT',
+        details: error.message,
+      );
+    }
+
+    if (error is HttpException) {
+      return NetworkException(
+        'Network error occurred. Please try again.',
+        code: 'HTTP_EXCEPTION',
+        details: error.message,
+      );
+    }
+
+    // Note: Avoid referencing GetX-internal exception types directly to keep mapping portable.
+
     if (error is ApiException) {
       return _mapApiException(error);
+    }
+
+    // Supabase auth failure propagated from ApiService
+    if (error is ApiAuthException) {
+      return AuthenticationException(
+        'Your session has expired. Please log in again.',
+        code: 'UNAUTHORIZED',
+        details: error.toString(),
+      );
     }
 
     // Handle wrapped ApiException (Exception: ApiException: ...)
@@ -26,8 +143,14 @@ class ErrorMapper {
         final statusCode = int.tryParse(match.group(2)!);
         return _mapHttpStatusCode(statusCode, message);
       }
-      return NetworkException(
-        'API error occurred. Please try again.',
+      return NetworkException('API error occurred. Please try again.', details: error.toString());
+    }
+
+    // Handle wrapped ApiAuthException (Exception: ApiAuthException: ...)
+    if (error is Exception && error.toString().contains('ApiAuthException:')) {
+      return AuthenticationException(
+        'Your session has expired. Please log in again.',
+        code: 'UNAUTHORIZED',
         details: error.toString(),
       );
     }
@@ -43,48 +166,14 @@ class ErrorMapper {
     );
   }
 
-  static AppException _mapDioException(DioException error) {
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.sendTimeout:
-        return NetworkException(
-          'Connection timeout. Please check your internet connection and try again.',
-          code: 'TIMEOUT',
-          details: error.message,
-        );
-
-      case DioExceptionType.connectionError:
-        return NetworkException(
-          'Unable to connect to server. Please check your internet connection.',
-          code: 'CONNECTION_ERROR',
-          details: error.message,
-        );
-
-      case DioExceptionType.badResponse:
-        return _mapHttpStatusCode(error.response?.statusCode, error.response?.data);
-
-      case DioExceptionType.cancel:
-        return NetworkException(
-          'Request was cancelled.',
-          code: 'CANCELLED',
-          details: error.message,
-        );
-
-      default:
-        return NetworkException(
-          'Network error occurred. Please try again.',
-          code: 'NETWORK_ERROR',
-          details: error.message,
-        );
-    }
-  }
+  // Note: Previously mapped DioException. Since Dio is not used,
+  // we rely on platform and GetConnect exceptions above.
 
   static AppException _mapApiException(ApiException error) {
     if (error.statusCode != null) {
       return _mapHttpStatusCode(error.statusCode, error.response);
     }
-    
+
     return NetworkException(error.message, details: error.response);
   }
 
@@ -181,7 +270,7 @@ class ErrorMapper {
       if (responseData['detail'] is String) {
         return responseData['detail'];
       }
-      
+
       // Extract first error from errors object
       if (responseData['errors'] is Map) {
         final errors = responseData['errors'] as Map;
@@ -201,7 +290,7 @@ class ErrorMapper {
     if (responseData is Map<String, dynamic> && responseData['errors'] is Map) {
       final errors = responseData['errors'] as Map<String, dynamic>;
       final fieldErrors = <String, List<String>>{};
-      
+
       errors.forEach((field, error) {
         if (error is List) {
           fieldErrors[field] = error.cast<String>();
@@ -209,7 +298,7 @@ class ErrorMapper {
           fieldErrors[field] = [error];
         }
       });
-      
+
       return fieldErrors.isNotEmpty ? fieldErrors : null;
     }
     return null;
@@ -218,7 +307,7 @@ class ErrorMapper {
   // Show user-friendly error messages
   static void showErrorSnackbar(AppException error) {
     String title = 'Error';
-    
+
     if (error is NetworkException) {
       title = 'Connection Error';
     } else if (error is AuthenticationException) {
@@ -236,7 +325,7 @@ class ErrorMapper {
       error.message,
       snackPosition: SnackPosition.TOP,
       duration: const Duration(seconds: 4),
-      backgroundColor: Get.theme.colorScheme.error.withOpacity(0.9),
+      backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.9),
       colorText: Get.theme.colorScheme.onError,
     );
 
@@ -254,15 +343,15 @@ class ErrorMapper {
         return 'Check Connection & Retry';
       }
     }
-    
+
     if (error is ServerException) {
       return 'Try Again Later';
     }
-    
+
     if (error is AuthenticationException) {
       return 'Log In Again';
     }
-    
+
     return 'Try Again';
   }
 
@@ -276,19 +365,19 @@ class ErrorMapper {
     if (error is NetworkException) {
       return error.code != 'CANCELLED';
     }
-    
+
     if (error is ServerException) {
       return error.statusCode != null && error.statusCode! >= 500;
     }
-    
+
     if (error is AuthenticationException) {
       return false; // Auth errors need manual intervention
     }
-    
+
     if (error is ValidationException) {
       return false; // Validation errors need input changes
     }
-    
+
     return true; // Default to retryable
   }
 

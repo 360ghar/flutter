@@ -1,0 +1,1 @@
+gitingest ./lib --exclude-pattern '*.g.dart'

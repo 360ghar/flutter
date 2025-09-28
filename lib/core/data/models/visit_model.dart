@@ -1,3 +1,4 @@
+import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'visit_model.g.dart';
@@ -15,32 +16,6 @@ enum VisitStatus {
   rescheduled,
 }
 
-
-@JsonSerializable()
-class VisitPropertyInfo {
-  final int id;
-  final String title;
-  @JsonKey(name: 'property_type')
-  final String propertyType;
-  final String city;
-  final String locality;
-  @JsonKey(name: 'base_price')
-  final double basePrice;
-
-  VisitPropertyInfo({
-    required this.id,
-    required this.title,
-    required this.propertyType,
-    required this.city,
-    required this.locality,
-    required this.basePrice,
-  });
-
-  factory VisitPropertyInfo.fromJson(Map<String, dynamic> json) => _$VisitPropertyInfoFromJson(json);
-
-  Map<String, dynamic> toJson() => _$VisitPropertyInfoToJson(this);
-}
-
 @JsonSerializable()
 class VisitAgentInfo {
   final int id;
@@ -49,7 +24,7 @@ class VisitAgentInfo {
   final String agentCode;
   final String phone;
 
-  VisitAgentInfo({
+  const VisitAgentInfo({
     required this.id,
     required this.name,
     required this.agentCode,
@@ -95,10 +70,17 @@ class VisitModel {
   final DateTime createdAt;
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
-  final VisitPropertyInfo? properties;
+  // Backend returns nested full property under `property`
+  final PropertyModel? property;
   final VisitAgentInfo? agents;
 
-  VisitModel({
+  // API response fields for date and time parsing
+  @JsonKey(name: 'property_title')
+  final String? propertyTitleApi;
+  @JsonKey(name: 'agent_name')
+  final String? agentNameApi;
+
+  const VisitModel({
     required this.id,
     required this.propertyId,
     required this.userId,
@@ -116,24 +98,65 @@ class VisitModel {
     this.rescheduledFrom,
     required this.createdAt,
     this.updatedAt,
-    this.properties,
+    this.property,
     this.agents,
+    this.propertyTitleApi,
+    this.agentNameApi,
   });
 
-  factory VisitModel.fromJson(Map<String, dynamic> json) => _$VisitModelFromJson(json);
+  factory VisitModel.fromJson(Map<String, dynamic> json) {
+    // Combine date and time into a single DateTime object
+    final dateStr = json['visit_date'] as String?;
+    final timeStr = json['visit_time'] as String?;
+    DateTime? scheduledDateTime;
+
+    if (dateStr != null && timeStr != null) {
+      try {
+        scheduledDateTime = DateTime.parse('$dateStr $timeStr');
+      } catch (e) {
+        // Handle potential format errors - fall back to just date
+        try {
+          scheduledDateTime = DateTime.parse(dateStr);
+        } catch (e2) {
+          // If all parsing fails, use current time as fallback
+          scheduledDateTime = DateTime.now();
+        }
+      }
+    } else if (json['scheduled_date'] != null) {
+      // Fall back to the standard scheduled_date field if available
+      try {
+        scheduledDateTime = DateTime.parse(json['scheduled_date']);
+      } catch (e) {
+        scheduledDateTime = DateTime.now();
+      }
+    } else {
+      scheduledDateTime = DateTime.now();
+    }
+
+    // Create a modified JSON with the combined scheduled_date
+    final modifiedJson = Map<String, dynamic>.from(json);
+    modifiedJson['scheduled_date'] = scheduledDateTime.toIso8601String();
+
+    // Call the generated fromJson with the modified data
+    return _$VisitModelFromJson(modifiedJson);
+  }
 
   Map<String, dynamic> toJson() => _$VisitModelToJson(this);
 
-  // Convenience getters  
-  String get propertyTitle => properties?.title ?? 'Property #$propertyId';
-  String get agentName => agents?.name ?? 'Unknown Agent';
+  // Convenience getters
+  String get propertyTitle => property?.title ?? propertyTitleApi ?? 'Property #$propertyId';
+  String get agentName => agents?.name ?? agentNameApi ?? 'Unknown Agent';
   String get agentPhone => agents?.phone ?? '';
   String get notes => visitNotes ?? '';
-  
-  bool get isUpcoming => DateTime.now().isBefore(scheduledDate) && (status == VisitStatus.scheduled || status == VisitStatus.confirmed);
+
+  bool get isUpcoming =>
+      DateTime.now().isBefore(scheduledDate) &&
+      (status == VisitStatus.scheduled ||
+          status == VisitStatus.confirmed ||
+          status == VisitStatus.rescheduled);
   bool get isCompleted => status == VisitStatus.completed;
   bool get isCancelled => status == VisitStatus.cancelled;
-  
+
   // Helper methods for status
   String get statusString {
     switch (status) {
@@ -149,10 +172,16 @@ class VisitModel {
         return 'Rescheduled';
     }
   }
-  
-  bool get canReschedule => status == VisitStatus.scheduled || status == VisitStatus.confirmed;
-  bool get canCancel => status == VisitStatus.scheduled || status == VisitStatus.confirmed;
-  
+
+  bool get canReschedule =>
+      status == VisitStatus.scheduled ||
+      status == VisitStatus.confirmed ||
+      status == VisitStatus.rescheduled;
+  bool get canCancel =>
+      status == VisitStatus.scheduled ||
+      status == VisitStatus.confirmed ||
+      status == VisitStatus.rescheduled;
+
   VisitModel copyWith({
     int? id,
     int? propertyId,
@@ -171,8 +200,10 @@ class VisitModel {
     DateTime? rescheduledFrom,
     DateTime? createdAt,
     DateTime? updatedAt,
-    VisitPropertyInfo? properties,
+    PropertyModel? property,
     VisitAgentInfo? agents,
+    String? propertyTitleApi,
+    String? agentNameApi,
   }) {
     return VisitModel(
       id: id ?? this.id,
@@ -192,8 +223,10 @@ class VisitModel {
       rescheduledFrom: rescheduledFrom ?? this.rescheduledFrom,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      properties: properties ?? this.properties,
+      property: property ?? this.property,
       agents: agents ?? this.agents,
+      propertyTitleApi: propertyTitleApi ?? this.propertyTitleApi,
+      agentNameApi: agentNameApi ?? this.agentNameApi,
     );
   }
 }

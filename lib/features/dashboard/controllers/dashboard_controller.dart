@@ -1,43 +1,75 @@
 import 'package:get/get.dart';
-import '../../../core/data/providers/api_service.dart';
-import '../../../core/controllers/auth_controller.dart';
-import '../../../core/utils/debug_logger.dart';
+
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_mapper.dart';
 
 class DashboardController extends GetxController {
-  late final ApiService _apiService;
   late final AuthController _authController;
+  late final PageStateService _pageStateService;
 
   final RxMap<String, dynamic> dashboardData = <String, dynamic>{}.obs;
-  final RxList<Map<String, dynamic>> searchHistory = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> recentActivity = <Map<String, dynamic>>[].obs;
   final RxMap<String, dynamic> userStats = <String, dynamic>{}.obs;
   final RxBool isLoading = false.obs;
   final RxBool isRefreshing = false.obs;
-  final RxString error = ''.obs;
-  
+  final Rxn<AppException> error = Rxn<AppException>();
+
   // Bottom navigation state
   final RxInt currentIndex = 2.obs; // Default to Discover tab (index 2)
 
   @override
   void onInit() {
     super.onInit();
-    _apiService = Get.find<ApiService>();
+
     _authController = Get.find<AuthController>();
-    
+    _pageStateService = Get.find<PageStateService>();
+
     // Listen to authentication state changes
-    ever(_authController.isLoggedIn, (bool isLoggedIn) {
-      if (isLoggedIn) {
-        // User is logged in, safe to fetch data
+    ever(_authController.authStatus, (authStatus) {
+      if (_authController.isAuthenticated) {
+        // User is authenticated, safe to fetch data
         loadDashboardData();
       } else {
         // User logged out, clear all data
         _clearAllData();
       }
     });
-    
-    // If already logged in, load dashboard data
-    if (_authController.isLoggedIn.value) {
+
+    // If already authenticated, load dashboard data
+    if (_authController.isAuthenticated) {
       loadDashboardData();
+    }
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+
+    // Activate the initial page (Discover by default)
+    final initialIndex = currentIndex.value;
+    DebugLogger.info('🚀 Dashboard ready, activating initial tab: $initialIndex');
+
+    // Activate the default page without changing the index
+    PageType? pageType;
+    switch (initialIndex) {
+      case 1:
+        pageType = PageType.explore;
+        break;
+      case 2:
+        pageType = PageType.discover;
+        break;
+      case 3:
+        pageType = PageType.likes;
+        break;
+    }
+
+    if (pageType != null) {
+      // Single source of truth: update current page type only
+      _pageStateService.setCurrentPage(pageType);
     }
   }
 
@@ -46,25 +78,20 @@ class DashboardController extends GetxController {
 
     try {
       isLoading.value = true;
-      error.value = '';
-      
+      error.value = null;
+
       // Load dashboard data (analytics removed)
-      final results = await Future.wait([
-        _loadUserStats(),
-        _loadRecentActivity(),
-      ]);
-      
+      final results = await Future.wait([_loadUserStats(), _loadRecentActivity()]);
+
       userStats.value = results[0] as Map<String, dynamic>;
       recentActivity.value = results[1] as List<Map<String, dynamic>>;
-      
+
       // Clear analytics data that's no longer available
       dashboardData.value = {};
-      searchHistory.value = [];
-      
     } catch (e, stackTrace) {
-      error.value = 'Failed to load dashboard data';
+      error.value = ErrorMapper.mapApiError('Failed to load dashboard data');
       DebugLogger.error('Error loading dashboard data', e, stackTrace);
-      
+
       Get.snackbar(
         'Dashboard Error',
         'Failed to load dashboard data. Please try again.',
@@ -135,10 +162,9 @@ class DashboardController extends GetxController {
 
   void _clearAllData() {
     dashboardData.clear();
-    searchHistory.clear();
     recentActivity.clear();
     userStats.clear();
-    error.value = '';
+    error.value = null;
   }
 
   // Analytics dashboard getters
@@ -146,7 +172,7 @@ class DashboardController extends GetxController {
   int get totalLikes => dashboardData['total_likes'] ?? 0;
   int get totalVisitsScheduled => dashboardData['total_visits_scheduled'] ?? 0;
   double get conversionRate => dashboardData['conversion_rate']?.toDouble() ?? 0.0;
-  
+
   List<String> get preferredLocations {
     final locations = dashboardData['preferred_locations'];
     if (locations is List) {
@@ -165,33 +191,7 @@ class DashboardController extends GetxController {
   int get timeSpentMinutes => userStats['time_spent_minutes'] ?? 0;
   String get favoriteLocation => userStats['favorite_location'] ?? 'N/A';
 
-  // Search history methods (analytics removed)
-  Future<void> refreshSearchHistory() async {
-    searchHistory.clear();
-  }
-
-  void clearSearchHistory() {
-    searchHistory.clear();
-    // Also clear from backend if needed  
-    // Note: clearSearchHistory method needs to be implemented in ApiService
-  }
-
   // Dashboard insights
-  String get topPerformingSearchTerm {
-    if (searchHistory.isEmpty) return 'No searches yet';
-    
-    // Find most frequent search term
-    final searchTerms = <String, int>{};
-    for (final search in searchHistory) {
-      final term = search['query'] as String? ?? '';
-      searchTerms[term] = (searchTerms[term] ?? 0) + 1;
-    }
-    
-    if (searchTerms.isEmpty) return 'No searches yet';
-    
-    final topTerm = searchTerms.entries.reduce((a, b) => a.value > b.value ? a : b);
-    return topTerm.key;
-  }
 
   double get averagePropertyPrice {
     final summary = activitySummary;
@@ -240,7 +240,6 @@ class DashboardController extends GetxController {
   Map<String, dynamic> exportDashboardData() {
     return {
       'dashboard_data': dashboardData,
-      'search_history': searchHistory,
       'user_stats': userStats,
       'recent_activity': recentActivity,
       'export_timestamp': DateTime.now().toIso8601String(),
@@ -254,33 +253,59 @@ class DashboardController extends GetxController {
     'visits_scheduled': visitsScheduled,
     'engagement_level': userEngagementLevel,
     'time_spent': timeSpentFormatted,
-    'top_search_term': topPerformingSearchTerm,
     'favorite_location': favoriteLocation,
   };
-  
+
   // Navigation methods
   void changeTab(int index) {
+    if (currentIndex.value == index) return; // Prevent redundant updates
     currentIndex.value = index;
+
+    // Update PageStateService with the corresponding page type
+    PageType? pageType;
+    switch (index) {
+      case 0: // Profile (no associated PageType)
+        break;
+      case 1:
+        pageType = PageType.explore;
+        break;
+      case 2:
+        pageType = PageType.discover;
+        break;
+      case 3:
+        pageType = PageType.likes;
+        break;
+      case 4: // Visits (no associated PageType)
+        break;
+    }
+
+    if (pageType != null) {
+      // Single source of truth: feature controllers listen to this
+      _pageStateService.setCurrentPage(pageType);
+    }
   }
 
   // Sync tab with current route
   void syncTabWithRoute(String route) {
     switch (route) {
-      case '/dashboard':
-      case '/':
-        currentIndex.value = 0;
+      case '/profile':
+        currentIndex.value = 0; // ProfileView
+        break;
+      case '/explore':
+        currentIndex.value = 1; // ExploreView
         break;
       case '/discover':
-        currentIndex.value = 1;
-        break;
-      case '/search':
-        currentIndex.value = 2;
+        currentIndex.value = 2; // DiscoverView
         break;
       case '/likes':
-        currentIndex.value = 3;
+        currentIndex.value = 3; // LikesView
         break;
-      case '/profile':
-        currentIndex.value = 4;
+      case '/visits':
+        currentIndex.value = 4; // VisitsView
+        break;
+      case '/dashboard':
+      case '/':
+        // Keep current tab for dashboard route to avoid unwanted switches
         break;
       default:
         // For other routes, don't change the tab

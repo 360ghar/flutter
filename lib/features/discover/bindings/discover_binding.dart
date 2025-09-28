@@ -1,18 +1,13 @@
 import 'package:get/get.dart';
-import '../controllers/discover_controller.dart';
-import '../../../core/data/repositories/properties_repository.dart';
-import '../../../core/data/repositories/swipes_repository.dart';
+
+import 'package:ghar360/features/discover/controllers/discover_controller.dart';
 
 class DiscoverBinding extends Bindings {
   @override
   void dependencies() {
-    // Repositories (ApiService is already registered in InitialBinding)
-    Get.lazyPut<PropertiesRepository>(() => PropertiesRepository(), fenix: true);
-    Get.lazyPut<SwipesRepository>(() => SwipesRepository(), fenix: true);
-    
-    // Shared controllers (LocationController and FilterService already registered in InitialBinding)
-    
-    // Screen controller
-    Get.lazyPut<DiscoverController>(() => DiscoverController());
+    // Repositories and core services are registered in DashboardBinding
+
+    // Screen controller: eagerly initialize to avoid missing instance in GetView
+    Get.put<DiscoverController>(DiscoverController());
   }
 }

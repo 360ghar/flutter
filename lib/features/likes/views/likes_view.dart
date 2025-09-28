@@ -1,170 +1,135 @@
 import 'package:flutter/material.dart';
+
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
-import '../controllers/likes_controller.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/error_mapper.dart';
-import '../../../../widgets/common/loading_states.dart';
-import '../../../../widgets/common/error_states.dart';
-import '../../../../widgets/property/compact_property_card.dart';
-import '../../../core/data/models/property_model.dart';
+
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/error_mapper.dart';
+import 'package:ghar360/core/widgets/common/error_states.dart';
+import 'package:ghar360/core/widgets/common/loading_states.dart';
+import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
+import 'package:ghar360/core/widgets/common/unified_top_bar.dart';
+import 'package:ghar360/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:ghar360/features/likes/controllers/likes_controller.dart';
+import 'package:ghar360/features/likes/widgets/likes_property_card.dart';
 
 class LikesView extends GetView<LikesController> {
   const LikesView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final pageStateService = Get.find<PageStateService>();
+
+    // Reactive AppBar without rebuilding the whole Scaffold
+    final appBar = _ReactiveLikesAppBar(
+      onSearchChanged: controller.updateSearchQuery,
+      onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'likes'),
+    );
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(160), // Increased height to accommodate all content
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Main app bar
-                AppBar(
-                  backgroundColor: AppColors.appBarBackground,
-                  elevation: 0,
-                  toolbarHeight: kToolbarHeight,
-                  automaticallyImplyLeading: false,
-                  title: Text(
-                    'My Likes',
-                    style: TextStyle(
-                      color: AppColors.appBarText,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  actions: [
-                    // View toggle (grid/list)
-                    IconButton(
-                      icon: Icon(
-                        Icons.view_module,
-                        color: AppColors.iconColor,
-                      ),
-                      onPressed: () {
-                        // Toggle view mode if needed
-                      },
-                    ),
-                  ],
-                ),
-                
-                // Search bar
-                Container(
-                  color: AppColors.appBarBackground,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Obx(() => TextField(
-                    onChanged: controller.updateSearchQuery,
-                    style: TextStyle(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      hintText: 'Search in your likes...',
-                      hintStyle: TextStyle(color: AppColors.textSecondary),
-                      prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
-                      suffixIcon: controller.hasSearchQuery
-                          ? IconButton(
-                              icon: Icon(Icons.clear, color: AppColors.iconColor),
-                              onPressed: controller.clearSearch,
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: AppColors.inputBackground,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
-                  )),
-                ),
-                
-                // Tab bar
-                Container(
-                  color: AppColors.appBarBackground,
-                  child: TabBar(
-                    labelColor: AppColors.primaryYellow,
-                    unselectedLabelColor: AppColors.textSecondary,
-                    indicatorColor: AppColors.primaryYellow,
-                    indicatorWeight: 3,
-                    labelStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onTap: (index) {
-                      final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
-                      controller.switchToSegment(segment);
-                    },
-                    tabs: [
-                      Tab(
-                        child: Obx(() => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.favorite, size: 18),
-                            const SizedBox(width: 8),
-                            Text('Liked'),
-                            if (controller.currentSegment.value == LikesSegment.liked && 
-                                controller.hasCurrentProperties) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryYellow,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${controller.currentProperties.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        )),
-                      ),
-                      Tab(
-                        child: Obx(() => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.not_interested, size: 18),
-                            const SizedBox(width: 8),
-                            Text('Passed'),
-                            if (controller.currentSegment.value == LikesSegment.passed && 
-                                controller.hasCurrentProperties) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  '${controller.currentProperties.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        )),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        body: TabBarView(
+        appBar: appBar,
+        body: Column(
           children: [
-            _buildLikesTab(),
-            _buildPassedTab(),
+            // Subtle refresh indicator
+            Obx(() {
+              if (!pageStateService.likesState.value.isRefreshing) {
+                return const SizedBox.shrink();
+              }
+              return LinearProgressIndicator(
+                minHeight: 2,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+              );
+            }),
+            // Tab bar directly under the unified top bar
+            Container(
+              color: AppColors.appBarBackground,
+              child: TabBar(
+                labelColor: colorScheme.primary,
+                unselectedLabelColor: AppColors.textSecondary,
+                indicatorColor: colorScheme.primary,
+                indicatorWeight: 3,
+                labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                onTap: (index) {
+                  final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
+                  controller.switchToSegment(segment);
+                },
+                tabs: [
+                  Tab(
+                    child: Obx(
+                      () => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.favorite, size: 18),
+                          const SizedBox(width: 8),
+                          Text('liked'.tr),
+                          if (controller.currentSegment.value == LikesSegment.liked &&
+                              controller.hasCurrentProperties) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${controller.currentProperties.length}',
+                                style: TextStyle(
+                                  color: colorScheme.onPrimary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  Tab(
+                    child: Obx(
+                      () => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.not_interested, size: 18),
+                          const SizedBox(width: 8),
+                          Text('passed'.tr),
+                          if (controller.currentSegment.value == LikesSegment.passed &&
+                              controller.hasCurrentProperties) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${controller.currentProperties.length}',
+                                style: TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(child: TabBarView(children: [_buildLikesTab(), _buildPassedTab()])),
           ],
         ),
       ),
@@ -177,15 +142,15 @@ class LikesView extends GetView<LikesController> {
       if (controller.isCurrentLoading) {
         return LoadingStates.propertyGridSkeleton();
       }
-      
+
       if (controller.hasCurrentError) {
         return _buildErrorState();
       }
-      
+
       if (controller.isCurrentEmpty) {
         return _buildEmptyState(true);
       }
-      
+
       return _buildPropertyGrid();
     });
   }
@@ -196,15 +161,15 @@ class LikesView extends GetView<LikesController> {
       if (controller.isCurrentLoading) {
         return LoadingStates.propertyGridSkeleton();
       }
-      
+
       if (controller.hasCurrentError) {
         return _buildErrorState();
       }
-      
+
       if (controller.isCurrentEmpty) {
         return _buildEmptyState(false);
       }
-      
+
       return _buildPropertyGrid();
     });
   }
@@ -212,89 +177,91 @@ class LikesView extends GetView<LikesController> {
   Widget _buildPropertyGrid() {
     return RefreshIndicator(
       onRefresh: controller.refreshCurrentSegment,
-      color: AppColors.primaryYellow,
+      color: Get.theme.colorScheme.primary,
       child: CustomScrollView(
         slivers: [
           // Results header
           SliverToBoxAdapter(
-            child: Obx(() => Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Text(
-                    controller.currentCountText,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (controller.hasSearchQuery)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
+            child: Obx(
+              () => Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Text(
+                      controller.currentCountText,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
-                      child: Text(
-                        'Filtered',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.primaryYellow,
+                    ),
+                    const Spacer(),
+                    if (controller.hasSearchQuery)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Filtered',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.primaryYellow,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            )),
-          ),
-          
-          // Properties grid
-          Obx(() => SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
             ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
+          ),
+
+          // Properties grid
+          Obx(
+            () => SliverMasonryGrid.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childCount:
+                  controller.currentProperties.length +
+                  (controller.currentHasMore || controller.isCurrentLoadingMore ? 1 : 0),
+              itemBuilder: (context, index) {
                 final properties = controller.currentProperties;
-                
-                // Show load more indicator at the end
+
+                // Load more indicator at the end
                 if (index == properties.length) {
                   if (controller.currentHasMore && !controller.isCurrentLoadingMore) {
-                    // Trigger load more
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       controller.loadMoreCurrentSegment();
                     });
                   }
-                  
+
                   return controller.isCurrentLoadingMore
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
                       : const SizedBox();
                 }
-                
+
                 final property = properties[index];
                 final isLiked = controller.currentSegment.value == LikesSegment.liked;
-                
-                return CompactPropertyCard(
+
+                return LikesPropertyCard(
                   property: property,
                   isFavourite: isLiked,
                   onFavouriteToggle: () => _handleFavoriteToggle(property, isLiked),
                 );
               },
-              childCount: controller.currentProperties.length + 
-                         (controller.currentHasMore || controller.isCurrentLoadingMore ? 1 : 0),
             ),
-          )),
-          
-          // Bottom padding for FAB
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 100),
           ),
+
+          // Bottom padding for FAB
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
@@ -304,13 +271,11 @@ class LikesView extends GetView<LikesController> {
     return Obx(() {
       final errorMessage = controller.currentError;
       if (errorMessage == null) return const SizedBox();
-      
+
       try {
-        final exception = ErrorMapper.mapApiError(Exception(errorMessage));
-        return ErrorStates.genericError(
-          error: exception,
-          onRetry: controller.retryCurrentSegment,
-        );
+        // Don't wrap in Exception() - pass the original error message directly
+        final exception = ErrorMapper.mapApiError(errorMessage);
+        return ErrorStates.genericError(error: exception, onRetry: controller.retryCurrentSegment);
       } catch (e) {
         return ErrorStates.networkError(
           onRetry: controller.retryCurrentSegment,
@@ -327,13 +292,13 @@ class LikesView extends GetView<LikesController> {
         onClearSearch: controller.clearSearch,
       );
     }
-    
+
     return ErrorStates.emptyState(
-      title: isLiked ? 'No Liked Properties' : 'No Passed Properties',
+      title: isLiked ? 'no_liked_properties'.tr : 'no_passed_properties'.tr,
       message: controller.emptyStateMessage,
       icon: isLiked ? Icons.favorite_border : Icons.not_interested,
-      onAction: () => Get.offNamed('/discover'),
-      actionText: 'Explore Properties',
+      onAction: () => Get.find<DashboardController>().changeTab(2), // 2 = Discover tab
+      actionText: 'explore_properties'.tr,
     );
   }
 
@@ -345,13 +310,42 @@ class LikesView extends GetView<LikesController> {
       // This would be moving from passed to liked
       // For now, just show a message
       Get.snackbar(
-        'Info',
-        'Feature coming soon: Move to liked properties',
+        'info'.tr,
+        'feature_coming_soon_move_to_liked'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.primaryYellow.withValues(alpha: 0.1),
         colorText: AppColors.primaryYellow,
         duration: const Duration(seconds: 2),
       );
     }
+  }
+}
+
+// Reactive AppBar placed at top-level to satisfy Dart rules
+class _ReactiveLikesAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final ValueChanged<String>? onSearchChanged;
+  final VoidCallback? onFilterTap;
+
+  const _ReactiveLikesAppBar({this.onSearchChanged, this.onFilterTap});
+
+  @override
+  Size get preferredSize {
+    final pageStateService = Get.find<PageStateService>();
+    final searchVisible = pageStateService.isSearchVisible(PageType.likes);
+    final height = kToolbarHeight + (searchVisible ? 52 : 0);
+    return Size.fromHeight(height);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final pageStateService = Get.find<PageStateService>();
+      final searchVisible = pageStateService.isSearchVisible(PageType.likes);
+      return LikesTopBar(
+        key: ValueKey('likes_topbar_$searchVisible'),
+        onSearchChanged: onSearchChanged,
+        onFilterTap: onFilterTap,
+      );
+    });
   }
 }

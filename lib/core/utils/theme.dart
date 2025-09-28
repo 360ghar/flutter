@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Primary Colors
-  static const Color primaryYellow = Color(0xFFFFBC05);    // Bumble's signature yellow
+  static const Color primaryYellow = Color(0xFFFFBC05); // Bumble's signature yellow
   static const Color primaryYellowDark = Color(0xFFE3AA04); // Darker yellow variant
   static const Color primaryYellowLight = Color(0xFFFCC937); // Lighter yellow variant
 
   // Secondary Colors
-  static const Color accentOrange = Color(0xFFFF6B35);     // Real estate accent
-  static const Color accentBlue = Color(0xFF4A90E2);       // Trust and reliability
-  static const Color accentGreen = Color(0xFF50C878);      // Success/available properties
+  static const Color accentOrange = Color(0xFFFF6B35); // Real estate accent
+  static const Color accentBlue = Color(0xFF4A90E2); // Trust and reliability
+  static const Color accentGreen = Color(0xFF50C878); // Success/available properties
 
   // Light Theme Colors
   static const Color backgroundWhite = Color(0xFFFFFFFF);
@@ -43,7 +44,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       scaffoldBackgroundColor: backgroundGray,
-      colorScheme: ColorScheme.light(
+      colorScheme: const ColorScheme.light(
         primary: primaryYellow,
         onPrimary: textDark,
         secondary: accentOrange,
@@ -68,16 +69,8 @@ class AppTheme {
             color: textDark,
             letterSpacing: -0.25,
           ),
-          titleLarge: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: textDark,
-          ),
-          titleMedium: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: textDark,
-          ),
+          titleLarge: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: textDark),
+          titleMedium: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: textDark),
           bodyLarge: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.normal,
@@ -104,29 +97,20 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: textDark),
-        titleTextStyle: TextStyle(
-          color: textDark,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
+        titleTextStyle: TextStyle(color: textDark, fontSize: 20, fontWeight: FontWeight.w600),
       ),
-      
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryYellow,
           foregroundColor: textDark,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       cardTheme: CardThemeData(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: backgroundWhite,
         shadowColor: cardShadow,
       ),
@@ -151,9 +135,9 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return primaryYellow.withOpacity(0.3);
+            return primaryYellow.withValues(alpha: 0.3);
           }
-          return textLight.withOpacity(0.3);
+          return textLight.withValues(alpha: 0.3);
         }),
       ),
     );
@@ -164,7 +148,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: darkBackground,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: primaryYellow,
         onPrimary: textDark,
         secondary: accentOrange,
@@ -231,23 +215,18 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
-             
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryYellow,
           foregroundColor: textDark,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       cardTheme: CardThemeData(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: darkSurface,
         shadowColor: darkShadow,
       ),
@@ -272,15 +251,12 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return primaryYellow.withOpacity(0.3);
+            return primaryYellow.withValues(alpha: 0.3);
           }
-          return darkTextTertiary.withOpacity(0.3);
+          return darkTextTertiary.withValues(alpha: 0.3);
         }),
       ),
-      dividerTheme: const DividerThemeData(
-        color: darkBorder,
-        thickness: 1,
-      ),
+      dividerTheme: const DividerThemeData(color: darkBorder, thickness: 1),
     );
   }
-} 
+}

@@ -1,30 +1,38 @@
 import 'package:get/get.dart';
-import '../models/property_model.dart';
-import '../models/unified_filter_model.dart';
-import '../models/unified_property_response.dart';
-import '../providers/api_service.dart';
-import '../../utils/debug_logger.dart';
+
+import 'package:ghar360/core/controllers/offline_queue_service.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/data/models/unified_property_response.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class SwipesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
 
   // Record a swipe action
-  Future<void> recordSwipe({
-    required int propertyId,
-    required bool isLiked,
-  }) async {
+  Future<void> recordSwipe({required int propertyId, required bool isLiked}) async {
     try {
       DebugLogger.api('👆 RECORDING SWIPE: ${isLiked ? 'LIKE' : 'DISLIKE'} property $propertyId');
       DebugLogger.api('🔄 Swipe will update liked status to: $isLiked');
 
-      await _apiService.swipeProperty(
-        propertyId,
-        isLiked,
-      );
+      await _apiService.swipeProperty(propertyId, isLiked);
 
       DebugLogger.success('✅ Swipe recorded successfully');
-    } catch (e) {
-      DebugLogger.error('❌ Failed to record swipe: $e');
+    } on AppException catch (e) {
+      // If it's a network error, enqueue for retry instead of failing hard
+      if (e is NetworkException) {
+        DebugLogger.warning('🌐 Network error, queuing swipe for retry: ${e.message}');
+        try {
+          final queue = Get.find<OfflineQueueService>();
+          await queue.enqueueSwipe(propertyId: propertyId, isLiked: isLiked);
+        } catch (qErr) {
+          DebugLogger.error('💥 Failed to enqueue swipe: $qErr');
+        }
+        return; // swallow network errors after enqueueing
+      }
+      DebugLogger.error('❌ Failed to record swipe: ${e.message}');
       rethrow;
     }
   }
@@ -32,6 +40,8 @@ class SwipesRepository extends GetxService {
   // Get swipe history properties with comprehensive filtering
   Future<UnifiedPropertyResponse> getSwipeHistoryProperties({
     required UnifiedFilterModel filters,
+    double? latitude,
+    double? longitude,
     int page = 1,
     int limit = 50,
     bool? isLiked,
@@ -45,8 +55,8 @@ class SwipesRepository extends GetxService {
       DebugLogger.api('🔍 Fetching swipes with new API format');
       final responseJson = await _apiService.getSwipes(
         // Location & Search
-        lat: filters.latitude,
-        lng: filters.longitude,
+        lat: latitude,
+        lng: longitude,
         radius: filters.radiusKm?.toInt(),
         q: filters.searchQuery,
 
@@ -61,11 +71,6 @@ class SwipesRepository extends GetxService {
         bathroomsMax: filters.bathroomsMax,
         areaMin: filters.areaMin,
         areaMax: filters.areaMax,
-
-        // Location Filters
-        city: filters.city,
-        locality: filters.locality,
-        pincode: filters.pincode,
 
         // Additional Filters
         amenities: filters.amenities,
@@ -88,14 +93,26 @@ class SwipesRepository extends GetxService {
         limit: limit,
       );
 
+      // Log raw API response for debugging
+      DebugLogger.api('📊 [SWIPES_REPO] RAW API RESPONSE: $responseJson');
+
       // Parse properties from the new response format
       final List<dynamic> propertiesJson = responseJson['properties'] ?? [];
-      DebugLogger.api('📦 New API format: Found ${propertiesJson.length} properties in response');
-      final properties = propertiesJson.map((json) {
-        final property = PropertyModel.fromJson(json);
-        DebugLogger.api('🏠 Property: ${property.title} (liked: ${property.liked})');
-        return property;
-      }).toList();
+      DebugLogger.api(
+        '📦 [SWIPES_REPO] New API format: Found ${propertiesJson.length} properties in response',
+      );
+
+      final properties = <PropertyModel>[];
+      for (int i = 0; i < propertiesJson.length; i++) {
+        try {
+          final property = PropertyModel.fromJson(propertiesJson[i]);
+          properties.add(property);
+        } catch (e) {
+          DebugLogger.error('❌ [SWIPES_REPO] Error parsing property ${i + 1}: $e');
+          DebugLogger.error('❌ [SWIPES_REPO] Property data: ${propertiesJson[i]}');
+          // Continue with other properties instead of failing entirely
+        }
+      }
 
       // Create UnifiedPropertyResponse with the new format
       final response = UnifiedPropertyResponse(
@@ -105,20 +122,32 @@ class SwipesRepository extends GetxService {
         totalPages: responseJson['total_pages'] ?? 1,
         limit: responseJson['limit'] ?? limit,
         filtersApplied: responseJson['filters_applied'] ?? filters.toJson(),
-        searchCenter: responseJson['search_center'] != null
-          ? SearchCenter(
-              latitude: responseJson['search_center']['latitude'],
-              longitude: responseJson['search_center']['longitude'],
-            )
-          : null,
+        searchCenter: () {
+          try {
+            final searchCenterData = responseJson['search_center'];
+            if (searchCenterData != null) {
+              final lat = searchCenterData['latitude'] ?? searchCenterData['lat'];
+              final lng = searchCenterData['longitude'] ?? searchCenterData['lng'];
+              num? toNum(dynamic v) => v is num ? v : (v is String ? num.tryParse(v) : null);
+              final nLat = toNum(lat), nLng = toNum(lng);
+              if (nLat != null && nLng != null) {
+                return SearchCenter(latitude: nLat.toDouble(), longitude: nLng.toDouble());
+              }
+            }
+            return null;
+          } catch (e) {
+            DebugLogger.error('❌ [SWIPES_REPO] Error creating SearchCenter: $e');
+            return null;
+          }
+        }(),
       );
 
       DebugLogger.success(
         '✅ Loaded ${response.properties.length} properties from swipe history (page ${response.page}/${response.totalPages})',
       );
       return response;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch swipe history properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch swipe history properties: ${e.message}');
       rethrow;
     }
   }
@@ -126,6 +155,8 @@ class SwipesRepository extends GetxService {
   // Get liked properties via server-side history endpoint
   Future<List<PropertyModel>> getLikedProperties({
     required UnifiedFilterModel filters,
+    double? latitude,
+    double? longitude,
     int page = 1,
     int limit = 50,
   }) async {
@@ -133,13 +164,15 @@ class SwipesRepository extends GetxService {
       DebugLogger.api('❤️ Fetching liked properties (server-side): page=$page, limit=$limit');
       final response = await getSwipeHistoryProperties(
         filters: filters,
+        latitude: latitude,
+        longitude: longitude,
         page: page,
         limit: limit,
         isLiked: true,
       );
       return response.properties;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch liked properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch liked properties: ${e.message}');
       rethrow;
     }
   }
@@ -147,6 +180,8 @@ class SwipesRepository extends GetxService {
   // Get passed properties via server-side history endpoint
   Future<List<PropertyModel>> getPassedProperties({
     required UnifiedFilterModel filters,
+    double? latitude,
+    double? longitude,
     int page = 1,
     int limit = 50,
   }) async {
@@ -154,13 +189,15 @@ class SwipesRepository extends GetxService {
       DebugLogger.api('👎 Fetching passed properties (server-side): page=$page, limit=$limit');
       final response = await getSwipeHistoryProperties(
         filters: filters,
+        latitude: latitude,
+        longitude: longitude,
         page: page,
         limit: limit,
         isLiked: false,
       );
       return response.properties;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch passed properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch passed properties: ${e.message}');
       rethrow;
     }
   }
@@ -168,6 +205,8 @@ class SwipesRepository extends GetxService {
   // Get liked properties (new format - no swipe IDs needed)
   Future<List<PropertyModel>> getLikedPropertiesWithSwipeIds({
     required UnifiedFilterModel filters,
+    double? latitude,
+    double? longitude,
     int page = 1,
     int limit = 50,
   }) async {
@@ -176,6 +215,8 @@ class SwipesRepository extends GetxService {
 
       final response = await getSwipeHistoryProperties(
         filters: filters,
+        latitude: latitude,
+        longitude: longitude,
         page: page,
         limit: limit,
         isLiked: true,
@@ -183,8 +224,8 @@ class SwipesRepository extends GetxService {
 
       DebugLogger.success('✅ Loaded ${response.properties.length} liked properties');
       return response.properties;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch liked properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch liked properties: ${e.message}');
       rethrow;
     }
   }
@@ -202,5 +243,4 @@ class SwipesRepository extends GetxService {
       isLiked: null, // Get both liked and disliked
     );
   }
-
 }
