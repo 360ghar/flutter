@@ -5,7 +5,7 @@ class AppTranslations extends Translations {
   Map<String, Map<String, String>> get keys => {
     'en_US': {
       // General
-      'app_name': '360ghar',
+      'app_name': '360 Ghar',
       'loading': 'Loading...',
       'loading_properties': 'Loading properties...',
       'loading_page': 'Loading page {current} of {total}...',
@@ -469,7 +469,7 @@ class AppTranslations extends Translations {
     },
     'hi_IN': {
       // General
-      'app_name': '360गहर',
+      'app_name': '360 Ghar',
       'loading': 'लोड हो रहा है...',
       'loading_properties': 'संपत्तियाँ लोड हो रही हैं...',
       'loading_page': 'पृष्ठ {current} का {total} लोड हो रहा है...',
