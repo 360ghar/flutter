@@ -1,8 +1,9 @@
 import 'package:get/get.dart';
-import '../data/providers/api_service.dart';
-import 'debug_logger.dart';
-import '../../features/visits/controllers/visits_controller.dart';
-import '../controllers/localization_controller.dart';
+
+import 'package:ghar360/core/controllers/localization_controller.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/features/visits/controllers/visits_controller.dart';
 
 class DependencyManager {
   static final Map<String, bool> _initializedServices = {};

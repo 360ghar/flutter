@@ -14,7 +14,7 @@ description: Dart coding style and naming conventions
 - **Files**: `snake_case.dart` (e.g., `property_details_view.dart`)
 - **Classes**: `UpperCamelCase` (e.g., `PropertyDetailsController`)
 - **Variables/Methods**: `lowerCamelCase` (e.g., `userProfile`, `getUserData()`)
-- **Constants**: `UPPER_SNAKE_CASE` (e.g., `API_BASE_URL`)
+- **Constants**: `lowerCamelCase` (e.g., `apiBaseUrl`)
 
 ## File Structure Patterns
 - **Views**: `*_view.dart` (UI screens and components)

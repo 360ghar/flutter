@@ -1,15 +1,17 @@
 // lib/core/controllers/auth_controller.dart
 
 import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:ghar360/core/data/models/auth_status.dart';
 import 'package:ghar360/core/data/models/user_model.dart';
+import 'package:ghar360/core/data/repositories/profile_repository.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_handler.dart';
 import 'package:ghar360/features/auth/data/auth_repository.dart';
-import 'package:ghar360/core/data/models/auth_status.dart';
-import 'package:ghar360/core/data/repositories/profile_repository.dart';
-import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthController extends GetxController {
   // Dependencies (Lazy loaded to avoid circular dependency issues)
@@ -28,17 +30,21 @@ class AuthController extends GetxController {
   final Rx<AuthStatus> authStatus = AuthStatus.initial.obs;
   final Rxn<UserModel> currentUser = Rxn<UserModel>();
   final RxBool isLoading = false.obs;
+  final Rxn<RouteSettings> redirectRoute = Rxn<RouteSettings>();
+  final RxInt _profileCompletionPercentage = 0.obs;
 
   StreamSubscription<User?>? _authSubscription;
   Timer? _debounceTimer;
   User? _lastProcessedUser;
   Worker? _authStatusWorker;
+  Worker? _currentUserWorker;
 
   @override
   void onInit() {
     super.onInit();
     // Set up navigation worker BEFORE initializing so initial state changes trigger navigation
     _setupNavigationWorker();
+    _setupCurrentUserWorker();
     _initialize();
 
     // Ensure we handle the current state once (in case no change occurs after setup)
@@ -64,6 +70,14 @@ class AuthController extends GetxController {
   void _setupNavigationWorker() {
     _authStatusWorker = ever(authStatus, _handleAuthNavigation);
     DebugLogger.info('🧭 Navigation worker set up to listen for auth status changes');
+  }
+
+  /// Sets up the current user worker to update profile completion percentage
+  void _setupCurrentUserWorker() {
+    _currentUserWorker = ever(currentUser, (UserModel? user) {
+      _profileCompletionPercentage.value = user?.profileCompletionPercentage ?? 0;
+    });
+    DebugLogger.info('👤 Current user worker set up to update profile completion percentage');
   }
 
   /// Handles navigation based on auth status changes
@@ -96,7 +110,13 @@ class AuthController extends GetxController {
           break;
 
         case AuthStatus.authenticated:
-          if (Get.currentRoute != AppRoutes.dashboard) {
+          // Check if there's a stored redirect route
+          if (redirectRoute.value != null) {
+            DebugLogger.debug(
+              '📱 Navigation worker: Navigating to stored redirect route: ${redirectRoute.value!.name}',
+            );
+            navigateToRedirectRoute();
+          } else if (Get.currentRoute != AppRoutes.dashboard) {
             DebugLogger.debug('📱 Navigation worker: Navigating to Dashboard route');
             Get.offAllNamed(AppRoutes.dashboard);
           }
@@ -326,11 +346,23 @@ class AuthController extends GetxController {
     }
   }
 
+  /// Navigates to the stored redirect route after successful authentication
+  void navigateToRedirectRoute() {
+    final route = redirectRoute.value;
+    if (route != null) {
+      DebugLogger.info('🔄 Navigating to stored redirect route: ${route.name}');
+      Get.offAllNamed(route.name!, arguments: route.arguments);
+      // Clear the stored route after navigation
+      redirectRoute.value = null;
+    }
+  }
+
   @override
   void onClose() {
     _authSubscription?.cancel();
     _debounceTimer?.cancel();
     _authStatusWorker?.dispose();
+    _currentUserWorker?.dispose();
     super.onClose();
   }
 
@@ -338,6 +370,5 @@ class AuthController extends GetxController {
   bool get isAuthenticated => authStatus.value == AuthStatus.authenticated;
   String? get userEmail => currentUser.value?.email;
   String? get userId => _authRepository.currentUser?.id;
-  RxInt get profileCompletionPercentage =>
-      (currentUser.value?.profileCompletionPercentage ?? 0).obs;
+  RxInt get profileCompletionPercentage => _profileCompletionPercentage;
 }

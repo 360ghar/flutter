@@ -1,25 +1,24 @@
 import 'package:get/get.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/data/models/page_state_model.dart';
-import '../../../core/data/models/unified_property_response.dart';
-import '../../../core/data/repositories/properties_repository.dart';
-import '../../../core/data/repositories/swipes_repository.dart';
-import '../../../core/utils/debug_logger.dart';
-import '../../../core/utils/app_exceptions.dart';
-import '../../../core/controllers/page_state_service.dart';
+
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_mapper.dart';
+
+// Controllers should never talk to repositories directly
 
 enum DiscoverState { initial, loading, loaded, empty, error, prefetching }
 
 class DiscoverController extends GetxController {
-  final PropertiesRepository _propertiesRepository = Get.find<PropertiesRepository>();
-  final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
   final PageStateService _pageStateService = Get.find<PageStateService>();
 
   // Reactive state
   final Rx<DiscoverState> state = DiscoverState.initial.obs;
   final RxList<PropertyModel> deck = <PropertyModel>[].obs;
   final RxInt currentIndex = 0.obs;
-  final Rxn<AppError> error = Rxn<AppError>();
+  final Rxn<AppException> error = Rxn<AppException>();
 
   // Pagination
   int _currentPage = 1;
@@ -182,7 +181,7 @@ class DiscoverController extends GetxController {
     } catch (e, stackTrace) {
       DebugLogger.error('❌ Failed to load initial deck', e, stackTrace);
       state.value = DiscoverState.error;
-      error.value = AppError(error: e, stackTrace: stackTrace);
+      error.value = ErrorMapper.mapApiError(e, stackTrace);
     } finally {
       _pageStateService.notifyPageRefreshing(PageType.discover, false);
       // If PageStateService has data, ensure hydration to avoid desync
@@ -201,50 +200,17 @@ class DiscoverController extends GetxController {
     }
 
     try {
-      DebugLogger.api('📚 Loading more properties: page $_currentPage');
-
-      final pageState = _pageStateService.discoverState.value;
-      if (!pageState.hasLocation) {
-        throw Exception(
-          'User location is required for property recommendations. Please enable location services.',
-        );
-      }
-
-      final response = await _propertiesRepository.getProperties(
-        filters: _pageStateService.getCurrentPageState().filters,
-        page: _currentPage,
-        limit: _limit,
-        latitude: pageState.selectedLocation!.latitude,
-        longitude: pageState.selectedLocation!.longitude,
-        radiusKm: _pageStateService.getCurrentPageState().filters.radiusKm ?? 10.0,
-        excludeSwiped: true,
-        useCache: true,
-      );
-
-      _updatePaginationInfo(response);
-
-      // Add new properties to deck (avoiding duplicates)
-      final newProperties = response.properties.where((newProp) {
-        return !deck.any((existingProp) => existingProp.id == newProp.id);
-      }).toList();
-
-      deck.addAll(newProperties);
-      DebugLogger.success(
-        '✅ Added ${newProperties.length} new properties to deck (total: ${deck.length})',
-      );
+      DebugLogger.api('📚 Triggering PageStateService to load more properties');
+      await _pageStateService.loadMoreData(PageType.discover);
+      // Hydrate from updated PageState
+      _hydrateDeckFromPageState(_pageStateService.discoverState.value);
     } catch (e) {
       DebugLogger.error('❌ Failed to load more properties: $e');
       rethrow;
     }
   }
 
-  void _updatePaginationInfo(UnifiedPropertyResponse response) {
-    _currentPage++;
-    _totalPages = response.totalPages;
-    _hasMore = response.hasMore;
-
-    DebugLogger.api('📊 Pagination updated: page $_currentPage/$_totalPages, hasMore: $_hasMore');
-  }
+  // Pagination is derived from PageStateService via hydration
 
   // Swipe actions
   Future<void> swipeRight(PropertyModel property) async {
@@ -264,15 +230,7 @@ class DiscoverController extends GetxController {
       // Optimistic update - move to next card immediately
       _moveToNextCard();
 
-      // Optimistically reflect state across pages
-      _pageStateService.removePropertyFromDiscover(property.id);
-      if (isLiked) {
-        _pageStateService.addPropertyToLikes(property);
-      } else {
-        _pageStateService.addPropertyToPassed(property);
-      }
-
-      // Record swipe in background
+      // Delegate swipe mutation + backend sync to PageStateService
       _recordSwipeAsync(property.id, isLiked);
 
       // Check if we need to prefetch more properties
@@ -297,11 +255,12 @@ class DiscoverController extends GetxController {
   }
 
   void _recordSwipeAsync(int propertyId, bool isLiked) {
-    // Record swipe asynchronously without blocking UI
-    _swipesRepository.recordSwipe(propertyId: propertyId, isLiked: isLiked).catchError((e) {
-      DebugLogger.error('❌ Failed to record swipe for property $propertyId: $e');
-      // Could add to retry queue here
-    });
+    // Delegate recording to PageStateService for unidirectional flow
+    _pageStateService
+        .recordSwipe(propertyId: propertyId, isLiked: isLiked)
+        .catchError(
+          (e) => DebugLogger.error('❌ Failed to record swipe for property $propertyId: $e'),
+        );
   }
 
   void _recordSwipeStats(bool isLiked) {

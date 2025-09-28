@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import '../../../core/utils/webview_helper.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/debug_logger.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/webview_helper.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class PropertyCard extends StatelessWidget {
   final PropertyModel property;
@@ -25,184 +25,182 @@ class PropertyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    return Obx(
-      () => Card(
-        margin: const EdgeInsets.only(bottom: 16),
-        color: AppColors.propertyCardBackground,
-        shadowColor: AppColors.shadowColor,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // Prevent unbounded height
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                children: [
-                  RobustNetworkImage(
-                    imageUrl: property.mainImage,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    memCacheWidth: 400,
-                    memCacheHeight: 200,
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      color: AppColors.propertyCardBackground,
+      shadowColor: AppColors.shadowColor,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Prevent unbounded height
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                RobustNetworkImage(
+                  imageUrl: property.mainImage,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  memCacheWidth: 400,
+                  memCacheHeight: 200,
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        isFavourite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavourite ? AppColors.favoriteActive : colorScheme.onPrimary,
                       ),
-                      child: IconButton(
-                        icon: Icon(
-                          isFavourite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavourite ? AppColors.favoriteActive : colorScheme.onPrimary,
-                        ),
-                        onPressed: onFavouriteToggle,
-                      ),
+                      onPressed: onFavouriteToggle,
                     ),
                   ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min, // Prevent unbounded height
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            property.title,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.propertyCardText,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          property.formattedPrice,
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // Prevent unbounded height
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          property.title,
                           style: TextStyle(
                             fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.propertyCardPrice,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.propertyCardText,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        property.formattedPrice,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.propertyCardPrice,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    property.shortAddressDisplay,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.propertyCardSubtext,
+                      height: 1.4,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      _buildFeature(Icons.bed, '${property.bedrooms} Beds'),
+                      const SizedBox(width: 16),
+                      _buildFeature(Icons.bathtub_outlined, '${property.bathrooms} Baths'),
+                      const SizedBox(width: 16),
+                      _buildFeature(Icons.square_foot, '${property.areaSqft} sqft'),
+                    ],
+                  ),
+
+                  // 360° Tour Embedded Section
+                  if (property.virtualTourUrl != null && property.virtualTourUrl!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.threesixty, size: 20, color: AppColors.primaryYellow),
+                            const SizedBox(width: 8),
+                            Text(
+                              '360° Virtual Tour',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const Spacer(),
+                            InkWell(
+                              onTap: () {
+                                Get.toNamed('/tour', arguments: property.virtualTourUrl);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.primaryYellow.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.fullscreen,
+                                      size: 14,
+                                      color: AppColors.primaryYellow,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Fullscreen',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.primaryYellow,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // 360° Tour with Gesture Blocking to prevent card swipe interference
+                        GestureDetector(
+                          // Absorb pan gestures to prevent parent swipe detection
+                          onPanStart: (_) {},
+                          onPanUpdate: (_) {},
+                          onPanEnd: (_) {},
+                          child: Container(
+                            height: 320,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                              boxShadow: AppColors.getCardShadow(),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: _Embedded360Tour(tourUrl: property.virtualTourUrl!),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      property.addressDisplay,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.propertyCardSubtext,
-                        height: 1.4,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        _buildFeature(Icons.bed, '${property.bedrooms} Beds'),
-                        const SizedBox(width: 16),
-                        _buildFeature(Icons.bathtub_outlined, '${property.bathrooms} Baths'),
-                        const SizedBox(width: 16),
-                        _buildFeature(Icons.square_foot, '${property.areaSqft} sqft'),
-                      ],
-                    ),
-
-                    // 360° Tour Embedded Section
-                    if (property.virtualTourUrl != null && property.virtualTourUrl!.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.threesixty, size: 20, color: AppColors.primaryYellow),
-                              const SizedBox(width: 8),
-                              Text(
-                                '360° Virtual Tour',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const Spacer(),
-                              InkWell(
-                                onTap: () {
-                                  Get.toNamed('/tour', arguments: property.virtualTourUrl);
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryYellow.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppColors.primaryYellow.withValues(alpha: 0.3),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.fullscreen,
-                                        size: 14,
-                                        color: AppColors.primaryYellow,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Fullscreen',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.primaryYellow,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          // 360° Tour with Gesture Blocking to prevent card swipe interference
-                          GestureDetector(
-                            // Absorb pan gestures to prevent parent swipe detection
-                            onPanStart: (_) {},
-                            onPanUpdate: (_) {},
-                            onPanEnd: (_) {},
-                            child: Container(
-                              height: 320,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.border),
-                                boxShadow: AppColors.getCardShadow(),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: _Embedded360Tour(tourUrl: property.virtualTourUrl!),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -387,7 +385,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 2),
+                  const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 2),
                   const SizedBox(height: 8),
                   Text(
                     'Loading 360° Tour...',

@@ -16,7 +16,7 @@ analyzer:
     - "**/*.freezed.dart"
     - "**/*.gen.dart"
     - "**/*.gr.dart"
-    - "lib/**.mocks.dart"
+    - "**/*.mocks.dart"
 
 # Formatter configuration (picked up by `dart format` and modern IDEs)
 formatter:
@@ -43,7 +43,7 @@ linter:
     - prefer_single_quotes
 
     # Pick one import strategy (uncomment your preference)
-    # - always_use_package_imports   # enforce `package:your_app/...`
+    - always_use_package_imports   # enforce `package:ghar360/...`
     # - prefer_relative_imports     # enforce relative paths inside lib/
 
 # Additional information about this file can be found at

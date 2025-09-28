@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-import '../../../core/controllers/localization_controller.dart';
-import '../../../core/controllers/theme_controller.dart';
+import 'package:ghar360/core/controllers/localization_controller.dart';
+import 'package:ghar360/core/controllers/theme_controller.dart';
 
 class PreferencesController extends GetxController {
   final GetStorage _storage = GetStorage();

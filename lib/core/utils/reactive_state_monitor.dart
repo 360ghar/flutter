@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
-import 'debug_logger.dart';
+
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 /// A utility class to monitor GetX reactive state changes for debugging
 class ReactiveStateMonitor {
   static final Map<String, dynamic> _lastValues = <String, dynamic>{};
+  static final List<StreamSubscription> _subs = <StreamSubscription>[];
 
   /// Monitor an RxList and log changes
   static void monitorRxList<T>(RxList<T> rxList, String name) {
-    rxList.listen((List<T> newList) {
+    final sub = rxList.listen((List<T> newList) {
       final currentLength = newList.length;
       final lastLength = _lastValues[name] as int? ?? -1;
 
@@ -27,11 +31,12 @@ class ReactiveStateMonitor {
         }
       }
     });
+    _subs.add(sub);
   }
 
   /// Monitor an RxBool and log changes
   static void monitorRxBool(RxBool rxBool, String name) {
-    rxBool.listen((bool newValue) {
+    final sub = rxBool.listen((bool newValue) {
       final lastValue = _lastValues[name] as bool?;
 
       if (newValue != lastValue) {
@@ -39,11 +44,12 @@ class ReactiveStateMonitor {
         _lastValues[name] = newValue;
       }
     });
+    _subs.add(sub);
   }
 
   /// Monitor an RxString and log changes
   static void monitorRxString(RxString rxString, String name) {
-    rxString.listen((String newValue) {
+    final sub = rxString.listen((String newValue) {
       final lastValue = _lastValues[name] as String?;
 
       if (newValue != lastValue) {
@@ -53,6 +59,7 @@ class ReactiveStateMonitor {
         _lastValues[name] = newValue;
       }
     });
+    _subs.add(sub);
   }
 
   /// Get a brief description of an item for logging
@@ -122,8 +129,16 @@ class ReactiveStateMonitor {
   }
 
   /// Clear all monitored values (useful for testing)
-  static void clear() {
+  static Future<void> clear() async {
+    // Cancel all stored subscriptions
+    final cancelFutures = _subs.map((sub) => sub.cancel());
+    await Future.wait(cancelFutures);
+
+    // Clear collections
+    _subs.clear();
     _lastValues.clear();
-    DebugLogger.info('🧹 Cleared reactive state monitor history');
+
+    // Log cleared state
+    DebugLogger.info('🧹 Cleared reactive state monitor history (subscriptions canceled)');
   }
 }

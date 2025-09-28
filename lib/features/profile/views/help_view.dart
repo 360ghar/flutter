@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../../../core/mixins/theme_mixin.dart';
-import '../../../core/routes/app_routes.dart';
-import '../../../core/utils/app_colors.dart';
+import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
 
 class HelpView extends StatelessWidget with ThemeMixin {
   const HelpView({super.key});
@@ -301,7 +302,7 @@ class HelpView extends StatelessWidget with ThemeMixin {
                     width: 6,
                     height: 6,
                     margin: const EdgeInsets.only(top: 6, right: 12),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.primaryYellow,
                       shape: BoxShape.circle,
                     ),

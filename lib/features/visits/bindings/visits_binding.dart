@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
-import '../controllers/visits_controller.dart';
+
+import 'package:ghar360/features/visits/controllers/visits_controller.dart';
 
 class VisitsBinding extends Bindings {
   @override

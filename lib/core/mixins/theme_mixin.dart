@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
 mixin ThemeMixin {
@@ -106,7 +107,9 @@ mixin ThemeMixin {
           Switch(
             value: value,
             onChanged: enabled ? onChanged : null,
-            activeThumbColor: theme.colorScheme.primary,
+            thumbColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected) ? theme.colorScheme.primary : null,
+            ),
             activeTrackColor: theme.colorScheme.primary.withValues(alpha: 0.3),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),

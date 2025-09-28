@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
+
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
@@ -237,7 +239,7 @@ class ErrorStates {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${'no_results_message_prefix'.tr} "$searchQuery"',
+                  'no_results_message'.trParams({'query': searchQuery}),
                   style:
                       textTheme.bodyMedium?.copyWith(color: onSurface.withValues(alpha: 0.7)) ??
                       TextStyle(fontSize: 16, color: onSurface.withValues(alpha: 0.7)),

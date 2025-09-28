@@ -23,7 +23,9 @@ class PaginationParams {
   final int page;
   final int limit;
 
-  PaginationParams({this.page = 1, this.limit = 20});
+  const PaginationParams({this.page = 1, this.limit = 20})
+    : assert(page > 0, 'page must be > 0'),
+      assert(limit > 0, 'limit must be > 0');
 
   factory PaginationParams.fromJson(Map<String, dynamic> json) => _$PaginationParamsFromJson(json);
 
@@ -45,7 +47,7 @@ class PaginatedResponse<T> {
   @JsonKey(name: 'has_prev')
   final bool hasPrev;
 
-  PaginatedResponse({
+  const PaginatedResponse({
     required this.items,
     required this.total,
     required this.page,
@@ -86,7 +88,7 @@ class MessageResponse {
   final String message;
   final bool success;
 
-  MessageResponse({required this.message, this.success = true});
+  const MessageResponse({required this.message, this.success = true});
 
   factory MessageResponse.fromJson(Map<String, dynamic> json) => _$MessageResponseFromJson(json);
 
@@ -100,7 +102,7 @@ class ErrorResponse {
   final String? errorCode;
   final Map<String, dynamic>? details;
 
-  ErrorResponse({required this.message, this.errorCode, this.details});
+  const ErrorResponse({required this.message, this.errorCode, this.details});
 
   factory ErrorResponse.fromJson(Map<String, dynamic> json) => _$ErrorResponseFromJson(json);
 
@@ -117,7 +119,7 @@ class SearchParams {
   final int page;
   final int limit;
 
-  SearchParams({
+  const SearchParams({
     this.query,
     this.latitude,
     this.longitude,
@@ -146,7 +148,7 @@ class NotificationSettings {
   @JsonKey(name: 'promotional_emails')
   final bool promotionalEmails;
 
-  NotificationSettings({
+  const NotificationSettings({
     this.emailNotifications = true,
     this.pushNotifications = true,
     this.smsNotifications = false,
@@ -188,7 +190,7 @@ class PrivacySettings {
   @JsonKey(name: 'contact_sharing')
   final bool contactSharing;
 
-  PrivacySettings({
+  const PrivacySettings({
     this.profileVisibility = 'public',
     this.locationSharing = true,
     this.contactSharing = true,
@@ -220,7 +222,7 @@ class LocationUpdate {
   final double latitude;
   final double longitude;
 
-  LocationUpdate({required this.latitude, required this.longitude});
+  const LocationUpdate({required this.latitude, required this.longitude});
 
   factory LocationUpdate.fromJson(Map<String, dynamic> json) => _$LocationUpdateFromJson(json);
 

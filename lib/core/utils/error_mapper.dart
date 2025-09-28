@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'dart:io';
+
 import 'package:get/get.dart';
-import '../data/providers/api_service.dart';
-import 'null_check_trap.dart';
-import 'app_exceptions.dart';
-import 'debug_logger.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/null_check_trap.dart';
+import 'package:universal_io/io.dart';
 
 class ErrorMapper {
   // Map API errors to user-friendly messages
@@ -15,15 +16,6 @@ class ErrorMapper {
       error,
       stackTrace,
     );
-
-    // ADD THIS BLOCK AT THE TOP
-    // ==========================================================
-    if (error is String) {
-      NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError(String)');
-      // Return a generic exception for string errors.
-      return NetworkException('An unexpected error occurred. Please try again.', details: error);
-    }
-    // ==========================================================
 
     // Special handling for null check operator errors
     // Only emit deep stack analysis for non-String errors to reduce log noise

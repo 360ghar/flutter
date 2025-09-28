@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
-import '../controllers/likes_controller.dart';
+
+import 'package:ghar360/features/likes/controllers/likes_controller.dart';
 
 class LikesBinding extends Bindings {
   @override

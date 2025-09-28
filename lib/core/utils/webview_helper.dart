@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'debug_logger.dart';
 
 class WebViewHelper {
   static bool _isInitialized = false;
@@ -62,6 +62,7 @@ class WebViewHelper {
 
   /// Create a safe WebView widget with error handling
   static Widget createSafeWebView({
+    required BuildContext context,
     required String url,
     double? width,
     double? height,
@@ -88,33 +89,37 @@ class WebViewHelper {
       );
     } catch (e) {
       DebugLogger.error('Error creating safe WebView', e);
-      return errorWidget ?? _buildErrorWidget(width, height, url);
+      return errorWidget ?? _buildErrorWidget(context, width, height, url);
     }
   }
 
   /// Build error widget when WebView fails
-  static Widget _buildErrorWidget(double? width, double? height, String url) {
+  static Widget _buildErrorWidget(BuildContext context, double? width, double? height, String url) {
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.public_off, size: 48, color: Colors.grey[400]),
+          Icon(Icons.public_off, size: 48, color: Theme.of(context).colorScheme.outline),
           const SizedBox(height: 16),
           Text(
-            '360° Tour Unavailable',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+            'tour_unavailable_title'.tr,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Virtual tour could not be loaded',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            'tour_unavailable_body'.tr,
+            style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           if (kIsWeb)
@@ -137,11 +142,7 @@ class WebViewHelper {
 
   /// Check if WebView is supported on current platform
   static bool get isSupported {
-    try {
-      ensureInitialized();
-      return true;
-    } catch (e) {
-      return false;
-    }
+    ensureInitialized();
+    return _isInitialized;
   }
 }

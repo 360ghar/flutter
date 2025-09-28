@@ -1,6 +1,8 @@
 // lib/features/auth/bindings/signup_binding.dart
+
 import 'package:get/get.dart';
-import '../controllers/signup_controller.dart';
+
+import 'package:ghar360/features/auth/controllers/signup_controller.dart';
 
 class SignUpBinding extends Bindings {
   @override

@@ -1,14 +1,15 @@
 import 'package:get/get.dart';
-import '../controllers/dashboard_controller.dart';
-import '../../../core/controllers/page_state_service.dart';
-import '../../../core/data/repositories/properties_repository.dart';
-import '../../../core/data/repositories/swipes_repository.dart';
-import '../../../core/data/repositories/profile_repository.dart';
-import '../../profile/bindings/profile_binding.dart';
-import '../../explore/bindings/explore_binding.dart';
-import '../../discover/bindings/discover_binding.dart';
-import '../../likes/bindings/likes_binding.dart';
-import '../../visits/bindings/visits_binding.dart';
+
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/repositories/profile_repository.dart';
+import 'package:ghar360/core/data/repositories/properties_repository.dart';
+import 'package:ghar360/core/data/repositories/swipes_repository.dart';
+import 'package:ghar360/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:ghar360/features/discover/bindings/discover_binding.dart';
+import 'package:ghar360/features/explore/bindings/explore_binding.dart';
+import 'package:ghar360/features/likes/bindings/likes_binding.dart';
+import 'package:ghar360/features/profile/bindings/profile_binding.dart';
+import 'package:ghar360/features/visits/bindings/visits_binding.dart';
 
 class DashboardBinding extends Bindings {
   @override

@@ -95,7 +95,7 @@ jobs:
         fi
 
     - name: Cache Flutter dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.pub-cache
@@ -108,7 +108,7 @@ jobs:
           flutter-dart-${{ runner.os }}-
 
     - name: Cache Gradle dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.gradle/caches
@@ -119,7 +119,7 @@ jobs:
           gradle-${{ runner.os }}-
 
     - name: Cache Android SDK
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ${{ env.ANDROID_SDK_ROOT }}/platforms

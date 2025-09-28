@@ -1,12 +1,14 @@
-import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/data/models/visit_model.dart';
-import '../../../core/data/models/agent_model.dart';
-import '../../../core/data/providers/api_service.dart';
-import '../../../core/controllers/auth_controller.dart';
-import '../../../core/utils/debug_logger.dart'; // Added missing import
-import '../../dashboard/controllers/dashboard_controller.dart';
+import 'package:get/get.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/controllers/offline_queue_service.dart';
+import 'package:ghar360/core/data/models/agent_model.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/visit_model.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart'; // Added missing import
+import 'package:ghar360/features/dashboard/controllers/dashboard_controller.dart';
 
 class VisitsController extends GetxController {
   late final ApiService _apiService;
@@ -142,10 +144,7 @@ class VisitsController extends GetxController {
       final summary = await _apiService.getVisitsSummary();
       var allVisits = summary.visits;
       DebugLogger.info(
-        '📥 Visits fetched: total=${allVisits.length} | example=' +
-            (allVisits.isNotEmpty
-                ? '{id: ${allVisits.first.id}, status: ${allVisits.first.status}, date: ${allVisits.first.scheduledDate.toIso8601String()}}'
-                : 'none'),
+        '📥 Visits fetched: total=${allVisits.length} | example=${allVisits.isNotEmpty ? '{id: ${allVisits.first.id}, status: ${allVisits.first.status}, date: ${allVisits.first.scheduledDate.toIso8601String()}}' : 'none'}',
       );
 
       // Fallback: some backends may return counts without visits payload on summary
@@ -308,6 +307,29 @@ class VisitsController extends GetxController {
     } catch (e) {
       error.value = e.toString();
       DebugLogger.error('Error booking visit: $e');
+
+      // Enqueue for offline retry if this is a network exception
+      if (e is AppException && e is NetworkException) {
+        try {
+          final queue = Get.find<OfflineQueueService>();
+          await queue.enqueueVisit(
+            propertyId: property is PropertyModel
+                ? int.tryParse(property.id.toString()) ?? 0
+                : property.id as int,
+            scheduledDate: visitDateTime.toUtc().toIso8601String(),
+            specialRequirements: notes ?? 'Property visit scheduled through 360ghar app',
+          );
+          Get.snackbar(
+            'Queued Offline',
+            'No internet. Your visit will be scheduled automatically once back online.',
+            snackPosition: SnackPosition.TOP,
+            duration: const Duration(seconds: 4),
+          );
+          return false;
+        } catch (qErr) {
+          DebugLogger.error('Failed to enqueue visit booking: $qErr');
+        }
+      }
 
       Get.snackbar(
         'Booking Failed',

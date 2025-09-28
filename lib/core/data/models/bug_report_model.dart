@@ -1,4 +1,27 @@
+import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
+
+part 'bug_report_model.g.dart';
+
+class BugTypeConverter implements JsonConverter<BugType, String> {
+  const BugTypeConverter();
+
+  @override
+  BugType fromJson(String json) => BugType.fromValue(json);
+
+  @override
+  String toJson(BugType object) => object.value;
+}
+
+class BugSeverityConverter implements JsonConverter<BugSeverity, String> {
+  const BugSeverityConverter();
+
+  @override
+  BugSeverity fromJson(String json) => BugSeverity.fromValue(json);
+
+  @override
+  String toJson(BugSeverity object) => object.value;
+}
 
 /// Represents allowed bug categories for feedback submissions.
 enum BugType {
@@ -44,6 +67,7 @@ enum BugSeverity {
 
 /// Request payload for creating a new bug report.
 @immutable
+@JsonSerializable(fieldRename: FieldRename.snake)
 class BugReportRequest {
   const BugReportRequest({
     required this.source,
@@ -59,53 +83,35 @@ class BugReportRequest {
     this.tags,
   });
 
+  factory BugReportRequest.fromJson(Map<String, dynamic> json) => _$BugReportRequestFromJson(json);
+
   final String source;
+  @BugTypeConverter()
   final BugType bugType;
+  @BugSeverityConverter()
   final BugSeverity severity;
   final String title;
   final String description;
+  @JsonKey(includeIfNull: false)
   final String? stepsToReproduce;
+  @JsonKey(includeIfNull: false)
   final String? expectedBehavior;
+  @JsonKey(includeIfNull: false)
   final String? actualBehavior;
+  @JsonKey(includeIfNull: false)
   final Map<String, dynamic>? deviceInfo;
+  @JsonKey(includeIfNull: false)
   final String? appVersion;
+  @JsonKey(includeIfNull: false)
   final List<String>? tags;
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> json = {
-      'source': source,
-      'bug_type': bugType.value,
-      'severity': severity.value,
-      'title': title,
-      'description': description,
-    };
-
-    if (stepsToReproduce != null && stepsToReproduce!.trim().isNotEmpty) {
-      json['steps_to_reproduce'] = stepsToReproduce;
-    }
-    if (expectedBehavior != null && expectedBehavior!.trim().isNotEmpty) {
-      json['expected_behavior'] = expectedBehavior;
-    }
-    if (actualBehavior != null && actualBehavior!.trim().isNotEmpty) {
-      json['actual_behavior'] = actualBehavior;
-    }
-    if (deviceInfo != null && deviceInfo!.isNotEmpty) {
-      json['device_info'] = deviceInfo;
-    }
-    if (appVersion != null && appVersion!.trim().isNotEmpty) {
-      json['app_version'] = appVersion;
-    }
-    if (tags != null && tags!.isNotEmpty) {
-      json['tags'] = tags;
-    }
-
-    return json;
-  }
+  Map<String, dynamic> toJson() => _$BugReportRequestToJson(this);
 }
 
 /// Response returned after successfully submitting a bug report.
+@JsonSerializable(fieldRename: FieldRename.snake)
 class BugReportResponse {
-  BugReportResponse({
+  const BugReportResponse({
     required this.id,
     required this.source,
     required this.bugType,
@@ -124,14 +130,26 @@ class BugReportResponse {
     this.assignedTo,
     this.resolution,
     this.resolvedAt,
-    required this.createdAt,
+    this.createdAt,
     this.updatedAt,
   });
+
+  factory BugReportResponse.fromJson(Map<String, dynamic> json) {
+    // Validate required id field to fail fast instead of defaulting to 0
+    final idValue = json['id'];
+    if (idValue is! num) {
+      throw const FormatException('BugReportResponse.id is required and must be numeric');
+    }
+
+    return _$BugReportResponseFromJson(json);
+  }
 
   final int id;
   final int? userId;
   final String source;
+  @BugTypeConverter()
   final BugType bugType;
+  @BugSeverityConverter()
   final BugSeverity severity;
   final String status;
   final String title;
@@ -146,69 +164,8 @@ class BugReportResponse {
   final String? assignedTo;
   final String? resolution;
   final DateTime? resolvedAt;
-  final DateTime createdAt;
+  final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  factory BugReportResponse.fromJson(Map<String, dynamic> json) {
-    final media = <String>[];
-    if (json['media_urls'] is List) {
-      media.addAll(
-        (json['media_urls'] as List)
-            .whereType<String>()
-            .map((url) => url.trim())
-            .where((url) => url.isNotEmpty),
-      );
-    }
-
-    final tagsList = <String>[];
-    if (json['tags'] is List) {
-      tagsList.addAll(
-        (json['tags'] as List)
-            .whereType<String>()
-            .map((tag) => tag.trim())
-            .where((tag) => tag.isNotEmpty),
-      );
-    }
-
-    Map<String, dynamic>? parsedDeviceInfo;
-    if (json['device_info'] is Map<String, dynamic>) {
-      parsedDeviceInfo = Map<String, dynamic>.from(json['device_info'] as Map<String, dynamic>);
-    }
-
-    DateTime? _parseDate(dynamic value) {
-      if (value is String && value.isNotEmpty) {
-        return DateTime.tryParse(value);
-      }
-      return null;
-    }
-
-    final createdAt = _parseDate(json['created_at']) ?? DateTime.now();
-
-    return BugReportResponse(
-      id: json['id'] is num ? (json['id'] as num).toInt() : 0,
-      userId: json['user_id'] is num ? (json['user_id'] as num).toInt() : null,
-      source: (json['source'] ?? 'mobile').toString(),
-      bugType: BugType.fromValue(json['bug_type']?.toString()),
-      severity: BugSeverity.fromValue(json['severity']?.toString()),
-      status: (json['status'] ?? 'open').toString(),
-      title: (json['title'] ?? '').toString(),
-      description: (json['description'] ?? '').toString(),
-      stepsToReproduce: json['steps_to_reproduce'] != null
-          ? json['steps_to_reproduce'].toString()
-          : null,
-      expectedBehavior: json['expected_behavior'] != null
-          ? json['expected_behavior'].toString()
-          : null,
-      actualBehavior: json['actual_behavior'] != null ? json['actual_behavior'].toString() : null,
-      deviceInfo: parsedDeviceInfo,
-      appVersion: json['app_version'] != null ? json['app_version'].toString() : null,
-      mediaUrls: media,
-      tags: tagsList,
-      assignedTo: json['assigned_to'] != null ? json['assigned_to'].toString() : null,
-      resolution: json['resolution'] != null ? json['resolution'].toString() : null,
-      resolvedAt: _parseDate(json['resolved_at']),
-      createdAt: createdAt,
-      updatedAt: _parseDate(json['updated_at']),
-    );
-  }
+  Map<String, dynamic> toJson() => _$BugReportResponseToJson(this);
 }

@@ -1,7 +1,12 @@
 // lib/core/data/models/app_update_models.dart
 
+import 'package:json_annotation/json_annotation.dart';
+
+part 'app_update_models.g.dart';
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class AppVersionCheckRequest {
-  AppVersionCheckRequest({
+  const AppVersionCheckRequest({
     required this.app,
     required this.platform,
     required this.currentVersion,
@@ -13,18 +18,15 @@ class AppVersionCheckRequest {
   final String currentVersion;
   final int? buildNumber;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'app': app,
-      'platform': platform,
-      'current_version': currentVersion,
-      if (buildNumber != null) 'build_number': buildNumber,
-    };
-  }
+  factory AppVersionCheckRequest.fromJson(Map<String, dynamic> json) =>
+      _$AppVersionCheckRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AppVersionCheckRequestToJson(this);
 }
 
+@JsonSerializable(fieldRename: FieldRename.snake)
 class AppVersionCheckResponse {
-  AppVersionCheckResponse({
+  const AppVersionCheckResponse({
     required this.updateAvailable,
     required this.isMandatory,
     this.latestVersion,
@@ -40,16 +42,10 @@ class AppVersionCheckResponse {
   final String? releaseNotes;
   final String? minSupportedVersion;
 
-  factory AppVersionCheckResponse.fromJson(Map<String, dynamic> json) {
-    return AppVersionCheckResponse(
-      updateAvailable: json['update_available'] == true,
-      isMandatory: json['is_mandatory'] == true,
-      latestVersion: _stringOrNull(json['latest_version']),
-      downloadUrl: _stringOrNull(json['download_url']),
-      releaseNotes: _stringOrNull(json['release_notes']),
-      minSupportedVersion: _stringOrNull(json['min_supported_version']),
-    );
-  }
+  factory AppVersionCheckResponse.fromJson(Map<String, dynamic> json) =>
+      _$AppVersionCheckResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AppVersionCheckResponseToJson(this);
 
   bool get hasDownloadUrl => (downloadUrl ?? '').isNotEmpty;
 
@@ -72,15 +68,14 @@ class AppVersionCheckResponse {
   }
 }
 
-String? _stringOrNull(dynamic value) {
-  if (value == null) return null;
-  if (value is String) return value.isEmpty ? null : value;
-  return value.toString();
-}
-
+@JsonSerializable(fieldRename: FieldRename.snake)
 class AppVersionInfo {
   const AppVersionInfo({required this.version, this.buildNumber});
 
   final String version;
   final int? buildNumber;
+
+  factory AppVersionInfo.fromJson(Map<String, dynamic> json) => _$AppVersionInfoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AppVersionInfoToJson(this);
 }

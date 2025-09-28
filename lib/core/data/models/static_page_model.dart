@@ -2,7 +2,11 @@ class StaticPageModel {
   final String title;
   final String content;
 
-  StaticPageModel({required this.title, required this.content});
+  const StaticPageModel({required this.title, required this.content});
+
+  factory StaticPageModel.fromJson(Map<String, dynamic> json, {String fallbackTitle = ''}) {
+    return StaticPageModel.fromDynamic(json, fallbackTitle: fallbackTitle);
+  }
 
   factory StaticPageModel.fromDynamic(Map<String, dynamic> json, {String fallbackTitle = ''}) {
     final Map<String, dynamic> root = Map<String, dynamic>.from(json);
@@ -17,5 +21,9 @@ class StaticPageModel {
     final String content = rawContent?.toString() ?? '';
 
     return StaticPageModel(title: title, content: content);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'title': title, 'content': content};
   }
 }

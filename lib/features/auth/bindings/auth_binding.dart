@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
-import '../controllers/login_controller.dart';
-import '../controllers/profile_completion_controller.dart';
+
+import 'package:ghar360/features/auth/controllers/login_controller.dart';
+import 'package:ghar360/features/auth/controllers/profile_completion_controller.dart';
 
 class AuthBinding extends Bindings {
   @override

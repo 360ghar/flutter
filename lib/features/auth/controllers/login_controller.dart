@@ -1,10 +1,12 @@
 // lib/features/auth/controllers/login_controller.dart
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_handler.dart';
+import 'package:ghar360/core/utils/formatters.dart';
+import 'package:ghar360/features/auth/data/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../data/auth_repository.dart';
-import '../../../core/utils/error_handler.dart';
-import '../../../core/utils/debug_logger.dart';
 
 class LoginController extends GetxController {
   final AuthRepository _authRepository = Get.find();
@@ -26,16 +28,6 @@ class LoginController extends GetxController {
     rememberMe.value = !rememberMe.value;
   }
 
-  String _normalizeIndianPhone(String phone) {
-    if (phone.startsWith('+91')) {
-      return phone;
-    }
-    if (phone.length == 10) {
-      return '+91$phone';
-    }
-    return phone; // Return as-is if it doesn't match expected formats
-  }
-
   Future<void> signIn() async {
     if (!formKey.currentState!.validate()) return;
 
@@ -43,7 +35,7 @@ class LoginController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final phone = _normalizeIndianPhone(phoneController.text.trim());
+      final phone = Formatters.normalizeIndianPhone(phoneController.text.trim());
       final password = passwordController.text;
 
       await _authRepository.signInWithPhonePassword(phone, password);

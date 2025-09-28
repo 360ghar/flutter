@@ -21,15 +21,17 @@ This is a Flutter application using **feature-first GetX architecture**. Follow 
   - `core/utils/`: Helper functions and utilities
 
 ## Feature Structure
-- **`lib/features/<feature>/{views,controllers,bindings}/`**: Feature-specific code
+- **`lib/features/<feature>/{views,controllers,bindings,models,widgets}/`**: Feature-specific code
   - `views/`: UI screens and widgets (e.g., `property_details_view.dart`)
   - `controllers/`: Business logic and state management
   - `bindings/`: Feature-specific dependency injection
+  - `models/`: Domain/data models, DTOs
+  - `widgets/`: Reusable UI components
 
 ## Examples
-- `lib/features/auth/{views,controllers,bindings}/`
-- `lib/features/discover/{views,controllers,bindings}/`
-- `lib/features/profile/{views,controllers,bindings}/`
+- `lib/features/auth/{views,controllers,bindings,models,widgets}/`
+- `lib/features/discover/{views,controllers,bindings,models,widgets}/`
+- `lib/features/profile/{views,controllers,bindings,models,widgets}/`
 
 ## File Naming
 - Use `snake_case.dart` for all files

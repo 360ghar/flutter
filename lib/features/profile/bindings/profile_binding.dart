@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
-import '../controllers/edit_profile_controller.dart';
+
+import 'package:ghar360/features/profile/controllers/edit_profile_controller.dart';
 
 class ProfileBinding extends Bindings {
   @override

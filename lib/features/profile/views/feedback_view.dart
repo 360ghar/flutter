@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../../../core/mixins/theme_mixin.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../profile/controllers/feedback_controller.dart';
-import '../../../core/data/models/bug_report_model.dart';
+import 'package:ghar360/core/data/models/bug_report_model.dart';
+import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/features/profile/controllers/feedback_controller.dart';
 
 class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
   const FeedbackView({super.key});
@@ -132,7 +133,7 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
                               const SizedBox(width: 12),
                               Text(
                                 'sending_feedback'.tr,
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                             ],
                           )
@@ -187,15 +188,15 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+          borderSide: const BorderSide(color: AppColors.primaryYellow, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.errorRed),
+          borderSide: const BorderSide(color: AppColors.errorRed),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.errorRed, width: 2),
+          borderSide: const BorderSide(color: AppColors.errorRed, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
@@ -209,7 +210,7 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
     required String Function(T) itemLabel,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       onChanged: onChanged,
       decoration: InputDecoration(
         filled: true,
@@ -224,7 +225,7 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+          borderSide: const BorderSide(color: AppColors.primaryYellow, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       ),

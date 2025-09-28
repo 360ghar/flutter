@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../controllers/splash_controller.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/theme.dart';
+
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/theme.dart';
+import 'package:ghar360/features/splash/controllers/splash_controller.dart';
 
 class SplashView extends GetView<SplashController> {
   const SplashView({super.key});
@@ -47,7 +49,7 @@ class SplashView extends GetView<SplashController> {
               right: 16,
               child: TextButton(
                 onPressed: controller.skipToHome,
-                child: Text(
+                child: const Text(
                   'Skip',
                   style: TextStyle(
                     color: AppTheme.textGray,

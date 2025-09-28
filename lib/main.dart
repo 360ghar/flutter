@@ -5,19 +5,18 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:ghar360/core/bindings/initial_binding.dart';
+import 'package:ghar360/core/controllers/localization_controller.dart';
+import 'package:ghar360/core/controllers/theme_controller.dart';
+import 'package:ghar360/core/routes/app_pages.dart';
+import 'package:ghar360/core/translations/app_translations.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/null_check_trap.dart';
+import 'package:ghar360/core/utils/theme.dart';
+import 'package:ghar360/core/utils/webview_helper.dart';
+import 'package:ghar360/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:ghar360/root.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'core/bindings/initial_binding.dart';
-import 'core/controllers/localization_controller.dart';
-import 'core/controllers/theme_controller.dart';
-import 'core/routes/app_pages.dart';
-import 'core/translations/app_translations.dart';
-import 'core/utils/debug_logger.dart';
-import 'core/utils/null_check_trap.dart';
-import 'core/utils/theme.dart';
-import 'core/utils/webview_helper.dart';
-import 'features/dashboard/controllers/dashboard_controller.dart';
-import 'root.dart';
 
 void main() async {
   runZonedGuarded(
@@ -29,7 +28,7 @@ void main() async {
 
       // Load environment variables first (before DebugLogger initialization)
       try {
-        await dotenv.load(fileName: ".env.development");
+        await dotenv.load(fileName: '.env.development');
       } catch (e) {
         // Continue without .env file - will use defaults
       }
@@ -56,7 +55,7 @@ void main() async {
         await Supabase.initialize(
           url: dotenv.env['SUPABASE_URL'] ?? '',
           anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
-          authOptions: FlutterAuthClientOptions(detectSessionInUri: false),
+          authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
         );
         DebugLogger.success('Supabase initialized successfully');
       } catch (e) {

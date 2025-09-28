@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../controllers/profile_completion_controller.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/theme.dart';
+
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/theme.dart';
+import 'package:ghar360/features/auth/controllers/profile_completion_controller.dart';
 
 class ProfileCompletionView extends StatelessWidget {
   const ProfileCompletionView({super.key});
@@ -142,7 +144,7 @@ class ProfileCompletionView extends StatelessWidget {
       children: [
         Text(
           'personal_information'.tr,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         // Full Name

@@ -1,5 +1,5 @@
+import 'package:ghar360/core/data/models/api_response_models.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'api_response_models.dart';
 
 part 'unified_filter_model.g.dart';
 
@@ -64,7 +64,7 @@ class UnifiedFilterModel {
   @JsonKey(name: 'property_ids')
   final List<int>? propertyIds;
 
-  UnifiedFilterModel({
+  const UnifiedFilterModel({
     this.radiusKm,
     this.purpose,
     this.propertyType,
@@ -93,7 +93,7 @@ class UnifiedFilterModel {
   });
 
   factory UnifiedFilterModel.initial() {
-    return UnifiedFilterModel(
+    return const UnifiedFilterModel(
       radiusKm: 10.0,
       purpose: null,
       sortBy: null,
@@ -243,7 +243,7 @@ class LocationData {
   final double latitude;
   final double longitude;
 
-  LocationData({required this.name, required this.latitude, required this.longitude});
+  const LocationData({required this.name, required this.latitude, required this.longitude});
 
   factory LocationData.fromJson(Map<String, dynamic> json) {
     return LocationData(

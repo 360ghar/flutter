@@ -1,9 +1,10 @@
 // lib/core/widgets/common/app_update_dialog.dart
 
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
 
-import '../../data/models/app_update_models.dart';
+import 'package:ghar360/core/data/models/app_update_models.dart';
 
 enum AppUpdateAction { update, remindLater }
 
@@ -21,8 +22,8 @@ class AppUpdateDialog extends StatelessWidget {
     final latestVersionLabel = response.latestVersion;
     final minSupportedVersion = response.minSupportedVersion;
 
-    return WillPopScope(
-      onWillPop: () async => !isMandatory,
+    return PopScope(
+      canPop: !isMandatory,
       child: AlertDialog(
         title: Text(isMandatory ? 'mandatory_update_required'.tr : 'update_available'.tr),
         content: SingleChildScrollView(
