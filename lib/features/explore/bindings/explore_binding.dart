@@ -1,23 +1,15 @@
 import 'package:get/get.dart';
-import '../controllers/explore_controller.dart';
-import '../../../core/data/repositories/properties_repository.dart';
-import '../../../core/utils/debug_logger.dart';
+
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/features/explore/controllers/explore_controller.dart';
 
 class ExploreBinding extends Bindings {
   @override
   void dependencies() {
     DebugLogger.info('🔧 ExploreBinding dependencies() called.');
-    
-    // Repositories (ApiService already registered in InitialBinding)
-    if (!Get.isRegistered<PropertiesRepository>()) {
-      Get.lazyPut<PropertiesRepository>(() => PropertiesRepository(), fenix: true);
-      DebugLogger.success('✅ PropertiesRepository registered');
-    } else {
-      DebugLogger.info('ℹ️ PropertiesRepository already registered');
-    }
-    
-    // LocationController and FilterService are already registered globally in InitialBinding
-    
+
+    // Repositories and core services are registered in DashboardBinding
+
     // Screen controller
     Get.lazyPut<ExploreController>(() => ExploreController());
     DebugLogger.success('✅ ExploreController registered');

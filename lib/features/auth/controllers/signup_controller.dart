@@ -1,61 +1,35 @@
+// lib/features/auth/controllers/signup_controller.dart
+
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/error_handler.dart';
+import 'package:ghar360/core/utils/formatters.dart';
+import 'package:ghar360/features/auth/data/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/controllers/auth_controller.dart';
-import '../../../core/routes/app_routes.dart';
-import '../../../core/utils/error_handler.dart';
-import '../../../core/utils/debug_logger.dart';
 
-class SignupController extends GetxController {
+class SignUpController extends GetxController {
+  final AuthRepository _authRepository = Get.find();
   final formKey = GlobalKey<FormState>();
-  
-  // Form fields
-  final emailController = TextEditingController();
+
   final phoneController = TextEditingController();
-  final fullNameController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-  
-  // Observable states
+  final otpController = TextEditingController();
+
   final isLoading = false.obs;
   final isPasswordVisible = false.obs;
   final isConfirmPasswordVisible = false.obs;
-  final currentStep = 0.obs; // 0: signup form, 1: email OTP, 2: phone OTP
-  final errorMessage = ''.obs;
-  
-  // OTP related
-  final emailOtpController = TextEditingController();
-  final phoneOtpController = TextEditingController();
-  final canResendEmailOtp = false.obs;
-  final canResendPhoneOtp = false.obs;
-  final emailOtpCountdown = 0.obs;
-  final phoneOtpCountdown = 0.obs;
-  
-  final _supabase = Supabase.instance.client;
-  late final AuthController authController;
+  final isTermsAccepted = false.obs;
+  final RxInt currentStep = 0.obs; // 0 for form, 1 for OTP
+  final RxString errorMessage = ''.obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-    authController = Get.find<AuthController>();
-    _startOtpTimers();
-  }
-
-  void _startOtpTimers() {
-    // Email OTP timer
-    ever(emailOtpCountdown, (int count) {
-      if (count <= 0) {
-        canResendEmailOtp.value = true;
-      }
-    });
-    
-    // Phone OTP timer
-    ever(phoneOtpCountdown, (int count) {
-      if (count <= 0) {
-        canResendPhoneOtp.value = true;
-      }
-    });
-  }
+  final canResendOtp = false.obs;
+  final otpCountdown = 0.obs;
+  Timer? _otpTimer;
+  final RxBool _isControllerDisposed = false.obs;
 
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;
@@ -68,276 +42,141 @@ class SignupController extends GetxController {
   Future<void> signUp() async {
     if (!formKey.currentState!.validate()) return;
 
+    isLoading.value = true;
+    errorMessage.value = '';
+
     try {
-      isLoading.value = true;
-      errorMessage.value = '';
+      final phone = Formatters.normalizeIndianPhone(phoneController.text.trim());
+      final password = passwordController.text;
+      await _authRepository.signUpWithPhonePassword(phone, password);
 
-      // Create account with Supabase
-      final response = await _supabase.auth.signUp(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-        data: {
-          'full_name': fullNameController.text.trim(),
-          'phone': phoneController.text.trim(),
-        },
-      );
+      currentStep.value = 1; // Move to OTP step
+      _startOtpCountdown();
 
-      if (response.user != null) {
-        // Move to email verification step
-        currentStep.value = 1;
-        _startEmailOtpCountdown();
-        
-        ErrorHandler.showSuccess('Verification email sent! Please check your inbox.');
-      } else {
-        throw Exception('Failed to create account');
-      }
-    } catch (e, stackTrace) {
-      errorMessage.value = _getErrorMessage(e);
-      ErrorHandler.handleAuthError(e, onRetry: signUp);
+      Get.snackbar('verify_phone'.tr, 'otp_sent_message'.tr, snackPosition: SnackPosition.TOP);
+
+      DebugLogger.success('Sign up initiated for $phone');
+    } on AuthException catch (e) {
+      errorMessage.value = e.message;
+      ErrorHandler.handleAuthError(e);
+      DebugLogger.error('Sign up failed', e);
+    } catch (e) {
+      errorMessage.value = 'signup_error'.tr;
+      ErrorHandler.handleNetworkError(e);
+      DebugLogger.error('Unexpected signup error', e);
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> verifyEmailOtp() async {
-    if (emailOtpController.text.length != 6) {
-      ErrorHandler.handleValidationError('OTP', 'Please enter a valid 6-digit OTP');
+  Future<void> verifyOtp() async {
+    if (otpController.text.trim().length != 6) {
+      errorMessage.value = 'invalid_otp'.tr;
       return;
     }
 
+    isLoading.value = true;
+    errorMessage.value = '';
+
     try {
-      isLoading.value = true;
-      errorMessage.value = '';
+      final phone = Formatters.normalizeIndianPhone(phoneController.text.trim());
+      await _authRepository.verifyPhoneOtp(phone: phone, token: otpController.text.trim());
 
-      final response = await _supabase.auth.verifyOTP(
-        email: emailController.text.trim(),
-        token: emailOtpController.text,
-        type: OtpType.signup,
-      );
+      // Success! The AuthController will now automatically navigate
+      // the user to the profile completion screen.
+      DebugLogger.success('OTP verification successful for $phone');
+    } on AuthException catch (e) {
+      errorMessage.value = e.message;
+      ErrorHandler.handleAuthError(e);
+      DebugLogger.error('OTP verification failed', e);
+    } catch (e) {
+      errorMessage.value = 'otp_verification_error'.tr;
+      ErrorHandler.handleNetworkError(e);
+      DebugLogger.error('Unexpected OTP verification error', e);
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
-      if (response.user != null) {
-        // Email verified, now verify phone
-        currentStep.value = 2;
-        await _sendPhoneOtp();
-        _startPhoneOtpCountdown();
-      } else {
-        throw Exception('Invalid OTP');
+  Future<void> resendOtp() async {
+    if (canResendOtp.value) {
+      try {
+        isLoading.value = true;
+        final phone = Formatters.normalizeIndianPhone(phoneController.text.trim());
+        await _authRepository.signUpWithPhonePassword(phone, passwordController.text);
+
+        _startOtpCountdown();
+        Get.snackbar('otp_sent'.tr, 'otp_resent_message'.tr);
+
+        DebugLogger.info('OTP resent for signup to $phone');
+      } catch (e) {
+        ErrorHandler.handleAuthError(e);
+        DebugLogger.error('Failed to resend OTP', e);
+      } finally {
+        isLoading.value = false;
       }
-    } catch (e, stackTrace) {
-      errorMessage.value = _getErrorMessage(e);
-      Get.snackbar(
-        'Error',
-        errorMessage.value,
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      isLoading.value = false;
     }
   }
 
-  Future<void> _sendPhoneOtp() async {
-    try {
-      // Send OTP to phone using Supabase
-      await _supabase.auth.signInWithOtp(
-        phone: phoneController.text.trim(),
-      );
-      
-      Get.snackbar(
-        'Success',
-        'OTP sent to your phone number',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } catch (e, stackTrace) {
-      DebugLogger.error('Phone OTP error', e, stackTrace);
-      // For now, we'll skip phone verification if it fails
-      await _completeSignup();
-    }
-  }
+  void _startOtpCountdown() {
+    // Cancel any existing timer first
+    _cancelOtpTimer();
 
-  Future<void> verifyPhoneOtp() async {
-    if (phoneOtpController.text.length != 6) {
-      Get.snackbar(
-        'Error',
-        'Please enter a valid 6-digit OTP',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
+    canResendOtp.value = false;
+    otpCountdown.value = 60;
 
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-
-      final response = await _supabase.auth.verifyOTP(
-        phone: phoneController.text.trim(),
-        token: phoneOtpController.text,
-        type: OtpType.sms,
-      );
-
-      if (response.user != null) {
-        await _completeSignup();
-      } else {
-        throw Exception('Invalid phone OTP');
+    _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_isControllerDisposed.value) {
+        timer.cancel();
+        return;
       }
-    } catch (e, stackTrace) {
-      errorMessage.value = _getErrorMessage(e);
-      Get.snackbar(
-        'Error',
-        errorMessage.value,
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
-  Future<void> _completeSignup() async {
-    try {
-      // Sync user profile with backend
-      await authController.refreshUserProfile();
-      
-      Get.snackbar(
-        'Success',
-        'Account created successfully!',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-
-      // Navigate to home or profile completion
-      if (authController.currentUser.value != null) {
-        Get.offAllNamed(AppRoutes.dashboard);
+      if (otpCountdown.value > 0) {
+        otpCountdown.value--;
       } else {
-        Get.offAllNamed(AppRoutes.profileCompletion);
+        canResendOtp.value = true;
+        timer.cancel();
       }
-    } catch (e, stackTrace) {
-      DebugLogger.error('Profile sync error', e, stackTrace);
-      // Still go to profile completion even if sync fails
-      Get.offAllNamed(AppRoutes.profileCompletion);
-    }
-  }
-
-  Future<void> skipPhoneVerification() async {
-    await _completeSignup();
-  }
-
-  Future<void> resendEmailOtp() async {
-    if (!canResendEmailOtp.value) return;
-
-    try {
-      isLoading.value = true;
-      
-      await _supabase.auth.resend(
-        type: OtpType.signup,
-        email: emailController.text.trim(),
-      );
-      
-      _startEmailOtpCountdown();
-      
-      Get.snackbar(
-        'Success',
-        'Verification email resent!',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } catch (e, stackTrace) {
-      Get.snackbar(
-        'Error',
-        'Failed to resend email: ${_getErrorMessage(e)}',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> resendPhoneOtp() async {
-    if (!canResendPhoneOtp.value) return;
-
-    try {
-      isLoading.value = true;
-      await _sendPhoneOtp();
-      _startPhoneOtpCountdown();
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  void _startEmailOtpCountdown() {
-    canResendEmailOtp.value = false;
-    emailOtpCountdown.value = 60;
-    
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      emailOtpCountdown.value--;
-      return emailOtpCountdown.value > 0;
     });
   }
 
-  void _startPhoneOtpCountdown() {
-    canResendPhoneOtp.value = false;
-    phoneOtpCountdown.value = 60;
-    
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      phoneOtpCountdown.value--;
-      return phoneOtpCountdown.value > 0;
-    });
+  void _cancelOtpTimer() {
+    _otpTimer?.cancel();
+    _otpTimer = null;
   }
 
-  void goToLogin() {
-    Get.offNamed(AppRoutes.login);
-  }
-
-  void goBack() {
-    if (currentStep.value > 0) {
-      currentStep.value--;
-    } else {
-      Get.back();
-    }
-  }
-
-  String _getErrorMessage(dynamic error) {
-    if (error is AuthException) {
-      switch (error.message) {
-        case 'User already registered':
-          return 'An account with this email already exists';
-        case 'Password should be at least 6 characters':
-          return 'Password must be at least 6 characters long';
-        case 'Invalid email':
-          return 'Please enter a valid email address';
-        case 'Signup disabled':
-          return 'New user registration is currently disabled';
-        default:
-          return error.message;
-      }
-    } else if (error is Exception) {
-      return error.toString().replaceAll('Exception: ', '');
-    } else {
-      return 'An unexpected error occurred';
-    }
+  void goBackToForm() {
+    currentStep.value = 0;
+    otpController.clear();
+    errorMessage.value = '';
+    _cancelOtpTimer();
   }
 
   @override
   void onClose() {
-    emailController.dispose();
-    phoneController.dispose();
-    fullNameController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    emailOtpController.dispose();
-    phoneOtpController.dispose();
+    _disposeController();
     super.onClose();
+  }
+
+  @override
+  void dispose() {
+    _disposeController();
+    super.dispose();
+  }
+
+  void _disposeController() {
+    if (_isControllerDisposed.value) return;
+
+    _isControllerDisposed.value = true;
+    _cancelOtpTimer();
+
+    try {
+      phoneController.dispose();
+      passwordController.dispose();
+      confirmPasswordController.dispose();
+      otpController.dispose();
+    } catch (e) {
+      DebugLogger.error('Error disposing text controllers', e);
+    }
   }
 }

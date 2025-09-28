@@ -1,0 +1,64 @@
+---
+globs: *_test.dart
+description: Testing guidelines for Flutter/Dart code
+---
+
+# Flutter Testing Guidelines
+
+## Test Structure
+- **Location**: `test/` mirrors `lib/` structure
+- **Naming**: `*_test.dart` (e.g., `property_controller_test.dart`)
+- **Framework**: Flutter test framework with `flutter_test`
+
+## Test Types
+- **Unit Tests**: Business logic, controllers, utilities
+- **Widget Tests**: UI components, views, interactions
+- **Integration Tests**: Full feature flows (use `integration_test/`)
+
+## Test Organization
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:your_app/your_feature.dart';
+
+void main() {
+  group('PropertyController', () {
+    late PropertyController controller;
+
+    setUp(() {
+      controller = PropertyController();
+    });
+
+    test('should initialize with empty properties', () {
+      expect(controller.properties, isEmpty);
+    });
+
+    test('should load properties successfully', () async {
+      await controller.loadProperties();
+      expect(controller.properties.length, greaterThan(0));
+    });
+  });
+}
+```
+
+## Widget Testing
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:your_app/features/property_details/property_details_view.dart';
+
+void main() {
+  testWidgets('PropertyDetailsView displays property info', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(home: PropertyDetailsView()));
+
+    expect(find.text('Property Details'), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
+  });
+}
+```
+
+## Best Practices
+- Test one thing per test case
+- Use descriptive test names
+- Mock external dependencies (APIs, databases)
+- Test error conditions and edge cases
+- Run tests with `flutter test` before PRs

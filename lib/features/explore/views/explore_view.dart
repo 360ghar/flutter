@@ -1,123 +1,103 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
-import '../controllers/explore_controller.dart';
-import '../../../core/controllers/filter_service.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/error_mapper.dart';
-import '../../../core/utils/debug_logger.dart';
-import '../../../../widgets/common/loading_states.dart';
-import '../../../../widgets/common/error_states.dart';
-import '../../../../widgets/common/robust_network_image.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:get/get.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/widgets/common/error_states.dart';
+import 'package:ghar360/core/widgets/common/loading_states.dart';
+import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
+import 'package:ghar360/core/widgets/common/unified_top_bar.dart';
+import 'package:ghar360/features/explore/controllers/explore_controller.dart';
+import 'package:ghar360/features/explore/widgets/property_horizontal_list.dart';
+import 'package:ghar360/features/explore/widgets/property_marker_chip.dart';
+import 'package:latlong2/latlong.dart';
 
 class ExploreView extends GetView<ExploreController> {
-  ExploreView({super.key});
-  
-  FilterService get filterService => Get.find<FilterService>();
+  const ExploreView({super.key});
+
+  PageStateService get pageStateService => Get.find<PageStateService>();
 
   @override
   Widget build(BuildContext context) {
     DebugLogger.info('🎨 ExploreView build() called. Current state: ${controller.state.value}');
 
+    final pageStateService = Get.find<PageStateService>();
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: AppColors.appBarBackground,
-        elevation: 0,
-        title: Text(
-          'Explore Properties',
-          style: TextStyle(
-            color: AppColors.appBarText,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+      appBar: const _ReactiveExploreAppBar(),
+      body: Column(
+        children: [
+          // Subtle refresh indicator (reactive only)
+          Obx(() {
+            final isRefreshing = pageStateService.exploreState.value.isRefreshing;
+            if (!isRefreshing) return const SizedBox.shrink();
+            return const LinearProgressIndicator(
+              minHeight: 2,
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+            );
+          }),
+          // Main content (reactive state switch)
+          Expanded(
+            child: Obx(() {
+              final currentState = controller.state.value;
+              DebugLogger.info('🌨️ View Builder (Obx) - State: $currentState');
+
+              switch (currentState) {
+                case ExploreState.loading:
+                  // If location is available, keep the map visible and let markers update
+                  final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                  if (hasLocation) {
+                    DebugLogger.info('💻 Loading properties, rendering map with pending markers');
+                    return _buildMapInterface(context);
+                  }
+                  DebugLogger.info('💻 Rendering loading state (no location yet)');
+                  return _buildLoadingState(context);
+
+                case ExploreState.error:
+                  DebugLogger.info('⚠️ Rendering error state');
+                  return _buildErrorState();
+
+                case ExploreState.empty:
+                  DebugLogger.info('💭 Rendering empty state');
+                  return _buildEmptyState(context);
+
+                case ExploreState.loaded:
+                case ExploreState.loadingMore:
+                  DebugLogger.info('🗺️ Rendering map interface');
+                  return _buildMapInterface(context);
+
+                default:
+                  final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                  if (hasLocation) {
+                    DebugLogger.info('🔄 Initializing; rendering map while loading');
+                    return _buildMapInterface(context);
+                  }
+                  DebugLogger.info('🔄 Rendering default loading state (no location yet)');
+                  return _buildLoadingState(context);
+              }
+            }),
           ),
-        ),
-        actions: [
-          // Search toggle
-          Obx(() => IconButton(
-            icon: Icon(
-              controller.searchQuery.value.isEmpty ? Icons.search : Icons.search_off,
-              color: AppColors.iconColor,
-            ),
-            onPressed: () => _toggleSearch(context),
-          )),
-          
-          // Filters
-          Obx(() => IconButton(
-            icon: Stack(
-              children: [
-                Icon(
-                  Icons.tune,
-                  color: AppColors.iconColor,
-                ),
-                if (filterService.activeFiltersCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryYellow,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '${filterService.activeFiltersCount}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            onPressed: () => Get.toNamed('/filters'),
-          )),
         ],
       ),
-      body: Obx(() {
-        switch (controller.state.value) {
-          case ExploreState.loading:
-            return _buildLoadingState();
-            
-          case ExploreState.error:
-            return _buildErrorState();
-            
-          case ExploreState.empty:
-            return _buildEmptyState();
-            
-          case ExploreState.loaded:
-          case ExploreState.loadingMore:
-            return _buildMapInterface(context);
-            
-          default:
-            return _buildLoadingState();
-        }
-      }),
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(BuildContext context) {
     return Stack(
       children: [
         // Skeleton map
         Container(
           color: AppColors.surface,
-          child: Center(
-            child: Icon(
-              Icons.map,
-              size: 100,
-              color: AppColors.divider,
-            ),
-          ),
+          child: Center(child: Icon(Icons.map, size: 100, color: AppColors.divider)),
         ),
-        
+
         // Loading overlay with progress
         Obx(() {
           if (controller.loadingProgress.value > 0) {
@@ -127,7 +107,7 @@ class ExploreView extends GetView<ExploreController> {
               message: 'Loading properties for map...',
             );
           }
-          return LoadingStates.mapLoadingOverlay();
+          return LoadingStates.mapLoadingOverlay(context);
         }),
       ],
     );
@@ -135,151 +115,173 @@ class ExploreView extends GetView<ExploreController> {
 
   Widget _buildErrorState() {
     return Obx(() {
-      final errorMessage = controller.error.value;
-      if (errorMessage == null) return const SizedBox();
-      
-      try {
-        final exception = ErrorMapper.mapApiError(Exception(errorMessage));
-        return ErrorStates.genericError(
-          error: exception,
-          onRetry: controller.retryLoading,
-        );
-      } catch (e) {
-        return ErrorStates.networkError(
-          onRetry: controller.retryLoading,
-          customMessage: errorMessage,
-        );
-      }
+      final appException = controller.error.value;
+      if (appException == null) return const SizedBox();
+
+      return ErrorStates.genericError(error: appException, onRetry: controller.retryLoading);
     });
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return ErrorStates.emptyState(
-      title: 'No Properties Found',
-      message: 'No properties found in this area.\nTry adjusting your search location or filters.',
+      title: 'no_properties_found'.tr,
+      message: 'no_properties_found_area_message'.tr,
       icon: Icons.location_off,
-      onAction: () => Get.toNamed('/filters'),
-      actionText: 'Adjust Filters',
+      onAction: () => showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'explore'),
+      actionText: 'adjust_filters'.tr,
     );
   }
 
   Widget _buildMapInterface(BuildContext context) {
+    DebugLogger.info('🌎 Building map interface');
     return Stack(
       children: [
         // Main map
         Positioned.fill(
-          child: Obx(() => FlutterMap(
-            mapController: controller.mapController,
-            options: MapOptions(
-              initialCenter: controller.currentCenter.value,
-              initialZoom: controller.currentZoom.value,
-              onPositionChanged: controller.onMapMove,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
-            ),
-            children: [
-              // Map tiles
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.ghar360.app',
-                maxZoom: 19,
-              ),
-              
-              // Search radius circle
-              if (filterService.hasLocation)
-                CircleLayer(
-                  circles: [
-                    CircleMarker(
-                      point: controller.currentCenter.value,
-                      radius: controller.currentRadius.value * 1000, // Convert to meters
-                      color: AppColors.primaryYellow.withOpacity(0.1),
-                      borderColor: AppColors.primaryYellow.withOpacity(0.5),
-                      borderStrokeWidth: 2,
+          child: Builder(
+            builder: (_) {
+              try {
+                return FlutterMap(
+                  key: ValueKey(
+                    'map_${controller.currentCenter.value.latitude}_${controller.currentCenter.value.longitude}_${controller.currentZoom.value}',
+                  ),
+                  mapController: controller.mapController,
+                  options: MapOptions(
+                    initialCenter: controller.currentCenter.value,
+                    initialZoom: controller.currentZoom.value,
+                    minZoom: 3.0,
+                    maxZoom: 18.0,
+                    onPositionChanged: (position, hasGesture) {
+                      if (hasGesture && controller.isMapReady.value) {
+                        final zoomChanged =
+                            (position.zoom - controller.currentZoom.value).abs() > 0.1;
+                        final distance = _calculateDistance(
+                          controller.currentCenter.value,
+                          position.center,
+                        );
+                        final centerChanged = distance > 100;
+                        if (zoomChanged || centerChanged) {
+                          controller.onMapMove(position, hasGesture);
+                        }
+                      }
+                    },
+                    onMapReady: () {
+                      DebugLogger.success('🗺️ Map is ready!');
+                      controller.onMapReady();
+                    },
+                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.ghar360.app',
+                      maxZoom: 18,
                     ),
-                  ],
-                ),
-              
-              // Property markers
-              MarkerLayer(
-                markers: controller.propertyMarkers.map((marker) => Marker(
-                  point: marker.position,
-                  width: 40,
-                  height: 40,
-                  child: GestureDetector(
-                    onTap: () => controller.selectProperty(marker.property),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: marker.isSelected ? AppColors.primaryYellow : AppColors.accentBlue,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                    const RichAttributionWidget(
+                      attributions: [TextSourceAttribution('© OpenStreetMap contributors')],
+                    ),
+                    // Search radius circle (reactive)
+                    Obx(() {
+                      if (!pageStateService.getCurrentPageState().hasLocation) {
+                        return const SizedBox.shrink();
+                      }
+                      return CircleLayer(
+                        circles: [
+                          CircleMarker(
+                            point: controller.currentCenter.value,
+                            radius: controller.currentRadius.value * 1000,
+                            color: AppColors.primaryYellow.withValues(alpha: 0.1),
+                            borderColor: AppColors.primaryYellow.withValues(alpha: 0.5),
+                            borderStrokeWidth: 2,
                           ),
                         ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          marker.property.formattedPrice.replaceAll('₹', '₹').substring(0, 4),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      );
+                    }),
+                    // Property markers with clustering (reactive)
+                    Obx(() {
+                      final markers = controller.propertyMarkers;
+                      if (markers.isEmpty) return const SizedBox.shrink();
+
+                      // Convert our lightweight marker models to flutter_map Markers
+                      final mapMarkers = markers.map((marker) {
+                        final label = marker.label;
+                        final estWidth = _estimateChipWidth(label);
+                        return Marker(
+                          point: marker.position,
+                          width: estWidth,
+                          height: 40,
+                          child: PropertyMarkerChip(
+                            property: marker.property,
+                            isSelected: marker.isSelected,
+                            label: label,
+                            onTap: () {
+                              DebugLogger.info('Property marker tapped: ${marker.property.title}');
+                              controller.selectProperty(marker.property);
+                            },
                           ),
+                        );
+                      }).toList();
+
+                      return MarkerClusterLayerWidget(
+                        options: MarkerClusterLayerOptions(
+                          markers: mapMarkers,
+                          maxClusterRadius: 60,
+                          size: const Size(44, 44),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.all(60),
+                          maxZoom: 18,
+                          showPolygon: false,
+                          spiderfyCircleRadius: 60,
+                          spiderfySpiralDistanceMultiplier: 1,
+                          circleSpiralSwitchover: 12,
+                          zoomToBoundsOnClick: true,
+                          builder: (context, clusterMarkers) {
+                            final count = clusterMarkers.length;
+                            return _ClusterChip(count: count);
+                          },
                         ),
-                      ),
-                    ),
-                  ),
-                )).toList(),
-              ),
-            ],
-          )),
+                      );
+                    }),
+                  ],
+                );
+              } catch (e) {
+                DebugLogger.error('❌ Map rendering failed: $e');
+                return ErrorStates.networkError(
+                  onRetry: controller.retryLoading,
+                  customMessage: 'map_render_failed_message'.tr,
+                );
+              }
+            },
+          ),
         ),
-        
-        // Search bar (if active)
-        Obx(() {
-          if (controller.searchQuery.value.isNotEmpty || _isSearching.value) {
-            return _buildSearchBar(context);
-          }
-          return const SizedBox();
-        }),
-        
         // Map controls
         Positioned(
-          top: MediaQuery.of(context).padding.top + (controller.searchQuery.value.isNotEmpty || _isSearching.value ? 70 : 10),
+          top: MediaQuery.of(context).padding.top + 10,
           right: 16,
           child: _buildMapControls(),
         ),
-        
         // Info panel
         Positioned(
-          top: MediaQuery.of(context).padding.top + (controller.searchQuery.value.isNotEmpty || _isSearching.value ? 70 : 10),
+          top: MediaQuery.of(context).padding.top + 10,
           left: 16,
           child: _buildInfoPanel(),
         ),
-        
         // Loading indicator for more properties
         if (controller.state.value == ExploreState.loadingMore)
           Positioned(
-            bottom: 100,
+            bottom: 230,
             left: 16,
             right: 16,
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.surface.withOpacity(0.9),
+                color: AppColors.surface.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
@@ -289,64 +291,21 @@ class ExploreView extends GetView<ExploreController> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Loading more properties...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textPrimary,
-                    ),
+                    'loading_more_properties'.tr,
+                    style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
                   ),
                 ],
               ),
             ),
           ),
-        
-        // Selected property bottom sheet
-        Obx(() {
-          if (controller.hasSelection) {
-            return _buildPropertyBottomSheet();
-          }
-          return const SizedBox();
-        }),
+        // Horizontal property list at bottom
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: SafeArea(top: false, child: PropertyHorizontalList(controller: controller)),
+        ),
       ],
-    );
-  }
-
-  // Track search state
-  final RxBool _isSearching = false.obs;
-
-  Widget _buildSearchBar(BuildContext context) {
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 10,
-      left: 16,
-      right: 16,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: AppColors.getCardShadow(),
-        ),
-        child: TextField(
-          onChanged: controller.updateSearchQuery,
-          onSubmitted: (value) {
-            if (value.isEmpty) _isSearching.value = false;
-          },
-          style: TextStyle(color: AppColors.textPrimary),
-          decoration: InputDecoration(
-            hintText: 'Search locations...',
-            hintStyle: TextStyle(color: AppColors.textSecondary),
-            prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
-            suffixIcon: IconButton(
-              icon: Icon(Icons.clear, color: AppColors.iconColor),
-              onPressed: () {
-                controller.clearSearch();
-                _isSearching.value = false;
-              },
-            ),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          ),
-        ),
-      ),
     );
   }
 
@@ -366,11 +325,7 @@ class ExploreView extends GetView<ExploreController> {
                 icon: Icon(Icons.add, color: AppColors.iconColor),
                 onPressed: controller.zoomIn,
               ),
-              Container(
-                width: 1,
-                height: 1,
-                color: AppColors.divider,
-              ),
+              Container(width: 1, height: 1, color: AppColors.divider),
               IconButton(
                 icon: Icon(Icons.remove, color: AppColors.iconColor),
                 onPressed: controller.zoomOut,
@@ -378,9 +333,9 @@ class ExploreView extends GetView<ExploreController> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Current location button
         Container(
           decoration: BoxDecoration(
@@ -389,13 +344,13 @@ class ExploreView extends GetView<ExploreController> {
             boxShadow: AppColors.getCardShadow(),
           ),
           child: IconButton(
-            icon: Icon(Icons.my_location, color: AppColors.primaryYellow),
+            icon: const Icon(Icons.my_location, color: AppColors.primaryYellow),
             onPressed: controller.recenterToCurrentLocation,
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Fit bounds button
         Container(
           decoration: BoxDecoration(
@@ -404,7 +359,7 @@ class ExploreView extends GetView<ExploreController> {
             boxShadow: AppColors.getCardShadow(),
           ),
           child: IconButton(
-            icon: Icon(Icons.center_focus_strong, color: AppColors.accentBlue),
+            icon: const Icon(Icons.center_focus_strong, color: AppColors.accentBlue),
             onPressed: controller.fitBoundsToProperties,
           ),
         ),
@@ -416,189 +371,126 @@ class ExploreView extends GetView<ExploreController> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.9),
+        color: AppColors.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(25),
         boxShadow: AppColors.getCardShadow(),
       ),
-      child: Obx(() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            controller.propertiesCountText,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            controller.currentAreaText,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          if (controller.locationDisplayText != 'All Locations') ...[
-            const SizedBox(height: 4),
-            Text(
-              controller.locationDisplayText,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.primaryYellow,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ],
-      )),
-    );
-  }
+      child: Obx(() {
+        final propertiesCountText = controller.propertiesCountText;
+        final currentAreaText = controller.currentAreaText;
+        final locationDisplayText = controller.locationDisplayText;
 
-  Widget _buildPropertyBottomSheet() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 200,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          boxShadow: AppColors.getCardShadow(),
-        ),
-        child: Obx(() {
-          final property = controller.selectedProperty.value;
-          if (property == null) return const SizedBox();
-          
-          return Column(
-            children: [
-              // Handle bar
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+        DebugLogger.info(
+          '📊 Info panel update - properties: $propertiesCountText, area: $currentAreaText',
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              propertiesCountText,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
-              
-              // Property details
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // Property image
-                      RobustNetworkImage(
-                        imageUrl: property.mainImage,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        borderRadius: BorderRadius.circular(12),
-                        errorWidget: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: AppColors.inputBackground,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(Icons.home, color: AppColors.iconColor),
-                        ),
-                      ),
-                      
-                      const SizedBox(width: 16),
-                      
-                      // Property info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              property.title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              property.addressDisplay,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Text(
-                                  property.formattedPrice,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryYellow,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.accentBlue.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    property.purposeString,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.accentBlue,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Action buttons
-                      Column(
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.close, color: AppColors.textSecondary),
-                            onPressed: controller.clearSelection,
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.info, color: AppColors.primaryYellow),
-                            onPressed: () => controller.viewPropertyDetails(property),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(currentAreaText, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            if (locationDisplayText != 'All Locations' &&
+                locationDisplayText != 'Select Location') ...[
+              const SizedBox(height: 4),
+              Text(
+                locationDisplayText,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.primaryYellow,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
-          );
-        }),
-      ),
+          ],
+        );
+      }),
     );
   }
 
-  void _toggleSearch(BuildContext context) {
-    if (controller.searchQuery.value.isNotEmpty) {
-      controller.clearSearch();
-      _isSearching.value = false;
-    } else {
-      _isSearching.value = true;
-    }
+  // Bottom sheet removed in favor of persistent horizontal list
+
+  double _calculateDistance(LatLng point1, LatLng point2) {
+    const double earthRadius = 6371000; // Earth's radius in meters
+    final double lat1Rad = point1.latitude * (math.pi / 180);
+    final double lat2Rad = point2.latitude * (math.pi / 180);
+    final double deltaLat = (point2.latitude - point1.latitude) * (math.pi / 180);
+    final double deltaLng = (point2.longitude - point1.longitude) * (math.pi / 180);
+    final double a =
+        (math.sin(deltaLat / 2) * math.sin(deltaLat / 2)) +
+        math.cos(lat1Rad) * math.cos(lat2Rad) * (math.sin(deltaLng / 2) * math.sin(deltaLng / 2));
+    final double c = 2 * math.asin(math.sqrt(a));
+    return earthRadius * c;
+  }
+
+  double _estimateChipWidth(String label) {
+    // Rough estimate to size Marker width to avoid clipping dynamic chip
+    final base = 30; // padding and borders
+    final perChar = 7; // approx average glyph width
+    final est = base + (label.length * perChar);
+    return est.clamp(44, 160).toDouble();
+  }
+}
+
+class _ClusterChip extends StatelessWidget {
+  final int count;
+  const _ClusterChip({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.accentBlue,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.colorScheme.onPrimary, width: 2),
+        boxShadow: AppColors.getCardShadow(),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '$count',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onPrimary,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
+
+// PreferredSizeWidget wrapper which only rebuilds the AppBar when search visibility toggles
+class _ReactiveExploreAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _ReactiveExploreAppBar();
+
+  @override
+  Size get preferredSize {
+    final pageStateService = Get.find<PageStateService>();
+    final searchVisible = pageStateService.isSearchVisible(PageType.explore);
+    final height = kToolbarHeight + (searchVisible ? 52 : 0);
+    return Size.fromHeight(height);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final pageStateService = Get.find<PageStateService>();
+      final searchVisible = pageStateService.isSearchVisible(PageType.explore);
+      return ExploreTopBar(
+        key: ValueKey('explore_topbar_$searchVisible'),
+        onSearchChanged: (query) => Get.find<ExploreController>().updateSearchQuery(query),
+        onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
+      );
+    });
   }
 }

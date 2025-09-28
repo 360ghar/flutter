@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:get/get.dart';
-import '../../../core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class TourView extends StatefulWidget {
   const TourView({super.key});
@@ -18,6 +18,16 @@ class _TourViewState extends State<TourView> {
   void initState() {
     super.initState();
     final String tourUrl = Get.arguments as String;
+    const consoleSilencer = '''
+      if (window && window.console) {
+        window.console.log = function() {};
+        window.console.warn = function() {};
+        window.console.error = function() {};
+        window.console.info = function() {};
+        window.console.debug = function() {};
+      }
+    ''';
+
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
@@ -27,12 +37,13 @@ class _TourViewState extends State<TourView> {
             setState(() {
               isLoading = true;
             });
+            controller.runJavaScript(consoleSilencer);
           },
           onPageFinished: (String url) {
             setState(() {
               isLoading = false;
             });
-            // Inject CSS to enhance iframe display
+            controller.runJavaScript(consoleSilencer);
             controller.runJavaScript('''
               document.body.style.margin = '0';
               document.body.style.padding = '0';
@@ -49,19 +60,19 @@ class _TourViewState extends State<TourView> {
               isLoading = false;
             });
             Get.snackbar(
-              'Error Loading Tour',
-              'Please check your internet connection',
+              'error_loading_tour'.tr,
+              'check_internet_connection'.tr,
               snackPosition: SnackPosition.TOP,
               backgroundColor: AppColors.errorRed,
-              colorText: Colors.white,
+              colorText: AppColors.snackbarText,
             );
           },
         ),
       );
-    
-    // Check if it's a Kuula URL and wrap it properly
+
     if (tourUrl.contains('kuula.co')) {
-      final htmlContent = '''
+      final htmlContent =
+          '''
         <!DOCTYPE html>
         <html>
         <head>
@@ -70,11 +81,14 @@ class _TourViewState extends State<TourView> {
             body { margin: 0; padding: 0; background: #000; }
             iframe { width: 100vw; height: 100vh; border: none; }
           </style>
+          <script type="text/javascript">
+            $consoleSilencer
+          </script>
         </head>
         <body>
-          <iframe class="ku-embed" frameborder="0" 
-                  allow="xr-spatial-tracking; gyroscope; accelerometer" 
-                  allowfullscreen scrolling="no" 
+          <iframe class="ku-embed" frameborder="0"
+                  allow="xr-spatial-tracking; gyroscope; accelerometer"
+                  allowfullscreen scrolling="no"
                   src="$tourUrl">
           </iframe>
         </body>
@@ -98,19 +112,16 @@ class _TourViewState extends State<TourView> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          '360° Virtual Tour',
-          style: TextStyle(
-            color: AppColors.appBarText,
-            fontWeight: FontWeight.bold,
-          ),
+          'virtual_tour_title'.tr,
+          style: TextStyle(color: AppColors.appBarText, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: Icon(Icons.fullscreen, color: AppColors.appBarIcon),
             onPressed: () {
               Get.snackbar(
-                'Fullscreen Mode',
-                'Rotate your device for better experience',
+                'fullscreen_mode'.tr,
+                'rotate_device_better_experience'.tr,
                 snackPosition: SnackPosition.TOP,
                 backgroundColor: AppColors.snackbarBackground,
                 colorText: AppColors.snackbarText,
@@ -121,8 +132,8 @@ class _TourViewState extends State<TourView> {
             icon: Icon(Icons.share, color: AppColors.appBarIcon),
             onPressed: () {
               Get.snackbar(
-                'Share Tour',
-                'Tour link copied to clipboard',
+                'share_tour'.tr,
+                'tour_link_copied'.tr,
                 snackPosition: SnackPosition.TOP,
                 backgroundColor: AppColors.snackbarBackground,
                 colorText: AppColors.snackbarText,
@@ -155,13 +166,13 @@ class _TourViewState extends State<TourView> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircularProgressIndicator(
+                      const CircularProgressIndicator(
                         color: AppColors.primaryYellow,
                         strokeWidth: 3,
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Loading 360° Tour...',
+                        'loading_virtual_tour'.tr,
                         style: TextStyle(
                           fontSize: 16,
                           color: AppColors.textSecondary,
@@ -177,4 +188,4 @@ class _TourViewState extends State<TourView> {
       ),
     );
   }
-} 
+}

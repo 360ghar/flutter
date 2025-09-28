@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../../../core/utils/theme.dart';
-import '../../../core/mixins/theme_mixin.dart';
-import '../../../core/controllers/theme_controller.dart';
-import '../controllers/preferences_controller.dart';
+
+import 'package:ghar360/core/controllers/theme_controller.dart';
+import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/features/profile/controllers/preferences_controller.dart';
 
 class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
   const PreferencesView({super.key});
@@ -12,135 +14,64 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
       title: 'my_preferences'.tr,
-      body: Obx(() {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSection(
-                'property_preferences'.tr,
-                [
-                  _buildSwitchTile(
-                    'push_notifications'.tr,
-                    'push_notifications_desc'.tr,
-                    controller.pushNotifications.value,
-                    (value) => controller.pushNotifications.value = value,
-                  ),
-                  _buildSwitchTile(
-                    'email_notifications'.tr,
-                    'email_notifications_desc'.tr,
-                    controller.emailNotifications.value,
-                    (value) => controller.emailNotifications.value = value,
-                  ),
-                  _buildSwitchTile(
-                    'price_drop_alerts'.tr,
-                    'price_drop_alerts_desc'.tr,
-                    controller.priceDropAlerts.value,
-                    (value) => controller.priceDropAlerts.value = value,
-                  ),
-                  _buildSwitchTile(
-                    'similar_properties'.tr,
-                    'similar_properties_desc'.tr,
-                    controller.similarProperties.value,
-                    (value) => controller.similarProperties.value = value,
-                  ),
-                ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSection('property_preferences'.tr, [
+              Obx(
+                () => _buildSwitchTile(
+                  'push_notifications'.tr,
+                  'push_notifications_desc'.tr,
+                  controller.pushNotifications.value,
+                  (value) => controller.pushNotifications.value = value,
+                ),
               ),
-              const SizedBox(height: 24),
-              _buildSection(
-                'search_preferences'.tr,
-                [
-                  _buildSwitchTile(
-                    'save_search_history'.tr,
-                    'save_search_history_desc'.tr,
-                    controller.saveSearchHistory.value,
-                    (value) => controller.saveSearchHistory.value = value,
-                  ),
-                  _buildSwitchTile(
-                    'location_services'.tr,
-                    'location_services_desc'.tr,
-                    controller.locationServices.value,
-                    (value) => controller.locationServices.value = value,
-                  ),
-                  _buildSwitchTile(
-                    'auto_complete_search'.tr,
-                    'auto_complete_search_desc'.tr,
-                    controller.autoCompleteSearch.value,
-                    (value) => controller.autoCompleteSearch.value = value,
-                  ),
-                ],
+              Obx(
+                () => _buildSwitchTile(
+                  'email_notifications'.tr,
+                  'email_notifications_desc'.tr,
+                  controller.emailNotifications.value,
+                  (value) => controller.emailNotifications.value = value,
+                ),
               ),
-              const SizedBox(height: 24),
-              _buildSection(
-                'display_preferences'.tr,
-                [
-                  _buildThemeSelector(),
-                  _buildSwitchTile(
-                    'show_property_tour'.tr,
-                    'show_property_tour_desc'.tr,
-                    controller.showPropertyTour.value,
-                    (value) => controller.showPropertyTour.value = value,
-                  ),
-                  _buildSwitchTile(
-                    'compact_view'.tr,
-                    'compact_view_desc'.tr,
-                    controller.compactView.value,
-                    (value) => controller.compactView.value = value,
-                  ),
-                ],
+              Obx(
+                () => _buildSwitchTile(
+                  'similar_properties'.tr,
+                  'similar_properties_desc'.tr,
+                  controller.similarProperties.value,
+                  (value) => controller.similarProperties.value = value,
+                ),
               ),
-              const SizedBox(height: 24),
-              _buildSection(
-                'language_preferences'.tr,
-                [
-                  _buildLanguageSelector(),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildSection(
-                'privacy_preferences'.tr,
-                [
-                  _buildSwitchTile(
-                    'share_analytics'.tr,
-                    'share_analytics_desc'.tr,
-                    controller.shareAnalytics.value,
-                    (value) => controller.shareAnalytics.value = value,
-                  ),
-                  _buildSwitchTile(
-                    'personalized_ads'.tr,
-                    'personalized_ads_desc'.tr,
-                    controller.personalizedAds.value,
-                    (value) => controller.personalizedAds.value = value,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: controller.savePreferences,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'save_preferences'.tr,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+            ]),
+            const SizedBox(height: 24),
+            _buildSection('display_preferences'.tr, [Obx(_buildThemeSelector)]),
+            const SizedBox(height: 24),
+            _buildSection('language_preferences'.tr, [Obx(_buildLanguageSelector)]),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: controller.savePreferences,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryYellow,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  'save_preferences'.tr,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ),
-            ],
-          ),
-        );
-      }),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -169,12 +100,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
     );
   }
 
-  Widget _buildSwitchTile(
-    String title,
-    String subtitle,
-    bool value,
-    Function(bool) onChanged,
-  ) {
+  Widget _buildSwitchTile(String title, String subtitle, bool value, Function(bool) onChanged) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -183,18 +109,12 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Theme.of(Get.context!).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(Get.context!).colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -204,7 +124,8 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.primaryColor,
+            activeThumbColor: Theme.of(Get.context!).colorScheme.primary,
+            activeTrackColor: Theme.of(Get.context!).colorScheme.primary.withValues(alpha: 0.3),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
@@ -223,16 +144,13 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
               children: [
                 Text(
                   'select_language'.tr,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'select_language_desc'.tr,
                   style: TextStyle(
-                    color: Theme.of(Get.context!).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(Get.context!).colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -244,7 +162,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryColor),
+                border: Border.all(color: AppColors.primaryYellow),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -252,17 +170,13 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 children: [
                   Text(
                     controller.getCurrentLanguage(),
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
+                    style: const TextStyle(
+                      color: AppColors.primaryYellow,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppTheme.primaryColor,
-                    size: 20,
-                  ),
+                  const Icon(Icons.keyboard_arrow_down, color: AppColors.primaryYellow, size: 20),
                 ],
               ),
             ),
@@ -284,12 +198,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             _buildLanguageOption('हिंदी', 'hi', 'IN'),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('cancel'.tr),
-          ),
-        ],
+        actions: [TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr))],
       ),
     );
   }
@@ -302,7 +211,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
         Get.back();
       },
       trailing: controller.getCurrentLanguage() == languageName
-          ? Icon(Icons.check, color: AppTheme.primaryColor)
+          ? const Icon(Icons.check, color: AppColors.primaryYellow)
           : null,
     );
   }
@@ -318,10 +227,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
               children: [
                 Text(
                   'app_theme'.tr,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -339,7 +245,7 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryColor),
+                border: Border.all(color: AppColors.primaryYellow),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -347,17 +253,13 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
                 children: [
                   Text(
                     controller.currentThemeName,
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
+                    style: const TextStyle(
+                      color: AppColors.primaryYellow,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppTheme.primaryColor,
-                    size: 20,
-                  ),
+                  const Icon(Icons.keyboard_arrow_down, color: AppColors.primaryYellow, size: 20),
                 ],
               ),
             ),
@@ -381,26 +283,21 @@ class PreferencesView extends GetView<PreferencesController> with ThemeMixin {
             _buildThemeOption('System', AppThemeMode.system, Icons.settings_system_daydream),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('cancel'.tr),
-          ),
-        ],
+        actions: [TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr))],
       ),
     );
   }
 
   Widget _buildThemeOption(String themeName, AppThemeMode mode, IconData icon) {
     return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor),
+      leading: Icon(icon, color: AppColors.primaryYellow),
       title: Text(themeName),
       onTap: () {
         controller.updateTheme(mode);
         Get.back();
       },
       trailing: controller.currentThemeMode == mode
-          ? Icon(Icons.check, color: AppTheme.primaryColor)
+          ? const Icon(Icons.check, color: AppColors.primaryYellow)
           : null,
     );
   }

@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
-import '../../visits/controllers/visits_controller.dart';
-import '../../booking/controllers/booking_controller.dart';
-import '../controllers/property_controller.dart';
-import '../../../core/data/repositories/properties_repository.dart';
+
+import 'package:ghar360/core/data/repositories/properties_repository.dart';
+import 'package:ghar360/features/likes/controllers/likes_controller.dart';
+import 'package:ghar360/features/visits/controllers/visits_controller.dart';
 
 class PropertyDetailsBinding extends Bindings {
   @override
@@ -11,11 +11,12 @@ class PropertyDetailsBinding extends Bindings {
     if (!Get.isRegistered<PropertiesRepository>()) {
       Get.lazyPut<PropertiesRepository>(() => PropertiesRepository(), fenix: true);
     }
-    
-    // Register PropertyController
-    Get.lazyPut<PropertyController>(() => PropertyController(), fenix: true);
-    
+
+    // Register LikesController for favorite management
+    if (!Get.isRegistered<LikesController>()) {
+      Get.lazyPut<LikesController>(() => LikesController(), fenix: true);
+    }
+
     Get.lazyPut<VisitsController>(() => VisitsController());
-    Get.lazyPut<BookingController>(() => BookingController());
   }
-} 
+}

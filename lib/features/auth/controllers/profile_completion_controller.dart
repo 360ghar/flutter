@@ -1,363 +1,131 @@
+// lib/features/auth/controllers/profile_completion_controller.dart
+
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:intl/intl.dart';
-import '../../../core/controllers/auth_controller.dart';
-import '../../../core/routes/app_routes.dart';
-import '../../../core/utils/debug_logger.dart';
-import '../../../core/utils/theme.dart';
+
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/controllers/page_state_service.dart';
+import 'package:ghar360/core/data/models/auth_status.dart';
+import 'package:ghar360/core/utils/error_handler.dart';
 
 class ProfileCompletionController extends GetxController {
   final formKey = GlobalKey<FormState>();
-  
-  // Form controllers
+  final fullNameController = TextEditingController();
+  final emailController = TextEditingController();
   final dateOfBirthController = TextEditingController();
-  final phoneController = TextEditingController();
-  final occupationController = TextEditingController();
-  final budgetMinController = TextEditingController();
-  final budgetMaxController = TextEditingController();
-  final preferredCitiesController = TextEditingController();
-  
-  // Observable states
-  final currentStep = 0.obs;
   final isLoading = false.obs;
-  final selectedIncome = ''.obs;
-  final selectedPropertyPurpose = 'rent'.obs;
-  final selectedPropertyTypes = <String>[].obs;
-  final selectedBedroomsMin = 0.obs;
-  final selectedBedroomsMax = 0.obs;
-  final maxDistance = 10.0.obs;
-  final selectedAmenities = <String>[].obs;
-  final currentLocation = Rxn<Position>();
-  
-  // Data lists
-  final incomeRanges = [
-    'Under ₹5 Lakhs',
-    '₹5-10 Lakhs',
-    '₹10-20 Lakhs',
-    '₹20-50 Lakhs',
-    '₹50 Lakhs - 1 Crore',
-    'Above ₹1 Crore',
-    'Prefer not to say'
-  ];
-  
-  final propertyPurposes = ['rent', 'buy', 'short_stay'];
-  
-  final propertyTypes = [
-    'apartment',
-    'house',
-    'villa',
-    'studio',
-    'penthouse',
-    'duplex'
-  ];
-  
-  final amenities = [
-    'parking',
-    'gym',
-    'swimming_pool',
-    'security',
-    'power_backup',
-    'elevator',
-    'garden',
-    'playground',
-    'club_house',
-    'wifi',
-    'air_conditioning',
-    'balcony',
-    'furnished',
-    'pet_friendly'
-  ];
+  final RxInt currentStep = 0.obs;
+  final RxString selectedPropertyPurpose = 'buy'.obs;
+  final List<String> propertyPurposes = ['Buy', 'Rent', 'Investment'];
+
+  // Store the selected DateTime object
+  DateTime? selectedDateOfBirth;
 
   late final AuthController authController;
-  bool _isDisposed = false;
+  PageStateService? pageStateService;
 
   @override
   void onInit() {
     super.onInit();
     authController = Get.find<AuthController>();
-    _loadExistingDataOnce();
+    if (Get.isRegistered<PageStateService>()) {
+      pageStateService = Get.find<PageStateService>();
+    }
+    emailController.text = authController.userEmail ?? '';
   }
 
-  void _loadExistingDataOnce() {
-    // Load data once without reactive patterns to avoid GetX scope issues
+  Future<void> completeProfile() async {
+    if (isLoading.value || !(formKey.currentState?.validate() ?? false)) return;
+
     try {
-      final user = authController.currentUser.value;
-      if (user != null && !_isDisposed) {
-        phoneController.text = user.phone ?? '';
-        
-        final preferences = user.preferences;
-        if (preferences != null) {
-          selectedPropertyPurpose.value = preferences['purpose'] ?? 'rent';
-          
-          if (preferences['property_type'] != null) {
-            selectedPropertyTypes.clear();
-            selectedPropertyTypes.addAll(
-              List<String>.from(preferences['property_type'])
-            );
-          }
-          
-          budgetMinController.text = preferences['budget_min']?.toString() ?? '';
-          budgetMaxController.text = preferences['budget_max']?.toString() ?? '';
-          selectedBedroomsMin.value = preferences['bedrooms_min'] ?? 0;
-          selectedBedroomsMax.value = preferences['bedrooms_max'] ?? 0;
-          maxDistance.value = (preferences['max_distance_km'] ?? 10).toDouble();
-          
-          if (preferences['amenities'] != null) {
-            selectedAmenities.clear();
-            selectedAmenities.addAll(
-              List<String>.from(preferences['amenities'])
-            );
-          }
+      isLoading.value = true;
+      update(); // Trigger UI rebuild to show loading state
+
+      final profileData = {
+        'full_name': fullNameController.text.trim(),
+        'email': emailController.text.trim(),
+        'date_of_birth': selectedDateOfBirth != null
+            ? '${selectedDateOfBirth!.year.toString().padLeft(4, '0')}-'
+                  '${selectedDateOfBirth!.month.toString().padLeft(2, '0')}-'
+                  '${selectedDateOfBirth!.day.toString().padLeft(2, '0')}'
+            : null,
+        'property_purpose': selectedPropertyPurpose.value,
+      };
+
+      // Call the central AuthController to update the profile.
+      // The AuthController will then refresh its state, and the Root widget will
+      // automatically navigate to the Dashboard.
+      final success = await authController.updateUserProfile(profileData);
+
+      if (success) {
+        // Sync chosen purpose to PageStateService if available.
+        // If not yet registered (will be by DashboardBinding), the user preference
+        // has already been persisted via updateUserProfile -> updateUserPreferences.
+        if (Get.isRegistered<PageStateService>()) {
+          (pageStateService ?? Get.find<PageStateService>()).setPurposeForAllPages(
+            selectedPropertyPurpose.value,
+          );
         }
+      } else {
+        // The error is already shown by the AuthController, but you can add specific logic here if needed.
       }
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error loading existing profile data', e, stackTrace);
+    } catch (e) {
+      ErrorHandler.handleNetworkError(e);
+    } finally {
+      isLoading.value = false;
+      update(); // Trigger UI rebuild to hide loading state
     }
   }
 
+  void skipToHome() {
+    // This is a bit of a cheat. Ideally, we'd set a flag, but for simplicity:
+    // We can just force the auth status.
+    authController.authStatus.value = AuthStatus.authenticated;
+  }
+
   void nextStep() {
-    if (_validateCurrentStep()) {
-      if (currentStep.value < 2) {
-        currentStep.value++;
-      }
+    if (currentStep.value < 1) {
+      currentStep.value++;
+      update(); // Trigger UI rebuild for GetBuilder
     }
   }
 
   void previousStep() {
     if (currentStep.value > 0) {
       currentStep.value--;
+      update(); // Trigger UI rebuild for GetBuilder
     }
-  }
-
-  bool _validateCurrentStep() {
-    switch (currentStep.value) {
-      case 0:
-        return _validatePersonalInfo();
-      case 1:
-        return _validatePropertyPreferences();
-      case 2:
-        return _validateLocationPreferences();
-      default:
-        return true;
-    }
-  }
-
-  bool _validatePersonalInfo() {
-    // Basic validation - these fields are optional for profile completion
-    return true;
-  }
-
-  bool _validatePropertyPreferences() {
-    if (selectedPropertyTypes.isEmpty) {
-      Get.snackbar(
-        'Required',
-        'Please select at least one property type',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppTheme.warningAmber,
-        colorText: AppTheme.backgroundWhite,
-      );
-      return false;
-    }
-    return true;
-  }
-
-  bool _validateLocationPreferences() {
-    // Location preferences are optional
-    return true;
   }
 
   Future<void> selectDateOfBirth() async {
-    if (_isDisposed) return;
-    
-    final DateTime? picked = await showDatePicker(
+    final DateTime? pickedDate = await showDatePicker(
       context: Get.context!,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 25)),
+      initialDate: selectedDateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 18)),
       firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
-      lastDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
     );
-    
-    if (picked != null && !_isDisposed) {
-      dateOfBirthController.text = DateFormat('dd/MM/yyyy').format(picked);
+
+    if (pickedDate != null) {
+      // Store the DateTime object
+      selectedDateOfBirth = pickedDate;
+
+      // Format for UI display (dd/MM/yyyy)
+      final formattedDate =
+          '${pickedDate.day.toString().padLeft(2, '0')}/'
+          '${pickedDate.month.toString().padLeft(2, '0')}/'
+          '${pickedDate.year}';
+      dateOfBirthController.text = formattedDate;
+
+      update(); // Trigger UI rebuild for GetBuilder
     }
-  }
-
-  Future<void> getCurrentLocation() async {
-    try {
-      isLoading.value = true;
-      
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
-        Get.snackbar(
-          'Permission Denied',
-          'Location permission is permanently denied. Please enable it in settings.',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: AppTheme.errorRed,
-          colorText: AppTheme.backgroundWhite,
-        );
-        return;
-      }
-      
-      if (permission == LocationPermission.denied) {
-        Get.snackbar(
-          'Permission Required',
-          'Location permission is required to use this feature.',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: AppTheme.warningAmber,
-          colorText: AppTheme.backgroundWhite,
-        );
-        return;
-      }
-      
-      // Get current position
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      
-      currentLocation.value = position;
-      
-      // Update location in backend
-      await authController.updateUserLocation(
-        position.latitude,
-        position.longitude,
-      );
-      
-      Get.snackbar(
-        'Success',
-        'Current location updated successfully',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppTheme.successGreen,
-        colorText: AppTheme.backgroundWhite,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to get current location: $e',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppTheme.errorRed,
-        colorText: AppTheme.backgroundWhite,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> completeProfile() async {
-    if (!_validateCurrentStep()) return;
-    
-    try {
-      isLoading.value = true;
-      
-      // Prepare profile data
-      final profileData = <String, dynamic>{};
-      final preferences = <String, dynamic>{};
-      
-      // Personal info
-      if (dateOfBirthController.text.isNotEmpty) {
-        try {
-          final date = DateFormat('dd/MM/yyyy').parse(dateOfBirthController.text);
-          profileData['date_of_birth'] = DateFormat('yyyy-MM-dd').format(date);
-        } catch (e, stackTrace) {
-          // Log the parsing error
-          DebugLogger.error('Invalid date format in date of birth field', e, stackTrace);
-
-          // Clear the invalid date and show user feedback
-          dateOfBirthController.clear();
-          Get.snackbar(
-            'Invalid Date',
-            'Please enter a valid date in DD/MM/YYYY format',
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: AppTheme.warningAmber,
-            colorText: AppTheme.backgroundWhite,
-          );
-        }
-      }
-      
-      if (phoneController.text.isNotEmpty) {
-        profileData['phone'] = phoneController.text.trim();
-      }
-      
-      // Property preferences
-      preferences['purpose'] = selectedPropertyPurpose.value;
-      preferences['property_type'] = selectedPropertyTypes.toList();
-      
-      if (budgetMinController.text.isNotEmpty) {
-        preferences['budget_min'] = int.tryParse(budgetMinController.text) ?? 0;
-      }
-      
-      if (budgetMaxController.text.isNotEmpty) {
-        preferences['budget_max'] = int.tryParse(budgetMaxController.text) ?? 0;
-      }
-      
-      preferences['bedrooms_min'] = selectedBedroomsMin.value;
-      preferences['bedrooms_max'] = selectedBedroomsMax.value;
-      preferences['max_distance_km'] = maxDistance.value.round();
-      preferences['amenities'] = selectedAmenities.toList();
-      
-      // Location preferences
-      if (preferredCitiesController.text.isNotEmpty) {
-        final cities = preferredCitiesController.text
-            .split(',')
-            .map((city) => city.trim())
-            .where((city) => city.isNotEmpty)
-            .toList();
-        preferences['location_preference'] = cities;
-      }
-      
-      // Update profile
-      if (profileData.isNotEmpty) {
-        await authController.updateUserProfile(profileData);
-      }
-      
-      // Update preferences
-      if (preferences.isNotEmpty) {
-        await authController.updateUserPreferences(preferences);
-      }
-      
-      Get.snackbar(
-        'Success',
-        'Profile completed successfully!',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppTheme.successGreen,
-        colorText: AppTheme.backgroundWhite,
-      );
-      
-      // Navigate to home
-      Get.offAllNamed(AppRoutes.dashboard);
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to complete profile: $e',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppTheme.errorRed,
-        colorText: AppTheme.backgroundWhite,
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  void skipToHome() {
-    Get.offAllNamed(AppRoutes.dashboard);
   }
 
   @override
   void onClose() {
-    _isDisposed = true;
-    
-    // Dispose text controllers
+    fullNameController.dispose();
+    emailController.dispose();
     dateOfBirthController.dispose();
-    phoneController.dispose();
-    occupationController.dispose();
-    budgetMinController.dispose();
-    budgetMaxController.dispose();
-    preferredCitiesController.dispose();
-    
     super.onClose();
   }
 }

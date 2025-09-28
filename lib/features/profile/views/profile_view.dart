@@ -1,50 +1,40 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../../../core/controllers/auth_controller.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../../widgets/common/theme_toggle_button.dart';
-import '../../../../widgets/common/robust_network_image.dart';
+
+import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class ProfileView extends GetView<AuthController> {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Scaffold(
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: AppColors.appBarBackground,
         elevation: 0,
         title: Text(
           'profile'.tr,
-          style: TextStyle(
-            color: AppColors.appBarText,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: AppColors.appBarText, fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        actions: [
-          const ThemeToggleButton(),
-          IconButton(
-            icon: Icon(Icons.settings, color: AppColors.appBarIcon),
-            onPressed: () => Get.toNamed('/preferences'),
-          ),
-        ],
+        // Removed gear/theme toggle icon per updated design direction
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: AppColors.loadingIndicator,
-            ),
-          );
+          return Center(child: CircularProgressIndicator(color: AppColors.loadingIndicator));
         }
 
         final user = controller.currentUser.value;
         if (user == null) {
           return Center(
             child: Text(
-              'No user data available',
+              'no_user_data_available'.tr,
               style: TextStyle(color: AppColors.textSecondary),
             ),
           );
@@ -55,58 +45,42 @@ class ProfileView extends GetView<AuthController> {
           child: Column(
             children: [
               // Profile Header
-              _buildProfileHeader(user),
+              _buildProfileHeader(context, user),
               const SizedBox(height: 30),
-              
-              // Profile Completion
-              _buildProfileCompletion(),
-              const SizedBox(height: 30),
-              
+
               // Menu Items
               _buildMenuItem(
                 icon: Icons.person_outline,
                 title: 'edit_profile'.tr,
-                subtitle: 'Update your personal information',
+                subtitle: 'update_personal_information'.tr,
                 onTap: () => Get.toNamed('/edit-profile'),
               ),
               _buildMenuItem(
                 icon: Icons.favorite_outline,
                 title: 'my_preferences'.tr,
-                subtitle: 'Property preferences and filters',
+                subtitle: 'property_preferences_filters'.tr,
                 onTap: () => Get.toNamed('/preferences'),
               ),
               _buildMenuItem(
-                icon: Icons.history,
-                title: 'Search History',
-                subtitle: 'Your recent property searches',
-                onTap: () => Get.toNamed('/search-history'),
-              ),
-              _buildMenuItem(
-                icon: Icons.notifications,
-                title: 'notifications'.tr,
-                subtitle: 'Manage notification settings',
-                onTap: () => Get.toNamed('/notifications'),
-              ),
-              _buildMenuItem(
                 icon: Icons.security,
-                title: 'Privacy & Security',
-                subtitle: 'Account security settings',
+                title: 'privacy_security'.tr,
+                subtitle: 'account_security_settings'.tr,
                 onTap: () => Get.toNamed('/privacy'),
               ),
               _buildMenuItem(
                 icon: Icons.help_outline,
                 title: 'help'.tr,
-                subtitle: 'Get help and contact support',
+                subtitle: 'get_help_contact_support'.tr,
                 onTap: () => Get.toNamed('/help'),
               ),
               _buildMenuItem(
                 icon: Icons.info_outline,
                 title: 'about'.tr,
-                subtitle: 'App version and information',
+                subtitle: 'app_version_information'.tr,
                 onTap: () => Get.toNamed('/about'),
               ),
               const SizedBox(height: 20),
-              
+
               // Logout Button
               _buildLogoutButton(),
               const SizedBox(height: 40),
@@ -114,10 +88,12 @@ class ProfileView extends GetView<AuthController> {
           ),
         );
       }),
-    ));
+    );
   }
 
-  Widget _buildProfileHeader(user) {
+  Widget _buildProfileHeader(BuildContext context, dynamic user) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -142,7 +118,7 @@ class ProfileView extends GetView<AuthController> {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                           ),
                         ),
                       ),
@@ -167,25 +143,18 @@ class ProfileView extends GetView<AuthController> {
                   decoration: BoxDecoration(
                     color: AppColors.primaryYellow,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.surface,
-                      width: 2,
-                    ),
+                    border: Border.all(color: AppColors.surface, width: 2),
                   ),
-                  child: Icon(
-                    Icons.camera_alt,
-                    size: 16,
-                    color: AppColors.buttonText,
-                  ),
+                  child: Icon(Icons.camera_alt, size: 16, color: AppColors.buttonText),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Name
           Text(
-            user.name.isNotEmpty ? user.name : 'User Name',
+            user.name.isNotEmpty ? user.name : 'user_name'.tr,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -193,77 +162,17 @@ class ProfileView extends GetView<AuthController> {
             ),
           ),
           const SizedBox(height: 4),
-          
+
           // Email
           Text(
-            user.email.isNotEmpty ? user.email : 'user@example.com',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-            ),
+            user.email.isNotEmpty ? user.email : '',
+            style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
-          
+
           // Phone
           if (user.phone.isNotEmpty)
-            Text(
-              user.phone,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textTertiary,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileCompletion() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: AppColors.getCardShadow(),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Profile Completion',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Obx(() => Text(
-                '${controller.profileCompletionPercentage.value}%',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryYellow,
-                ),
-              )),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Obx(() => LinearProgressIndicator(
-            value: controller.profileCompletionPercentage.value / 100,
-            backgroundColor: AppColors.inputBackground,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
-          )),
-          const SizedBox(height: 8),
-          Text(
-            'Complete your profile to get better property recommendations',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
-          ),
+            Text(user.phone, style: TextStyle(fontSize: 14, color: AppColors.textTertiary)),
         ],
       ),
     );
@@ -282,39 +191,19 @@ class ProfileView extends GetView<AuthController> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primaryYellow.withOpacity(0.1),
+            color: AppColors.primaryYellow.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            icon,
-            color: AppColors.primaryYellow,
-            size: 24,
-          ),
+          child: Icon(icon, color: AppColors.primaryYellow, size: 24),
         ),
         title: Text(
           title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: AppColors.iconColor,
-        ),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.iconColor),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         tileColor: AppColors.surface,
       ),
     );
@@ -326,15 +215,13 @@ class ProfileView extends GetView<AuthController> {
       child: OutlinedButton(
         onPressed: () => _showLogoutDialog(),
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: AppColors.errorRed),
+          side: const BorderSide(color: AppColors.errorRed),
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: Text(
-          'Logout',
-          style: TextStyle(
+          'logout'.tr,
+          style: const TextStyle(
             color: AppColors.errorRed,
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -348,36 +235,25 @@ class ProfileView extends GetView<AuthController> {
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text(
-          'Logout',
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
+        title: Text('logout'.tr, style: TextStyle(color: AppColors.textPrimary)),
         content: Text(
-          'Are you sure you want to logout?',
+          'logout_confirm_message'.tr,
           style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
+            child: Text('cancel'.tr, style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
               Get.back();
               controller.signOut();
             },
-            child: Text(
-              'Logout',
-              style: TextStyle(color: AppColors.errorRed),
-            ),
+            child: Text('logout'.tr, style: const TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),
     );
   }
-
-
-} 
+}

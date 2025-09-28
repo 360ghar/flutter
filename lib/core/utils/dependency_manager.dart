@@ -1,10 +1,9 @@
 import 'package:get/get.dart';
-import '../data/providers/api_service.dart';
-import 'debug_logger.dart';
-import '../../features/property_details/controllers/property_controller.dart';
-import '../../features/discover/controllers/swipe_controller.dart';
-import '../../features/visits/controllers/visits_controller.dart';
-import '../controllers/localization_controller.dart';
+
+import 'package:ghar360/core/controllers/localization_controller.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/features/visits/controllers/visits_controller.dart';
 
 class DependencyManager {
   static final Map<String, bool> _initializedServices = {};
@@ -23,8 +22,6 @@ class DependencyManager {
   static void cleanupDependencies() {
     try {
       // Clean up controllers by type instead of tag since they are registered without tags
-      _cleanupController<PropertyController>('PropertyController');
-      _cleanupController<SwipeController>('SwipeController');
       _cleanupController<VisitsController>('VisitsController');
       _cleanupController<LocalizationController>('LocalizationController');
     } catch (e, stackTrace) {
@@ -90,4 +87,4 @@ class DependencyManager {
       return null;
     }
   }
-} 
+}

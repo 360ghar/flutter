@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+description: Essential Flutter development and build commands
+---
+
+# Flutter Development Commands
+
+## Package Management
+```bash
+flutter pub get                    # Install dependencies
+flutter pub upgrade               # Update packages
+flutter pub outdated              # Check for outdated packages
+```
+
+## Development
+```bash
+flutter run -d <device_id>        # Run on simulator/device
+flutter run -d chrome             # Run on web
+flutter run -d android            # Run on Android device
+flutter run -d ios                # Run on iOS simulator
+```
+
+## Code Quality & Analysis
+```bash
+flutter analyze                   # Static code analysis (fix all warnings)
+dart format .                     # Format code (run before commits)
+flutter pub run build_runner build --delete-conflicting-outputs  # Generate *.g.dart files
+```
+
+## Testing
+```bash
+flutter test                      # Run all tests
+flutter test --plain-name "test name"  # Run specific test
+flutter test test/features/auth/  # Run tests in directory
+```
+
+## Building for Production
+```bash
+flutter build apk                 # Android APK
+flutter build appbundle           # Android App Bundle
+flutter build ios                 # iOS (requires macOS)
+flutter build web                 # Web build
+```
+
+## Pre-commit Checklist
+Always run these before committing:
+1. `flutter analyze` (fix warnings)
+2. `dart format .` (format code)
+3. `flutter test` (run tests)
+4. `flutter pub run build_runner build --delete-conflicting-outputs` (regenerate code)

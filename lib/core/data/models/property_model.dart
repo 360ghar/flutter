@@ -1,5 +1,5 @@
+import 'package:ghar360/core/data/models/property_image_model.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'property_image_model.dart';
 
 part 'property_model.g.dart';
 
@@ -13,6 +13,10 @@ enum PropertyType {
   builderFloor,
   @JsonValue('room')
   room,
+  @JsonValue('villa')
+  villa,
+  @JsonValue('plot')
+  plot,
 }
 
 enum PropertyPurpose {
@@ -39,35 +43,35 @@ enum PropertyStatus {
 
 @JsonSerializable()
 class PropertyAmenity {
+  @JsonKey(defaultValue: -1)
   final int id;
+  @JsonKey(defaultValue: 'Unknown')
   final String title;
   final String? icon;
   final String? category;
 
-  PropertyAmenity({
-    required this.id,
-    required this.title,
-    this.icon,
-    this.category,
-  });
+  const PropertyAmenity({required this.id, required this.title, this.icon, this.category});
 
   factory PropertyAmenity.fromJson(Map<String, dynamic> json) => _$PropertyAmenityFromJson(json);
   Map<String, dynamic> toJson() => _$PropertyAmenityToJson(this);
 }
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, checked: true)
 class PropertyModel {
+  @JsonKey(defaultValue: -1)
   final int id;
   @JsonKey(defaultValue: 'Unknown Property')
   final String title;
   final String? description;
-  @JsonKey(name: 'property_type')
-  final PropertyType propertyType;
-  final PropertyPurpose purpose;
+  @JsonKey(name: 'property_type', unknownEnumValue: PropertyType.house)
+  final PropertyType? propertyType;
+  @JsonKey(unknownEnumValue: PropertyPurpose.buy)
+  final PropertyPurpose? purpose;
   @JsonKey(name: 'base_price', defaultValue: 0.0)
   final double basePrice;
-  final PropertyStatus status;
-  
+  @JsonKey(unknownEnumValue: PropertyStatus.available)
+  final PropertyStatus? status;
+
   // Location fields
   final double? latitude;
   final double? longitude;
@@ -84,7 +88,7 @@ class PropertyModel {
   final String? fullAddress;
   @JsonKey(name: 'area_type')
   final String? areaType;
-  
+
   // Property details
   @JsonKey(name: 'area_sqft')
   final double? areaSqft;
@@ -93,7 +97,7 @@ class PropertyModel {
   final int? balconies;
   @JsonKey(name: 'parking_spaces')
   final int? parkingSpaces;
-  
+
   // Pricing
   @JsonKey(name: 'price_per_sqft')
   final double? pricePerSqft;
@@ -105,7 +109,7 @@ class PropertyModel {
   final double? securityDeposit;
   @JsonKey(name: 'maintenance_charges')
   final double? maintenanceCharges;
-  
+
   // Building details
   @JsonKey(name: 'floor_number')
   final int? floorNumber;
@@ -113,13 +117,13 @@ class PropertyModel {
   final int? totalFloors;
   @JsonKey(name: 'age_of_property')
   final int? ageOfProperty;
-  
+
   // Accommodation details
   @JsonKey(name: 'max_occupancy')
   final int? maxOccupancy;
   @JsonKey(name: 'minimum_stay_days')
   final int? minimumStayDays;
-  
+
   // Features and amenities
   final List<PropertyAmenity>? amenities;
   final List<String>? features;
@@ -127,15 +131,16 @@ class PropertyModel {
   final String? mainImageUrl;
   @JsonKey(name: 'virtual_tour_url')
   final String? virtualTourUrl;
-  
+
   // Availability
-  @JsonKey(name: 'is_available', defaultValue: true)
+  // Backend may send either is_active or is_available
+  @JsonKey(name: 'is_active', defaultValue: true)
   final bool isAvailable;
   @JsonKey(name: 'available_from')
   final String? availableFrom;
   @JsonKey(name: 'calendar_data')
   final Map<String, dynamic>? calendarData;
-  
+
   // SEO and metadata
   final List<String>? tags;
   @JsonKey(name: 'owner_name')
@@ -144,7 +149,7 @@ class PropertyModel {
   final String? ownerContact;
   @JsonKey(name: 'builder_name')
   final String? builderName;
-  
+
   // Performance metrics
   @JsonKey(name: 'view_count', defaultValue: 0)
   final int viewCount;
@@ -152,16 +157,16 @@ class PropertyModel {
   final int likeCount;
   @JsonKey(name: 'interest_count', defaultValue: 0)
   final int interestCount;
-  
+
   // Timestamps
   @JsonKey(name: 'created_at')
-  final DateTime createdAt;
+  final DateTime? createdAt;
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
-  
+
   // Relationships
   final List<PropertyImageModel>? images;
-  
+
   // Client-side calculated fields
   @JsonKey(name: 'distance_km')
   final double? distanceKm;
@@ -170,14 +175,22 @@ class PropertyModel {
   @JsonKey(name: 'liked', defaultValue: false)
   final bool liked;
 
-  PropertyModel({
+  // User visit scheduling fields (per-property, user-scoped)
+  @JsonKey(name: 'user_has_scheduled_visit', defaultValue: false)
+  final bool userHasScheduledVisit;
+  @JsonKey(name: 'user_scheduled_visit_count', defaultValue: 0)
+  final int userScheduledVisitCount;
+  @JsonKey(name: 'user_next_visit_date')
+  final DateTime? userNextVisitDate;
+
+  const PropertyModel({
     required this.id,
     required this.title,
     this.description,
-    required this.propertyType,
-    required this.purpose,
+    this.propertyType,
+    this.purpose,
     required this.basePrice,
-    required this.status,
+    this.status,
     this.latitude,
     this.longitude,
     this.city,
@@ -218,14 +231,29 @@ class PropertyModel {
     required this.viewCount,
     required this.likeCount,
     required this.interestCount,
-    required this.createdAt,
+    this.createdAt,
     this.updatedAt,
     this.images,
     this.distanceKm,
     this.liked = false,
+    this.userHasScheduledVisit = false,
+    this.userScheduledVisitCount = 0,
+    this.userNextVisitDate,
   });
 
-  factory PropertyModel.fromJson(Map<String, dynamic> json) => _$PropertyModelFromJson(json);
+  factory PropertyModel.fromJson(Map<String, dynamic> json) {
+    // Normalize backend variations without breaking generated parsing
+    final normalized = Map<String, dynamic>.from(json);
+    if (!normalized.containsKey('is_active') && normalized.containsKey('is_available')) {
+      normalized['is_active'] = normalized['is_available'];
+    }
+    // Normalize date string for user_next_visit_date into ISO if needed
+    final nextVisit = normalized['user_next_visit_date'];
+    if (nextVisit is String && nextVisit.isNotEmpty) {
+      // Let generated code parse ISO-8601 directly; no-op here
+    }
+    return _$PropertyModelFromJson(normalized);
+  }
 
   Map<String, dynamic> toJson() => _$PropertyModelToJson(this);
 
@@ -248,9 +276,11 @@ class PropertyModel {
         return dailyRate ?? basePrice;
       case PropertyPurpose.buy:
         return basePrice;
+      default:
+        return basePrice;
     }
   }
-  
+
   String get propertyTypeString {
     switch (propertyType) {
       case PropertyType.house:
@@ -261,9 +291,15 @@ class PropertyModel {
         return 'Builder Floor';
       case PropertyType.room:
         return 'Room';
+      case PropertyType.villa:
+        return 'Villa';
+      case PropertyType.plot:
+        return 'Plot';
+      default:
+        return 'Property';
     }
   }
-  
+
   String get purposeString {
     switch (purpose) {
       case PropertyPurpose.buy:
@@ -272,9 +308,11 @@ class PropertyModel {
         return 'Rent';
       case PropertyPurpose.shortStay:
         return 'Short Stay';
+      default:
+        return 'For Sale';
     }
   }
-  
+
   String get statusString {
     switch (status) {
       case PropertyStatus.available:
@@ -287,48 +325,92 @@ class PropertyModel {
         return 'Under Offer';
       case PropertyStatus.maintenance:
         return 'Maintenance';
+      default:
+        return 'Available';
     }
   }
 
   String get addressDisplay {
     if (fullAddress?.isNotEmpty == true) return fullAddress!;
-    if (locality?.isNotEmpty == true && city?.isNotEmpty == true) return '$locality, $city';
+    if (locality?.isNotEmpty == true && city?.isNotEmpty == true) {
+      return '$locality, $city';
+    }
     return city ?? 'Unknown Location';
   }
 
-  String get mainImage {
-    if (mainImageUrl?.isNotEmpty == true) {
-      return mainImageUrl!;
-    }
-    if (images?.isNotEmpty == true) {
-      return images!.first.imageUrl;
-    }
-    return 'https://via.placeholder.com/400x300?text=No+Image';
+  // Short address that never exposes full_address. Prefer locality/subLocality + city.
+  String get shortAddressDisplay {
+    final parts = <String>[];
+    if (locality != null && locality!.isNotEmpty) parts.add(locality!);
+    if (subLocality != null && subLocality!.isNotEmpty) parts.add(subLocality!);
+    if (city != null && city!.isNotEmpty) parts.add(city!);
+    if (parts.isEmpty) return city ?? 'Unknown Location';
+    return parts.join(', ');
   }
 
+  String get mainImage {
+    if (mainImageUrl?.isNotEmpty == true) return mainImageUrl!;
+    final firstImageUrl = (images != null && images!.isNotEmpty) ? images!.first.imageUrl : null;
+    return (firstImageUrl?.isNotEmpty == true)
+        ? firstImageUrl!
+        : 'https://via.placeholder.com/400x300?text=No+Image';
+  }
+
+  // Also make the imageUrls getter safer
   List<String> get imageUrls {
-    if (images?.isNotEmpty == true) {
-      return images!.map((e) => e.imageUrl).toList();
+    final urls = <String>[];
+    if (mainImageUrl?.isNotEmpty == true) urls.add(mainImageUrl!);
+    for (final img in images ?? const <PropertyImageModel>[]) {
+      if (img.imageUrl.isNotEmpty) urls.add(img.imageUrl);
     }
-    return mainImageUrl != null ? [mainImageUrl!] : [];
+    return urls.toSet().toList();
+  }
+
+  // Images suitable for gallery (filter out known non-image URLs like 360 tour links)
+  List<String> get galleryImageUrls {
+    final candidates = <String>[];
+    // Prefer sorted images by display order when available
+    final sortedImages = [...(images ?? [])]
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    for (final img in sortedImages) {
+      final url = img.imageUrl;
+      if (_looksLikeImageUrl(url)) candidates.add(url);
+    }
+    // Include main image if list still empty
+    if (candidates.isEmpty && mainImageUrl?.isNotEmpty == true) {
+      candidates.add(mainImageUrl!);
+    }
+    // Final fallback: at least one placeholder handled by UI if still empty
+    return candidates;
+  }
+
+  bool _looksLikeImageUrl(String url) {
+    final lower = url.toLowerCase();
+    if (lower.contains('kuula.co/share')) return false;
+    final path = Uri.tryParse(lower)?.path ?? lower;
+    return path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.png') ||
+        path.endsWith('.webp') ||
+        path.endsWith('.gif');
   }
 
   // Location convenience methods
   bool get hasLocation => latitude != null && longitude != null;
-  
+
   // Amenities convenience methods
   bool get hasAmenities => amenities?.isNotEmpty == true;
   List<String> get amenitiesList => amenities?.map((a) => a.title).toList() ?? [];
   List<PropertyAmenity> get amenitiesData => amenities ?? [];
-  
+
   // Virtual tour convenience methods
   bool get hasVirtualTour => virtualTourUrl?.isNotEmpty == true;
-  
+
   // Agent/Owner convenience methods
   bool get hasOwner => ownerName?.isNotEmpty == true;
   String get ownerDisplayName => ownerName ?? 'Property Owner';
   bool get hasOwnerContact => ownerContact?.isNotEmpty == true;
-  
+
   // Property details convenience methods
   String get bedroomBathroomText {
     if (bedrooms != null && bathrooms != null) {
@@ -363,7 +445,7 @@ class PropertyModel {
   String get imageDescription {
     return '$propertyTypeString in ${city ?? 'Unknown Location'}';
   }
-  
+
   // Get initials for fallback display
   String get titleInitials {
     final words = title.split(' ');
@@ -400,4 +482,17 @@ class PropertyModel {
     return '';
   }
 
-} 
+  // User visit helpers
+  bool get hasUserScheduled => userHasScheduledVisit || userNextVisitDate != null;
+
+  // Parsed availability date helper
+  DateTime? get availableFromDate {
+    final v = availableFrom;
+    if (v == null || v.isEmpty) return null;
+    try {
+      return DateTime.parse(v);
+    } catch (_) {
+      return null;
+    }
+  }
+}

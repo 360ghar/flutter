@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../controllers/splash_controller.dart';
-import '../../../core/utils/theme.dart';
+
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/theme.dart';
+import 'package:ghar360/features/splash/controllers/splash_controller.dart';
 
 class SplashView extends GetView<SplashController> {
   const SplashView({super.key});
@@ -20,14 +23,14 @@ class SplashView extends GetView<SplashController> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppTheme.primaryYellow.withOpacity(0.1),
+                    AppTheme.primaryYellow.withValues(alpha: 0.1),
                     AppTheme.backgroundWhite,
-                    AppTheme.accentBlue.withOpacity(0.05),
+                    AppTheme.accentBlue.withValues(alpha: 0.05),
                   ],
                 ),
               ),
             ),
-            
+
             // Main content
             PageView(
               controller: controller.pageController,
@@ -39,14 +42,14 @@ class SplashView extends GetView<SplashController> {
                 _buildStep4(context),
               ],
             ),
-            
+
             // Skip button
             Positioned(
               top: 16,
               right: 16,
               child: TextButton(
                 onPressed: controller.skipToHome,
-                child: Text(
+                child: const Text(
                   'Skip',
                   style: TextStyle(
                     color: AppTheme.textGray,
@@ -56,7 +59,7 @@ class SplashView extends GetView<SplashController> {
                 ),
               ),
             ),
-            
+
             // Bottom navigation indicators and controls
             Positioned(
               bottom: 50,
@@ -65,65 +68,64 @@ class SplashView extends GetView<SplashController> {
               child: Column(
                 children: [
                   // Page indicators
-                  Obx(() => Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (index) {
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: controller.currentStep.value == index ? 24 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: controller.currentStep.value == index
-                              ? AppTheme.primaryYellow
-                              : AppTheme.textLight.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      );
-                    }),
-                  )),
-                  
+                  Obx(
+                    () => Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(4, (index) {
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: controller.currentStep.value == index ? 24 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: controller.currentStep.value == index
+                                ? AppTheme.primaryYellow
+                                : AppTheme.textLight.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+
                   const SizedBox(height: 32),
-                  
+
                   // Navigation buttons
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Obx(() => Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Previous button
-                        controller.currentStep.value > 0
-                            ? TextButton.icon(
-                                onPressed: controller.previousStep,
-                                icon: const Icon(Icons.arrow_back),
-                                label: const Text('Back'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppTheme.textGray,
-                                ),
-                              )
-                            : const SizedBox(width: 80),
-                        
-                        // Next/Get Started button
-                        ElevatedButton(
-                          onPressed: controller.nextStep,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryYellow,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
+                    child: Obx(
+                      () => Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Previous button
+                          controller.currentStep.value > 0
+                              ? TextButton.icon(
+                                  onPressed: controller.previousStep,
+                                  icon: const Icon(Icons.arrow_back),
+                                  label: Text('back'.tr),
+                                  style: TextButton.styleFrom(foregroundColor: AppTheme.textGray),
+                                )
+                              : const SizedBox(width: 80),
+
+                          // Next/Get Started button
+                          ElevatedButton(
+                            onPressed: controller.nextStep,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryYellow,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                            child: Text(
+                              controller.currentStep.value < 3 ? 'next'.tr : 'get_started'.tr,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
-                          child: Text(
-                            controller.currentStep.value < 3 ? 'Next' : 'Get Started',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -146,38 +148,34 @@ class SplashView extends GetView<SplashController> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // 360° Tour Animation
-              ScaleTransition(
-                scale: controller.scaleAnimation,
-                child: _build360TourIllustration(),
-              ),
-              
+              ScaleTransition(scale: controller.scaleAnimation, child: _build360TourIllustration()),
+
               const SizedBox(height: 48),
-              
+
               // Title
               Text(
                 'Experience 360° Virtual Tours',
                 style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  color: AppTheme.textDark,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                   height: 1.2,
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Description
               Text(
                 'Step inside every property from anywhere. Our immersive 360° tours let you explore homes as if you were there, saving time and making better decisions.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textGray,
-                  height: 1.6,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppTheme.textGray, height: 1.6),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Feature highlights
               _buildFeatureHighlights([
                 'Immersive 360° Views',
@@ -207,9 +205,9 @@ class SplashView extends GetView<SplashController> {
                 scale: controller.scaleAnimation,
                 child: _buildVirtualToursIllustration(),
               ),
-              
+
               const SizedBox(height: 48),
-              
+
               // Title
               Text(
                 'Tour at Your Convenience',
@@ -220,21 +218,20 @@ class SplashView extends GetView<SplashController> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Description
               Text(
                 'Visit properties 24/7 from the comfort of your home. No scheduling conflicts, no travel time – just instant access to your dream homes.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textGray,
-                  height: 1.6,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppTheme.textGray, height: 1.6),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Feature highlights
               _buildFeatureHighlights([
                 '24/7 Availability',
@@ -264,9 +261,9 @@ class SplashView extends GetView<SplashController> {
                 scale: controller.scaleAnimation,
                 child: _buildVerifiedListingIllustration(),
               ),
-              
+
               const SizedBox(height: 48),
-              
+
               // Title
               Text(
                 'Verified & Authentic Listings',
@@ -277,21 +274,20 @@ class SplashView extends GetView<SplashController> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Description
               Text(
                 'Every property is thoroughly verified by our team. Real photos, accurate details, and authentic information – no fake listings, guaranteed.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textGray,
-                  height: 1.6,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppTheme.textGray, height: 1.6),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Feature highlights
               _buildFeatureHighlights([
                 'Thoroughly Verified',
@@ -321,9 +317,9 @@ class SplashView extends GetView<SplashController> {
                 scale: controller.scaleAnimation,
                 child: _buildLowBrokerageIllustration(),
               ),
-              
+
               const SizedBox(height: 48),
-              
+
               // Title
               Text(
                 'Low Brokerage, Complete Service',
@@ -334,21 +330,20 @@ class SplashView extends GetView<SplashController> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Description
               Text(
                 'Save thousands with our transparent, low brokerage fees while getting full-service support. Expert guidance, legal assistance, and end-to-end support.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textGray,
-                  height: 1.6,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppTheme.textGray, height: 1.6),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Feature highlights
               _buildFeatureHighlights([
                 'Transparent Pricing',
@@ -377,11 +372,7 @@ class SplashView extends GetView<SplashController> {
                   shape: BoxShape.circle,
                   color: AppTheme.successGreen,
                 ),
-                child: const Icon(
-                  Icons.check,
-                  size: 14,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.check, size: 14, color: Colors.white),
               ),
               const SizedBox(width: 12),
               Text(
@@ -412,10 +403,7 @@ class SplashView extends GetView<SplashController> {
             height: 200,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: AppTheme.primaryYellow.withOpacity(0.3),
-                width: 3,
-              ),
+              border: Border.all(color: AppTheme.primaryYellow.withValues(alpha: 0.3), width: 3),
             ),
           ),
           // Center house icon
@@ -427,17 +415,13 @@ class SplashView extends GetView<SplashController> {
               color: AppTheme.primaryYellow,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryYellow.withOpacity(0.3),
+                  color: AppTheme.primaryYellow.withValues(alpha: 0.3),
                   blurRadius: 20,
                   spreadRadius: 5,
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.home_rounded,
-              size: 60,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.home_rounded, size: 60, color: Colors.white),
           ),
           // 360° text
           Positioned(
@@ -450,11 +434,7 @@ class SplashView extends GetView<SplashController> {
               ),
               child: const Text(
                 '360°',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
           ),
@@ -477,7 +457,7 @@ class SplashView extends GetView<SplashController> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -506,14 +486,10 @@ class SplashView extends GetView<SplashController> {
                         height: 120,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppTheme.accentBlue.withOpacity(0.3),
+                            color: AppTheme.accentBlue.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            Icons.apartment,
-                            size: 40,
-                            color: AppTheme.accentBlue,
-                          ),
+                          child: const Icon(Icons.apartment, size: 40, color: AppTheme.accentBlue),
                         ),
                       ),
                       // Play button for virtual tour
@@ -527,11 +503,7 @@ class SplashView extends GetView<SplashController> {
                             shape: BoxShape.circle,
                             color: AppTheme.primaryYellow,
                           ),
-                          child: const Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 30,
-                          ),
+                          child: const Icon(Icons.play_arrow, color: Colors.white, size: 30),
                         ),
                       ),
                     ],
@@ -575,7 +547,7 @@ class SplashView extends GetView<SplashController> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -592,13 +564,7 @@ class SplashView extends GetView<SplashController> {
                   color: AppTheme.backgroundGray,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.image,
-                    size: 30,
-                    color: AppTheme.textGray,
-                  ),
-                ),
+                child: const Center(child: Icon(Icons.image, size: 30, color: AppTheme.textGray)),
               ),
               const SizedBox(height: 14),
               // Property details with checkmarks
@@ -614,11 +580,7 @@ class SplashView extends GetView<SplashController> {
                           shape: BoxShape.circle,
                           color: AppTheme.successGreen,
                         ),
-                        child: const Icon(
-                          Icons.check,
-                          size: 14,
-                          color: Colors.white,
-                        ),
+                        child: const Icon(Icons.check, size: 14, color: Colors.white),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -649,17 +611,13 @@ class SplashView extends GetView<SplashController> {
               color: AppTheme.successGreen,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.successGreen.withOpacity(0.3),
+                  color: AppTheme.successGreen.withValues(alpha: 0.3),
                   blurRadius: 15,
                   spreadRadius: 2,
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.verified,
-              color: Colors.white,
-              size: 30,
-            ),
+            child: const Icon(Icons.verified, color: Colors.white, size: 30),
           ),
         ),
       ],
@@ -677,7 +635,7 @@ class SplashView extends GetView<SplashController> {
           height: 200,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppTheme.successGreen.withOpacity(0.1),
+            color: AppTheme.successGreen.withValues(alpha: 0.1),
           ),
           child: Stack(
             alignment: Alignment.center,
@@ -691,17 +649,13 @@ class SplashView extends GetView<SplashController> {
                   color: AppTheme.successGreen,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.successGreen.withOpacity(0.3),
+                      color: AppTheme.successGreen.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.attach_money,
-                  size: 60,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.attach_money, size: 60, color: Colors.white),
               ),
               // Percentage badge
               Positioned(
@@ -736,7 +690,7 @@ class SplashView extends GetView<SplashController> {
             Icons.security,
             Icons.thumb_up,
           ];
-          
+
           return Positioned(
             left: 100 + 100 * (index % 2 == 0 ? 1 : -1),
             top: 100 + 30 * (index - 2.5),
@@ -755,18 +709,10 @@ class SplashView extends GetView<SplashController> {
         shape: BoxShape.circle,
         color: color,
         boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.3),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
+          BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 10, spreadRadius: 2),
         ],
       ),
-      child: Icon(
-        icon,
-        color: Colors.white,
-        size: 24,
-      ),
+      child: Icon(icon, color: Colors.white, size: 24),
     );
   }
-} 
+}

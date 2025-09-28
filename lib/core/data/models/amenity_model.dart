@@ -15,7 +15,7 @@ class AmenityModel {
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
 
-  AmenityModel({
+  const AmenityModel({
     required this.id,
     required this.title,
     this.icon,
@@ -65,11 +65,11 @@ class PropertyAmenityModel {
   final int amenityId;
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
-  
+
   // Relationship data
   final AmenityModel? amenity;
 
-  PropertyAmenityModel({
+  const PropertyAmenityModel({
     required this.id,
     required this.propertyId,
     required this.amenityId,
@@ -77,7 +77,8 @@ class PropertyAmenityModel {
     this.amenity,
   });
 
-  factory PropertyAmenityModel.fromJson(Map<String, dynamic> json) => _$PropertyAmenityModelFromJson(json);
+  factory PropertyAmenityModel.fromJson(Map<String, dynamic> json) =>
+      _$PropertyAmenityModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$PropertyAmenityModelToJson(this);
 
@@ -95,14 +96,10 @@ class PropertyAmenityResponse {
   final String? icon;
   final String? category;
 
-  PropertyAmenityResponse({
-    required this.id,
-    required this.title,
-    this.icon,
-    this.category,
-  });
+  const PropertyAmenityResponse({required this.id, required this.title, this.icon, this.category});
 
-  factory PropertyAmenityResponse.fromJson(Map<String, dynamic> json) => _$PropertyAmenityResponseFromJson(json);
+  factory PropertyAmenityResponse.fromJson(Map<String, dynamic> json) =>
+      _$PropertyAmenityResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$PropertyAmenityResponseToJson(this);
 

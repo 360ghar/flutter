@@ -1,18 +1,14 @@
+import 'package:ghar360/core/data/models/api_response_models.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'api_response_models.dart';
 
 part 'unified_filter_model.g.dart';
 
 @JsonSerializable()
 class UnifiedFilterModel {
   // Location-based filters
-  final double? latitude;
-  final double? longitude;
+  // REMOVED: latitude and longitude are now handled by PageStateModel.selectedLocation
   @JsonKey(name: 'radius_km')
   final double? radiusKm;
-  final String? city;
-  final String? locality;
-  final String? pincode;
 
   // Core property filters
   final String? purpose; // buy, rent, short_stay
@@ -57,7 +53,7 @@ class UnifiedFilterModel {
   final int? guests;
   @JsonKey(name: 'sort_by')
   final SortBy? sortBy;
-  
+
   // Search query for text-based search
   @JsonKey(name: 'search_query')
   final String? searchQuery;
@@ -68,13 +64,8 @@ class UnifiedFilterModel {
   @JsonKey(name: 'property_ids')
   final List<int>? propertyIds;
 
-  UnifiedFilterModel({
-    this.latitude,
-    this.longitude,
+  const UnifiedFilterModel({
     this.radiusKm,
-    this.city,
-    this.locality,
-    this.pincode,
     this.purpose,
     this.propertyType,
     this.priceMin,
@@ -102,7 +93,7 @@ class UnifiedFilterModel {
   });
 
   factory UnifiedFilterModel.initial() {
-    return UnifiedFilterModel(
+    return const UnifiedFilterModel(
       radiusKm: 10.0,
       purpose: null,
       sortBy: null,
@@ -118,18 +109,63 @@ class UnifiedFilterModel {
 
   Map<String, dynamic> toJson() {
     final json = _$UnifiedFilterModelToJson(this);
-    // Remove null values for cleaner API requests
-    json.removeWhere((key, value) => value == null);
+
+    // Handle DateTime serialization properly for API
+    if (availableFrom != null) {
+      json['available_from'] = availableFrom!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+    }
+    if (checkInDate != null) {
+      json['check_in_date'] = checkInDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+    }
+    if (checkOutDate != null) {
+      json['check_out_date'] = checkOutDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+    }
+
+    // Ensure numeric values are within valid ranges
+    if (radiusKm != null && (radiusKm! <= 0 || radiusKm! > 1000)) {
+      json.remove('radius_km'); // Remove invalid radius
+    }
+    if (priceMin != null && priceMin! < 0) {
+      json.remove('price_min'); // Remove invalid price
+    }
+    if (priceMax != null && priceMax! < 0) {
+      json.remove('price_max'); // Remove invalid price
+    }
+    if (bedroomsMin != null && bedroomsMin! < 0) {
+      json.remove('bedrooms_min'); // Remove invalid bedrooms
+    }
+    if (bedroomsMax != null && bedroomsMax! < 0) {
+      json.remove('bedrooms_max'); // Remove invalid bedrooms
+    }
+    if (bathroomsMin != null && bathroomsMin! < 0) {
+      json.remove('bathrooms_min'); // Remove invalid bathrooms
+    }
+    if (bathroomsMax != null && bathroomsMax! < 0) {
+      json.remove('bathrooms_max'); // Remove invalid bathrooms
+    }
+    if (areaMin != null && areaMin! < 0) {
+      json.remove('area_min'); // Remove invalid area
+    }
+    if (areaMax != null && areaMax! < 0) {
+      json.remove('area_max'); // Remove invalid area
+    }
+    if (guests != null && guests! <= 0) {
+      json.remove('guests'); // Remove invalid guest count
+    }
+
+    // Remove null values and empty lists for cleaner API requests
+    json.removeWhere(
+      (key, value) =>
+          value == null ||
+          (value is List && value.isEmpty) ||
+          (value is String && value.trim().isEmpty),
+    );
+
     return json;
   }
 
   UnifiedFilterModel copyWith({
-    double? latitude,
-    double? longitude,
     double? radiusKm,
-    String? city,
-    String? locality,
-    String? pincode,
     String? purpose,
     List<String>? propertyType,
     double? priceMin,
@@ -156,12 +192,7 @@ class UnifiedFilterModel {
     List<int>? propertyIds,
   }) {
     return UnifiedFilterModel(
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
       radiusKm: radiusKm ?? this.radiusKm,
-      city: city ?? this.city,
-      locality: locality ?? this.locality,
-      pincode: pincode ?? this.pincode,
       purpose: purpose ?? this.purpose,
       propertyType: propertyType ?? this.propertyType,
       priceMin: priceMin ?? this.priceMin,
@@ -211,34 +242,18 @@ class LocationData {
   final String name;
   final double latitude;
   final double longitude;
-  final String? city;
-  final String? locality;
 
-  LocationData({
-    required this.name,
-    required this.latitude,
-    required this.longitude,
-    this.city,
-    this.locality,
-  });
+  const LocationData({required this.name, required this.latitude, required this.longitude});
 
   factory LocationData.fromJson(Map<String, dynamic> json) {
     return LocationData(
       name: json['name'] ?? '',
       latitude: json['latitude']?.toDouble() ?? 0.0,
       longitude: json['longitude']?.toDouble() ?? 0.0,
-      city: json['city'],
-      locality: json['locality'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'latitude': latitude,
-      'longitude': longitude,
-      'city': city,
-      'locality': locality,
-    };
+    return {'name': name, 'latitude': latitude, 'longitude': longitude};
   }
 }

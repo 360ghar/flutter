@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/mixins/theme_mixin.dart';
-import '../controllers/edit_profile_controller.dart';
-import '../../../../widgets/common/robust_network_image.dart';
+
+import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
+import 'package:ghar360/features/profile/controllers/edit_profile_controller.dart';
 
 class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
   const EditProfileView({super.key});
@@ -11,14 +13,10 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
   @override
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
-      title: 'Edit Profile',
+      title: 'edit_profile'.tr,
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: AppColors.loadingIndicator,
-            ),
-          );
+          return Center(child: CircularProgressIndicator(color: AppColors.loadingIndicator));
         }
 
         return SingleChildScrollView(
@@ -73,17 +71,10 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                           decoration: BoxDecoration(
                             color: AppColors.primaryYellow,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.surface,
-                              width: 3,
-                            ),
+                            border: Border.all(color: AppColors.surface, width: 3),
                           ),
                           child: IconButton(
-                            icon: Icon(
-                              Icons.camera_alt,
-                              color: AppColors.buttonText,
-                              size: 20,
-                            ),
+                            icon: Icon(Icons.camera_alt, color: AppColors.buttonText, size: 20),
                             onPressed: controller.pickProfileImage,
                           ),
                         ),
@@ -98,72 +89,51 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      buildSectionTitle('Personal Information'),
+                      buildSectionTitle('personal_information'.tr),
                       const SizedBox(height: 20),
-                      
                       _buildTextField(
                         controller: controller.nameController,
-                        label: 'Full Name',
+                        label: 'full_name'.tr,
                         icon: Icons.person_outline,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Name is required';
+                            return 'name_required'.tr;
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
-                      
                       _buildTextField(
                         controller: controller.emailController,
-                        label: 'Email Address',
+                        label: 'email_address'.tr,
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value != null && value.isNotEmpty && !GetUtils.isEmail(value)) {
-                            return 'Please enter a valid email';
+                            return 'valid_email_required'.tr;
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
-                      
-                      _buildTextField(
-                        controller: controller.phoneController,
-                        label: 'Phone Number',
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Phone number is required';
-                          }
-                          if (value.length < 10) {
-                            return 'Please enter a valid phone number';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      
                       _buildTextField(
                         controller: controller.locationController,
-                        label: 'Location',
+                        label: 'location'.tr,
                         icon: Icons.location_on_outlined,
                       ),
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Date of Birth Section
                 buildThemeAwareCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      buildSectionTitle('Additional Information'),
+                      buildSectionTitle('additional_information'.tr),
                       const SizedBox(height: 20),
-                      
                       GestureDetector(
                         onTap: () => controller.selectDateOfBirth(context),
                         child: Container(
@@ -178,26 +148,24 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                               Icon(Icons.calendar_today, color: AppColors.iconColor),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Obx(() => Text(
-                                  controller.dateOfBirth.value != null
-                                      ? controller.formatDate(controller.dateOfBirth.value!)
-                                      : 'Select your date of birth',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: controller.dateOfBirth.value != null 
-                                        ? AppColors.textPrimary
-                                        : AppColors.textSecondary,
+                                child: Obx(
+                                  () => Text(
+                                    controller.dateOfBirth.value != null
+                                        ? controller.formatDate(controller.dateOfBirth.value!)
+                                        : 'select_your_date_of_birth'.tr,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: controller.dateOfBirth.value != null
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
                                   ),
-                                )),
+                                ),
                               ),
                               if (controller.dateOfBirth.value != null)
                                 GestureDetector(
                                   onTap: controller.clearDateOfBirth,
-                                  child: Icon(
-                                    Icons.clear, 
-                                    color: AppColors.iconColor, 
-                                    size: 20,
-                                  ),
+                                  child: Icon(Icons.clear, color: AppColors.iconColor, size: 20),
                                 ),
                             ],
                           ),
@@ -206,9 +174,9 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Save Button
                 SizedBox(
                   width: double.infinity,
@@ -218,20 +186,15 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
                       backgroundColor: AppColors.buttonBackground,
                       foregroundColor: AppColors.buttonText,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(
-                      controller.isLoading.value ? 'Saving...' : 'Save Changes',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      controller.isLoading.value ? 'saving'.tr : 'save_changes'.tr,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
               ],
             ),
@@ -265,7 +228,7 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+          borderSide: const BorderSide(color: AppColors.primaryYellow, width: 2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -274,4 +237,4 @@ class EditProfileView extends GetView<EditProfileController> with ThemeMixin {
       ),
     );
   }
-} 
+}

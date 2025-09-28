@@ -23,10 +23,9 @@ class PaginationParams {
   final int page;
   final int limit;
 
-  PaginationParams({
-    this.page = 1,
-    this.limit = 20,
-  });
+  const PaginationParams({this.page = 1, this.limit = 20})
+    : assert(page > 0, 'page must be > 0'),
+      assert(limit > 0, 'limit must be > 0');
 
   factory PaginationParams.fromJson(Map<String, dynamic> json) => _$PaginationParamsFromJson(json);
 
@@ -48,7 +47,7 @@ class PaginatedResponse<T> {
   @JsonKey(name: 'has_prev')
   final bool hasPrev;
 
-  PaginatedResponse({
+  const PaginatedResponse({
     required this.items,
     required this.total,
     required this.page,
@@ -89,10 +88,7 @@ class MessageResponse {
   final String message;
   final bool success;
 
-  MessageResponse({
-    required this.message,
-    this.success = true,
-  });
+  const MessageResponse({required this.message, this.success = true});
 
   factory MessageResponse.fromJson(Map<String, dynamic> json) => _$MessageResponseFromJson(json);
 
@@ -106,11 +102,7 @@ class ErrorResponse {
   final String? errorCode;
   final Map<String, dynamic>? details;
 
-  ErrorResponse({
-    required this.message,
-    this.errorCode,
-    this.details,
-  });
+  const ErrorResponse({required this.message, this.errorCode, this.details});
 
   factory ErrorResponse.fromJson(Map<String, dynamic> json) => _$ErrorResponseFromJson(json);
 
@@ -127,7 +119,7 @@ class SearchParams {
   final int page;
   final int limit;
 
-  SearchParams({
+  const SearchParams({
     this.query,
     this.latitude,
     this.longitude,
@@ -140,7 +132,6 @@ class SearchParams {
 
   Map<String, dynamic> toJson() => _$SearchParamsToJson(this);
 }
-
 
 @JsonSerializable()
 class NotificationSettings {
@@ -157,7 +148,7 @@ class NotificationSettings {
   @JsonKey(name: 'promotional_emails')
   final bool promotionalEmails;
 
-  NotificationSettings({
+  const NotificationSettings({
     this.emailNotifications = true,
     this.pushNotifications = true,
     this.smsNotifications = false,
@@ -166,7 +157,8 @@ class NotificationSettings {
     this.promotionalEmails = false,
   });
 
-  factory NotificationSettings.fromJson(Map<String, dynamic> json) => _$NotificationSettingsFromJson(json);
+  factory NotificationSettings.fromJson(Map<String, dynamic> json) =>
+      _$NotificationSettingsFromJson(json);
 
   Map<String, dynamic> toJson() => _$NotificationSettingsToJson(this);
 
@@ -197,14 +189,11 @@ class PrivacySettings {
   final bool locationSharing;
   @JsonKey(name: 'contact_sharing')
   final bool contactSharing;
-  @JsonKey(name: 'search_history_tracking')
-  final bool searchHistoryTracking;
 
-  PrivacySettings({
+  const PrivacySettings({
     this.profileVisibility = 'public',
     this.locationSharing = true,
     this.contactSharing = true,
-    this.searchHistoryTracking = true,
   });
 
   factory PrivacySettings.fromJson(Map<String, dynamic> json) => _$PrivacySettingsFromJson(json);
@@ -215,13 +204,11 @@ class PrivacySettings {
     String? profileVisibility,
     bool? locationSharing,
     bool? contactSharing,
-    bool? searchHistoryTracking,
   }) {
     return PrivacySettings(
       profileVisibility: profileVisibility ?? this.profileVisibility,
       locationSharing: locationSharing ?? this.locationSharing,
       contactSharing: contactSharing ?? this.contactSharing,
-      searchHistoryTracking: searchHistoryTracking ?? this.searchHistoryTracking,
     );
   }
 
@@ -235,10 +222,7 @@ class LocationUpdate {
   final double latitude;
   final double longitude;
 
-  LocationUpdate({
-    required this.latitude,
-    required this.longitude,
-  });
+  const LocationUpdate({required this.latitude, required this.longitude});
 
   factory LocationUpdate.fromJson(Map<String, dynamic> json) => _$LocationUpdateFromJson(json);
 

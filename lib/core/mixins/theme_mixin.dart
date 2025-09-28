@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import '../utils/theme.dart';
 
 mixin ThemeMixin {
   // App Bar styling
@@ -10,18 +10,18 @@ mixin ThemeMixin {
     Widget? leading,
     bool automaticallyImplyLeading = true,
   }) {
+    final theme = Get.theme;
     return AppBar(
       title: Text(
         title,
-        style: TextStyle(
-          color: AppTheme.primaryColor,
+        style: theme.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
-          fontSize: 20,
+          color: theme.colorScheme.onSurface,
         ),
       ),
-      backgroundColor: Get.theme.colorScheme.surface,
+      backgroundColor: theme.colorScheme.surface,
       elevation: 0,
-      iconTheme: const IconThemeData(color: AppTheme.primaryColor),
+      iconTheme: IconThemeData(color: theme.colorScheme.primary),
       actions: actions,
       leading: leading,
       automaticallyImplyLeading: automaticallyImplyLeading,
@@ -39,21 +39,18 @@ mixin ThemeMixin {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: Get.theme.colorScheme.surface,
-      child: Padding(
-        padding: padding ?? const EdgeInsets.all(16),
-        child: child,
-      ),
+      child: Padding(padding: padding ?? const EdgeInsets.all(16), child: child),
     );
   }
 
   // Section title styling
   Widget buildSectionTitle(String title) {
+    final theme = Get.theme;
     return Text(
       title,
-      style: TextStyle(
+      style: theme.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.bold,
-        color: Get.theme.colorScheme.onSurface,
-        fontSize: 18,
+        color: theme.colorScheme.onSurface,
       ),
     );
   }
@@ -67,6 +64,7 @@ mixin ThemeMixin {
     IconData? icon,
     bool enabled = true,
   }) {
+    final theme = Get.theme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -74,7 +72,9 @@ mixin ThemeMixin {
           if (icon != null) ...[
             Icon(
               icon,
-              color: enabled ? AppTheme.primaryColor : Get.theme.colorScheme.onSurface.withOpacity(0.5),
+              color: enabled
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.5),
               size: 24,
             ),
             const SizedBox(width: 16),
@@ -88,14 +88,16 @@ mixin ThemeMixin {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: enabled ? Get.theme.colorScheme.onSurface : Get.theme.colorScheme.onSurface.withOpacity(0.5),
+                    color: enabled
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -105,7 +107,10 @@ mixin ThemeMixin {
           Switch(
             value: value,
             onChanged: enabled ? onChanged : null,
-            activeColor: AppTheme.primaryColor,
+            thumbColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected) ? theme.colorScheme.primary : null,
+            ),
+            activeTrackColor: theme.colorScheme.primary.withValues(alpha: 0.3),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
@@ -121,6 +126,7 @@ mixin ThemeMixin {
     IconData? icon,
     bool isDestructive = false,
   }) {
+    final theme = Get.theme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
@@ -133,7 +139,7 @@ mixin ThemeMixin {
               if (icon != null) ...[
                 Icon(
                   icon,
-                  color: isDestructive ? AppTheme.errorRed : AppTheme.primaryColor,
+                  color: isDestructive ? theme.colorScheme.error : theme.colorScheme.primary,
                   size: 24,
                 ),
                 const SizedBox(width: 16),
@@ -147,14 +153,16 @@ mixin ThemeMixin {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
-                        color: isDestructive ? AppTheme.errorRed : Get.theme.colorScheme.onSurface,
+                        color: isDestructive
+                            ? theme.colorScheme.error
+                            : theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -163,7 +171,7 @@ mixin ThemeMixin {
               ),
               Icon(
                 Icons.arrow_forward_ios,
-                color: Get.theme.colorScheme.onSurface.withOpacity(0.5),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 size: 16,
               ),
             ],
@@ -180,12 +188,10 @@ mixin ThemeMixin {
     List<Widget>? actions,
     Widget? floatingActionButton,
   }) {
+    final theme = Get.theme;
     return Scaffold(
-      backgroundColor: Get.theme.scaffoldBackgroundColor,
-      appBar: buildThemeAwareAppBar(
-        title: title,
-        actions: actions,
-      ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: buildThemeAwareAppBar(title: title, actions: actions),
       body: body,
       floatingActionButton: floatingActionButton,
     );

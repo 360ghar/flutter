@@ -51,7 +51,7 @@ class AgentModel {
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
 
-  AgentModel({
+  const AgentModel({
     required this.id,
     required this.name,
     this.description,
@@ -134,6 +134,6 @@ class AgentModel {
   }
 
   String get languagesDisplay => languages?.join(', ') ?? 'Not specified';
-  
+
   bool get hasWorkingHours => workingHours?.isNotEmpty == true;
-} 
+}

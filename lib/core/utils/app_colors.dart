@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:get/get.dart';
-import 'theme.dart';
-import '../controllers/theme_controller.dart';
+
+import 'package:ghar360/core/controllers/theme_controller.dart';
+import 'package:ghar360/core/utils/theme.dart';
 
 class AppColors {
   // Primary colors (consistent across themes)
@@ -9,11 +11,14 @@ class AppColors {
   static const Color accentOrange = AppTheme.accentOrange;
   static const Color accentBlue = AppTheme.accentBlue;
   static const Color accentGreen = AppTheme.accentGreen;
-  
+
   // Status colors (consistent across themes)
   static const Color successGreen = AppTheme.successGreen;
   static const Color warningAmber = AppTheme.warningAmber;
   static const Color errorRed = AppTheme.errorRed;
+
+  // Utility colors (consistent across themes)
+  static const Color transparent = Colors.transparent;
 
   // Helper to get theme controller safely
   static ThemeController? get _themeController {
@@ -233,7 +238,9 @@ class AppColors {
   }
 
   static Color get switchTrackInactive {
-    return _isDarkMode ? AppTheme.darkTextTertiary.withValues(alpha: 0.3) : AppTheme.textLight.withValues(alpha: 0.3);
+    return _isDarkMode
+        ? AppTheme.darkTextTertiary.withValues(alpha: 0.3)
+        : AppTheme.textLight.withValues(alpha: 0.3);
   }
 
   // Method to get appropriate text color for given background

@@ -1,25 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'debug_logger.dart';
 
 class ErrorHandler {
-  static void handleAuthError(dynamic error, {VoidCallback? onRetry}) {
+  /// Safely gets a context for UI operations, preferring overlay context for reliability
+  static BuildContext? _getSafeContext() {
+    return Get.overlayContext ?? Get.context;
+  }
+
+  static void handleAuthError(dynamic error, {VoidCallback? onRetry, StackTrace? stackTrace}) {
+    // Enhanced error logging with stack trace preservation
+    DebugLogger.logDetailedError(
+      operation: 'handleAuthError',
+      error: error,
+      stackTrace: stackTrace ?? StackTrace.current,
+      additionalData: {'hasRetryCallback': onRetry != null},
+    );
+
     String message;
     String title = 'Error';
-    Color backgroundColor = Colors.red;
-    
+    Color backgroundColor = AppColors.errorRed;
+
     if (error is AuthException) {
       title = 'Authentication Error';
-      switch (error.message) {
+      final msg = error.message;
+      String code = '';
+      try {
+        // AuthApiException has a code field
+        // ignore: invalid_use_of_visible_for_testing_member
+        code = (error as dynamic).code ?? '';
+      } catch (_) {}
+      switch (msg) {
         case 'Invalid login credentials':
-          message = 'Invalid email or password. Please check your credentials.';
+          message = 'Invalid phone or password. Please check your credentials.';
           break;
         case 'Email not confirmed':
-          message = 'Please verify your email address before signing in.';
+        case 'Phone not confirmed':
+        case 'User not confirmed':
+          message = 'Please verify your phone number before signing in.';
+          backgroundColor = AppColors.warningAmber;
           break;
         case 'User already registered':
-          message = 'An account with this email already exists. Please sign in instead.';
+          message = 'An account with this phone already exists. Please sign in instead.';
           break;
         case 'Password should be at least 6 characters':
           message = 'Password must be at least 6 characters long.';
@@ -27,18 +51,40 @@ class ErrorHandler {
         case 'Invalid email':
           message = 'Please enter a valid email address.';
           break;
+        case 'Invalid phone':
+        case 'Invalid phone number':
+          message = 'Please enter a valid phone number.';
+          break;
         case 'Signup disabled':
           message = 'New user registration is currently disabled.';
           break;
+        case 'User not found':
+          message = 'No account found with this phone number.';
+          break;
+        case 'Wrong password':
+        case 'Incorrect password':
+          message = 'Password is incorrect. Please try again or reset your password.';
+          break;
         case 'Email rate limit exceeded':
+        case 'SMS rate limit exceeded':
           message = 'Too many attempts. Please wait before trying again.';
-          backgroundColor = Colors.orange;
+          backgroundColor = AppColors.warningAmber;
+          break;
+        case 'Token has expired or is invalid':
+          message = 'OTP has expired or is invalid. Please request a new code.';
+          backgroundColor = AppColors.warningAmber;
           break;
         case 'Session not found':
           message = 'Your session has expired. Please sign in again.';
           break;
         default:
-          message = error.message;
+          // Map by code if available
+          if (code == 'otp_expired') {
+            message = 'OTP has expired. Please request a new code.';
+            backgroundColor = AppColors.warningAmber;
+          } else {
+            message = msg;
+          }
       }
     } else if (error is Exception) {
       message = error.toString().replaceAll('Exception: ', '');
@@ -46,28 +92,42 @@ class ErrorHandler {
       message = 'An unexpected error occurred. Please try again.';
     }
 
+    final context = _getSafeContext();
+    if (context == null) {
+      DebugLogger.warning('No context available for showing auth error snackbar');
+      return;
+    }
+
     Get.snackbar(
       title,
       message,
       snackPosition: SnackPosition.TOP,
       backgroundColor: backgroundColor,
-      colorText: Colors.white,
+      colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 4),
       mainButton: onRetry != null
           ? TextButton(
               onPressed: onRetry,
-              child: const Text(
-                'Retry',
-                style: TextStyle(color: Colors.white),
+              child: Text(
+                'retry'.tr,
+                style: TextStyle(color: Theme.of(context).colorScheme.onError),
               ),
             )
           : null,
     );
   }
 
-  static void handleNetworkError(dynamic error, {VoidCallback? onRetry}) {
+  static void handleNetworkError(dynamic error, {VoidCallback? onRetry, StackTrace? stackTrace}) {
+    // Enhanced error logging with stack trace preservation
+    DebugLogger.logDetailedError(
+      operation: 'handleNetworkError',
+      error: error,
+      stackTrace: stackTrace ?? StackTrace.current,
+      additionalData: {'hasRetryCallback': onRetry != null, 'errorString': error.toString()},
+    );
+
     String message;
-    
+
     if (error.toString().contains('SocketException') ||
         error.toString().contains('TimeoutException')) {
       message = 'No internet connection. Please check your network and try again.';
@@ -85,19 +145,25 @@ class ErrorHandler {
       message = 'Network error occurred. Please try again.';
     }
 
+    final context = _getSafeContext();
+    if (context == null) {
+      DebugLogger.warning('No context available for showing network error snackbar');
+      return;
+    }
+
     Get.snackbar(
-      'Network Error',
+      'network_error'.tr,
       message,
       snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
+      backgroundColor: AppColors.warningAmber,
+      colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 4),
       mainButton: onRetry != null
           ? TextButton(
               onPressed: onRetry,
-              child: const Text(
-                'Retry',
-                style: TextStyle(color: Colors.white),
+              child: Text(
+                'retry'.tr,
+                style: TextStyle(color: Theme.of(context).colorScheme.onError),
               ),
             )
           : null,
@@ -105,79 +171,98 @@ class ErrorHandler {
   }
 
   static void handleValidationError(String field, String message) {
+    final context = _getSafeContext();
+    if (context == null) {
+      DebugLogger.warning('No context available for showing validation error snackbar');
+      return;
+    }
+
     Get.snackbar(
-      'Validation Error',
+      'validation_error'.tr,
       '$field: $message',
       snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
+      backgroundColor: AppColors.warningAmber,
+      colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 3),
     );
   }
 
   static void showSuccess(String message) {
+    final context = _getSafeContext();
+    if (context == null) {
+      DebugLogger.warning('No context available for showing success snackbar');
+      return;
+    }
+
     Get.snackbar(
-      'Success',
+      'success'.tr,
       message,
       snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
+      backgroundColor: AppColors.successGreen,
+      colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 3),
     );
   }
 
   static void showInfo(String message) {
+    final context = _getSafeContext();
+    if (context == null) {
+      DebugLogger.warning('No context available for showing info snackbar');
+      return;
+    }
+
     Get.snackbar(
-      'Info',
+      'info'.tr,
       message,
       snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.blue,
-      colorText: Colors.white,
+      backgroundColor: AppColors.accentBlue,
+      colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 3),
     );
   }
 
   static Widget buildErrorWidget(String error, {VoidCallback? onRetry}) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: colorScheme.error),
+                const SizedBox(height: 16),
+                Text(
+                  'something_went_wrong'.tr,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (onRetry != null) ...[
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh),
+                    label: Text('retry'.tr),
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Something went wrong',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (onRetry != null) ...[
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Try Again'),
-              ),
-            ],
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -189,11 +274,7 @@ class ErrorHandler {
           const CircularProgressIndicator(),
           if (message != null) ...[
             const SizedBox(height: 16),
-            Text(
-              message,
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
+            Text(message, style: const TextStyle(fontSize: 16), textAlign: TextAlign.center),
           ],
         ],
       ),
@@ -207,45 +288,47 @@ class ErrorHandler {
     VoidCallback? onAction,
     String? actionLabel,
   }) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon ?? Icons.inbox_outlined,
-              size: 64,
-              color: Colors.grey,
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon ?? Icons.inbox_outlined,
+                  size: 64,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (onAction != null && actionLabel != null) ...[
+                  const SizedBox(height: 24),
+                  ElevatedButton(onPressed: onAction, child: Text(actionLabel)),
+                ],
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (onAction != null && actionLabel != null) ...[
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: onAction,
-                child: Text(actionLabel),
-              ),
-            ],
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -254,14 +337,18 @@ class ApiErrorHandler {
   /// Handles API errors and provides user-friendly messages and debugging info
   static String handleError(dynamic error, {String? context, StackTrace? stackTrace}) {
     final errorMessage = error.toString();
-    
-    DebugLogger.error('API Error in ${context ?? 'unknown context'}: $errorMessage', error, stackTrace);
-    
+
+    DebugLogger.error(
+      'API Error in ${context ?? 'unknown context'}: $errorMessage',
+      error,
+      stackTrace,
+    );
+
     // Type casting errors
     if (errorMessage.contains('is not a subtype of type')) {
       return _handleTypeCastingError(errorMessage, context);
     }
-    
+
     // Network errors
     if (errorMessage.contains('Connection refused') ||
         errorMessage.contains('Failed host lookup') ||
@@ -269,7 +356,7 @@ class ApiErrorHandler {
         errorMessage.contains('NetworkException')) {
       return _handleNetworkError(errorMessage, context);
     }
-    
+
     // HTTP errors
     if (errorMessage.contains('404')) {
       return _handleHttpError(404, context);
@@ -280,28 +367,30 @@ class ApiErrorHandler {
     } else if (errorMessage.contains('500')) {
       return _handleHttpError(500, context);
     }
-    
+
     // JSON parsing errors
     if (errorMessage.contains('FormatException') ||
         errorMessage.contains('Unexpected character') ||
         errorMessage.contains('Invalid JSON')) {
       return _handleJsonError(errorMessage, context);
     }
-    
+
     // Authentication errors
     if (errorMessage.contains('Invalid email or password') ||
         errorMessage.contains('User not found') ||
         errorMessage.contains('Invalid credentials')) {
       return _handleAuthError(errorMessage, context);
     }
-    
+
     // Generic error
     return _handleGenericError(errorMessage, context);
   }
 
   static String _handleTypeCastingError(String error, String? context) {
-    DebugLogger.warning('Type casting error detected: backend data types don\'t match frontend expectations');
-    
+    DebugLogger.warning(
+      'Type casting error detected: backend data types don\'t match frontend expectations',
+    );
+
     if (error.contains("'int' is not a subtype of type 'String'")) {
       DebugLogger.info('Solution: Backend is returning integer where string is expected');
       return 'Data format mismatch - contact support';
@@ -312,14 +401,16 @@ class ApiErrorHandler {
       DebugLogger.info('Solution: Backend is returning string where number is expected');
       return 'Numeric data format issue - please try again';
     }
-    
+
     return 'Data format error - please try again';
   }
 
   static String _handleNetworkError(String error, String? context) {
     DebugLogger.warning('Network connectivity issue detected');
-    DebugLogger.debug('Solutions: 1. Check backend server 2. Verify connectivity 3. Check firewall');
-    
+    DebugLogger.debug(
+      'Solutions: 1. Check backend server 2. Verify connectivity 3. Check firewall',
+    );
+
     return 'Unable to connect to server - please try again later';
   }
 
@@ -328,19 +419,19 @@ class ApiErrorHandler {
       case 401:
         DebugLogger.warning('Authentication error: invalid or expired token');
         return 'Please log in again';
-        
+
       case 403:
         DebugLogger.warning('Authorization error: insufficient permissions');
         return 'Access denied - insufficient permissions';
-        
+
       case 404:
         DebugLogger.warning('Resource not found');
         return 'Requested data not found';
-        
+
       case 500:
         DebugLogger.error('Server error: backend is experiencing issues');
         return 'Server error - please try again later';
-        
+
       default:
         DebugLogger.error('HTTP Error $statusCode');
         return 'Server responded with error $statusCode';
@@ -350,21 +441,21 @@ class ApiErrorHandler {
   static String _handleJsonError(String error, String? context) {
     DebugLogger.warning('JSON parsing error: invalid response format');
     DebugLogger.debug('Check backend response format and verify valid JSON');
-    
+
     return 'Invalid data format received - please try again';
   }
 
   static String _handleAuthError(String error, String? context) {
     DebugLogger.warning('Authentication failed');
     DebugLogger.debug('Verify credentials and account status');
-    
+
     return 'Authentication failed - please check credentials';
   }
 
   static String _handleGenericError(String error, String? context) {
     DebugLogger.error('Unhandled error type: $error');
     DebugLogger.debug('Request failed - please retry');
-    
+
     return 'Unexpected error occurred - please try again later';
   }
 
@@ -383,5 +474,4 @@ class ApiErrorHandler {
       additionalData: additionalData,
     );
   }
-
 }

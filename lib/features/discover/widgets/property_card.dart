@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/webview_helper.dart';
+import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../../core/utils/webview_helper.dart';
-import '../../../core/data/models/property_model.dart';
-import '../../../core/utils/app_colors.dart';
-import '../../../core/utils/debug_logger.dart';
-import '../../../../widgets/common/robust_network_image.dart';
 
 class PropertyCard extends StatelessWidget {
   final PropertyModel property;
@@ -23,7 +23,9 @@ class PropertyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Card(
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Card(
       margin: const EdgeInsets.only(bottom: 16),
       color: AppColors.propertyCardBackground,
       shadowColor: AppColors.shadowColor,
@@ -50,13 +52,13 @@ class PropertyCard extends StatelessWidget {
                   right: 8,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
                       icon: Icon(
                         isFavourite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavourite ? AppColors.favoriteActive : Colors.white,
+                        color: isFavourite ? AppColors.favoriteActive : colorScheme.onPrimary,
                       ),
                       onPressed: onFavouriteToggle,
                     ),
@@ -97,7 +99,7 @@ class PropertyCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    property.addressDisplay,
+                    property.shortAddressDisplay,
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.propertyCardSubtext,
@@ -109,23 +111,14 @@ class PropertyCard extends StatelessWidget {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _buildFeature(
-                        Icons.bed,
-                        '${property.bedrooms} Beds',
-                      ),
+                      _buildFeature(Icons.bed, '${property.bedrooms} Beds'),
                       const SizedBox(width: 16),
-                      _buildFeature(
-                        Icons.bathtub_outlined,
-                        '${property.bathrooms} Baths',
-                      ),
+                      _buildFeature(Icons.bathtub_outlined, '${property.bathrooms} Baths'),
                       const SizedBox(width: 16),
-                      _buildFeature(
-                        Icons.square_foot,
-                        '${property.areaSqft} sqft',
-                      ),
+                      _buildFeature(Icons.square_foot, '${property.areaSqft} sqft'),
                     ],
                   ),
-                  
+
                   // 360° Tour Embedded Section
                   if (property.virtualTourUrl != null && property.virtualTourUrl!.isNotEmpty) ...[
                     const SizedBox(height: 16),
@@ -134,11 +127,7 @@ class PropertyCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              Icons.threesixty,
-                              size: 20,
-                              color: AppColors.primaryYellow,
-                            ),
+                            const Icon(Icons.threesixty, size: 20, color: AppColors.primaryYellow),
                             const SizedBox(width: 8),
                             Text(
                               '360° Virtual Tour',
@@ -156,11 +145,13 @@ class PropertyCard extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryYellow.withOpacity(0.1),
+                                  color: AppColors.primaryYellow.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
+                                  border: Border.all(
+                                    color: AppColors.primaryYellow.withValues(alpha: 0.3),
+                                  ),
                                 ),
-                                child: Row(
+                                child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
@@ -168,7 +159,7 @@ class PropertyCard extends StatelessWidget {
                                       size: 14,
                                       color: AppColors.primaryYellow,
                                     ),
-                                    const SizedBox(width: 4),
+                                    SizedBox(width: 4),
                                     Text(
                                       'Fullscreen',
                                       style: TextStyle(
@@ -212,25 +203,17 @@ class PropertyCard extends StatelessWidget {
           ],
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildFeature(IconData icon, String label) {
     return Row(
       children: [
-        Icon(
-          icon, 
-          size: 20, 
-          color: AppColors.propertyFeatureIcon,
-        ),
+        Icon(icon, size: 20, color: AppColors.propertyFeatureIcon),
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.propertyFeatureText,
-            height: 1.4,
-          ),
+          style: TextStyle(fontSize: 14, color: AppColors.propertyFeatureText, height: 1.4),
         ),
       ],
     );
@@ -239,9 +222,9 @@ class PropertyCard extends StatelessWidget {
 
 class _Embedded360Tour extends StatefulWidget {
   final String tourUrl;
-  
+
   const _Embedded360Tour({required this.tourUrl});
-  
+
   @override
   State<_Embedded360Tour> createState() => _Embedded360TourState();
 }
@@ -250,42 +233,63 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
   WebViewController? controller;
   bool isLoading = true;
   bool hasError = false;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeWebView();
   }
-  
+
   void _initializeWebView() {
     try {
       WebViewHelper.ensureInitialized();
-      controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageFinished: (String url) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-              });
-            }
-          },
-          onWebResourceError: (WebResourceError error) {
-            DebugLogger.warning('WebView error in 360° tour: ${error.description}');
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-                hasError = true;
-              });
-            }
-          },
-        ),
-      );
-    
-      // Create optimized HTML for embedded Kuula tour
-      final htmlContent = '''
+      const consoleSilencer = '''
+        if (window && window.console) {
+          window.console.log = function() {};
+          window.console.warn = function() {};
+          window.console.error = function() {};
+          window.console.info = function() {};
+          window.console.debug = function() {};
+        }
+      ''';
+
+      controller = WebViewController();
+      controller!
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(const Color(0x00000000))
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageStarted: (String url) {
+              if (mounted) {
+                setState(() {
+                  isLoading = true;
+                });
+              }
+              controller!.runJavaScript(consoleSilencer);
+            },
+            onPageFinished: (String url) {
+              if (mounted) {
+                setState(() {
+                  isLoading = false;
+                });
+              }
+              controller!.runJavaScript(consoleSilencer);
+            },
+            onWebResourceError: (WebResourceError error) {
+              DebugLogger.warning('WebView error in 360° tour: ${error.description}');
+              if (mounted) {
+                setState(() {
+                  isLoading = false;
+                  hasError = true;
+                });
+              }
+            },
+          ),
+        );
+
+      final sanitizedUrl = widget.tourUrl;
+      final htmlContent =
+          '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -304,6 +308,9 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
             display: block;
           }
         </style>
+        <script type="text/javascript">
+          $consoleSilencer
+        </script>
       </head>
       <body>
         <iframe class="ku-embed" 
@@ -311,12 +318,12 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
                 allow="xr-spatial-tracking; gyroscope; accelerometer" 
                 allowfullscreen 
                 scrolling="no" 
-                src="${widget.tourUrl}">
+                src="$sanitizedUrl">
         </iframe>
       </body>
       </html>
     ''';
-    
+
       controller!.loadHtmlString(htmlContent);
     } catch (e, stackTrace) {
       DebugLogger.error('Error initializing WebView for 360° tour', e, stackTrace);
@@ -328,7 +335,9 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
       }
     }
   }
-  
+
+  @override
+  @override
   @override
   Widget build(BuildContext context) {
     if (hasError || controller == null) {
@@ -341,7 +350,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
               Icon(
                 Icons.public_off,
                 size: 48,
-                color: AppColors.textSecondary.withOpacity(0.7),
+                color: AppColors.textSecondary.withValues(alpha: 0.7),
               ),
               const SizedBox(height: 16),
               Text(
@@ -357,7 +366,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
                 'Virtual tour could not be loaded',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textSecondary.withOpacity(0.7),
+                  color: AppColors.textSecondary.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -365,7 +374,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
         ),
       );
     }
-    
+
     return Stack(
       children: [
         WebViewWidget(controller: controller!),
@@ -376,17 +385,11 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(
-                    color: AppColors.primaryYellow,
-                    strokeWidth: 2,
-                  ),
+                  const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 2),
                   const SizedBox(height: 8),
                   Text(
                     'Loading 360° Tour...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
               ),
@@ -395,4 +398,4 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
       ],
     );
   }
-} 
+}

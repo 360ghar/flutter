@@ -1,9 +1,11 @@
 import 'package:get/get.dart';
-import '../models/property_model.dart';
-import '../models/unified_property_response.dart';
-import '../models/unified_filter_model.dart';
-import '../providers/api_service.dart';
-import '../../utils/debug_logger.dart';
+
+import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/data/models/unified_property_response.dart';
+import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class PropertiesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
@@ -13,21 +15,34 @@ class PropertiesRepository extends GetxService {
     required UnifiedFilterModel filters,
     required int page,
     required int limit,
+    required double latitude,
+    required double longitude,
+    double? radiusKm,
+    bool excludeSwiped = false,
     bool useCache = true,
   }) async {
     try {
-      DebugLogger.api('🔍 Fetching properties: page=$page, limit=$limit, activeFilters=${filters.activeFilterCount}');
+      DebugLogger.api(
+        '🔍 Fetching properties: page=$page, limit=$limit, activeFilters=${filters.activeFilterCount}',
+      );
 
       final response = await _apiService.searchProperties(
         filters: filters,
+        latitude: latitude,
+        longitude: longitude,
+        radiusKm: (filters.radiusKm ?? radiusKm ?? 10.0),
         page: page,
         limit: limit,
+        excludeSwiped: excludeSwiped,
+        useCache: useCache,
       );
 
-      DebugLogger.success('✅ Fetched ${response.properties.length} properties (page $page/${response.totalPages})');
+      DebugLogger.success(
+        '✅ Fetched ${response.properties.length} properties (page $page/${response.totalPages})',
+      );
       return response;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch properties: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch properties: ${e.message}');
       rethrow;
     }
   }
@@ -41,8 +56,8 @@ class PropertiesRepository extends GetxService {
 
       DebugLogger.success('✅ Property details fetched: ${property.title}');
       return property;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch property $propertyId: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch property $propertyId: ${e.message}');
       rethrow;
     }
   }
@@ -61,7 +76,7 @@ class PropertiesRepository extends GetxService {
       for (int i = 0; i < propertyIds.length; i += batchSize) {
         final batch = propertyIds.skip(i).take(batchSize).toList();
         final futures = batch.map((id) => getPropertyDetail(id));
-        
+
         try {
           final batchResults = await Future.wait(futures);
           allProperties.addAll(batchResults);
@@ -73,8 +88,8 @@ class PropertiesRepository extends GetxService {
 
       DebugLogger.success('✅ Loaded ${allProperties.length}/${propertyIds.length} properties');
       return allProperties;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to fetch properties by IDs: $e');
+    } on AppException catch (e) {
+      DebugLogger.error('❌ Failed to fetch properties by IDs: ${e.message}');
       rethrow;
     }
   }
@@ -84,12 +99,20 @@ class PropertiesRepository extends GetxService {
     required UnifiedFilterModel filters,
     required int page,
     required int limit,
+    required double latitude,
+    required double longitude,
+    double? radiusKm,
+    bool excludeSwiped = false,
     bool useCache = false, // Search results shouldn't be cached as much
   }) async {
     return getProperties(
       filters: filters,
       page: page,
       limit: limit,
+      latitude: latitude,
+      longitude: longitude,
+      radiusKm: radiusKm,
+      excludeSwiped: excludeSwiped,
       useCache: useCache,
     );
   }
@@ -97,47 +120,77 @@ class PropertiesRepository extends GetxService {
   // Load all pages for map view
   Future<List<PropertyModel>> loadAllPropertiesForMap({
     required UnifiedFilterModel filters,
+    required double latitude,
+    required double longitude,
+    double? radiusKm,
     int limit = 100,
     Function(int current, int total)? onProgress,
   }) async {
     try {
       DebugLogger.api('🗺️ Loading all properties for map view');
-      
+      DebugLogger.info('🔍 Filters passed to loadAllPropertiesForMap: ${filters.toJson()}');
+      DebugLogger.info('📊 Active filter count: ${filters.activeFilterCount}');
+
       final List<PropertyModel> allProperties = [];
       int currentPage = 1;
       int totalPages = 1;
 
       do {
+        DebugLogger.info('📈 Loading page $currentPage with limit $limit');
+
         final response = await getProperties(
           filters: filters,
           page: currentPage,
           limit: limit,
+          latitude: latitude,
+          longitude: longitude,
+          radiusKm: radiusKm,
           useCache: true,
+        );
+
+        DebugLogger.info(
+          '📦 Page $currentPage response: ${response.properties.length} properties, total pages: ${response.totalPages}',
         );
 
         allProperties.addAll(response.properties);
         totalPages = response.totalPages;
-        
+
         onProgress?.call(currentPage, totalPages);
-        
-        DebugLogger.api('📄 Loaded page $currentPage/$totalPages; totalProperties=${allProperties.length}');
-        
+
+        DebugLogger.api(
+          '📄 Loaded page $currentPage/$totalPages; totalProperties=${allProperties.length}',
+        );
+
+        // Log some property details for first few properties
+        if (currentPage == 1 && response.properties.isNotEmpty) {
+          final firstProperty = response.properties.first;
+          DebugLogger.info(
+            '🏠 First property example: ${firstProperty.title} at (${firstProperty.latitude}, ${firstProperty.longitude})',
+          );
+        }
+
         currentPage++;
       } while (currentPage <= totalPages);
 
       DebugLogger.success('✅ Loaded all ${allProperties.length} properties for map');
+
+      // Final validation
+      final propertiesWithLocation = allProperties.where((p) => p.hasLocation).length;
+      DebugLogger.info(
+        '🗺️ Final result: ${allProperties.length} total properties, $propertiesWithLocation with location data',
+      );
+
       return allProperties;
-    } catch (e) {
-      DebugLogger.error('❌ Failed to load all properties for map: $e');
+    } on AppException catch (e, stackTrace) {
+      DebugLogger.error('❌ Failed to load all properties for map: ${e.message}');
+      DebugLogger.error('Stack trace: $stackTrace');
       rethrow;
     }
   }
-
 
   // Clear repository cache
   void clearCache() {
     // Cache clearing functionality can be added to ApiService if needed
     DebugLogger.api('🧹 Properties repository cache cleared');
   }
-
 }

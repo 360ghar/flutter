@@ -1,15 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'debug_logger.dart';
 
 class WebViewHelper {
   static bool _isInitialized = false;
-  
+
   /// Initialize WebView platform if not already done
   static void ensureInitialized() {
     if (_isInitialized) return;
-    
+
     try {
       if (kIsWeb) {
         // For web, we need to register the web platform
@@ -20,11 +21,11 @@ class WebViewHelper {
         DebugLogger.success('WebView platform initialized for mobile');
       }
       _isInitialized = true;
-    } catch (e, stackTrace) {
-      DebugLogger.warning('WebView platform initialization failed', e, stackTrace);
+    } catch (e) {
+      DebugLogger.warning('WebView platform initialization failed', e);
     }
   }
-  
+
   /// Create a WebView controller with proper error handling
   static WebViewController createController({
     required String url,
@@ -33,9 +34,9 @@ class WebViewHelper {
     Function(WebResourceError)? onWebResourceError,
   }) {
     ensureInitialized();
-    
+
     final controller = WebViewController();
-    
+
     try {
       controller
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -43,22 +44,25 @@ class WebViewHelper {
           NavigationDelegate(
             onPageStarted: onPageStarted,
             onPageFinished: onPageFinished,
-            onWebResourceError: onWebResourceError ?? (WebResourceError error) {
-              DebugLogger.warning('WebView error: ${error.description}');
-            },
+            onWebResourceError:
+                onWebResourceError ??
+                (WebResourceError error) {
+                  DebugLogger.warning('WebView error: ${error.description}');
+                },
           ),
         )
         ..loadRequest(Uri.parse(url));
-        
+
       return controller;
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error creating WebView controller', e, stackTrace);
+    } catch (e) {
+      DebugLogger.error('Error creating WebView controller', e);
       rethrow;
     }
   }
-  
+
   /// Create a safe WebView widget with error handling
   static Widget createSafeWebView({
+    required BuildContext context,
     required String url,
     double? width,
     double? height,
@@ -68,7 +72,7 @@ class WebViewHelper {
   }) {
     try {
       ensureInitialized();
-      
+
       final controller = createController(
         url: url,
         onPageStarted: onPageStarted,
@@ -77,52 +81,45 @@ class WebViewHelper {
           DebugLogger.warning('WebView resource error: ${error.description}');
         },
       );
-      
+
       return SizedBox(
         width: width,
         height: height,
         child: WebViewWidget(controller: controller),
       );
-    } catch (e, stackTrace) {
-      DebugLogger.error('Error creating safe WebView', e, stackTrace);
-      return errorWidget ?? _buildErrorWidget(width, height, url);
+    } catch (e) {
+      DebugLogger.error('Error creating safe WebView', e);
+      return errorWidget ?? _buildErrorWidget(context, width, height, url);
     }
   }
-  
+
   /// Build error widget when WebView fails
-  static Widget _buildErrorWidget(double? width, double? height, String url) {
+  static Widget _buildErrorWidget(BuildContext context, double? width, double? height, String url) {
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.public_off,
-            size: 48,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.public_off, size: 48, color: Theme.of(context).colorScheme.outline),
           const SizedBox(height: 16),
           Text(
-            '360° Tour Unavailable',
+            'tour_unavailable_title'.tr,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Virtual tour could not be loaded',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            'tour_unavailable_body'.tr,
+            style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           if (kIsWeb)
@@ -132,24 +129,20 @@ class WebViewHelper {
                 try {
                   // This would need url_launcher for proper implementation
                   DebugLogger.debug('Opening URL in new tab: $url');
-                } catch (e, stackTrace) {
+                } catch (e) {
                   DebugLogger.warning('Could not open URL', e);
                 }
               },
-              child: const Text('Open in New Tab'),
+              child: Text('open_in_new_tab'.tr),
             ),
         ],
       ),
     );
   }
-  
+
   /// Check if WebView is supported on current platform
   static bool get isSupported {
-    try {
-      ensureInitialized();
-      return true;
-    } catch (e, stackTrace) {
-      return false;
-    }
+    ensureInitialized();
+    return _isInitialized;
   }
 }

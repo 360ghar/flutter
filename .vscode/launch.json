@@ -1,0 +1,170 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "360Ghar - Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--dart-define-from-file=.env.development"
+      ]
+    },
+    {
+      "name": "360Ghar - Profile",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--dart-define-from-file=.env.production"
+      ]
+    },
+    {
+      "name": "360Ghar - Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--dart-define-from-file=.env.production"
+      ]
+    },
+    {
+      "name": "360Ghar - Android Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "deviceId": "emulator-5554",
+      "args": [
+        "--dart-define-from-file=.env.development"
+      ]
+    },
+    {
+      "name": "360Ghar - iOS Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "deviceId": "iPhone",
+      "args": [
+        "--dart-define-from-file=.env.development"
+      ]
+    },
+    {
+      "name": "360Ghar - Web Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "deviceId": "chrome",
+      "args": [
+        "--dart-define-from-file=.env.development",
+        "--web-port=8080"
+      ]
+    },
+    {
+      "name": "360Ghar - Web Release",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "deviceId": "chrome",
+      "args": [
+        "--dart-define-from-file=.env.production",
+        "--web-port=8080"
+      ]
+    },
+    {
+      "name": "360Ghar - MacOS Debug",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "deviceId": "macos",
+      "args": [
+        "--dart-define-from-file=.env.development"
+      ]
+    },
+    {
+      "name": "360Ghar - Attach to Device",
+      "request": "attach",
+      "type": "dart",
+      "flutterMode": "debug",
+      "observatoryUri": "http://127.0.0.1:8181/"
+    },
+    {
+      "name": "360Ghar - Run Tests",
+      "request": "launch",
+      "type": "dart",
+      "program": "test/",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--coverage",
+        "--reporter=expanded"
+      ]
+    },
+    {
+      "name": "360Ghar - Run Specific Test",
+      "request": "launch",
+      "type": "dart",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--coverage"
+      ]
+    },
+    {
+      "name": "360Ghar - Build APK",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--dart-define-from-file=.env.production",
+        "build",
+        "apk",
+        "--split-per-abi"
+      ]
+    },
+    {
+      "name": "360Ghar - Build iOS",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--dart-define-from-file=.env.production",
+        "build",
+        "ios",
+        "--no-codesign"
+      ]
+    },
+    {
+      "name": "360Ghar - Build Web",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "--dart-define-from-file=.env.production",
+        "build",
+        "web",
+        "--web-renderer=html"
+      ]
+    }
+  ]
+}
