@@ -55,6 +55,10 @@ class PageStateService extends GetxController {
   void onInit() {
     super.onInit();
     _loadSavedStates();
+    // Apply globally saved purpose/type if present, then ensure sane defaults
+    _applySavedGlobalFilters();
+    // Ensure default purpose is set to 'buy' when unset for new users
+    setPurposeForAllPages('buy', onlyIfUnset: true);
     _bootstrapInitialStates(); // <-- Add this call
     _setupListeners();
   }
@@ -221,6 +225,26 @@ class PageStateService extends GetxController {
     });
   }
 
+  // Load globally stored purpose/property_type and apply across pages
+  void _applySavedGlobalFilters() {
+    try {
+      final String? globalPurpose = _storage.read('global_purpose');
+      if (globalPurpose != null && globalPurpose.trim().isNotEmpty) {
+        setPurposeForAllPages(globalPurpose.trim());
+        DebugLogger.success('🎯 Applied saved global purpose: $globalPurpose');
+      }
+
+      final List<dynamic>? storedTypes = _storage.read('global_property_types');
+      if (storedTypes != null) {
+        final types = storedTypes.whereType<String>().toList();
+        setPropertyTypeForAllPages(types);
+        DebugLogger.success('🏷️ Applied saved global property types: ${types.join(', ')}');
+      }
+    } catch (e) {
+      DebugLogger.warning('Failed to apply saved global filters: $e');
+    }
+  }
+
   // Update location only for a specific page
   Future<void> updateLocationForPage(
     PageType pageType,
@@ -371,21 +395,47 @@ class PageStateService extends GetxController {
 
   // Filter management for specific pages
   void updatePageFilters(PageType pageType, UnifiedFilterModel filters) {
+    final previous = _getStateForPage(pageType).filters;
+    final purposeChanged = (filters.purpose ?? '') != (previous.purpose ?? '');
+    final List<String> prevTypes = previous.propertyType ?? const [];
+    final List<String> nextTypes = filters.propertyType ?? const [];
+    final typeChanged = prevTypes.join(',') != nextTypes.join(',');
+
     switch (pageType) {
       case PageType.explore:
         exploreState.value = exploreState.value.copyWith(filters: filters);
-        _debounceRefresh(pageType);
+        if (!(purposeChanged || typeChanged)) _debounceRefresh(pageType);
         break;
       case PageType.discover:
         discoverState.value = discoverState.value.copyWith(filters: filters);
-        _debounceRefresh(pageType);
+        if (!(purposeChanged || typeChanged)) _debounceRefresh(pageType);
         break;
       case PageType.likes:
         likesState.value = likesState.value.copyWith(filters: filters);
-        _debounceRefresh(pageType);
+        if (!(purposeChanged || typeChanged)) _debounceRefresh(pageType);
         break;
     }
     DebugLogger.info('🔍 Updated ${pageType.name} filters');
+
+    // Persist and propagate global fields when they change
+    if (purposeChanged) {
+      final newPurpose = filters.purpose?.trim();
+      if (newPurpose != null && newPurpose.isNotEmpty) {
+        _storage.write('global_purpose', newPurpose);
+        setPurposeForAllPages(newPurpose);
+        DebugLogger.info('🌐 Propagated purpose="$newPurpose" to all pages');
+      }
+    }
+
+    if (typeChanged) {
+      _storage.write('global_property_types', nextTypes);
+      setPropertyTypeForAllPages(nextTypes);
+      DebugLogger.info('🌐 Propagated property_type=${nextTypes.join(', ')} to all pages');
+    }
+
+    if (purposeChanged || typeChanged) {
+      _refreshAllPagesData();
+    }
   }
 
   // Search management (only for explore and likes)
@@ -766,6 +816,24 @@ class PageStateService extends GetxController {
     setFor(PageType.discover);
     setFor(PageType.likes);
     DebugLogger.info('🎯 Set default purpose="$purpose" for all pages (onlyIfUnset=$onlyIfUnset)');
+  }
+
+  // Set property type across all pages; optionally only if unset/empty
+  void setPropertyTypeForAllPages(List<String>? propertyTypes, {bool onlyIfUnset = false}) {
+    void setFor(PageType page) {
+      final state = _getStateForPage(page);
+      final current = state.filters.propertyType ?? const [];
+      if (onlyIfUnset && current.isNotEmpty) return;
+      final updatedFilters = state.filters.copyWith(propertyType: propertyTypes ?? const []);
+      _updatePageState(page, state.copyWith(filters: updatedFilters).resetData());
+    }
+
+    setFor(PageType.explore);
+    setFor(PageType.discover);
+    setFor(PageType.likes);
+    DebugLogger.info(
+      '🏷️ Set property types="${(propertyTypes ?? const []).join(', ')}" for all pages (onlyIfUnset=$onlyIfUnset)',
+    );
   }
 
   // Helper methods
