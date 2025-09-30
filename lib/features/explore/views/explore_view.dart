@@ -199,6 +199,7 @@ class ExploreView extends GetView<ExploreController> {
                     }),
                     // Property markers with clustering (reactive)
                     Obx(() {
+                      final _ = controller.markersRevision.value;
                       final markers = controller.propertyMarkers;
                       if (markers.isEmpty) return const SizedBox.shrink();
 

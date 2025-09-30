@@ -1,4 +1,5 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
+
 import 'package:ghar360/core/firebase/remote_config_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
@@ -28,7 +29,7 @@ class AnalyticsService {
     }
   }
 
-  static Future<void> logVital(String name, {Map<String, Object?>? params}) async {
+  static Future<void> logVital(String name, {Map<String, Object>? params}) async {
     if (!_enabled) return;
     try {
       await _analytics.logEvent(name: name, parameters: params);
@@ -40,8 +41,10 @@ class AnalyticsService {
   }
 
   // Suggested canonical events for vital flows
-  static Future<void> login({String? method}) => logVital('login', params: {'method': method});
-  static Future<void> signUp({String? method}) => logVital('sign_up', params: {'method': method});
+  static Future<void> login({String? method}) =>
+      logVital('login', params: method != null ? {'method': method} : null);
+  static Future<void> signUp({String? method}) =>
+      logVital('sign_up', params: method != null ? {'method': method} : null);
   static Future<void> viewProperty(String propertyId) =>
       logVital('property_view', params: {'id': propertyId});
   static Future<void> viewPropertyOnce(String propertyId) async {
@@ -54,6 +57,6 @@ class AnalyticsService {
       logVital('property_like', params: {'id': propertyId});
   static Future<void> scheduleVisit(String propertyId) =>
       logVital('visit_schedule', params: {'id': propertyId});
-  static Future<void> applyFilter(Map<String, Object?> snapshot) =>
+  static Future<void> applyFilter(Map<String, Object> snapshot) =>
       logVital('filters_apply', params: snapshot);
 }

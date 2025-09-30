@@ -60,6 +60,8 @@ class ExploreController extends GetxController {
   // Memoized markers cache
   List<PropertyMarker>? _cachedPropertyMarkers;
   bool _markersDirty = true;
+  // Revision to ensure Obx always consumes a reactive when markers change
+  final RxInt markersRevision = 0.obs;
 
   @override
   void onInit() {
@@ -930,6 +932,8 @@ class ExploreController extends GetxController {
   void _invalidateMarkers(String reason) {
     _markersDirty = true;
     DebugLogger.debug('🧠 propertyMarkers cache invalidated: $reason');
+    // Bump revision so Obx builders reliably consume a reactive
+    markersRevision.value++;
   }
 
   // Helper getters

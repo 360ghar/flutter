@@ -95,7 +95,8 @@ class UnifiedFilterModel {
   factory UnifiedFilterModel.initial() {
     return const UnifiedFilterModel(
       radiusKm: 10.0,
-      purpose: null,
+      // Default to 'buy' when no user preference is set
+      purpose: 'buy',
       sortBy: null,
       includeUnavailable: false,
       propertyType: [],
