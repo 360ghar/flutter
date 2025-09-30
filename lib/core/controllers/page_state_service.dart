@@ -11,7 +11,6 @@ import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/data/providers/api_service.dart';
-import 'package:ghar360/core/data/repositories/properties_repository.dart';
 import 'package:ghar360/core/data/repositories/swipes_repository.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
@@ -21,7 +20,6 @@ class PageStateService extends GetxController {
 
   // Storage instance
   final _storage = GetStorage();
-  final _propertiesRepository = Get.find<PropertiesRepository>();
   final _swipesRepository = Get.find<SwipesRepository>();
   final _apiService = Get.find<ApiService>();
   final _locationController = Get.find<LocationController>();

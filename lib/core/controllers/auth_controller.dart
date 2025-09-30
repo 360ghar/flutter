@@ -2,11 +2,13 @@
 
 import 'dart:async';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/auth_status.dart';
 import 'package:ghar360/core/data/models/user_model.dart';
 import 'package:ghar360/core/data/repositories/profile_repository.dart';
+import 'package:ghar360/core/firebase/analytics_service.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_handler.dart';
@@ -157,9 +159,19 @@ class AuthController extends GetxController {
       DebugLogger.auth('Auth state changed: User is signed out.');
       currentUser.value = null;
       authStatus.value = AuthStatus.unauthenticated;
+      // Clear analytics/Crashlytics user context
+      try {
+        await AnalyticsService.setUserId(null);
+        await FirebaseCrashlytics.instance.setUserIdentifier('');
+      } catch (_) {}
     } else {
       // --- USER IS SIGNED IN ---
       DebugLogger.auth('Auth state changed: User is signed in. UID: ${supabaseUser.id}');
+      // Set analytics/Crashlytics user context
+      try {
+        await AnalyticsService.setUserId(supabaseUser.id);
+        await FirebaseCrashlytics.instance.setUserIdentifier(supabaseUser.id);
+      } catch (_) {}
       // A Supabase user exists, now we need to fetch our application-specific user profile
       // from our own backend.
       await _loadUserProfile();

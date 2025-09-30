@@ -46,5 +46,6 @@ linter:
     - always_use_package_imports   # enforce `package:ghar360/...`
     # - prefer_relative_imports     # enforce relative paths inside lib/
 
+ 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

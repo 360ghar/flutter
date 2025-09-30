@@ -313,6 +313,11 @@ class LocationController extends GetxController {
     );
   }
 
+  void selectCity(String cityName) {
+    // This method now only logs the selection
+    DebugLogger.info('City selected: $cityName');
+  }
+
   Future<void> openLocationSettings() async {
     try {
       await Geolocator.openLocationSettings();
