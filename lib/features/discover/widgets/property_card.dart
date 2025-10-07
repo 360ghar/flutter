@@ -175,23 +175,17 @@ class PropertyCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        // 360° Tour with Gesture Blocking to prevent card swipe interference
-                        GestureDetector(
-                          // Absorb pan gestures to prevent parent swipe detection
-                          onPanStart: (_) {},
-                          onPanUpdate: (_) {},
-                          onPanEnd: (_) {},
-                          child: Container(
-                            height: 320,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
-                              boxShadow: AppColors.getCardShadow(),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: _Embedded360Tour(tourUrl: property.virtualTourUrl!),
-                            ),
+                        // 360° Tour preview (WebView claims gestures via eager recognizers)
+                        Container(
+                          height: 320,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                            boxShadow: AppColors.getCardShadow(),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: _Embedded360Tour(tourUrl: property.virtualTourUrl!),
                           ),
                         ),
                       ],
@@ -253,7 +247,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
         }
       ''';
 
-      controller = WebViewController();
+      controller = WebViewHelper.createBaseController();
       controller!
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(const Color(0x00000000))
@@ -288,22 +282,21 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
         );
 
       final sanitizedUrl = widget.tourUrl;
-      final htmlContent =
-          '''
+      final htmlContent = '''
       <!DOCTYPE html>
       <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          body { 
-            margin: 0; 
-            padding: 0; 
+          body {
+            margin: 0;
+            padding: 0;
             background: #f0f0f0;
             overflow: hidden;
           }
-          iframe { 
-            width: 100vw; 
-            height: 100vh; 
+          iframe {
+            width: 100vw;
+            height: 100vh;
             border: none;
             display: block;
           }
@@ -313,11 +306,11 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
         </script>
       </head>
       <body>
-        <iframe class="ku-embed" 
-                frameborder="0" 
-                allow="xr-spatial-tracking; gyroscope; accelerometer" 
-                allowfullscreen 
-                scrolling="no" 
+        <iframe class="ku-embed"
+                frameborder="0"
+                allow="xr-spatial-tracking; gyroscope; accelerometer"
+                allowfullscreen
+                scrolling="no"
                 src="$sanitizedUrl">
         </iframe>
       </body>
@@ -377,7 +370,10 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
 
     return Stack(
       children: [
-        WebViewWidget(controller: controller!),
+        WebViewWidget(
+          controller: controller!,
+          gestureRecognizers: WebViewHelper.createInteractiveGestureRecognizers(),
+        ),
         if (isLoading)
           Container(
             color: AppColors.inputBackground,
