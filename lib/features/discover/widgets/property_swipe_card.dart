@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/share_utils.dart';
 import 'package:ghar360/core/utils/webview_helper.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:latlong2/latlong.dart';
@@ -115,13 +116,17 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           Positioned(
                             top: 16,
                             right: 16,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(20),
+                            child: GestureDetector(
+                              onTap: () =>
+                                  ShareUtils.shareProperty(widget.property, context: context),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Icon(Icons.share, color: colorScheme.onPrimary, size: 20),
                               ),
-                              child: Icon(Icons.share, color: colorScheme.onPrimary, size: 20),
                             ),
                           ),
 

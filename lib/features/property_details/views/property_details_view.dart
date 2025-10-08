@@ -3,8 +3,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
+import 'package:ghar360/core/data/repositories/properties_repository.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/webview_helper.dart';
+import 'package:ghar360/core/utils/share_utils.dart';
+import 'package:ghar360/core/widgets/common/loading_states.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:ghar360/core/widgets/property/property_details_features.dart';
 import 'package:ghar360/features/likes/controllers/likes_controller.dart';
@@ -24,34 +28,33 @@ class PropertyDetailsView extends StatelessWidget {
 
     if (arguments is PropertyModel) {
       property = arguments;
-    } else if (arguments is String) {
-      // For string IDs, we'll need to handle this in a FutureBuilder or similar
-      // For now, return error state
-      property = null;
+    } else if (arguments is String || arguments is int) {
+      final int? propertyId = arguments is int ? arguments : int.tryParse(arguments as String);
+      if (propertyId == null) {
+        return const _PropertyErrorScaffold(message: 'Invalid property id');
+      }
+      // Fetch property by id, then navigate to the same route with full data
+      final repo = Get.find<PropertiesRepository>();
+      return FutureBuilder<PropertyModel>(
+        future: repo.getPropertyDetail(propertyId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const _PropertyLoadingScaffold();
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const _PropertyErrorScaffold(message: 'Failed to load property');
+          }
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // Replace current route with one that has a full PropertyModel argument
+            Get.offNamed(AppRoutes.propertyDetails, arguments: snapshot.data);
+          });
+          return const _PropertyLoadingScaffold();
+        },
+      );
     }
 
     if (property == null) {
-      return Scaffold(
-        backgroundColor: AppColors.scaffoldBackground,
-        appBar: AppBar(
-          backgroundColor: AppColors.appBarBackground,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppColors.appBarIcon),
-            onPressed: () => Get.back(),
-          ),
-          title: Text(
-            'property_details'.tr,
-            style: TextStyle(color: AppColors.appBarText, fontWeight: FontWeight.bold),
-          ),
-        ),
-        body: Center(
-          child: Text(
-            'Property not found',
-            style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
-          ),
-        ),
-      );
+      return const _PropertyErrorScaffold(message: 'Property not found');
     }
 
     // Use LikesController for favorite management
@@ -124,15 +127,7 @@ class PropertyDetailsView extends StatelessWidget {
                 ),
                 child: IconButton(
                   icon: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimary),
-                  onPressed: () {
-                    Get.snackbar(
-                      'share_property'.tr,
-                      'Sharing ${safeProperty.title}',
-                      snackPosition: SnackPosition.TOP,
-                      backgroundColor: AppColors.snackbarBackground,
-                      colorText: AppColors.snackbarText,
-                    );
-                  },
+                  onPressed: () => ShareUtils.shareProperty(safeProperty, context: context),
                 ),
               ),
             ],
@@ -388,7 +383,8 @@ class PropertyDetailsView extends StatelessWidget {
                                       amenity.icon!,
                                       width: 16,
                                       height: 16,
-                                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const SizedBox.shrink(),
                                     ),
                                     const SizedBox(width: 6),
                                   ] else ...[
@@ -790,30 +786,6 @@ class PropertyDetailsView extends StatelessWidget {
     );
   }
 
-  String _formatDate(String iso) {
-    try {
-      final dt = DateTime.tryParse(iso);
-      if (dt == null) return iso;
-      const months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
-    } catch (_) {
-      return iso;
-    }
-  }
-
   void _showBookVisitDialog(
     BuildContext context,
     PropertyModel safeProperty,
@@ -920,6 +892,58 @@ class PropertyDetailsView extends StatelessWidget {
             child: Text('schedule_visit'.tr),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PropertyLoadingScaffold extends StatelessWidget {
+  const _PropertyLoadingScaffold();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.appBarBackground,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.appBarIcon),
+          onPressed: () => Get.back(),
+        ),
+        title: Text(
+          'property_details'.tr,
+          style: TextStyle(color: AppColors.appBarText, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: LoadingStates.propertyDetailsSkeleton(),
+    );
+  }
+}
+
+class _PropertyErrorScaffold extends StatelessWidget {
+  const _PropertyErrorScaffold({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
+      appBar: AppBar(
+        backgroundColor: AppColors.appBarBackground,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.appBarIcon),
+          onPressed: () => Get.back(),
+        ),
+        title: Text(
+          'property_details'.tr,
+          style: TextStyle(color: AppColors.appBarText, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: Center(
+        child: Text(message, style: TextStyle(fontSize: 18, color: AppColors.textSecondary)),
       ),
     );
   }

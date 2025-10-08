@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">360 Ghar</string>
+    
+    <!-- Deep Link Configuration -->
+    <!-- Replace with your actual domain -->
+    <string name="deep_link_scheme">https</string>
+    <string name="deep_link_host">360ghar.com</string>
+    
+    <!-- Custom scheme for app-to-app -->
+    <string name="custom_scheme">ghar360</string>
+</resources>

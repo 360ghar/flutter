@@ -94,8 +94,8 @@ class RobustNetworkImage extends StatelessWidget {
       filterQuality: FilterQuality.medium,
       memCacheWidth: memCacheWidth,
       memCacheHeight: memCacheHeight,
-      placeholder: (context, _) => placeholder ?? _buildDefaultPlaceholder(),
-      errorWidget: (context, _, __) => errorWidget ?? _buildDefaultErrorWidget(),
+      placeholder: (context, placeholderUrl) => placeholder ?? _buildDefaultPlaceholder(),
+      errorWidget: (context, error, stackTrace) => errorWidget ?? _buildDefaultErrorWidget(),
     );
   }
 
@@ -110,7 +110,7 @@ class RobustNetworkImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      placeholderBuilder: (_) => placeholder ?? _buildDefaultPlaceholder(),
+      placeholderBuilder: (context) => placeholder ?? _buildDefaultPlaceholder(),
     );
   }
 
