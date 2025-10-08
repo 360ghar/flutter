@@ -164,6 +164,89 @@ class LoadingStates {
     );
   }
 
+  // Full property details page skeleton
+  static Widget propertyDetailsSkeleton() {
+    final baseColor = AppColors.textSecondary.withValues(alpha: 0.18);
+    final highlightColor = AppColors.textSecondary.withValues(alpha: 0.06);
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // Header image placeholder
+          Container(height: 300, color: baseColor),
+          const SizedBox(height: 12),
+          // Title + price card placeholder
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(height: 24, width: 220, color: baseColor),
+                  const SizedBox(height: 8),
+                  Container(height: 16, width: 140, color: baseColor),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(height: 18, width: 100, color: baseColor),
+                      const Spacer(),
+                      Container(height: 16, width: 80, color: baseColor),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Features chips placeholder
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: List.generate(6, (i) => Container(height: 28, width: 90, color: baseColor)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Description section placeholder
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(height: 18, width: 120, color: baseColor),
+                const SizedBox(height: 10),
+                Container(height: 14, width: double.infinity, color: baseColor),
+                const SizedBox(height: 8),
+                Container(height: 14, width: double.infinity, color: baseColor),
+                const SizedBox(height: 8),
+                Container(height: 14, width: 240, color: baseColor),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Map placeholder
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              height: 180,
+              decoration: BoxDecoration(color: baseColor, borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
   static Widget swipeCardSkeleton() {
     final baseColor = AppColors.textSecondary.withValues(alpha: 0.2);
     final highlightColor = AppColors.textSecondary.withValues(alpha: 0.05);

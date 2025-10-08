@@ -19,7 +19,6 @@ class DiscoverView extends GetView<DiscoverController> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final pageStateService = Get.find<PageStateService>();
 
     return Scaffold(

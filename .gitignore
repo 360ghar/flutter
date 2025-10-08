@@ -66,3 +66,28 @@ digest.txt
 !.env.staging.example
 
 venv/
+android/key.properties
+\n# Firebase configuration files
+ios/Runner/GoogleService-Info.plist
+
+# Android local & build outputs
+android/local.properties
+android/.gradle/
+android/build/
+android/**/build/
+
+# iOS build outputs & CocoaPods
+ios/build/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Xcode user data
+ios/Runner.xcodeproj/xcuserdata/
+ios/Runner.xcworkspace/xcuserdata/

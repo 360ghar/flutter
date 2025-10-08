@@ -150,7 +150,7 @@ class _PolicyPageViewState extends State<PolicyPageView> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         styleSheet: _buildMarkdownStyleSheet(context),
         selectable: true,
-        onTapLink: (_, href, __) => _handleLinkTap(href),
+        onTapLink: (text, href, title) => _handleLinkTap(href),
       );
     }
 
