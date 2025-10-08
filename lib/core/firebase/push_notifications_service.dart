@@ -80,8 +80,8 @@ class PushNotificationsService {
       if (kIsWeb) {
         token = await _messaging.getToken(vapidKey: null);
       } else if (Platform.isIOS || Platform.isMacOS) {
-        token = await _messaging.getAPNSToken();
-        token ??= await _messaging.getToken();
+        token = await _messaging.getToken();
+        // Optionally: final apnsToken = await _messaging.getAPNSToken();
       } else {
         token = await _messaging.getToken();
       }
