@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:firebase_performance/firebase_performance.dart' as fp;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart' as getx;
 import 'package:get_storage/get_storage.dart';
@@ -15,6 +17,7 @@ import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/data/models/unified_property_response.dart';
 import 'package:ghar360/core/data/models/user_model.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
+import 'package:ghar360/core/firebase/remote_config_service.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
@@ -200,7 +203,7 @@ class ApiService extends getx.GetConnect {
   Future<void> _initializeService() async {
     try {
       // Initialize environment variables - use root URL for GetConnect
-      final fullApiUrl = dotenv.env['API_BASE_URL'] ?? 'https://360ghar.up.railway.app';
+      final fullApiUrl = dotenv.env['API_BASE_URL'] ?? 'https://api.360ghar.com';
       // Extract base URL without /api/v1 for GetConnect
       _baseUrl = fullApiUrl.replaceAll('/api/v1', '');
       DebugLogger.startup('API Service initialized with base URL: $_baseUrl');
@@ -285,9 +288,20 @@ class ApiService extends getx.GetConnect {
     final int maxAttempts = retries + 1; // attempts = initial + retries
 
     for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      fp.HttpMetric? httpMetric;
       try {
         // Prepend /api/v1 to all endpoints
         final fullEndpoint = '/api/v1$endpoint';
+        final absoluteUrl = '$_baseUrl$fullEndpoint';
+
+        // Optional Firebase Performance HTTP auto-instrumentation
+        try {
+          if (RemoteConfigService.performanceEnabled && _shouldSampleHttpMetric()) {
+            final httpMethod = _toHttpMethod(method);
+            httpMetric = fp.FirebasePerformance.instance.newHttpMetric(absoluteUrl, httpMethod);
+            await httpMetric.start();
+          }
+        } catch (_) {}
 
         // Prepare headers (and inject If-None-Match for GET when cached)
         final effectiveHeaders = <String, String>{...?(headers)};
@@ -347,6 +361,18 @@ class ApiService extends getx.GetConnect {
         // Single-line API response log for debugging
         DebugLogger.api('📨 API $method $fullEndpoint → ${response.statusCode}');
         DebugLogger.api('📨 API $method $fullEndpoint → ${response.bodyString}');
+
+        // Stop metric after response
+        try {
+          if (httpMetric != null) {
+            httpMetric.httpResponseCode = response.statusCode ?? 0;
+            final bodyLen = response.bodyString?.length;
+            if (bodyLen != null) {
+              httpMetric.responsePayloadSize = bodyLen;
+            }
+            await httpMetric.stop();
+          }
+        } catch (_) {}
 
         // Log response
         DebugLogger.logAPIResponse(
@@ -514,6 +540,12 @@ class ApiService extends getx.GetConnect {
           throw appEx;
         }
       } catch (e, st) {
+        // Ensure any in-flight metric is stopped on error
+        try {
+          if (httpMetric != null) {
+            await httpMetric.stop();
+          }
+        } catch (_) {}
         // Convert to AppException immediately
         final appEx = ErrorMapper.mapApiError(e, st);
 
@@ -564,6 +596,38 @@ class ApiService extends getx.GetConnect {
     final delay = base + jitter;
     // Cap delay to reasonable upper bound
     return delay > 4000 ? 4000 : delay;
+  }
+
+  // ===== Firebase Performance helpers =====
+  fp.HttpMethod _toHttpMethod(String method) {
+    switch (method.toUpperCase()) {
+      case 'GET':
+        return fp.HttpMethod.Get;
+      case 'POST':
+        return fp.HttpMethod.Post;
+      case 'PUT':
+        return fp.HttpMethod.Put;
+      case 'DELETE':
+        return fp.HttpMethod.Delete;
+      case 'PATCH':
+        return fp.HttpMethod.Patch;
+      case 'HEAD':
+        return fp.HttpMethod.Head;
+      default:
+        return fp.HttpMethod.Get;
+    }
+  }
+
+  bool _shouldSampleHttpMetric() {
+    try {
+      final ratio = RemoteConfigService.perfHttpSampling;
+      if (ratio <= 0) return false;
+      if (ratio >= 1) return true;
+      final r = Random().nextDouble();
+      return r < ratio;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ===== HTTP ETag cache helpers =====

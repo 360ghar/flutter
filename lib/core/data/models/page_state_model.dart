@@ -30,7 +30,7 @@ class PageStateModel {
   final bool isLoading;
   final bool isLoadingMore;
   final bool isRefreshing;
-  @JsonKey(ignore: true) // We won't serialize the error object
+  @JsonKey(includeFromJson: false, includeToJson: false) // We won't serialize the error object
   final AppException? error;
   final DateTime? lastFetched;
 

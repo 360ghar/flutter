@@ -1,0 +1,22 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.com.example.ghar360",
+        "paths": [
+          "/property/*",
+          "/tour/*",
+          "/explore",
+          "/profile",
+          "/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAM_ID.com.example.ghar360"
+    ]
+  }
+}

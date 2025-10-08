@@ -24,7 +24,6 @@ class DiscoverController extends GetxController {
   int _currentPage = 1;
   int _totalPages = 1;
   bool _hasMore = true;
-  static const int _limit = 20;
   static const int _prefetchThreshold = 3;
 
   // Swipe tracking

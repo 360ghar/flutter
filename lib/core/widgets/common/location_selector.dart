@@ -384,6 +384,8 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   }
 
   void _useCurrentLocation() async {
+    // Capture any theme-derived colors up-front to avoid using context across awaits
+    final onErrorColor = Theme.of(context).colorScheme.onError;
     try {
       Navigator.of(context).pop();
       await pageStateService.useCurrentLocationForPage(widget.pageType);
@@ -400,12 +402,14 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         'unable_to_get_current_location'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.errorRed,
-        colorText: Theme.of(context).colorScheme.onError,
+        colorText: onErrorColor,
       );
     }
   }
 
   void _selectPlaceSuggestion(PlaceSuggestion suggestion) async {
+    // Capture any theme-derived colors up-front to avoid using context across awaits
+    final onErrorColor = Theme.of(context).colorScheme.onError;
     try {
       Navigator.of(context).pop();
 
@@ -434,7 +438,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         'unable_to_select_location'.tr,
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.errorRed,
-        colorText: Theme.of(context).colorScheme.onError,
+        colorText: onErrorColor,
       );
     }
   }
