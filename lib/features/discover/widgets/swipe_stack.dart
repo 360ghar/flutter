@@ -47,7 +47,6 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     if (_properties.isEmpty) {
       return Center(

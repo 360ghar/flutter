@@ -13,6 +13,12 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
+        <!-- Default notification channel for FCM (Android 8+) -->
+        <!-- Ensure the channel with this ID is created at runtime -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="high_importance_channel" />
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -34,6 +40,26 @@
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            
+            <!-- Deep Links (App Links) Configuration -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                
+                <!-- HTTPS deep links for 360ghar.com and www.360ghar.com -->
+                <data android:scheme="https" android:host="360ghar.com" android:pathPrefix="/"/>
+                <data android:scheme="https" android:host="www.360ghar.com" android:pathPrefix="/"/>
+            </intent-filter>
+            
+            <!-- Custom scheme for app-to-app communication -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                
+                <data android:scheme="ghar360"/>
             </intent-filter>
         </activity>
         

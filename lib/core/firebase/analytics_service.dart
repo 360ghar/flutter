@@ -6,6 +6,7 @@ import 'package:ghar360/core/utils/debug_logger.dart';
 class AnalyticsService {
   static final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
   static final Set<String> _seenProperties = <String>{};
+  static const int _maxSeenProperties = 1000;
 
   static bool get _enabled => RemoteConfigService.analyticsEnabled;
 
@@ -14,8 +15,7 @@ class AnalyticsService {
     try {
       await _analytics.setUserId(id: userId);
     } catch (e, st) {
-      DebugLogger.warning('Analytics setUserId failed', e);
-      DebugLogger.debug('Analytics setUserId stack', st);
+      DebugLogger.warning('Analytics setUserId failed', e, st);
     }
   }
 
@@ -24,8 +24,7 @@ class AnalyticsService {
     try {
       await _analytics.setUserProperty(name: name, value: value);
     } catch (e, st) {
-      DebugLogger.warning('Analytics setUserProperty failed', e);
-      DebugLogger.debug('Analytics setUserProperty stack', st);
+      DebugLogger.warning('Analytics setUserProperty failed', e, st);
     }
   }
 
@@ -35,8 +34,7 @@ class AnalyticsService {
       await _analytics.logEvent(name: name, parameters: params);
       DebugLogger.debug('📊 Analytics event: $name ${params ?? {}}');
     } catch (e, st) {
-      DebugLogger.warning('Analytics logEvent failed', e);
-      DebugLogger.debug('Analytics logEvent stack', st);
+      DebugLogger.warning('Analytics logEvent failed', e, st);
     }
   }
 
@@ -49,6 +47,10 @@ class AnalyticsService {
       logVital('property_view', params: {'id': propertyId});
   static Future<void> viewPropertyOnce(String propertyId) async {
     if (_seenProperties.contains(propertyId)) return;
+    if (_seenProperties.length >= _maxSeenProperties && _seenProperties.isNotEmpty) {
+      // Maintain a bounded set to avoid unbounded memory growth
+      _seenProperties.remove(_seenProperties.first);
+    }
     _seenProperties.add(propertyId);
     await viewProperty(propertyId);
   }
@@ -59,4 +61,14 @@ class AnalyticsService {
       logVital('visit_schedule', params: {'id': propertyId});
   static Future<void> applyFilter(Map<String, Object> snapshot) =>
       logVital('filters_apply', params: snapshot);
+
+  // Deep link analytics
+  static Future<void> deepLinkOpenProperty(String propertyId) =>
+      logVital('deep_link_open_property', params: {'id': propertyId});
+  static Future<void> deepLinkOpenTour({String? propertyId, String? url}) async {
+    final params = <String, Object>{};
+    if (propertyId != null) params['property_id'] = propertyId;
+    if (url != null) params['url'] = url;
+    await logVital('deep_link_open_tour', params: params.isEmpty ? null : params);
+  }
 }

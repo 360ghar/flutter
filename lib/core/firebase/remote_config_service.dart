@@ -32,8 +32,7 @@ class RemoteConfigService {
       await _rc.fetchAndActivate();
       DebugLogger.startup('Remote Config fetched.');
     } catch (e, st) {
-      DebugLogger.warning('Remote Config init failed', e);
-      DebugLogger.debug('Remote Config stack', st);
+      DebugLogger.warning('Remote Config init failed', e, st);
     }
   }
 

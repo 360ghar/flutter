@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -31,7 +32,9 @@ void main() async {
 
       // Load environment variables first (before DebugLogger initialization)
       try {
-        await dotenv.load(fileName: '.env.development');
+        // Choose env file based on build mode
+        final envFile = kReleaseMode ? '.env.production' : '.env.development';
+        await dotenv.load(fileName: envFile);
       } catch (e) {
         // Continue without .env file - will use defaults
       }
@@ -46,10 +49,10 @@ void main() async {
       try {
         DebugLogger.success('Environment variables loaded successfully');
         DebugLogger.info(
-          'API Base URL: ${dotenv.env['API_BASE_URL'] ?? 'https://360ghar.up.railway.app'}',
+          'API Base URL: ${dotenv.env['API_BASE_URL'] ?? 'https://api.360ghar.com'}',
         );
       } catch (e) {
-        DebugLogger.warning('Failed to load .env.development', e);
+        DebugLogger.warning('Failed to load .env file', e);
         DebugLogger.info('Using default configuration');
       }
 
@@ -89,8 +92,7 @@ void main() async {
         await PushNotificationsService.requestUserPermission(provisional: false);
         await PushNotificationsService.getToken();
       } catch (e, st) {
-        DebugLogger.warning('Failed to initialize Firebase', e);
-        DebugLogger.debug('Firebase init stack', st);
+        DebugLogger.warning('Failed to initialize Firebase', e, st);
       }
 
       runApp(const MyApp());

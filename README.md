@@ -76,11 +76,13 @@ Follow these instructions to get a copy of the project up and running on your lo
     ```
 
 2.  **Set up environment variables:**
-    Create two files in the root of the project: `.env.development` and `.env.production`. You can copy the example file:
+    Create two files in the root of the project: `.env.development` and `.env.production`.
+    Use the provided templates and fill in your values:
     ```bash
-    cp .env.example .env.development
+    cp .env.development.example .env.development
+    cp .env.production.example .env.production
     ```
-    Fill in the required values in `.env.development` with your Supabase and API credentials:
+    Fill in the required values in `.env.development` with your Supabase, API and other credentials:
     ```env
     # Supabase Credentials
     SUPABASE_URL=https://your-project-ref.supabase.co
@@ -116,6 +118,10 @@ Follow these instructions to get a copy of the project up and running on your lo
     ```bash
     flutter run
     ```
+
+Notes:
+- Secrets must never be committed. Files `.env.development` and `.env.production` are git-ignored.
+- The app automatically loads `.env.development` in debug/profile and `.env.production` in release builds.
 
 ## 📱 Bottom Navigation
 

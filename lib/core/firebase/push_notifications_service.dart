@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -16,6 +17,22 @@ class PushNotificationsService {
     const ios = DarwinInitializationSettings();
     const settings = InitializationSettings(android: android, iOS: ios);
     await _fln.initialize(settings);
+
+    // Create a high-importance default channel for Android 8+
+    try {
+      const channel = AndroidNotificationChannel(
+        'high_importance_channel',
+        'General Notifications',
+        description: 'General updates and alerts',
+        importance: Importance.max,
+      );
+
+      final androidPlugin = _fln
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.createNotificationChannel(channel);
+    } catch (e, st) {
+      DebugLogger.warning('Failed to create Android notification channel', e, st);
+    }
   }
 
   static Future<void> initializeForegroundHandling() async {
@@ -52,8 +69,7 @@ class PushNotificationsService {
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       await androidPlugin?.requestNotificationsPermission();
     } catch (e, st) {
-      DebugLogger.warning('Android notifications permission request failed', e);
-      DebugLogger.debug('Android permission stack', st);
+      DebugLogger.warning('Android notifications permission request failed', e, st);
     }
     return settings;
   }
@@ -72,8 +88,7 @@ class PushNotificationsService {
       DebugLogger.info('🔑 FCM token: ${token ?? 'null'}');
       return token;
     } catch (e, st) {
-      DebugLogger.warning('FCM getToken failed', e);
-      DebugLogger.debug('FCM getToken stack', st);
+      DebugLogger.warning('FCM getToken failed', e, st);
       return null;
     }
   }
@@ -90,12 +105,13 @@ class PushNotificationsService {
       ),
       iOS: DarwinNotificationDetails(),
     );
+    final id = (DateTime.now().millisecondsSinceEpoch & 0x7fffffff);
     await _fln.show(
-      notification.hashCode,
+      id,
       notification.title,
       notification.body,
       details,
-      payload: data.isEmpty ? null : data.toString(),
+      payload: data.isEmpty ? null : jsonEncode(data),
     );
   }
 }

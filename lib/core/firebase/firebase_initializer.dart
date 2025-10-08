@@ -1,22 +1,25 @@
 import 'dart:async';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_performance/firebase_performance.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-import 'package:ghar360/core/firebase/dynamic_links_service.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:ghar360/core/firebase/deep_link_service.dart';
 import 'package:ghar360/core/firebase/remote_config_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/firebase_options.dart';
 
 /// Background FCM handler (required to be a top-level function)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     DebugLogger.info('📩 [FCM][BG] Message received: ${message.messageId ?? 'no-id'}');
   } catch (e, st) {
     DebugLogger.error('Failed to init Firebase in BG handler', e, st);
@@ -45,8 +48,36 @@ class FirebaseInitializer {
       return;
     }
 
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     DebugLogger.startup('Firebase initialized');
+
+    // App Check (Play Integrity / DeviceCheck). Web uses reCAPTCHA v3 if provided.
+    final appCheckEnabled = _envFlag('FIREBASE_APPCHECK', fallback: true);
+    if (appCheckEnabled) {
+      try {
+        if (kIsWeb) {
+          final siteKey = dotenv.env['RECAPTCHA_V3_SITE_KEY'];
+          if (siteKey != null && siteKey.isNotEmpty) {
+            await FirebaseAppCheck.instance.activate(providerWeb: ReCaptchaV3Provider(siteKey));
+            DebugLogger.startup('App Check (Web) activated with reCAPTCHA v3');
+          } else {
+            DebugLogger.warning(
+              'App Check (Web) site key missing; skipping web App Check activation',
+            );
+          }
+        } else {
+          final debugMode = _envFlag('FIREBASE_APPCHECK_DEBUG', fallback: !kReleaseMode);
+          await FirebaseAppCheck.instance.activate(
+            androidProvider: debugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+            appleProvider: debugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+          );
+          await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+          DebugLogger.startup('Firebase App Check activated (debugMode=$debugMode)');
+        }
+      } catch (e, st) {
+        DebugLogger.warning('App Check activation failed', e, st);
+      }
+    }
 
     // Crashlytics minimal setup: enable in debug too for QA builds
     final crashlyticsEnabled = _envFlag('FIREBASE_CRASHLYTICS', fallback: true);
@@ -69,29 +100,46 @@ class FirebaseInitializer {
     );
 
     // Remote Config bootstrap with safe defaults
-    await RemoteConfigService.initializeAndFetch();
-
-    // Apply Remote Config toggles post-fetch
+    bool rcFetched = false;
     try {
-      await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(
-        RemoteConfigService.analyticsEnabled,
-      );
-      await FirebasePerformance.instance.setPerformanceCollectionEnabled(
-        RemoteConfigService.performanceEnabled,
-      );
+      await RemoteConfigService.initializeAndFetch();
+      rcFetched = true;
+    } catch (e, st) {
+      DebugLogger.warning('Remote Config fetch failed; keeping env flags', e, st);
+    }
+
+    // Apply Remote Config toggles post-fetch and honor user consent when available
+    try {
+      if (!rcFetched) {
+        // Preserve env-based settings if RC not fetched
+        DebugLogger.debug('Skip RC toggles application (no fresh config)');
+        _initialized = true;
+        return;
+      }
+      final storage = GetStorage();
+      bool consent(String key) {
+        final v = storage.read(key);
+        return v is bool ? v : true; // Default allow until explicit choice
+      }
+
+      final analyticsOn = RemoteConfigService.analyticsEnabled && consent('consent_analytics');
+      final perfOn = RemoteConfigService.performanceEnabled && consent('consent_performance');
+
+      await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(analyticsOn);
+      await FirebasePerformance.instance.setPerformanceCollectionEnabled(perfOn);
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
         RemoteConfigService.crashlyticsEnabled,
       );
       await FirebaseInAppMessaging.instance.setAutomaticDataCollectionEnabled(
         RemoteConfigService.iamEnabled,
       );
+      DebugLogger.startup('Consent gating → analytics=$analyticsOn, performance=$perfOn');
     } catch (e, st) {
-      DebugLogger.warning('Failed applying Remote Config toggles', e);
-      DebugLogger.debug('RC toggle apply stack', st);
+      DebugLogger.warning('Failed applying Remote Config toggles', e, st);
     }
 
-    // Dynamic Links listener (no-op routing for now, just logging)
-    await DynamicLinksService.initializeListener();
+    // Deep Links listener (App Links - replaces deprecated Firebase Dynamic Links)
+    await DeepLinkService.initializeListener();
 
     // FCM background handler registration. Foreground permission prompt is opt-in.
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.the360ghar.ghar360",
+      "sha256_cert_fingerprints": [
+        "E2:9C:60:26:A3:79:20:19:25:5F:93:BE:D1:35:CF:5F:3A:89:52:DD:44:EA:F9:41:08:87:7C:08:74:B0:XX:XX"
+      ]
+    }
+  }
+]

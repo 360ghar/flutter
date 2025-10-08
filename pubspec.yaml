@@ -1,7 +1,7 @@
 name: ghar360
 description: A Flutter real estate app with Bumble-inspired design using GetX
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -45,16 +45,21 @@ dependencies:
   flutter_staggered_grid_view: ^0.7.0
 
   # Firebase Core + services (minimal, opt-in collection)
-  firebase_core:
-  firebase_crashlytics:
-  firebase_analytics:
-  firebase_messaging:
-  firebase_performance:
-  firebase_remote_config:
-  firebase_in_app_messaging:
-  firebase_dynamic_links:
+  firebase_core: ^4.1.1
+  firebase_crashlytics: ^5.0.2
+  firebase_analytics: ^12.0.2
+  firebase_messaging: ^16.0.2
+  firebase_performance: ^0.11.1
+  firebase_remote_config: ^6.0.2
+  firebase_in_app_messaging: ^0.9.0+2
+  firebase_app_check: ^0.4.1
   # Local notifications for foreground FCM and app UX
-  flutter_local_notifications:
+  flutter_local_notifications: ^18.0.1
+  # Native share sheets (Android/iOS/macOS/Web)
+  share_plus: ^10.0.2
+  
+  # Deep linking (replaces deprecated Firebase Dynamic Links)
+  app_links: ^6.4.1
 
   meta: any
 dev_dependencies:
