@@ -1,11 +1,15 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 class WebViewHelper {
   static bool _isInitialized = false;
+
+  static bool get _isAndroid => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   /// Initialize WebView platform if not already done
   static void ensureInitialized() {
@@ -26,6 +30,35 @@ class WebViewHelper {
     }
   }
 
+  /// Returns a [WebViewController] configured with platform specific defaults
+  /// (hybrid composition on Android) so gesture handling works consistently.
+  static WebViewController createBaseController({
+    void Function(WebViewPermissionRequest request)? onPermissionRequest,
+  }) {
+    ensureInitialized();
+
+    final PlatformWebViewControllerCreationParams params = _isAndroid
+        ? AndroidWebViewControllerCreationParams()
+        : const PlatformWebViewControllerCreationParams();
+
+    final controller = WebViewController.fromPlatformCreationParams(
+      params,
+      onPermissionRequest: onPermissionRequest,
+    );
+
+    if (_isAndroid) {
+      AndroidWebViewController.enableDebugging(kDebugMode);
+    }
+
+    return controller;
+  }
+
+  /// Builds a gesture recognizer set that eagerly hands pointer events to the
+  /// underlying WebView (useful when nested in scrollable parents).
+  static Set<Factory<OneSequenceGestureRecognizer>> createInteractiveGestureRecognizers() {
+    return {Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer())};
+  }
+
   /// Create a WebView controller with proper error handling
   static WebViewController createController({
     required String url,
@@ -33,9 +66,7 @@ class WebViewHelper {
     Function(String)? onPageFinished,
     Function(WebResourceError)? onWebResourceError,
   }) {
-    ensureInitialized();
-
-    final controller = WebViewController();
+    final controller = createBaseController();
 
     try {
       controller
@@ -85,7 +116,10 @@ class WebViewHelper {
       return SizedBox(
         width: width,
         height: height,
-        child: WebViewWidget(controller: controller),
+        child: WebViewWidget(
+          controller: controller,
+          gestureRecognizers: createInteractiveGestureRecognizers(),
+        ),
       );
     } catch (e) {
       DebugLogger.error('Error creating safe WebView', e);
