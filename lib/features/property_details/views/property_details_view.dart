@@ -7,6 +7,7 @@ import 'package:ghar360/core/data/repositories/properties_repository.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/share_utils.dart';
+import 'package:ghar360/core/utils/webview_helper.dart';
 import 'package:ghar360/core/widgets/common/loading_states.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:ghar360/core/widgets/property/property_details_features.dart';
@@ -547,9 +548,14 @@ class PropertyDetailsView extends StatelessWidget {
                           const Icon(Icons.check_circle, color: AppColors.accentGreen),
                           const SizedBox(width: 8),
                           Text(
-                            scheduledDate != null
-                                ? 'Scheduled on ${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}'
-                                : 'Visit Scheduled',
+                            (() {
+                              if (scheduledDate != null) {
+                                final formatted =
+                                    '${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}';
+                                return '${'visit_scheduled'.tr}: $formatted';
+                              }
+                              return 'visit_scheduled'.tr;
+                            })(),
                             style: TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 16,
@@ -1143,7 +1149,7 @@ class _VirtualTourSectionState extends State<_VirtualTourSection> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'Tap to load virtual tour',
+                                'tap_to_load_virtual_tour'.tr,
                                 style:
                                     theme.textTheme.titleMedium?.copyWith(
                                       color: Colors.white,
@@ -1213,7 +1219,7 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
       }
     ''';
 
-    controller = WebViewController()
+    controller = WebViewHelper.createBaseController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
@@ -1288,7 +1294,10 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        WebViewWidget(controller: controller),
+        WebViewWidget(
+          controller: controller,
+          gestureRecognizers: WebViewHelper.createInteractiveGestureRecognizers(),
+        ),
         if (isLoading)
           Container(
             color: AppColors.inputBackground,
@@ -1299,7 +1308,7 @@ class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
                   const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 3),
                   const SizedBox(height: 12),
                   Text(
-                    'Loading 360° Tour...',
+                    'loading_virtual_tour'.tr,
                     style: TextStyle(
                       fontSize: 16,
                       color: AppColors.textSecondary,

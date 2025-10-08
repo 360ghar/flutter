@@ -429,6 +429,7 @@ class AppTranslations extends Translations {
       'loading_virtual_tour': 'Loading 360° Tour...',
       'tour_unavailable_title': '360° Tour Unavailable',
       'tour_unavailable_body': 'Virtual tour could not be loaded',
+      'tap_to_load_virtual_tour': 'Tap to load virtual tour',
       // Edit profile
       'additional_information': 'Additional Information',
       'name_required': 'Name is required',
@@ -896,6 +897,7 @@ class AppTranslations extends Translations {
       'loading_virtual_tour': '360° टूर लोड हो रहा है...',
       'tour_unavailable_title': '360° टूर अनुपलब्ध',
       'tour_unavailable_body': 'वर्चुअल टूर लोड नहीं किया जा सका',
+      'tap_to_load_virtual_tour': 'वर्चुअल टूर लोड करने के लिए टैप करें',
       // Edit profile
       'additional_information': 'अतिरिक्त जानकारी',
       'name_required': 'नाम आवश्यक है',

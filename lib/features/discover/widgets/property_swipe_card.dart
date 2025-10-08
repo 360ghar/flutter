@@ -835,7 +835,7 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Swipe right to like • Swipe left to pass',
+                'Swipe right to like | Swipe left to pass',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: colorScheme.onSurface,
@@ -990,7 +990,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
     // Calculate rotation based on horizontal drag
     // The card rotates from the bottom center like a hinge
     final horizontalRatio = dragPosition.dx / (screenSize.width * 0.5);
-    // Limit rotation to a maximum of 45 degrees (π/4 radians)
+    // Limit rotation to a maximum of 45 degrees (pi/4 radians)
     final maxRotation = 0.785398; // 45 degrees in radians
     return horizontalRatio * maxRotation * 0.7; // Reduce sensitivity
   }
@@ -1308,7 +1308,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
         }
       ''';
 
-      controller = WebViewController();
+      controller = WebViewHelper.createBaseController();
       controller!
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(const Color(0x00000000))
@@ -1350,15 +1350,15 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          body { 
-            margin: 0; 
-            padding: 0; 
+          body {
+            margin: 0;
+            padding: 0;
             background: #f0f0f0;
             overflow: hidden;
           }
-          iframe { 
-            width: 100vw; 
-            height: 100vh; 
+          iframe {
+            width: 100vw;
+            height: 100vh;
             border: none;
             display: block;
           }
@@ -1368,11 +1368,11 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
         </script>
       </head>
       <body>
-        <iframe class="ku-embed" 
-                frameborder="0" 
-                allow="xr-spatial-tracking; gyroscope; accelerometer" 
-                allowfullscreen 
-                scrolling="no" 
+        <iframe class="ku-embed"
+                frameborder="0"
+                allow="xr-spatial-tracking; gyroscope; accelerometer"
+                allowfullscreen
+                scrolling="no"
                 src="$sanitizedUrl">
         </iframe>
       </body>
@@ -1392,8 +1392,6 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
   }
 
   @override
-  @override
-  @override
   Widget build(BuildContext context) {
     if (hasError || controller == null) {
       final theme = Theme.of(context);
@@ -1407,7 +1405,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
               Icon(Icons.public_off, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
               const SizedBox(height: 16),
               Text(
-                '360° Tour Unavailable',
+                'tour_unavailable_title'.tr,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
@@ -1415,7 +1413,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Virtual tour could not be loaded',
+                'tour_unavailable_body'.tr,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
@@ -1428,7 +1426,10 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
 
     return Stack(
       children: [
-        WebViewWidget(controller: controller!),
+        WebViewWidget(
+          controller: controller!,
+          gestureRecognizers: WebViewHelper.createInteractiveGestureRecognizers(),
+        ),
         if (isLoading)
           Container(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -1439,7 +1440,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
                   const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 2),
                   const SizedBox(height: 8),
                   Text(
-                    'Loading 360° Tour...',
+                    'loading_virtual_tour'.tr,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),

@@ -75,6 +75,7 @@ android/local.properties
 android/.gradle/
 android/build/
 android/**/build/
+android/app/google-services.json
 
 # iOS build outputs & CocoaPods
 ios/build/

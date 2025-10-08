@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/webview_helper.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class TourView extends StatefulWidget {
@@ -28,7 +29,7 @@ class _TourViewState extends State<TourView> {
       }
     ''';
 
-    controller = WebViewController()
+    controller = WebViewHelper.createBaseController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
@@ -155,7 +156,10 @@ class _TourViewState extends State<TourView> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: WebViewWidget(controller: controller),
+                child: WebViewWidget(
+                  controller: controller,
+                  gestureRecognizers: WebViewHelper.createInteractiveGestureRecognizers(),
+                ),
               ),
             ),
             // Loading indicator
