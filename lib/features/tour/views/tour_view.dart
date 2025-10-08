@@ -29,24 +29,23 @@ class _TourViewState extends State<TourView> {
       }
     ''';
 
-    controller =
-        WebViewHelper.createBaseController()
-          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-          ..setBackgroundColor(const Color(0x00000000))
-          ..setNavigationDelegate(
-            NavigationDelegate(
-              onPageStarted: (String url) {
-                setState(() {
-                  isLoading = true;
-                });
-                controller.runJavaScript(consoleSilencer);
-              },
-              onPageFinished: (String url) {
-                setState(() {
-                  isLoading = false;
-                });
-                controller.runJavaScript(consoleSilencer);
-                controller.runJavaScript('''
+    controller = WebViewHelper.createBaseController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (String url) {
+            setState(() {
+              isLoading = true;
+            });
+            controller.runJavaScript(consoleSilencer);
+          },
+          onPageFinished: (String url) {
+            setState(() {
+              isLoading = false;
+            });
+            controller.runJavaScript(consoleSilencer);
+            controller.runJavaScript('''
               document.body.style.margin = '0';
               document.body.style.padding = '0';
               var iframes = document.getElementsByTagName('iframe');
@@ -56,24 +55,25 @@ class _TourViewState extends State<TourView> {
                 iframes[i].style.border = 'none';
               }
             ''');
-              },
-              onWebResourceError: (WebResourceError error) {
-                setState(() {
-                  isLoading = false;
-                });
-                Get.snackbar(
-                  'error_loading_tour'.tr,
-                  'check_internet_connection'.tr,
-                  snackPosition: SnackPosition.TOP,
-                  backgroundColor: AppColors.errorRed,
-                  colorText: AppColors.snackbarText,
-                );
-              },
-            ),
-          );
+          },
+          onWebResourceError: (WebResourceError error) {
+            setState(() {
+              isLoading = false;
+            });
+            Get.snackbar(
+              'error_loading_tour'.tr,
+              'check_internet_connection'.tr,
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: AppColors.errorRed,
+              colorText: AppColors.snackbarText,
+            );
+          },
+        ),
+      );
 
     if (tourUrl.contains('kuula.co')) {
-      final htmlContent = '''
+      final htmlContent =
+          '''
         <!DOCTYPE html>
         <html>
         <head>

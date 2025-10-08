@@ -47,7 +47,7 @@ class WebViewHelper {
     );
 
     if (_isAndroid) {
-      AndroidWebViewController.enableDebugging(true);
+      AndroidWebViewController.enableDebugging(kDebugMode);
     }
 
     return controller;

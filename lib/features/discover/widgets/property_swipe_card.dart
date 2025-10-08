@@ -54,10 +54,9 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
         child: Container(
           color: colorScheme.surface,
           child: SingleChildScrollView(
-            physics:
-                _interactiveChildActive
-                    ? const NeverScrollableScrollPhysics()
-                    : const BouncingScrollPhysics(),
+            physics: _interactiveChildActive
+                ? const NeverScrollableScrollPhysics()
+                : const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -66,11 +65,9 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                   builder: (context, constraints) {
                     // Use available parent height instead of full screen height
                     // This ensures we don't overlap with app bar or other UI elements
-                    final availableHeight =
-                        constraints.maxHeight > 0
-                            ? constraints.maxHeight
-                            : MediaQuery.of(context).size.height -
-                                200; // Fallback with safe margins
+                    final availableHeight = constraints.maxHeight > 0
+                        ? constraints.maxHeight
+                        : MediaQuery.of(context).size.height - 200; // Fallback with safe margins
 
                     return SizedBox(
                       height: math.min(availableHeight * 0.8, 600), // Cap at reasonable max height
@@ -488,32 +485,31 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children:
-                                (widget.property.features ?? [])
-                                    .take(4)
-                                    .map(
-                                      (t) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.accentOrange.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(
-                                            color: AppColors.accentOrange.withValues(alpha: 0.3),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          t,
-                                          style: theme.textTheme.labelMedium?.copyWith(
-                                            color: AppColors.accentOrange,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
+                            children: (widget.property.features ?? [])
+                                .take(4)
+                                .map(
+                                  (t) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accentOrange.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppColors.accentOrange.withValues(alpha: 0.3),
                                       ),
-                                    )
-                                    .toList(),
+                                    ),
+                                    child: Text(
+                                      t,
+                                      style: theme.textTheme.labelMedium?.copyWith(
+                                        color: AppColors.accentOrange,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
                           const SizedBox(height: 20),
                         ],
@@ -531,32 +527,31 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children:
-                                widget.property.amenitiesList
-                                    .take(6)
-                                    .map(
-                                      (amenity) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.accentBlue.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(
-                                            color: AppColors.accentBlue.withValues(alpha: 0.3),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          amenity,
-                                          style: theme.textTheme.labelMedium?.copyWith(
-                                            color: AppColors.accentBlue,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
+                            children: widget.property.amenitiesList
+                                .take(6)
+                                .map(
+                                  (amenity) => Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accentBlue.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppColors.accentBlue.withValues(alpha: 0.3),
                                       ),
-                                    )
-                                    .toList(),
+                                    ),
+                                    child: Text(
+                                      amenity,
+                                      style: theme.textTheme.labelMedium?.copyWith(
+                                        color: AppColors.accentBlue,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
                           if (widget.property.amenitiesList.length > 6)
                             Padding(
@@ -793,12 +788,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: OutlinedButton.icon(
-                              onPressed:
-                                  () => _openGoogleMaps(
-                                    widget.property.latitude!,
-                                    widget.property.longitude!,
-                                    widget.property.title,
-                                  ),
+                              onPressed: () => _openGoogleMaps(
+                                widget.property.latitude!,
+                                widget.property.longitude!,
+                                widget.property.title,
+                              ),
                               icon: const Icon(Icons.directions),
                               label: const Text('Get directions'),
                               style: OutlinedButton.styleFrom(
@@ -1153,25 +1147,25 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
             child: AnimatedBuilder(
               animation: _swipeAnimation,
               builder: (context, child) {
-                final swipeOffset =
-                    _isDragging
-                        ? Offset(_dragPosition.dx, 0)
-                        : Offset(_dragPosition.dx * (1 + _swipeAnimation.value * 2), 0);
+                final swipeOffset = _isDragging
+                    ? Offset(_dragPosition.dx, 0)
+                    : Offset(_dragPosition.dx * (1 + _swipeAnimation.value * 2), 0);
 
-                final swipeRotation =
-                    _isDragging ? _rotation : _rotation * (1 + _swipeAnimation.value * 2);
+                final swipeRotation = _isDragging
+                    ? _rotation
+                    : _rotation * (1 + _swipeAnimation.value * 2);
 
                 return Transform.translate(
                   offset: swipeOffset,
                   child: Transform(
                     alignment: Alignment.bottomCenter, // Rotate from bottom center like a hinge
-                    transform:
-                        Matrix4.identity()
-                          ..setEntry(3, 2, 0.001) // Add perspective
-                          ..rotateZ(swipeRotation),
+                    transform: Matrix4.identity()
+                      ..setEntry(3, 2, 0.001) // Add perspective
+                      ..rotateZ(swipeRotation),
                     child: Opacity(
-                      opacity:
-                          _swipeAnimationController.isAnimating ? (1 - _swipeAnimation.value) : 1.0,
+                      opacity: _swipeAnimationController.isAnimating
+                          ? (1 - _swipeAnimation.value)
+                          : 1.0,
                       child: PropertySwipeCard(
                         property: _properties[0],
                         showSwipeInstructions: widget.showSwipeInstructions,
@@ -1220,10 +1214,9 @@ class SparklesPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = AppColors.primaryYellow.withValues(alpha: 0.8)
-          ..style = PaintingStyle.fill;
+    final paint = Paint()
+      ..color = AppColors.primaryYellow.withValues(alpha: 0.8)
+      ..style = PaintingStyle.fill;
 
     // Create sparkles at various positions
     final sparklePositions = [
@@ -1350,7 +1343,8 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
         );
 
       final sanitizedUrl = widget.tourUrl;
-      final htmlContent = '''
+      final htmlContent =
+          '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -1398,8 +1392,6 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
   }
 
   @override
-  @override
-  @override
   Widget build(BuildContext context) {
     if (hasError || controller == null) {
       final theme = Theme.of(context);
@@ -1413,7 +1405,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
               Icon(Icons.public_off, size: 48, color: colorScheme.onSurface.withValues(alpha: 0.6)),
               const SizedBox(height: 16),
               Text(
-                '360° Tour Unavailable',
+                'tour_unavailable_title'.tr,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSurface,
@@ -1421,7 +1413,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Virtual tour could not be loaded',
+                'tour_unavailable_body'.tr,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
@@ -1448,7 +1440,7 @@ class _EmbeddedSwipe360TourState extends State<_EmbeddedSwipe360Tour> {
                   const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 2),
                   const SizedBox(height: 8),
                   Text(
-                    'Loading 360° Tour...',
+                    'loading_virtual_tour'.tr,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),

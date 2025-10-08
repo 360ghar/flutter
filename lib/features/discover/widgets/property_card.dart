@@ -282,7 +282,8 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
         );
 
       final sanitizedUrl = widget.tourUrl;
-      final htmlContent = '''
+      final htmlContent =
+          '''
       <!DOCTYPE html>
       <html>
       <head>
@@ -330,8 +331,6 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
   }
 
   @override
-  @override
-  @override
   Widget build(BuildContext context) {
     if (hasError || controller == null) {
       return Container(
@@ -347,7 +346,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
               ),
               const SizedBox(height: 16),
               Text(
-                '360° Tour Unavailable',
+                'tour_unavailable_title'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -356,7 +355,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Virtual tour could not be loaded',
+                'tour_unavailable_body'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary.withValues(alpha: 0.7),
@@ -384,7 +383,7 @@ class _Embedded360TourState extends State<_Embedded360Tour> {
                   const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 2),
                   const SizedBox(height: 8),
                   Text(
-                    'Loading 360° Tour...',
+                    'loading_virtual_tour'.tr,
                     style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
