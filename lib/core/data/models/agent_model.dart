@@ -31,6 +31,8 @@ class AgentModel {
   final String? description;
   @JsonKey(name: 'avatar_url')
   final String? avatarUrl;
+  @JsonKey(name: 'contact_number')
+  final String? contactNumber;
   final List<String>? languages;
   @JsonKey(name: 'agent_type', unknownEnumValue: AgentType.unknown)
   final AgentType agentType;
@@ -56,6 +58,7 @@ class AgentModel {
     required this.name,
     this.description,
     this.avatarUrl,
+    this.contactNumber,
     this.languages,
     required this.agentType,
     required this.experienceLevel,
@@ -77,6 +80,7 @@ class AgentModel {
     String? name,
     String? description,
     String? avatarUrl,
+    String? contactNumber,
     List<String>? languages,
     AgentType? agentType,
     ExperienceLevel? experienceLevel,
@@ -93,6 +97,7 @@ class AgentModel {
       name: name ?? this.name,
       description: description ?? this.description,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      contactNumber: contactNumber ?? this.contactNumber,
       languages: languages ?? this.languages,
       agentType: agentType ?? this.agentType,
       experienceLevel: experienceLevel ?? this.experienceLevel,

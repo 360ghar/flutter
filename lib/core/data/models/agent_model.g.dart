@@ -11,6 +11,7 @@ AgentModel _$AgentModelFromJson(Map<String, dynamic> json) => AgentModel(
   name: json['name'] as String,
   description: json['description'] as String?,
   avatarUrl: json['avatar_url'] as String?,
+  contactNumber: json['contact_number'] as String?,
   languages: (json['languages'] as List<dynamic>?)?.map((e) => e as String).toList(),
   agentType: $enumDecode(_$AgentTypeEnumMap, json['agent_type'], unknownValue: AgentType.unknown),
   experienceLevel: $enumDecode(
@@ -32,6 +33,7 @@ Map<String, dynamic> _$AgentModelToJson(AgentModel instance) => <String, dynamic
   'name': instance.name,
   'description': instance.description,
   'avatar_url': instance.avatarUrl,
+  'contact_number': instance.contactNumber,
   'languages': instance.languages,
   'agent_type': _$AgentTypeEnumMap[instance.agentType]!,
   'experience_level': _$ExperienceLevelEnumMap[instance.experienceLevel]!,

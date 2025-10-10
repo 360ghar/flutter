@@ -172,6 +172,13 @@ class AuthController extends GetxController {
         await AnalyticsService.setUserId(supabaseUser.id);
         await FirebaseCrashlytics.instance.setUserIdentifier(supabaseUser.id);
       } catch (_) {}
+      // Ensure access token is available before calling our backend
+      try {
+        await _authRepository.waitForAccessToken(timeout: const Duration(seconds: 2));
+      } catch (e) {
+        DebugLogger.warning('Proceeding to load profile without confirmed token: $e');
+      }
+
       // A Supabase user exists, now we need to fetch our application-specific user profile
       // from our own backend.
       await _loadUserProfile();
