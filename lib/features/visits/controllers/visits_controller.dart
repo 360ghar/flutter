@@ -234,6 +234,7 @@ class VisitsController extends GetxController {
         name: agentData.name,
         description: agentData.description,
         avatarUrl: agentData.avatarUrl,
+        contactNumber: agentData.contactNumber,
         languages: agentData.languages,
         agentType: agentData.agentType,
         experienceLevel: agentData.experienceLevel,

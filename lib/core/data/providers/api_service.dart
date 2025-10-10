@@ -165,42 +165,48 @@ class ApiService extends getx.GetConnect {
   @override
   void onInit() {
     super.onInit();
-    // Defer async init to avoid changing the method signature
-    Future.microtask(() async {
-      await _initializeService();
-      httpClient.baseUrl = _baseUrl;
-      // Configure a sensible default timeout, overridable via env
-      final timeoutSeconds = int.tryParse(dotenv.env['API_TIMEOUT_SECONDS'] ?? '') ?? 15;
-      httpClient.timeout = Duration(seconds: timeoutSeconds);
-      DebugLogger.startup('HTTP client timeout set to ${httpClient.timeout.inSeconds}s');
+    // Initialize synchronously to avoid race conditions on early requests
+    _initializeService();
+    httpClient.baseUrl = _baseUrl;
+    // Configure a sensible default timeout, overridable via env
+    final timeoutSeconds = int.tryParse(dotenv.env['API_TIMEOUT_SECONDS'] ?? '') ?? 15;
+    httpClient.timeout = Duration(seconds: timeoutSeconds);
+    DebugLogger.startup('HTTP client timeout set to ${httpClient.timeout.inSeconds}s');
 
-      // Request modifier to add authentication token
-      httpClient.addRequestModifier<Object?>((request) async {
-        final token = await _authToken;
-        if (token != null && token.trim().isNotEmpty) {
-          request.headers['Authorization'] = 'Bearer ${token.trim()}';
-          DebugLogger.auth('➡️ Attaching Authorization header to ${request.url}');
-        } else {
-          request.headers.remove('Authorization');
-          DebugLogger.auth('➡️ No Authorization header for ${request.url}');
-        }
-        request.headers['Content-Type'] = 'application/json';
-        return request;
-      });
+    // Request modifier to add authentication token
+    httpClient.addRequestModifier<Object?>((request) async {
+      final token = await _authToken;
+      if (token != null && token.trim().isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer ${token.trim()}';
+        DebugLogger.auth('➡️ Attaching Authorization header to ${request.url}');
+      } else {
+        request.headers.remove('Authorization');
+        DebugLogger.auth('➡️ No Authorization header for ${request.url}');
+      }
+      request.headers['Content-Type'] = 'application/json';
+      return request;
+    });
 
-      // Simplified response interceptor - trust Supabase's automatic refresh
-      httpClient.addResponseModifier((request, response) async {
-        if (response.statusCode == 401) {
-          DebugLogger.warning('🔐 Received 401 response, clearing authentication');
+    // Response interceptor: be tolerant on the first 401 to avoid premature sign-out
+    httpClient.addResponseModifier((request, response) async {
+      if (response.statusCode == 401) {
+        // Let the caller handle the first 401 gracefully; only force sign-out on repeated failures
+        _recordAuthFailure();
+        if (_authFailureCount >= 2) {
+          DebugLogger.warning('🔐 Repeated 401 responses detected. Signing out.');
           _handleAuthenticationFailure();
-          throw ApiAuthException('Authentication failed', statusCode: 401);
+        } else {
+          DebugLogger.warning(
+            '🔐 401 received. Propagating without forced sign-out (grace attempt).',
+          );
         }
-        return response;
-      });
+        throw ApiAuthException('Authentication failed', statusCode: 401);
+      }
+      return response;
     });
   }
 
-  Future<void> _initializeService() async {
+  void _initializeService() {
     try {
       // Initialize environment variables - use root URL for GetConnect
       final fullApiUrl = dotenv.env['API_BASE_URL'] ?? 'https://api.360ghar.com';
@@ -241,6 +247,19 @@ class ApiService extends getx.GetConnect {
           break;
       }
     });
+  }
+
+  // Track recent auth failures to avoid immediate sign-out on the first occurrence
+  int _authFailureCount = 0;
+  DateTime? _lastAuthFailureAt;
+  void _recordAuthFailure() {
+    final now = DateTime.now();
+    if (_lastAuthFailureAt == null || now.difference(_lastAuthFailureAt!).inSeconds > 15) {
+      // Reset window after 15s of no failures
+      _authFailureCount = 0;
+    }
+    _lastAuthFailureAt = now;
+    _authFailureCount++;
   }
 
   /// Retrieves the current valid JWT access token from the Supabase session.
@@ -924,6 +943,8 @@ class ApiService extends getx.GetConnect {
   }
 
   Future<UserModel> getCurrentUser() async {
+    // Ensure we have a token (post sign-in race guard)
+    await _waitForAuthToken(maxWaitMs: 1500);
     // De-dupe concurrent calls to avoid unnecessary load and race conditions
     if (_getCurrentUserInFlight != null) {
       return await _getCurrentUserInFlight!;
@@ -947,8 +968,21 @@ class ApiService extends getx.GetConnect {
     }
   }
 
+  /// Wait briefly for an auth token to become available (guards sign-in races)
+  Future<String?> _waitForAuthToken({int maxWaitMs = 1500}) async {
+    final deadline = DateTime.now().add(Duration(milliseconds: maxWaitMs));
+    String? token = await _authToken;
+    while ((token == null || token.isEmpty) && DateTime.now().isBefore(deadline)) {
+      await Future.delayed(const Duration(milliseconds: 50));
+      token = await _authToken;
+    }
+    return token;
+  }
+
   // User Management
   Future<UserModel> updateUserProfile(Map<String, dynamic> profileData) async {
+    // Ensure token is attached when updating profile right after sign-in
+    await _waitForAuthToken(maxWaitMs: 1500);
     // Create a copy to avoid modifying the original
     final filteredData = Map<String, dynamic>.from(profileData);
 
@@ -1050,6 +1084,7 @@ class ApiService extends getx.GetConnect {
   }
 
   Future<void> updateUserPreferences(Map<String, dynamic> preferences) async {
+    await _waitForAuthToken(maxWaitMs: 1500);
     await _makeRequest(
       '/users/preferences/',
       (json) => json,
@@ -1060,6 +1095,7 @@ class ApiService extends getx.GetConnect {
   }
 
   Future<void> updateUserLocation(double latitude, double longitude) async {
+    await _waitForAuthToken(maxWaitMs: 1500);
     await _makeRequest(
       '/users/location/',
       (json) => json,

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
 import 'package:get/get.dart';
-
 import 'package:ghar360/core/data/models/visit_model.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
@@ -10,6 +8,84 @@ import 'package:ghar360/features/visits/controllers/visits_controller.dart';
 import 'package:ghar360/features/visits/widgets/agent_card.dart';
 import 'package:ghar360/features/visits/widgets/visit_card.dart';
 import 'package:ghar360/features/visits/widgets/visits_skeleton_loaders.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+// Helpers for launching dialer/WhatsApp with Indian numbers
+String _formatIndianNumber(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return '';
+  final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digits.isEmpty) return '';
+  // Remove leading zeroes
+  String d = digits.replaceFirst(RegExp(r'^0+'), '');
+  if (d.startsWith('91') && d.length == 12) {
+    return d; // already with country code
+  }
+  if (d.length == 10) {
+    return '91$d';
+  }
+  // Fallback: if longer than 12, take last 10 as local and prefix 91
+  if (d.length > 10) {
+    final last10 = d.substring(d.length - 10);
+    return '91$last10';
+  }
+  return d; // may be incomplete; handled by callers
+}
+
+Future<void> _launchDialer(String? rawNumber) async {
+  final formatted = _formatIndianNumber(rawNumber);
+  if (formatted.isEmpty) {
+    Get.snackbar('Unavailable', 'Agent contact number not available');
+    return;
+  }
+  // Prefer constructing Uri via scheme/path to ensure proper encoding
+  final telUri = Uri(scheme: 'tel', path: '+$formatted');
+
+  // Try external application first (best UX on Android)
+  try {
+    final launched = await launchUrl(telUri, mode: LaunchMode.externalApplication);
+    if (launched) return;
+  } catch (_) {}
+
+  // Fallback to platform default
+  try {
+    final launched = await launchUrl(telUri, mode: LaunchMode.platformDefault);
+    if (launched) return;
+  } catch (_) {}
+
+  // iOS-specific fallback using telprompt (older behavior)
+  if (GetPlatform.isIOS) {
+    final telPromptUri = Uri(scheme: 'telprompt', path: '+$formatted');
+    try {
+      final launched = await launchUrl(telPromptUri, mode: LaunchMode.platformDefault);
+      if (launched) return;
+    } catch (_) {}
+  }
+
+  // Final fallback: try without '+' (some OEM dialers handle E.164 poorly)
+  final plainTelUri = Uri(scheme: 'tel', path: formatted);
+  try {
+    final launched = await launchUrl(plainTelUri, mode: LaunchMode.platformDefault);
+    if (launched) return;
+  } catch (_) {}
+
+  Get.snackbar('Action Failed', 'Could not open phone dialer');
+}
+
+Future<void> _launchWhatsApp(String? rawNumber) async {
+  final formatted = _formatIndianNumber(rawNumber);
+  if (formatted.isEmpty) {
+    Get.snackbar('Unavailable', 'Agent contact number not available');
+    return;
+  }
+  // Use wa.me to reliably open WhatsApp if installed, else browser
+  final uri = Uri.parse('https://wa.me/$formatted');
+  final ok = await canLaunchUrl(uri);
+  if (!ok) {
+    Get.snackbar('Action Failed', 'Could not open WhatsApp');
+    return;
+  }
+  await launchUrl(uri, mode: LaunchMode.externalApplication);
+}
 
 class VisitsView extends GetView<VisitsController> {
   const VisitsView({super.key});
@@ -304,10 +380,10 @@ class VisitsView extends GetView<VisitsController> {
       return AgentCard(
         agent: agent,
         onCall: () {
-          // Call functionality
+          _launchDialer(agent.contactNumber);
         },
         onWhatsApp: () {
-          // WhatsApp functionality
+          _launchWhatsApp(agent.contactNumber);
         },
       );
     });
