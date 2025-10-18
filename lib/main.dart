@@ -84,18 +84,27 @@ void main() async {
         FlutterError.presentError(details);
       };
 
-      // Initialize Firebase (minimal, privacy-first) and services
+      // Initialize Firebase (minimal, privacy-first)
       try {
         await FirebaseInitializer.init();
-        await PushNotificationsService.initializeForegroundHandling();
-        // Prompt for notifications at app start (as approved)
-        await PushNotificationsService.requestUserPermission(provisional: false);
-        await PushNotificationsService.getToken();
       } catch (e, st) {
         DebugLogger.warning('Failed to initialize Firebase', e, st);
       }
 
       runApp(const MyApp());
+
+      // Defer notifications setup and prompts until after first frame
+      try {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          try {
+            await PushNotificationsService.initializeForegroundHandling();
+            await PushNotificationsService.requestUserPermission(provisional: false);
+            await PushNotificationsService.getToken();
+          } catch (e, st) {
+            DebugLogger.warning('Deferred notifications setup failed', e, st);
+          }
+        });
+      } catch (_) {}
     },
     (error, stack) {
       // One-time first null-check trap capture for unhandled async errors

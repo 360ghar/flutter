@@ -5,6 +5,8 @@ import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:ghar360/core/controllers/app_update_controller.dart';
 import 'package:ghar360/core/data/models/auth_status.dart';
 import 'package:ghar360/core/data/models/user_model.dart';
 import 'package:ghar360/core/data/repositories/profile_repository.dart';
@@ -48,9 +50,6 @@ class AuthController extends GetxController {
     _setupNavigationWorker();
     _setupCurrentUserWorker();
     _initialize();
-
-    // Ensure we handle the current state once (in case no change occurs after setup)
-    _handleAuthNavigation(authStatus.value);
   }
 
   /// Initialize the controller and listen to auth state changes.
@@ -91,16 +90,24 @@ class AuthController extends GetxController {
 
       switch (status) {
         case AuthStatus.initial:
-          if (Get.currentRoute != AppRoutes.splash) {
-            DebugLogger.debug('📱 Navigation worker: Navigating to Splash route');
-            Get.offAllNamed(AppRoutes.splash);
-          }
+          // Do nothing on initial; wait for resolved auth state
+          DebugLogger.debug('⏳ AuthStatus.initial - waiting for resolved auth state');
           break;
 
         case AuthStatus.unauthenticated:
-          if (Get.currentRoute != AppRoutes.login) {
-            DebugLogger.debug('📱 Navigation worker: Navigating to Login route');
-            Get.offAllNamed(AppRoutes.login);
+          // Gate splash/onboarding with persisted flag
+          final storage = GetStorage();
+          final hasSeenOnboarding = storage.read('has_seen_onboarding') == true;
+          if (!hasSeenOnboarding) {
+            if (Get.currentRoute != AppRoutes.splash) {
+              DebugLogger.debug('📱 Navigation worker: Navigating to Splash (first run)');
+              Get.offAllNamed(AppRoutes.splash);
+            }
+          } else {
+            if (Get.currentRoute != AppRoutes.login) {
+              DebugLogger.debug('📱 Navigation worker: Navigating to Login');
+              Get.offAllNamed(AppRoutes.login);
+            }
           }
           break;
 
@@ -121,6 +128,14 @@ class AuthController extends GetxController {
           } else if (Get.currentRoute != AppRoutes.dashboard) {
             DebugLogger.debug('📱 Navigation worker: Navigating to Dashboard route');
             Get.offAllNamed(AppRoutes.dashboard);
+            // Defer app update check to post-frame, only after user is active
+            try {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (Get.isRegistered<AppUpdateController>()) {
+                  Get.find<AppUpdateController>().scheduleCheckAfterFirstFrame();
+                }
+              });
+            } catch (_) {}
           }
           break;
 
@@ -172,16 +187,25 @@ class AuthController extends GetxController {
         await AnalyticsService.setUserId(supabaseUser.id);
         await FirebaseCrashlytics.instance.setUserIdentifier(supabaseUser.id);
       } catch (_) {}
-      // Ensure access token is available before calling our backend
-      try {
-        await _authRepository.waitForAccessToken(timeout: const Duration(seconds: 2));
-      } catch (e) {
-        DebugLogger.warning('Proceeding to load profile without confirmed token: $e');
-      }
+      // Ensure access token is available before calling our backend (block until ready)
+      await _ensureTokenThenLoadProfile();
+    }
+  }
 
-      // A Supabase user exists, now we need to fetch our application-specific user profile
-      // from our own backend.
+  Future<void> _ensureTokenThenLoadProfile({int retries = 5}) async {
+    try {
+      await _authRepository.waitForAccessToken(timeout: const Duration(seconds: 3));
       await _loadUserProfile();
+    } catch (e) {
+      if (retries > 0) {
+        DebugLogger.warning('Access token not ready yet, retrying... ($retries)');
+        await Future.delayed(const Duration(seconds: 1));
+        await _ensureTokenThenLoadProfile(retries: retries - 1);
+      } else {
+        DebugLogger.error('Failed to obtain access token after retries.');
+        // Surface an error state that allows retry or sign-out
+        authStatus.value = AuthStatus.error;
+      }
     }
   }
 
