@@ -66,26 +66,26 @@ class AuthRepository extends GetxService {
     return _supabase.auth.signOut();
   }
 
-  /// Waits for a valid access token to become available.
-  /// Tries a session refresh once if needed to avoid race conditions after OTP verification.
-  Future<String> waitForAccessToken({Duration timeout = const Duration(seconds: 2)}) async {
+  /// Waits for a valid access token to become available with robust retries.
+  /// Useful immediately after signup/OTP verification where the session may lag.
+  Future<String> waitForAccessToken({Duration timeout = const Duration(seconds: 8)}) async {
     final deadline = DateTime.now().add(timeout);
     Session? session = _supabase.auth.currentSession;
     if (session?.accessToken.isNotEmpty == true) {
       return session!.accessToken;
     }
 
-    bool refreshed = false;
+    int refreshAttempts = 0;
     while (DateTime.now().isBefore(deadline)) {
-      // Try a single refresh early in the wait window
-      if (!refreshed) {
+      // Attempt periodic refreshes (throttled)
+      if (refreshAttempts < 3) {
         try {
           DebugLogger.auth('Attempting session refresh while waiting for access token');
           await _supabase.auth.refreshSession();
         } catch (_) {}
-        refreshed = true;
+        refreshAttempts++;
       }
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 150));
       session = _supabase.auth.currentSession;
       if (session?.accessToken.isNotEmpty == true) {
         return session!.accessToken;

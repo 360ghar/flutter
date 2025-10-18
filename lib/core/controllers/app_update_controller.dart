@@ -41,7 +41,9 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
   @override
   void onReady() {
     super.onReady();
-    unawaited(_checkForUpdates(force: true));
+    // Restore initial app-update check on cold start so that
+    // unauthenticated/onboarding sessions also receive prompts.
+    scheduleCheckAfterFirstFrame(force: true);
   }
 
   @override
@@ -112,6 +114,18 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
       DebugLogger.warning('App update check failed', e, stackTrace);
     } finally {
       isChecking.value = false;
+    }
+  }
+
+  /// Public method to schedule an update check after the first frame
+  void scheduleCheckAfterFirstFrame({bool force = false}) {
+    try {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_checkForUpdates(force: force));
+      });
+    } catch (_) {
+      // Fallback to immediate check
+      unawaited(_checkForUpdates(force: force));
     }
   }
 

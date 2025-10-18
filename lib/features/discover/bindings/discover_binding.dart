@@ -7,7 +7,7 @@ class DiscoverBinding extends Bindings {
   void dependencies() {
     // Repositories and core services are registered in DashboardBinding
 
-    // Screen controller: eagerly initialize to avoid missing instance in GetView
-    Get.put<DiscoverController>(DiscoverController());
+    // Screen controller
+    Get.lazyPut<DiscoverController>(() => DiscoverController());
   }
 }

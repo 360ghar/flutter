@@ -33,13 +33,11 @@ class DashboardBinding extends Bindings {
     }
 
     Get.lazyPut<DashboardController>(() => DashboardController());
-
-    // Initialize all tab controllers
+    // Register feature bindings lazily; controllers instantiate on first use
     ProfileBinding().dependencies();
     ExploreBinding().dependencies();
     DiscoverBinding().dependencies();
     LikesBinding().dependencies();
     VisitsBinding().dependencies();
-    // PageStateService and repositories are now available for all features
   }
 }

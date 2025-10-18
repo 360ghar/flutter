@@ -29,15 +29,7 @@ class LocationController extends GetxController {
   void onInit() {
     super.onInit();
     _authController = Get.find<AuthController>();
-    _initializeLocation();
-  }
-
-  Future<void> _initializeLocation() async {
-    await _checkLocationService();
-    await _requestLocationPermission();
-    if (isLocationPermissionGranted.value && isLocationEnabled.value) {
-      await getCurrentLocation();
-    }
+    // Defer location permission prompts and resolution to first use
   }
 
   // IP-based location fallback

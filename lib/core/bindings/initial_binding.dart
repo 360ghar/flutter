@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import 'package:get/get.dart';
 
 import 'package:ghar360/core/controllers/app_update_controller.dart';
@@ -54,8 +56,8 @@ class InitialBinding extends Bindings {
 
   void _initializeApiService() {
     try {
-      // Test connection asynchronously without blocking initialization
-      Future.delayed(const Duration(milliseconds: 500), () {
+      // Defer backend connection test until after first frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         _testBackendConnection();
       });
     } catch (e) {

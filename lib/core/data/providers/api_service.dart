@@ -175,7 +175,7 @@ class ApiService extends getx.GetConnect {
 
     // Request modifier to add authentication token
     httpClient.addRequestModifier<Object?>((request) async {
-      final token = await _authToken;
+      final token = await _ensureValidSessionToken();
       if (token != null && token.trim().isNotEmpty) {
         request.headers['Authorization'] = 'Bearer ${token.trim()}';
         DebugLogger.auth('➡️ Attaching Authorization header to ${request.url}');
@@ -273,6 +273,27 @@ class ApiService extends getx.GetConnect {
     // The accessToken is automatically refreshed by the Supabase client library.
     DebugLogger.auth('Retrieved access token from Supabase session.');
     return session.accessToken;
+  }
+
+  /// Ensures a valid session token is available before making a request.
+  /// Attempts a refresh when missing and waits briefly.
+  Future<String?> _ensureValidSessionToken() async {
+    String? token = await _authToken;
+    if (token != null && token.isNotEmpty) return token;
+
+    try {
+      await _supabase.auth.refreshSession();
+    } catch (_) {}
+
+    // brief wait for session to be set by SDK
+    for (int i = 0; i < 10; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      final s = _supabase.auth.currentSession;
+      if (s?.accessToken.isNotEmpty == true) {
+        return s!.accessToken;
+      }
+    }
+    return null;
   }
 
   /// Handles authentication failure by signing the user out and redirecting to login.
