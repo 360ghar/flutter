@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
@@ -44,6 +45,11 @@ void main() async {
 
       // Initialize WebView platform
       WebViewHelper.ensureInitialized();
+
+      // Enable edge-to-edge system UI on Android 10+ and iOS
+      // This avoids deprecated status/navigation bar color APIs on Android 15+
+      // and ensures our content can draw behind system bars with insets.
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
       // Log environment status after DebugLogger is ready
       try {
@@ -130,7 +136,7 @@ class MyApp extends StatelessWidget {
     // Rebuild GetMaterialApp whenever theme mode changes
     return Obx(
       () => GetMaterialApp(
-        title: 'app_name'.tr,
+        title: '360 Ghar',
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: themeController.themeMode,

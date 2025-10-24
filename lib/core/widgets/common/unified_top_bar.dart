@@ -50,15 +50,10 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
         automaticallyImplyLeading: false,
         toolbarHeight: kToolbarHeight,
         titleSpacing: 16,
+        // Avoid setting statusBarColor to prevent deprecated Android 15 APIs.
         systemOverlayStyle: theme.brightness == Brightness.dark
-            ? const SystemUiOverlayStyle(
-                statusBarColor: AppColors.transparent,
-                statusBarIconBrightness: Brightness.light,
-              )
-            : const SystemUiOverlayStyle(
-                statusBarColor: AppColors.transparent,
-                statusBarIconBrightness: Brightness.dark,
-              ),
+            ? const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.light)
+            : const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark),
         title: Row(
           children: [
             // Location selector
