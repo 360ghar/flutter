@@ -5,7 +5,7 @@ version: 1.0.3+8
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
-  flutter: ">=3.27.0"
+  flutter: ">=3.35.0"
 
 dependencies:
   flutter:
@@ -15,15 +15,15 @@ dependencies:
   cupertino_icons: ^1.0.2
   get: ^4.6.6
   get_storage: ^2.1.1
-  http: ^1.1.0
+  http: ^1.2.2
   supabase_flutter: ^2.10.0
-  json_annotation: ^4.8.1
+  json_annotation: ^4.9.0
   flutter_dotenv: ^6.0.0
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.3.2
   connectivity_plus: ^6.1.5
-  google_fonts: ^6.1.0
-  cached_network_image: ^3.3.0
-  flutter_svg: ^2.0.9
+  google_fonts: ^6.2.1
+  cached_network_image: ^3.4.1
+  flutter_svg: ^2.0.15+1
   intl: ^0.20.2
   geolocator: ^14.0.1
   geocoding: ^4.0.0
@@ -32,11 +32,11 @@ dependencies:
   logger: ^2.0.2+1
   flutter_rating_bar: ^4.0.1
   shimmer: ^3.0.0
-  webview_flutter: ^4.4.2
+  webview_flutter: ^4.10.4
   webview_flutter_web: ^0.2.2+4
   webview_flutter_android: ^4.10.4
   image_network: ^2.1.2
-  flutter_cache_manager: ^3.3.1
+  flutter_cache_manager: ^3.4.1
   flutter_secure_storage: ^9.2.2
   url_launcher: ^6.3.0
   flutter_markdown: ^0.7.3
