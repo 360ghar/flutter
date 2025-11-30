@@ -131,6 +131,10 @@ class PropertyModel {
   final String? mainImageUrl;
   @JsonKey(name: 'virtual_tour_url')
   final String? virtualTourUrl;
+  @JsonKey(name: 'video_urls')
+  final List<String>? videoUrls;
+  @JsonKey(name: 'google_street_view_url')
+  final String? googleStreetViewUrl;
 
   // Availability
   // Backend may send either is_active or is_available
@@ -221,6 +225,8 @@ class PropertyModel {
     this.features,
     this.mainImageUrl,
     this.virtualTourUrl,
+    this.videoUrls,
+    this.googleStreetViewUrl,
     required this.isAvailable,
     this.availableFrom,
     this.calendarData,
@@ -380,9 +386,19 @@ class PropertyModel {
     if (candidates.isEmpty && mainImageUrl?.isNotEmpty == true) {
       candidates.add(mainImageUrl!);
     }
+    final unique = <String>{};
+    final deduped = <String>[];
+    for (final url in candidates) {
+      if (unique.add(url)) {
+        deduped.add(url);
+      }
+    }
     // Final fallback: at least one placeholder handled by UI if still empty
-    return candidates;
+    return deduped;
   }
+
+  List<String> get mediaVideoUrls => videoUrls ?? const <String>[];
+  bool get hasVideos => mediaVideoUrls.isNotEmpty;
 
   bool _looksLikeImageUrl(String url) {
     final lower = url.toLowerCase();
@@ -397,6 +413,17 @@ class PropertyModel {
 
   // Location convenience methods
   bool get hasLocation => latitude != null && longitude != null;
+  bool get hasStreetView => streetViewLaunchUrl != null;
+  String? get streetViewLaunchUrl {
+    if (googleStreetViewUrl?.isNotEmpty == true) return googleStreetViewUrl;
+    if (hasLocation) {
+      return 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=$latitude,$longitude';
+    }
+    return null;
+  }
+
+  String? get streetViewEmbedUrl =>
+      googleStreetViewUrl != null && googleStreetViewUrl!.isNotEmpty ? googleStreetViewUrl : null;
 
   // Amenities convenience methods
   bool get hasAmenities => amenities?.isNotEmpty == true;

@@ -166,9 +166,6 @@ class ErrorMapper {
     );
   }
 
-  // Note: Previously mapped DioException. Since Dio is not used,
-  // we rely on platform and GetConnect exceptions above.
-
   static AppException _mapApiException(ApiException error) {
     if (error.statusCode != null) {
       return _mapHttpStatusCode(error.statusCode, error.response);

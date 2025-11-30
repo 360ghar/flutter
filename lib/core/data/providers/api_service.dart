@@ -814,6 +814,30 @@ class ApiService extends getx.GetConnect {
         }
       }
 
+      List<String>? toStringList(dynamic value) {
+        if (value == null) return null;
+        if (value is List) {
+          final cleaned = value
+              .map((e) => e?.toString().trim())
+              .whereType<String>()
+              .where((e) => e.isNotEmpty)
+              .toList();
+          return cleaned.isEmpty ? null : cleaned;
+        }
+        if (value is String) {
+          final parts = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+          return parts.isEmpty ? null : parts;
+        }
+        return null;
+      }
+
+      safeJson['video_urls'] = toStringList(safeJson['video_urls']);
+      final streetView = safeJson['google_street_view_url'];
+      if (streetView is String) {
+        final trimmed = streetView.trim();
+        safeJson['google_street_view_url'] = trimmed.isEmpty ? null : trimmed;
+      }
+
       return PropertyModel.fromJson(safeJson);
     } catch (e) {
       DebugLogger.error('❌ Error parsing property model: $e');
