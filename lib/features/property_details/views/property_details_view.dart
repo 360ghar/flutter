@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
@@ -208,15 +208,15 @@ class PropertyDetailsView extends StatelessWidget {
                                   children: [
                                     if (safeProperty.pricePerSqft != null)
                                       _chip(
-                                        '₹${safeProperty.pricePerSqft!.toStringAsFixed(0)}/sqft',
+                                        'Γé╣${safeProperty.pricePerSqft!.toStringAsFixed(0)}/sqft',
                                       ),
                                     if (safeProperty.securityDeposit != null)
                                       _chip(
-                                        'Deposit ₹${safeProperty.securityDeposit!.toStringAsFixed(0)}',
+                                        'Deposit Γé╣${safeProperty.securityDeposit!.toStringAsFixed(0)}',
                                       ),
                                     if (safeProperty.maintenanceCharges != null)
                                       _chip(
-                                        'Maintenance ₹${safeProperty.maintenanceCharges!.toStringAsFixed(0)}',
+                                        'Maintenance Γé╣${safeProperty.maintenanceCharges!.toStringAsFixed(0)}',
                                       ),
                                   ],
                                 ),
@@ -262,7 +262,7 @@ class PropertyDetailsView extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // 360° Tour: priority after basic info
+                    // 360┬░ Tour: priority after basic info
                     if (safeProperty.virtualTourUrl != null &&
                         safeProperty.virtualTourUrl!.isNotEmpty) ...[
                       const SizedBox(height: 20),
@@ -270,6 +270,11 @@ class PropertyDetailsView extends StatelessWidget {
                         tourUrl: safeProperty.virtualTourUrl!,
                         thumbnailUrl: safeProperty.mainImage,
                       ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    if (safeProperty.hasVideos) ...[
+                      _MediaSection(property: safeProperty),
                       const SizedBox(height: 24),
                     ],
 
@@ -438,6 +443,10 @@ class PropertyDetailsView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      if (safeProperty.hasStreetView) ...[
+                        _StreetViewSection(property: safeProperty),
+                        const SizedBox(height: 12),
+                      ],
                       Container(
                         height: 220,
                         decoration: BoxDecoration(
@@ -651,12 +660,12 @@ class PropertyDetailsView extends StatelessWidget {
             final rows = <Widget>[];
             if (purpose == PropertyPurpose.rent) {
               final rent = property.monthlyRent ?? property.basePrice;
-              rows.add(_buildInfoRow('Monthly Rent', '₹${rent.toStringAsFixed(0)}'));
+              rows.add(_buildInfoRow('Monthly Rent', 'Γé╣${rent.toStringAsFixed(0)}'));
               if (property.securityDeposit != null) {
                 rows.add(
                   _buildInfoRow(
                     'Security Deposit',
-                    '₹${property.securityDeposit!.toStringAsFixed(0)}',
+                    'Γé╣${property.securityDeposit!.toStringAsFixed(0)}',
                   ),
                 );
               }
@@ -664,34 +673,34 @@ class PropertyDetailsView extends StatelessWidget {
                 rows.add(
                   _buildInfoRow(
                     'Maintenance',
-                    '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
+                    'Γé╣${property.maintenanceCharges!.toStringAsFixed(0)}',
                   ),
                 );
               }
             } else if (purpose == PropertyPurpose.shortStay) {
               final rate = property.dailyRate ?? property.basePrice;
-              rows.add(_buildInfoRow('Daily Rate', '₹${rate.toStringAsFixed(0)}'));
+              rows.add(_buildInfoRow('Daily Rate', 'Γé╣${rate.toStringAsFixed(0)}'));
               if (property.securityDeposit != null) {
                 rows.add(
                   _buildInfoRow(
                     'Security Deposit',
-                    '₹${property.securityDeposit!.toStringAsFixed(0)}',
+                    'Γé╣${property.securityDeposit!.toStringAsFixed(0)}',
                   ),
                 );
               }
             } else {
               // Buy/default
-              rows.add(_buildInfoRow('Sale Price', '₹${property.basePrice.toStringAsFixed(0)}'));
+              rows.add(_buildInfoRow('Sale Price', 'Γé╣${property.basePrice.toStringAsFixed(0)}'));
               if (property.pricePerSqft != null) {
                 rows.add(
-                  _buildInfoRow('Price per Sq Ft', '₹${property.pricePerSqft!.toStringAsFixed(0)}'),
+                  _buildInfoRow('Price per Sq Ft', 'Γé╣${property.pricePerSqft!.toStringAsFixed(0)}'),
                 );
               }
               if (property.maintenanceCharges != null) {
                 rows.add(
                   _buildInfoRow(
                     'Maintenance',
-                    '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
+                    'Γé╣${property.maintenanceCharges!.toStringAsFixed(0)}',
                   ),
                 );
               }
@@ -966,6 +975,359 @@ Future<void> _openGoogleMaps(double latitude, double longitude, String label) as
   }
 }
 
+class _MediaSection extends StatelessWidget {
+  const _MediaSection({required this.property});
+
+  final PropertyModel property;
+
+  Future<void> _openVideo(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      Get.snackbar(
+        'Unable to open video',
+        'Please check the video link',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: AppColors.snackbarBackground,
+        colorText: AppColors.snackbarText,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final videos = property.mediaVideoUrls;
+
+    if (videos.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppColors.getCardShadow(),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Media',
+            style:
+                theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ) ??
+                TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Videos',
+            style:
+                theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ) ??
+                TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 8),
+          Column(
+            children: videos
+                .map(
+                  (url) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _VideoTile(videoUrl: url, onOpen: () => _openVideo(context, url)),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VideoTile extends StatelessWidget {
+  const _VideoTile({required this.videoUrl, required this.onOpen});
+
+  final String videoUrl;
+  final VoidCallback onOpen;
+
+  String? get _thumbnailUrl {
+    final id = _extractYoutubeId(videoUrl);
+    if (id != null) {
+      return 'https://img.youtube.com/vi/$id/hqdefault.jpg';
+    }
+    return null;
+  }
+
+  String? _extractYoutubeId(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.host.isEmpty) return null;
+    if (uri.host.contains('youtu.be')) {
+      return uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
+    }
+    if (uri.host.contains('youtube.com')) {
+      if (uri.queryParameters['v']?.isNotEmpty == true) {
+        return uri.queryParameters['v'];
+      }
+      if (uri.pathSegments.contains('embed') && uri.pathSegments.length >= 2) {
+        return uri.pathSegments[1];
+      }
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayHost = Uri.tryParse(videoUrl)?.host.replaceFirst('www.', '') ?? 'Video';
+    return InkWell(
+      onTap: onOpen,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+          boxShadow: AppColors.getCardShadow(),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                height: 72,
+                width: 100,
+                child: _thumbnailUrl != null
+                    ? RobustNetworkImage(
+                        imageUrl: _thumbnailUrl!,
+                        fit: BoxFit.cover,
+                        errorWidget: Container(
+                          color: AppColors.inputBackground,
+                          child: Icon(
+                            Icons.play_circle_filled,
+                            size: 28,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        color: AppColors.inputBackground,
+                        child: Icon(
+                          Icons.play_circle_filled,
+                          size: 32,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayHost,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    videoUrl,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 6),
+                  const Row(
+                    children: [
+                      Icon(Icons.open_in_new, size: 14, color: AppColors.primaryYellow),
+                      SizedBox(width: 4),
+                      Text(
+                        'Open YouTube',
+                        style: TextStyle(fontSize: 12, color: AppColors.primaryYellow),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StreetViewSection extends StatefulWidget {
+  const _StreetViewSection({required this.property});
+
+  final PropertyModel property;
+
+  @override
+  State<_StreetViewSection> createState() => _StreetViewSectionState();
+}
+
+class _StreetViewSectionState extends State<_StreetViewSection> {
+  WebViewController? _controller;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final embedUrl = widget.property.streetViewEmbedUrl;
+    if (embedUrl != null) {
+      _controller = WebViewHelper.createBaseController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageFinished: (_) => _markLoaded(),
+            onWebResourceError: (_) => _markLoaded(),
+          ),
+        )
+        ..loadHtmlString(_buildEmbedHtml(embedUrl));
+    } else {
+      _isLoading = false;
+    }
+  }
+
+  void _markLoaded() {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _buildEmbedHtml(String url) {
+    return '''
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe src="$url" allowfullscreen></iframe>
+  </body>
+</html>
+''';
+  }
+
+  Future<void> _openStreetView() async {
+    final urlString = widget.property.streetViewLaunchUrl;
+    if (urlString == null) return;
+    final url = Uri.tryParse(urlString);
+    if (url != null && await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      Get.snackbar(
+        'Unable to open Street View',
+        'Please check the Street View link',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: AppColors.snackbarBackground,
+        colorText: AppColors.snackbarText,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final streetViewUrl = widget.property.streetViewLaunchUrl;
+    if (streetViewUrl == null) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppColors.getCardShadow(),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.streetview, color: AppColors.primaryYellow),
+              const SizedBox(width: 8),
+              Text(
+                'Google Street View',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _openStreetView,
+                icon: const Icon(Icons.open_in_new, size: 16, color: AppColors.primaryYellow),
+                label: const Text('Open'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primaryYellow,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_controller != null)
+            SizedBox(
+              height: 220,
+              child: Stack(
+                children: [
+                  WebViewWidget(controller: _controller!),
+                  if (_isLoading) const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ],
+              ),
+            )
+          else
+            Container(
+              height: 180,
+              decoration: BoxDecoration(
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.streetview, color: AppColors.textSecondary),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap open to view in Google Maps',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 // Image gallery for the header
 class _PropertyImageGallery extends StatefulWidget {
   final PropertyModel property;
@@ -1076,7 +1438,7 @@ class _VirtualTourSectionState extends State<_VirtualTourSection> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '360° Virtual Tour',
+                      '360┬░ Virtual Tour',
                       style:
                           theme.textTheme.titleMedium?.copyWith(
                             fontSize: 20,
