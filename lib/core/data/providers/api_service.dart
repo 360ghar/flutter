@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:firebase_performance/firebase_performance.dart' as fp;
@@ -178,10 +178,10 @@ class ApiService extends getx.GetConnect {
       final token = await _ensureValidSessionToken();
       if (token != null && token.trim().isNotEmpty) {
         request.headers['Authorization'] = 'Bearer ${token.trim()}';
-        DebugLogger.auth('Γ₧í∩╕Å Attaching Authorization header to ${request.url}');
+        DebugLogger.auth('➡️ Attaching Authorization header to ${request.url}');
       } else {
         request.headers.remove('Authorization');
-        DebugLogger.auth('Γ₧í∩╕Å No Authorization header for ${request.url}');
+        DebugLogger.auth('➡️ No Authorization header for ${request.url}');
       }
       request.headers['Content-Type'] = 'application/json';
       return request;
@@ -193,11 +193,11 @@ class ApiService extends getx.GetConnect {
         // Let the caller handle the first 401 gracefully; only force sign-out on repeated failures
         _recordAuthFailure();
         if (_authFailureCount >= 2) {
-          DebugLogger.warning('≡ƒöÉ Repeated 401 responses detected. Signing out.');
+          DebugLogger.warning('🔐 Repeated 401 responses detected. Signing out.');
           _handleAuthenticationFailure();
         } else {
           DebugLogger.warning(
-            '≡ƒöÉ 401 received. Propagating without forced sign-out (grace attempt).',
+            '🔐 401 received. Propagating without forced sign-out (grace attempt).',
           );
         }
         throw ApiAuthException('Authentication failed', statusCode: 401);
@@ -363,13 +363,13 @@ class ApiService extends getx.GetConnect {
           if (cachedEtag != null &&
               !effectiveHeaders.keys.any((k) => k.toLowerCase() == 'if-none-match')) {
             effectiveHeaders['If-None-Match'] = cachedEtag;
-            DebugLogger.api('≡ƒºá Added If-None-Match for $fullEndpoint (etag=$cachedEtag)');
+            DebugLogger.api('🧠 Added If-None-Match for $fullEndpoint (etag=$cachedEtag)');
           }
         }
 
         // Single-line API request log for debugging
         DebugLogger.api(
-          '≡ƒÜÇ API $method $fullEndpoint${queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : ''}${body != null && body.isNotEmpty ? ' | Body: $body' : ''}',
+          '🚀 API $method $fullEndpoint${queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : ''}${body != null && body.isNotEmpty ? ' | Body: $body' : ''}',
         );
 
         DebugLogger.logAPIRequest(method: method, endpoint: fullEndpoint, body: body);
@@ -399,8 +399,8 @@ class ApiService extends getx.GetConnect {
         }
 
         // Single-line API response log for debugging
-        DebugLogger.api('≡ƒô¿ API $method $fullEndpoint ΓåÆ ${response.statusCode}');
-        DebugLogger.api('≡ƒô¿ API $method $fullEndpoint ΓåÆ ${response.bodyString}');
+        DebugLogger.api('📨 API $method $fullEndpoint → ${response.statusCode}');
+        DebugLogger.api('📨 API $method $fullEndpoint → ${response.bodyString}');
 
         // Stop metric after response
         try {
@@ -432,7 +432,7 @@ class ApiService extends getx.GetConnect {
             final cachedEntry = _readCacheEntry(cacheKey);
             final cachedBody = cachedEntry?['body'] as String?;
             if (cachedBody != null) {
-              DebugLogger.api('≡ƒöü 304 for $fullEndpoint ΓåÆ serving cached response');
+              DebugLogger.api('🔁 304 for $fullEndpoint → serving cached response');
               // Provide headers (e.g., ETag) to caller if requested
               if (onHeaders != null) {
                 try {
@@ -455,13 +455,13 @@ class ApiService extends getx.GetConnect {
                   return result;
                 }
               } catch (e) {
-                DebugLogger.error('≡ƒÜ¿ Error parsing cached data for $operation: $e');
+                DebugLogger.error('🚨 Error parsing cached data for $operation: $e');
                 rethrow;
               }
             }
           }
           // No cache available; escalate as cache error
-          DebugLogger.warning('ΓÜá∩╕Å 304 received but no cache found for $operation');
+          DebugLogger.warning('⚠️ 304 received but no cache found for $operation');
           throw CacheException('No cached data available for 304 Not Modified');
         }
 
@@ -475,92 +475,92 @@ class ApiService extends getx.GetConnect {
             } catch (_) {}
           }
           final responseData = response.body;
-          DebugLogger.api('≡ƒôè [_makeRequest] Raw response data type: ${responseData?.runtimeType}');
-          DebugLogger.api('≡ƒôè [_makeRequest] Raw response data: $responseData');
+          DebugLogger.api('📊 [_makeRequest] Raw response data type: ${responseData?.runtimeType}');
+          DebugLogger.api('📊 [_makeRequest] Raw response data: $responseData');
 
           try {
             if (responseData is Map<String, dynamic>) {
               DebugLogger.api(
-                '≡ƒôè [_makeRequest] Calling fromJson with Map<String, dynamic>: $responseData',
+                '📊 [_makeRequest] Calling fromJson with Map<String, dynamic>: $responseData',
               );
               final result = fromJson(responseData);
               // Cache successful GET responses with ETag
               if (method.toUpperCase() == 'GET' && cacheKey != null) {
                 _maybeCacheResponse(cacheKey, response);
               }
-              DebugLogger.api('≡ƒôè [_makeRequest] fromJson completed successfully for $operation');
+              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             } else if (responseData is List) {
-              DebugLogger.api('≡ƒôè [_makeRequest] Normalizing List response to Map for $operation');
+              DebugLogger.api('📊 [_makeRequest] Normalizing List response to Map for $operation');
               final normalizedData = {'data': responseData};
               DebugLogger.api(
-                '≡ƒôè [_makeRequest] Calling fromJson with normalized data: $normalizedData',
+                '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
               );
               final result = fromJson(normalizedData);
               if (method.toUpperCase() == 'GET' && cacheKey != null) {
                 _maybeCacheResponse(cacheKey, response);
               }
-              DebugLogger.api('≡ƒôè [_makeRequest] fromJson completed successfully for $operation');
+              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             } else {
               DebugLogger.api(
-                '≡ƒôè [_makeRequest] Normalizing ${responseData?.runtimeType} response to Map for $operation',
+                '📊 [_makeRequest] Normalizing ${responseData?.runtimeType} response to Map for $operation',
               );
               final normalizedData = {'data': responseData};
               DebugLogger.api(
-                '≡ƒôè [_makeRequest] Calling fromJson with normalized data: $normalizedData',
+                '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
               );
               final result = fromJson(normalizedData);
               if (method.toUpperCase() == 'GET' && cacheKey != null) {
                 _maybeCacheResponse(cacheKey, response);
               }
-              DebugLogger.api('≡ƒôè [_makeRequest] fromJson completed successfully for $operation');
+              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             }
           } catch (e) {
-            DebugLogger.error('≡ƒÜ¿ [_makeRequest] ERROR in fromJson callback for $operation: $e');
-            DebugLogger.error('≡ƒÜ¿ [_makeRequest] Response data: $responseData');
+            DebugLogger.error('🚨 [_makeRequest] ERROR in fromJson callback for $operation: $e');
+            DebugLogger.error('🚨 [_makeRequest] Response data: $responseData');
             rethrow;
           }
         } else if (response.statusCode == 401) {
           // Token expired - the response interceptor will handle this
-          DebugLogger.auth('≡ƒöÆ Authentication failed for $operation');
+          DebugLogger.auth('🔒 Authentication failed for $operation');
           throw ApiAuthException('Authentication failed for $operation', statusCode: 401);
         } else if (response.statusCode == 403) {
-          DebugLogger.auth('≡ƒÜ½ Access forbidden for $operation');
+          DebugLogger.auth('🚫 Access forbidden for $operation');
           throw ApiAuthException('Access forbidden for $operation', statusCode: 403);
         } else if (((response.statusCode) ?? 0) >= 500 && attempt < retries) {
           // Server error - retry with exponential backoff + jitter
           final delayMs = _computeBackoffDelayMs(attempt);
           DebugLogger.warning(
-            '≡ƒöä Server error (${response.statusCode}) for $operation, retrying in ${delayMs}ms... (${attempt + 1}/$retries)',
+            '🔄 Server error (${response.statusCode}) for $operation, retrying in ${delayMs}ms... (${attempt + 1}/$retries)',
           );
           await Future.delayed(Duration(milliseconds: delayMs));
           continue;
         } else {
           // Enhanced error logging for 422 errors
           if (response.statusCode == 422) {
-            DebugLogger.error('≡ƒÜ½ 422 Unprocessable Entity for $operation');
-            DebugLogger.error('≡ƒÜ½ Endpoint: $fullEndpoint');
-            DebugLogger.error('≡ƒÜ½ Method: $method');
-            DebugLogger.error('≡ƒÜ½ Query Params: $queryParams');
-            DebugLogger.error('≡ƒÜ½ Request Body: $body');
-            DebugLogger.error('≡ƒÜ½ Response Body: ${response.bodyString}');
-            DebugLogger.error('≡ƒÜ½ Response Headers: ${response.headers}');
+            DebugLogger.error('🚫 422 Unprocessable Entity for $operation');
+            DebugLogger.error('🚫 Endpoint: $fullEndpoint');
+            DebugLogger.error('🚫 Method: $method');
+            DebugLogger.error('🚫 Query Params: $queryParams');
+            DebugLogger.error('🚫 Request Body: $body');
+            DebugLogger.error('🚫 Response Body: ${response.bodyString}');
+            DebugLogger.error('🚫 Response Headers: ${response.headers}');
           }
 
           // Enhanced error logging for 409 Conflict errors
           if (response.statusCode == 409) {
-            DebugLogger.error('ΓÜí 409 Conflict detected for $operation');
-            DebugLogger.error('ΓÜí This indicates a concurrent update conflict');
-            DebugLogger.error('ΓÜí Endpoint: $fullEndpoint');
-            DebugLogger.error('ΓÜí Response Body: ${response.bodyString}');
+            DebugLogger.error('⚡ 409 Conflict detected for $operation');
+            DebugLogger.error('⚡ This indicates a concurrent update conflict');
+            DebugLogger.error('⚡ Endpoint: $fullEndpoint');
+            DebugLogger.error('⚡ Response Body: ${response.bodyString}');
           }
 
           // Create an ApiException to be mapped to AppException below
           final errorMessage =
               'HTTP ${response.statusCode}: ${response.statusText ?? 'Unknown error'}';
-          DebugLogger.error('Γ¥î API Error for $operation: $errorMessage');
+          DebugLogger.error('❌ API Error for $operation: $errorMessage');
           final apiEx = ApiException(
             response.statusText ?? 'API Error',
             statusCode: response.statusCode,
@@ -572,7 +572,7 @@ class ApiService extends getx.GetConnect {
           if (attempt < retries && ErrorMapper.isRetryable(appEx)) {
             final delayMs = _computeBackoffDelayMs(attempt);
             DebugLogger.warning(
-              '≡ƒöä Retryable API error for $operation, retrying in ${delayMs}ms... (${attempt + 1}/$retries)',
+              '🔄 Retryable API error for $operation, retrying in ${delayMs}ms... (${attempt + 1}/$retries)',
             );
             await Future.delayed(Duration(milliseconds: delayMs));
             continue;
@@ -591,7 +591,7 @@ class ApiService extends getx.GetConnect {
 
         // Auth errors should bubble immediately
         if (appEx is AuthenticationException) {
-          DebugLogger.auth('≡ƒöÆ Authentication error for $operation: ${appEx.message}');
+          DebugLogger.auth('🔒 Authentication error for $operation: ${appEx.message}');
           throw appEx;
         }
 
@@ -599,13 +599,13 @@ class ApiService extends getx.GetConnect {
         if (attempt < retries && ErrorMapper.isRetryable(appEx)) {
           final delayMs = _computeBackoffDelayMs(attempt);
           DebugLogger.warning(
-            '≡ƒöä Request failed for $operation (${appEx.code ?? appEx.runtimeType}), retrying in ${delayMs}ms... (${attempt + 1}/$retries)',
+            '🔄 Request failed for $operation (${appEx.code ?? appEx.runtimeType}), retrying in ${delayMs}ms... (${attempt + 1}/$retries)',
           );
           await Future.delayed(Duration(milliseconds: delayMs));
           continue;
         }
 
-        // No retries left or non-retryable ΓåÆ record and rethrow
+        // No retries left or non-retryable → record and rethrow
         lastAppException = appEx;
 
         DebugLogger.reportError(
@@ -630,7 +630,7 @@ class ApiService extends getx.GetConnect {
 
   // Exponential backoff with jitter (ms)
   int _computeBackoffDelayMs(int attempt) {
-    // attempt: 0,1,2 ΓåÆ 300, 600, 1200 (+ jitter)
+    // attempt: 0,1,2 → 300, 600, 1200 (+ jitter)
     final base = 300 * (1 << attempt);
     final jitter = (DateTime.now().microsecondsSinceEpoch % 200);
     final delay = base + jitter;
@@ -700,12 +700,12 @@ class ApiService extends getx.GetConnect {
     try {
       final etag = _getHeaderValue(response.headers, 'etag');
       if (etag == null || etag.isEmpty) {
-        DebugLogger.api('≡ƒùé∩╕Å No ETag present; skipping cache for $cacheKey');
+        DebugLogger.api('🗂️ No ETag present; skipping cache for $cacheKey');
         return;
       }
       final bodyStr = response.bodyString ?? jsonEncode(response.body);
       if (bodyStr.isEmpty || bodyStr.trim() == 'null') {
-        DebugLogger.api('≡ƒùé∩╕Å Empty body; skipping cache for $cacheKey');
+        DebugLogger.api('🗂️ Empty body; skipping cache for $cacheKey');
         return;
       }
       _cacheStorage.write(cacheKey, {
@@ -713,7 +713,7 @@ class ApiService extends getx.GetConnect {
         'body': bodyStr,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
-      DebugLogger.api('Γ£à Cached response (etag=$etag) for $cacheKey');
+      DebugLogger.api('✅ Cached response (etag=$etag) for $cacheKey');
     } catch (e) {
       DebugLogger.warning('Failed to cache response for $cacheKey', e);
     }
@@ -774,8 +774,8 @@ class ApiService extends getx.GetConnect {
 
       return UserModel.fromJson(safeJson);
     } catch (e) {
-      DebugLogger.error('Γ¥î Error parsing user model: $e');
-      DebugLogger.api('≡ƒôè Raw JSON: $json');
+      DebugLogger.error('❌ Error parsing user model: $e');
+      DebugLogger.api('📊 Raw JSON: $json');
       rethrow;
     }
   }
@@ -814,34 +814,10 @@ class ApiService extends getx.GetConnect {
         }
       }
 
-      List<String>? toStringList(dynamic value) {
-        if (value == null) return null;
-        if (value is List) {
-          final cleaned = value
-              .map((e) => e?.toString().trim())
-              .whereType<String>()
-              .where((e) => e.isNotEmpty)
-              .toList();
-          return cleaned.isEmpty ? null : cleaned;
-        }
-        if (value is String) {
-          final parts = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-          return parts.isEmpty ? null : parts;
-        }
-        return null;
-      }
-
-      safeJson['video_urls'] = toStringList(safeJson['video_urls']);
-      final streetView = safeJson['google_street_view_url'];
-      if (streetView is String) {
-        final trimmed = streetView.trim();
-        safeJson['google_street_view_url'] = trimmed.isEmpty ? null : trimmed;
-      }
-
       return PropertyModel.fromJson(safeJson);
     } catch (e) {
-      DebugLogger.error('Γ¥î Error parsing property model: $e');
-      DebugLogger.api('≡ƒôè Raw JSON: $json');
+      DebugLogger.error('❌ Error parsing property model: $e');
+      DebugLogger.api('📊 Raw JSON: $json');
       rethrow;
     }
   }
@@ -849,7 +825,7 @@ class ApiService extends getx.GetConnect {
   // Helper method for parsing unified property response
   static UnifiedPropertyResponse _parseUnifiedPropertyResponse(Map<String, dynamic> json) {
     try {
-      DebugLogger.api('≡ƒôè [UNIFIED_PARSER] RAW API RESPONSE: $json');
+      DebugLogger.api('📊 [UNIFIED_PARSER] RAW API RESPONSE: $json');
       final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
 
       // Accept multiple shapes: { properties: [...] }, { data: [...] }, or nested common keys
@@ -857,34 +833,34 @@ class ApiService extends getx.GetConnect {
           safeJson['properties'] ?? safeJson['data'] ?? safeJson['results'] ?? safeJson['items'];
       final List<dynamic> list = rawList is List ? rawList : <dynamic>[];
 
-      DebugLogger.api('≡ƒôª [UNIFIED_PARSER] Found ${list.length} properties to parse');
-      DebugLogger.debug('≡ƒôª [UNIFIED_PARSER] Property list type: ${list.runtimeType}');
+      DebugLogger.api('📦 [UNIFIED_PARSER] Found ${list.length} properties to parse');
+      DebugLogger.debug('📦 [UNIFIED_PARSER] Property list type: ${list.runtimeType}');
 
       final List<PropertyModel> parsed = <PropertyModel>[];
       int failedCount = 0;
       for (int i = 0; i < list.length; i++) {
         final item = list[i];
-        DebugLogger.debug('≡ƒÅá [UNIFIED_PARSER] Processing item $i: ${item?.runtimeType}');
+        DebugLogger.debug('🏠 [UNIFIED_PARSER] Processing item $i: ${item?.runtimeType}');
 
         if (item is Map<String, dynamic>) {
           try {
-            DebugLogger.debug('≡ƒÅá [UNIFIED_PARSER] About to parse property $i: $item');
+            DebugLogger.debug('🏠 [UNIFIED_PARSER] About to parse property $i: $item');
             final property = _parsePropertyModel(item);
             parsed.add(property);
             DebugLogger.debug(
-              '≡ƒÅá [UNIFIED_PARSER] Successfully parsed property $i: ${property.title}',
+              '🏠 [UNIFIED_PARSER] Successfully parsed property $i: ${property.title}',
             );
           } catch (e, stackTrace) {
-            DebugLogger.error('Γ¥î [UNIFIED_PARSER] Failed to parse property $i: $e');
-            DebugLogger.error('Γ¥î [UNIFIED_PARSER] Failed property data: $item');
-            DebugLogger.error('Γ¥î [UNIFIED_PARSER] Stack trace: $stackTrace');
+            DebugLogger.error('❌ [UNIFIED_PARSER] Failed to parse property $i: $e');
+            DebugLogger.error('❌ [UNIFIED_PARSER] Failed property data: $item');
+            DebugLogger.error('❌ [UNIFIED_PARSER] Stack trace: $stackTrace');
 
             if (e.toString().contains('Null check operator used on a null value')) {
               DebugLogger.error(
-                '≡ƒÜ¿ [UNIFIED_PARSER] NULL CHECK OPERATOR ERROR at property index $i!',
+                '🚨 [UNIFIED_PARSER] NULL CHECK OPERATOR ERROR at property index $i!',
               );
               DebugLogger.error(
-                '≡ƒÜ¿ [UNIFIED_PARSER] This should provide more details from _parsePropertyModel',
+                '🚨 [UNIFIED_PARSER] This should provide more details from _parsePropertyModel',
               );
             }
 
@@ -892,7 +868,7 @@ class ApiService extends getx.GetConnect {
           }
         } else {
           DebugLogger.warning(
-            'ΓÜá∩╕Å [UNIFIED_PARSER] Invalid property at index $i: $item (${item?.runtimeType})',
+            '⚠️ [UNIFIED_PARSER] Invalid property at index $i: $item (${item?.runtimeType})',
           );
           failedCount++;
         }
@@ -900,7 +876,7 @@ class ApiService extends getx.GetConnect {
 
       if (failedCount > 0) {
         DebugLogger.warning(
-          'ΓÜá∩╕Å [UNIFIED_PARSER] Skipped $failedCount invalid properties out of ${list.length}',
+          '⚠️ [UNIFIED_PARSER] Skipped $failedCount invalid properties out of ${list.length}',
         );
       }
 
@@ -947,8 +923,8 @@ class ApiService extends getx.GetConnect {
         searchCenter: searchCenter,
       );
     } catch (e) {
-      DebugLogger.error('Γ¥î Error parsing unified property response: $e');
-      DebugLogger.api('≡ƒôè Raw JSON: $json');
+      DebugLogger.error('❌ Error parsing unified property response: $e');
+      DebugLogger.api('📊 Raw JSON: $json');
       rethrow;
     }
   }
@@ -1082,21 +1058,21 @@ class ApiService extends getx.GetConnect {
           filteredData['date_of_birth'] =
               "${parsedDate.year.toString().padLeft(4, '0')}-${parsedDate.month.toString().padLeft(2, '0')}-${parsedDate.day.toString().padLeft(2, '0')}";
           DebugLogger.info(
-            '≡ƒôà Converted date_of_birth from "$dobString" to "${filteredData['date_of_birth']}"',
+            '📅 Converted date_of_birth from "$dobString" to "${filteredData['date_of_birth']}"',
           );
         }
       } catch (e) {
-        DebugLogger.warning('ΓÜá∩╕Å Failed to parse date_of_birth "$dobString": $e');
+        DebugLogger.warning('⚠️ Failed to parse date_of_birth "$dobString": $e');
         // Remove invalid date to prevent API error
         filteredData.remove('date_of_birth');
       }
     }
 
     // Log what we're sending (without sensitive data)
-    DebugLogger.info('≡ƒô¥ Profile update fields: ${filteredData.keys.toList()}');
+    DebugLogger.info('📝 Profile update fields: ${filteredData.keys.toList()}');
     if (preferenceFields.isNotEmpty) {
       DebugLogger.info(
-        'ΓÜÖ∩╕Å Preference fields (will be sent separately): ${preferenceFields.keys.toList()}',
+        '⚙️ Preference fields (will be sent separately): ${preferenceFields.keys.toList()}',
       );
     }
 
@@ -1104,9 +1080,9 @@ class ApiService extends getx.GetConnect {
     if (preferenceFields.isNotEmpty) {
       try {
         await updateUserPreferences(preferenceFields);
-        DebugLogger.success('Γ£à User preferences updated successfully');
+        DebugLogger.success('✅ User preferences updated successfully');
       } catch (e) {
-        DebugLogger.warning('ΓÜá∩╕Å Failed to update preferences, continuing with profile update: $e');
+        DebugLogger.warning('⚠️ Failed to update preferences, continuing with profile update: $e');
       }
     }
 
@@ -1163,23 +1139,23 @@ class ApiService extends getx.GetConnect {
   }) async {
     // Validate parameters to prevent 422 errors
     if (latitude < -90 || latitude > 90) {
-      DebugLogger.error('≡ƒÜ½ Invalid latitude: $latitude (must be between -90 and 90)');
+      DebugLogger.error('🚫 Invalid latitude: $latitude (must be between -90 and 90)');
       throw ArgumentError('Invalid latitude: $latitude');
     }
     if (longitude < -180 || longitude > 180) {
-      DebugLogger.error('≡ƒÜ½ Invalid longitude: $longitude (must be between -180 and 180)');
+      DebugLogger.error('🚫 Invalid longitude: $longitude (must be between -180 and 180)');
       throw ArgumentError('Invalid longitude: $longitude');
     }
     if (radiusKm <= 0 || radiusKm > 1000) {
-      DebugLogger.error('≡ƒÜ½ Invalid radius: $radiusKm (must be between 0 and 1000 km)');
+      DebugLogger.error('🚫 Invalid radius: $radiusKm (must be between 0 and 1000 km)');
       throw ArgumentError('Invalid radius: $radiusKm');
     }
     if (page <= 0) {
-      DebugLogger.error('≡ƒÜ½ Invalid page: $page (must be >= 1)');
+      DebugLogger.error('🚫 Invalid page: $page (must be >= 1)');
       throw ArgumentError('Invalid page: $page');
     }
     if (limit <= 0 || limit > 100) {
-      DebugLogger.error('≡ƒÜ½ Invalid limit: $limit (must be between 1 and 100)');
+      DebugLogger.error('🚫 Invalid limit: $limit (must be between 1 and 100)');
       throw ArgumentError('Invalid limit: $limit');
     }
 
@@ -1196,7 +1172,7 @@ class ApiService extends getx.GetConnect {
       queryParams['_'] = DateTime.now().millisecondsSinceEpoch.toString();
     }
 
-    DebugLogger.api('≡ƒöì Search parameters - lat: $latitude, lng: $longitude, radius: $radiusKm km');
+    DebugLogger.api('🔍 Search parameters - lat: $latitude, lng: $longitude, radius: $radiusKm km');
 
     // Convert filters to query parameters with validation
     final filterMap = filters.toJson();
@@ -1234,7 +1210,7 @@ class ApiService extends getx.GetConnect {
       queryParams['exclude_swiped'] = 'true';
     }
 
-    DebugLogger.api('≡ƒöì Final query params: $queryParams');
+    DebugLogger.api('🔍 Final query params: $queryParams');
 
     return await _makeRequest(
       '/properties/',
@@ -1427,7 +1403,7 @@ class ApiService extends getx.GetConnect {
   // Connection Testing
   Future<bool> testConnection() async {
     try {
-      DebugLogger.api('≡ƒöì Testing backend connection to $_baseUrl');
+      DebugLogger.api('🔍 Testing backend connection to $_baseUrl');
       final response = await get('/health').timeout(
         const Duration(seconds: 5),
         onTimeout: () {
@@ -1435,19 +1411,19 @@ class ApiService extends getx.GetConnect {
         },
       );
 
-      DebugLogger.api('≡ƒÅÑ Health check response: ${response.statusCode}');
+      DebugLogger.api('🏥 Health check response: ${response.statusCode}');
 
       // Consider 200, 404, and 405 as "server is reachable"
       final isReachable =
           response.statusCode == 200 || response.statusCode == 404 || response.statusCode == 405;
 
       if (isReachable) {
-        DebugLogger.success('Γ£à Backend server is reachable (status: ${response.statusCode})');
+        DebugLogger.success('✅ Backend server is reachable (status: ${response.statusCode})');
       }
 
       return isReachable;
     } catch (e) {
-      DebugLogger.warning('≡ƒöì Primary health check failed: $e');
+      DebugLogger.warning('🔍 Primary health check failed: $e');
       // Try alternative endpoint for testing
       try {
         final response = await get('/').timeout(
@@ -1456,7 +1432,7 @@ class ApiService extends getx.GetConnect {
             throw Exception('Connection timeout');
           },
         );
-        DebugLogger.api('≡ƒöä Alternative endpoint test: ${response.statusCode}');
+        DebugLogger.api('🔄 Alternative endpoint test: ${response.statusCode}');
 
         // Server is reachable if we get any HTTP response (including 405, 404)
         final isReachable =
@@ -1464,13 +1440,13 @@ class ApiService extends getx.GetConnect {
 
         if (isReachable) {
           DebugLogger.success(
-            'Γ£à Backend server is reachable via alternative test (status: ${response.statusCode})',
+            '✅ Backend server is reachable via alternative test (status: ${response.statusCode})',
           );
         }
 
         return isReachable;
       } catch (e2) {
-        DebugLogger.warning('≡ƒÆö Backend server unreachable: $e2');
+        DebugLogger.warning('💔 Backend server unreachable: $e2');
         return false;
       }
     }

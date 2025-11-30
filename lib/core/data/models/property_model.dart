@@ -1,4 +1,4 @@
-﻿import 'package:ghar360/core/data/models/property_image_model.dart';
+import 'package:ghar360/core/data/models/property_image_model.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'property_model.g.dart';
@@ -131,10 +131,6 @@ class PropertyModel {
   final String? mainImageUrl;
   @JsonKey(name: 'virtual_tour_url')
   final String? virtualTourUrl;
-  @JsonKey(name: 'video_urls')
-  final List<String>? videoUrls;
-  @JsonKey(name: 'google_street_view_url')
-  final String? googleStreetViewUrl;
 
   // Availability
   // Backend may send either is_active or is_available
@@ -225,8 +221,6 @@ class PropertyModel {
     this.features,
     this.mainImageUrl,
     this.virtualTourUrl,
-    this.videoUrls,
-    this.googleStreetViewUrl,
     required this.isAvailable,
     this.availableFrom,
     this.calendarData,
@@ -266,11 +260,11 @@ class PropertyModel {
   String get formattedPrice {
     final price = getEffectivePrice();
     if (price >= 10000000) {
-      return 'Γé╣${(price / 10000000).toStringAsFixed(1)} Cr';
+      return '₹${(price / 10000000).toStringAsFixed(1)} Cr';
     } else if (price >= 100000) {
-      return 'Γé╣${(price / 100000).toStringAsFixed(1)} L';
+      return '₹${(price / 100000).toStringAsFixed(1)} L';
     } else {
-      return 'Γé╣${price.toStringAsFixed(0)}';
+      return '₹${price.toStringAsFixed(0)}';
     }
   }
 
@@ -386,19 +380,9 @@ class PropertyModel {
     if (candidates.isEmpty && mainImageUrl?.isNotEmpty == true) {
       candidates.add(mainImageUrl!);
     }
-    final unique = <String>{};
-    final deduped = <String>[];
-    for (final url in candidates) {
-      if (unique.add(url)) {
-        deduped.add(url);
-      }
-    }
     // Final fallback: at least one placeholder handled by UI if still empty
-    return deduped;
+    return candidates;
   }
-
-  List<String> get mediaVideoUrls => videoUrls ?? const <String>[];
-  bool get hasVideos => mediaVideoUrls.isNotEmpty;
 
   bool _looksLikeImageUrl(String url) {
     final lower = url.toLowerCase();
@@ -413,17 +397,6 @@ class PropertyModel {
 
   // Location convenience methods
   bool get hasLocation => latitude != null && longitude != null;
-  bool get hasStreetView => streetViewLaunchUrl != null;
-  String? get streetViewLaunchUrl {
-    if (googleStreetViewUrl?.isNotEmpty == true) return googleStreetViewUrl;
-    if (hasLocation) {
-      return 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=$latitude,$longitude';
-    }
-    return null;
-  }
-
-  String? get streetViewEmbedUrl =>
-      googleStreetViewUrl != null && googleStreetViewUrl!.isNotEmpty ? googleStreetViewUrl : null;
 
   // Amenities convenience methods
   bool get hasAmenities => amenities?.isNotEmpty == true;

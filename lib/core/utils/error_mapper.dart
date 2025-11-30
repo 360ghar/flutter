@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/providers/api_service.dart';
@@ -12,7 +12,7 @@ class ErrorMapper {
   static AppException mapApiError(Object error, [StackTrace? stackTrace]) {
     // Log the incoming error being normalized to an AppException (informational, not a failure)
     DebugLogger.info(
-      '≡ƒù║∩╕Å [ERROR_MAPPER] Mapping incoming error: type=${error.runtimeType}, error=$error',
+      '🗺️ [ERROR_MAPPER] Mapping incoming error: type=${error.runtimeType}, error=$error',
       error,
       stackTrace,
     );
@@ -24,56 +24,56 @@ class ErrorMapper {
         // Capture a one-time stack to identify where this mapping is triggered
         NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError');
       } else if (error is Error || error is Exception) {
-        DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] NULL CHECK OPERATOR ERROR DETECTED!');
-        DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] Error type: ${error.runtimeType}');
-        DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] Error string: ${error.toString()}');
+        DebugLogger.error('🚨 [ERROR_MAPPER] NULL CHECK OPERATOR ERROR DETECTED!');
+        DebugLogger.error('🚨 [ERROR_MAPPER] Error type: ${error.runtimeType}');
+        DebugLogger.error('🚨 [ERROR_MAPPER] Error string: ${error.toString()}');
 
         // CRITICAL: Get the current stack trace to see where this error is coming from
         DebugLogger.error(
-          '≡ƒÜ¿ [ERROR_MAPPER] CURRENT STACK TRACE (where ErrorMapper.map was called):',
+          '🚨 [ERROR_MAPPER] CURRENT STACK TRACE (where ErrorMapper.map was called):',
         );
         final currentStackTrace = StackTrace.current;
-        DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] ${currentStackTrace.toString()}');
+        DebugLogger.error('🚨 [ERROR_MAPPER] ${currentStackTrace.toString()}');
 
         // Try to get original stack trace if available
         try {
           if (error is Error) {
-            DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] ORIGINAL ERROR STACK TRACE:');
-            DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] ${error.stackTrace}');
+            DebugLogger.error('🚨 [ERROR_MAPPER] ORIGINAL ERROR STACK TRACE:');
+            DebugLogger.error('🚨 [ERROR_MAPPER] ${error.stackTrace}');
           }
         } catch (e) {
-          DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] Could not get original stack trace: $e');
+          DebugLogger.error('🚨 [ERROR_MAPPER] Could not get original stack trace: $e');
         }
 
         // Log error source analysis
         final stackString = currentStackTrace.toString();
         if (stackString.contains('property_model.g.dart')) {
           DebugLogger.error(
-            '≡ƒÜ¿ [ERROR_MAPPER] ERROR ORIGINATES FROM: property_model.g.dart (generated code)',
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_model.g.dart (generated code)',
           );
         } else if (stackString.contains('property_image_model.g.dart')) {
           DebugLogger.error(
-            '≡ƒÜ¿ [ERROR_MAPPER] ERROR ORIGINATES FROM: property_image_model.g.dart (generated code)',
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_image_model.g.dart (generated code)',
           );
         } else if (stackString.contains('explore_controller.dart')) {
-          DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] ERROR ORIGINATES FROM: explore_controller.dart');
+          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: explore_controller.dart');
         } else if (stackString.contains('likes_controller.dart')) {
-          DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] ERROR ORIGINATES FROM: likes_controller.dart');
+          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: likes_controller.dart');
         } else if (stackString.contains('page_state_service.dart')) {
-          DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] ERROR ORIGINATES FROM: page_state_service.dart');
+          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: page_state_service.dart');
         } else {
           DebugLogger.error(
-            '≡ƒÜ¿ [ERROR_MAPPER] ERROR ORIGINATES FROM: Unknown location - check full stack trace above',
+            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: Unknown location - check full stack trace above',
           );
         }
 
         // Extract and log the specific lines from the stack trace
         final lines = stackString.split('\n');
-        DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] STACK TRACE ANALYSIS:');
+        DebugLogger.error('🚨 [ERROR_MAPPER] STACK TRACE ANALYSIS:');
         for (int i = 0; i < lines.length && i < 10; i++) {
           final line = lines[i].trim();
           if (line.contains('.dart')) {
-            DebugLogger.error('≡ƒÜ¿ [ERROR_MAPPER] [$i] $line');
+            DebugLogger.error('🚨 [ERROR_MAPPER] [$i] $line');
           }
         }
       }
@@ -165,6 +165,9 @@ class ErrorMapper {
       details: error.toString(),
     );
   }
+
+  // Note: Previously mapped DioException. Since Dio is not used,
+  // we rely on platform and GetConnect exceptions above.
 
   static AppException _mapApiException(ApiException error) {
     if (error.statusCode != null) {
@@ -327,7 +330,7 @@ class ErrorMapper {
     );
 
     // Log the full error for debugging
-    DebugLogger.error('Γ¥î Error shown to user: title=$title, message=${error.message}');
+    DebugLogger.error('❌ Error shown to user: title=$title, message=${error.message}');
     if (error.details != null) {
       DebugLogger.error('Details: ${error.details}');
     }
@@ -381,16 +384,16 @@ class ErrorMapper {
   // Get error icon for UI
   static String getErrorIcon(AppException error) {
     if (error is NetworkException) {
-      return '≡ƒîÉ';
+      return '🌐';
     } else if (error is AuthenticationException) {
-      return '≡ƒöÆ';
+      return '🔒';
     } else if (error is ValidationException) {
-      return 'ΓÜá∩╕Å';
+      return '⚠️';
     } else if (error is NotFoundException) {
-      return '≡ƒöì';
+      return '🔍';
     } else if (error is ServerException) {
-      return '≡ƒöº';
+      return '🔧';
     }
-    return 'Γ¥î';
+    return '❌';
   }
 }
