@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 
+import 'package:ghar360/core/data/models/property_image_model.dart';
+import 'package:ghar360/core/data/models/property_media_payload.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/data/models/unified_property_response.dart';
@@ -10,7 +12,6 @@ import 'package:ghar360/core/utils/debug_logger.dart';
 class PropertiesRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
 
-  // Get properties with filters and pagination
   Future<UnifiedPropertyResponse> getProperties({
     required UnifiedFilterModel filters,
     required int page,
@@ -23,7 +24,7 @@ class PropertiesRepository extends GetxService {
   }) async {
     try {
       DebugLogger.api(
-        '🔍 Fetching properties: page=$page, limit=$limit, activeFilters=${filters.activeFilterCount}',
+        'Fetching properties page=$page limit=$limit filters=${filters.activeFilterCount}',
       );
 
       final response = await _apiService.searchProperties(
@@ -37,39 +38,31 @@ class PropertiesRepository extends GetxService {
         useCache: useCache,
       );
 
-      DebugLogger.success(
-        '✅ Fetched ${response.properties.length} properties (page $page/${response.totalPages})',
-      );
+      DebugLogger.success('Fetched ${response.properties.length} properties on page $page');
       return response;
     } on AppException catch (e) {
-      DebugLogger.error('❌ Failed to fetch properties: ${e.message}');
+      DebugLogger.error('Failed to fetch properties: ${e.message}');
       rethrow;
     }
   }
 
-  // Get single property details
   Future<PropertyModel> getPropertyDetail(int propertyId) async {
     try {
-      DebugLogger.api('🏠 Fetching property details: $propertyId');
-
+      DebugLogger.api('Fetching property details: $propertyId');
       final property = await _apiService.getPropertyDetails(propertyId);
-
-      DebugLogger.success('✅ Property details fetched: ${property.title}');
+      DebugLogger.success('Property details fetched: ${property.title}');
       return property;
     } on AppException catch (e) {
-      DebugLogger.error('❌ Failed to fetch property $propertyId: ${e.message}');
+      DebugLogger.error('Failed to fetch property $propertyId: ${e.message}');
       rethrow;
     }
   }
 
-  // Get multiple property details by IDs (for likes page)
   Future<List<PropertyModel>> getPropertiesByIds(List<int> propertyIds) async {
     if (propertyIds.isEmpty) return [];
 
     try {
-      DebugLogger.api('🏠 Fetching ${propertyIds.length} properties by IDs');
-
-      // Fetch properties concurrently but limit concurrent requests
+      DebugLogger.api('Fetching ${propertyIds.length} properties by IDs');
       const batchSize = 10;
       final List<PropertyModel> allProperties = [];
 
@@ -81,20 +74,18 @@ class PropertiesRepository extends GetxService {
           final batchResults = await Future.wait(futures);
           allProperties.addAll(batchResults);
         } catch (e) {
-          DebugLogger.warning('⚠️ Some properties failed to load in batch: $e');
-          // Continue with partial results
+          DebugLogger.warning('Some properties failed to load in batch: $e');
         }
       }
 
-      DebugLogger.success('✅ Loaded ${allProperties.length}/${propertyIds.length} properties');
+      DebugLogger.success('Loaded ${allProperties.length}/${propertyIds.length} properties');
       return allProperties;
     } on AppException catch (e) {
-      DebugLogger.error('❌ Failed to fetch properties by IDs: ${e.message}');
+      DebugLogger.error('Failed to fetch properties by IDs: ${e.message}');
       rethrow;
     }
   }
 
-  // Search properties (same as getProperties but for consistency)
   Future<UnifiedPropertyResponse> searchProperties({
     required UnifiedFilterModel filters,
     required int page,
@@ -103,7 +94,7 @@ class PropertiesRepository extends GetxService {
     required double longitude,
     double? radiusKm,
     bool excludeSwiped = false,
-    bool useCache = false, // Search results shouldn't be cached as much
+    bool useCache = false,
   }) async {
     return getProperties(
       filters: filters,
@@ -117,7 +108,6 @@ class PropertiesRepository extends GetxService {
     );
   }
 
-  // Load all pages for map view
   Future<List<PropertyModel>> loadAllPropertiesForMap({
     required UnifiedFilterModel filters,
     required double latitude,
@@ -127,17 +117,13 @@ class PropertiesRepository extends GetxService {
     Function(int current, int total)? onProgress,
   }) async {
     try {
-      DebugLogger.api('🗺️ Loading all properties for map view');
-      DebugLogger.info('🔍 Filters passed to loadAllPropertiesForMap: ${filters.toJson()}');
-      DebugLogger.info('📊 Active filter count: ${filters.activeFilterCount}');
+      DebugLogger.api('Loading all properties for map view');
 
       final List<PropertyModel> allProperties = [];
       int currentPage = 1;
       int totalPages = 1;
 
       do {
-        DebugLogger.info('📈 Loading page $currentPage with limit $limit');
-
         final response = await getProperties(
           filters: filters,
           page: currentPage,
@@ -148,49 +134,87 @@ class PropertiesRepository extends GetxService {
           useCache: true,
         );
 
-        DebugLogger.info(
-          '📦 Page $currentPage response: ${response.properties.length} properties, total pages: ${response.totalPages}',
-        );
-
         allProperties.addAll(response.properties);
         totalPages = response.totalPages;
-
         onProgress?.call(currentPage, totalPages);
-
-        DebugLogger.api(
-          '📄 Loaded page $currentPage/$totalPages; totalProperties=${allProperties.length}',
-        );
-
-        // Log some property details for first few properties
-        if (currentPage == 1 && response.properties.isNotEmpty) {
-          final firstProperty = response.properties.first;
-          DebugLogger.info(
-            '🏠 First property example: ${firstProperty.title} at (${firstProperty.latitude}, ${firstProperty.longitude})',
-          );
-        }
-
         currentPage++;
       } while (currentPage <= totalPages);
 
-      DebugLogger.success('✅ Loaded all ${allProperties.length} properties for map');
-
-      // Final validation
-      final propertiesWithLocation = allProperties.where((p) => p.hasLocation).length;
-      DebugLogger.info(
-        '🗺️ Final result: ${allProperties.length} total properties, $propertiesWithLocation with location data',
-      );
+      DebugLogger.success('Loaded ${allProperties.length} properties for map');
 
       return allProperties;
     } on AppException catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to load all properties for map: ${e.message}');
+      DebugLogger.error('Failed to load properties for map: ${e.message}');
       DebugLogger.error('Stack trace: $stackTrace');
       rethrow;
     }
   }
 
-  // Clear repository cache
+  Future<PropertyModel> createProperty({
+    required Map<String, dynamic> propertyData,
+    PropertyMediaPayload? mediaPayload,
+  }) async {
+    try {
+      final payload = Map<String, dynamic>.from(propertyData);
+      if (mediaPayload != null) {
+        payload.addAll(mediaPayload.toJson());
+      }
+      DebugLogger.api('Creating property with media fields=${mediaPayload != null}');
+      return await _apiService.createProperty(payload);
+    } on AppException catch (e) {
+      DebugLogger.error('Failed to create property: ${e.message}');
+      rethrow;
+    }
+  }
+
+  Future<PropertyModel> updateProperty({
+    required int propertyId,
+    Map<String, dynamic>? fields,
+    PropertyMediaPayload? mediaPayload,
+  }) async {
+    try {
+      final payload = Map<String, dynamic>.from(fields ?? {});
+      if (mediaPayload != null) {
+        payload.addAll(mediaPayload.toJson());
+      }
+      DebugLogger.api('Updating property $propertyId with media=${mediaPayload != null}');
+      return await _apiService.updateProperty(propertyId, payload);
+    } on AppException catch (e) {
+      DebugLogger.error('Failed to update property $propertyId: ${e.message}');
+      rethrow;
+    }
+  }
+
+  Future<PropertyModel> updatePropertyMedia({
+    required int propertyId,
+    String? mainImageUrl,
+    List<PropertyImageModel>? images,
+    String? videoTourUrl,
+    List<String>? videoUrls,
+    String? virtualTourUrl,
+    String? googleStreetViewUrl,
+    String? floorPlanUrl,
+  }) async {
+    final payload = PropertyMediaPayload(
+      mainImageUrl: mainImageUrl,
+      images: images,
+      videoTourUrl: videoTourUrl,
+      videoUrls: videoUrls,
+      virtualTourUrl: virtualTourUrl,
+      googleStreetViewUrl: googleStreetViewUrl,
+      floorPlanUrl: floorPlanUrl,
+    );
+
+    try {
+      DebugLogger.api('Updating media for property $propertyId');
+      return await _apiService.updatePropertyMedia(propertyId, payload.toJson());
+    } on AppException catch (e) {
+      DebugLogger.error('Failed to update property media for $propertyId: ${e.message}');
+      rethrow;
+    }
+  }
+
   void clearCache() {
-    // Cache clearing functionality can be added to ApiService if needed
-    DebugLogger.api('🧹 Properties repository cache cleared');
+    DebugLogger.api('Properties repository cache cleared');
   }
 }

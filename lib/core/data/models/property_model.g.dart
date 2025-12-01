@@ -79,12 +79,20 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) => $checkedCrea
         (v) => (v as List<dynamic>?)?.map((e) => e as String).toList(),
       ),
       mainImageUrl: $checkedConvert('main_image_url', (v) => v as String?),
-      virtualTourUrl: $checkedConvert('virtual_tour_url', (v) => v as String?),
+      images: $checkedConvert(
+        'images',
+        (v) => (v as List<dynamic>?)
+            ?.map((e) => PropertyImageModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      ),
+      videoTourUrl: $checkedConvert('video_tour_url', (v) => v as String?),
       videoUrls: $checkedConvert(
         'video_urls',
         (v) => (v as List<dynamic>?)?.map((e) => e as String).toList(),
       ),
+      virtualTourUrl: $checkedConvert('virtual_tour_url', (v) => v as String?),
       googleStreetViewUrl: $checkedConvert('google_street_view_url', (v) => v as String?),
+      floorPlanUrl: $checkedConvert('floor_plan_url', (v) => v as String?),
       isAvailable: $checkedConvert('is_active', (v) => v as bool? ?? true),
       availableFrom: $checkedConvert('available_from', (v) => v as String?),
       calendarData: $checkedConvert('calendar_data', (v) => v as Map<String, dynamic>?),
@@ -102,12 +110,6 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) => $checkedCrea
       updatedAt: $checkedConvert(
         'updated_at',
         (v) => v == null ? null : DateTime.parse(v as String),
-      ),
-      images: $checkedConvert(
-        'images',
-        (v) => (v as List<dynamic>?)
-            ?.map((e) => PropertyImageModel.fromJson(e as Map<String, dynamic>))
-            .toList(),
       ),
       distanceKm: $checkedConvert('distance_km', (v) => (v as num?)?.toDouble()),
       liked: $checkedConvert('liked', (v) => v as bool? ?? false),
@@ -145,6 +147,8 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) => $checkedCrea
     'maxOccupancy': 'max_occupancy',
     'minimumStayDays': 'minimum_stay_days',
     'mainImageUrl': 'main_image_url',
+    'videoTourUrl': 'video_tour_url',
+    'floorPlanUrl': 'floor_plan_url',
     'virtualTourUrl': 'virtual_tour_url',
     'videoUrls': 'video_urls',
     'googleStreetViewUrl': 'google_street_view_url',
@@ -203,9 +207,12 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) => <String, d
   'amenities': instance.amenities?.map((e) => e.toJson()).toList(),
   'features': instance.features,
   'main_image_url': instance.mainImageUrl,
+  'images': instance.images?.map((e) => e.toJson()).toList(),
+  'video_tour_url': instance.videoTourUrl,
   'virtual_tour_url': instance.virtualTourUrl,
   'video_urls': instance.videoUrls,
   'google_street_view_url': instance.googleStreetViewUrl,
+  'floor_plan_url': instance.floorPlanUrl,
   'is_active': instance.isAvailable,
   'available_from': instance.availableFrom,
   'calendar_data': instance.calendarData,
@@ -218,7 +225,6 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) => <String, d
   'interest_count': instance.interestCount,
   'created_at': instance.createdAt?.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
-  'images': instance.images?.map((e) => e.toJson()).toList(),
   'distance_km': instance.distanceKm,
   'liked': instance.liked,
   'user_has_scheduled_visit': instance.userHasScheduledVisit,

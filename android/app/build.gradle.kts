@@ -79,6 +79,10 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    // Match the Activity 1.11.x line that's now required by transitive deps (AGP bumped to 8.9.1).
+    implementation("androidx.activity:activity:1.11.0")
+    implementation("androidx.activity:activity-ktx:1.11.0")
 }
 
 flutter {

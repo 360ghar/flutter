@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
@@ -6,16 +8,17 @@ import 'package:ghar360/core/data/models/visit_model.dart';
 import 'package:ghar360/core/data/repositories/properties_repository.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/image_cache_service.dart';
 import 'package:ghar360/core/utils/share_utils.dart';
-import 'package:ghar360/core/utils/webview_helper.dart';
 import 'package:ghar360/core/widgets/common/loading_states.dart';
-import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:ghar360/core/widgets/property/property_details_features.dart';
 import 'package:ghar360/features/likes/controllers/likes_controller.dart';
+import 'package:ghar360/features/property_details/widgets/property_media_hub.dart';
 import 'package:ghar360/features/visits/controllers/visits_controller.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 class PropertyDetailsView extends StatelessWidget {
   const PropertyDetailsView({super.key});
@@ -262,19 +265,13 @@ class PropertyDetailsView extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // 360° Tour: priority after basic info
-                    if (safeProperty.virtualTourUrl != null &&
-                        safeProperty.virtualTourUrl!.isNotEmpty) ...[
-                      const SizedBox(height: 20),
-                      _VirtualTourSection(
-                        tourUrl: safeProperty.virtualTourUrl!,
-                        thumbnailUrl: safeProperty.mainImage,
+                    if (safeProperty.hasAnyMedia) ...[
+                      PropertyMediaBadges(property: safeProperty),
+                      const SizedBox(height: 12),
+                      PropertyMediaHub(
+                        property: safeProperty,
+                        googleMapsApiKey: dotenv.env['GOOGLE_PLACES_API_KEY'],
                       ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    if (safeProperty.hasVideos) ...[
-                      _MediaSection(property: safeProperty),
                       const SizedBox(height: 24),
                     ],
 
@@ -443,10 +440,6 @@ class PropertyDetailsView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      if (safeProperty.hasStreetView) ...[
-                        _StreetViewSection(property: safeProperty),
-                        const SizedBox(height: 12),
-                      ],
                       Container(
                         height: 220,
                         decoration: BoxDecoration(
@@ -975,359 +968,6 @@ Future<void> _openGoogleMaps(double latitude, double longitude, String label) as
   }
 }
 
-class _MediaSection extends StatelessWidget {
-  const _MediaSection({required this.property});
-
-  final PropertyModel property;
-
-  Future<void> _openVideo(BuildContext context, String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      Get.snackbar(
-        'Unable to open video',
-        'Please check the video link',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppColors.snackbarBackground,
-        colorText: AppColors.snackbarText,
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final videos = property.mediaVideoUrls;
-
-    if (videos.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.getCardShadow(),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Media',
-            style:
-                theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ) ??
-                TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Videos',
-            style:
-                theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ) ??
-                TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 8),
-          Column(
-            children: videos
-                .map(
-                  (url) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _VideoTile(videoUrl: url, onOpen: () => _openVideo(context, url)),
-                  ),
-                )
-                .toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VideoTile extends StatelessWidget {
-  const _VideoTile({required this.videoUrl, required this.onOpen});
-
-  final String videoUrl;
-  final VoidCallback onOpen;
-
-  String? get _thumbnailUrl {
-    final id = _extractYoutubeId(videoUrl);
-    if (id != null) {
-      return 'https://img.youtube.com/vi/$id/hqdefault.jpg';
-    }
-    return null;
-  }
-
-  String? _extractYoutubeId(String url) {
-    final uri = Uri.tryParse(url);
-    if (uri == null || uri.host.isEmpty) return null;
-    if (uri.host.contains('youtu.be')) {
-      return uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
-    }
-    if (uri.host.contains('youtube.com')) {
-      if (uri.queryParameters['v']?.isNotEmpty == true) {
-        return uri.queryParameters['v'];
-      }
-      if (uri.pathSegments.contains('embed') && uri.pathSegments.length >= 2) {
-        return uri.pathSegments[1];
-      }
-    }
-    return null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final displayHost = Uri.tryParse(videoUrl)?.host.replaceFirst('www.', '') ?? 'Video';
-    return InkWell(
-      onTap: onOpen,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-          boxShadow: AppColors.getCardShadow(),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(
-                height: 72,
-                width: 100,
-                child: _thumbnailUrl != null
-                    ? RobustNetworkImage(
-                        imageUrl: _thumbnailUrl!,
-                        fit: BoxFit.cover,
-                        errorWidget: Container(
-                          color: AppColors.inputBackground,
-                          child: Icon(
-                            Icons.play_circle_filled,
-                            size: 28,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      )
-                    : Container(
-                        color: AppColors.inputBackground,
-                        child: Icon(
-                          Icons.play_circle_filled,
-                          size: 32,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayHost,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    videoUrl,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 6),
-                  const Row(
-                    children: [
-                      Icon(Icons.open_in_new, size: 14, color: AppColors.primaryYellow),
-                      SizedBox(width: 4),
-                      Text(
-                        'Open YouTube',
-                        style: TextStyle(fontSize: 12, color: AppColors.primaryYellow),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StreetViewSection extends StatefulWidget {
-  const _StreetViewSection({required this.property});
-
-  final PropertyModel property;
-
-  @override
-  State<_StreetViewSection> createState() => _StreetViewSectionState();
-}
-
-class _StreetViewSectionState extends State<_StreetViewSection> {
-  WebViewController? _controller;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    final embedUrl = widget.property.streetViewEmbedUrl;
-    if (embedUrl != null) {
-      _controller = WebViewHelper.createBaseController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setNavigationDelegate(
-          NavigationDelegate(
-            onPageFinished: (_) => _markLoaded(),
-            onWebResourceError: (_) => _markLoaded(),
-          ),
-        )
-        ..loadHtmlString(_buildEmbedHtml(embedUrl));
-    } else {
-      _isLoading = false;
-    }
-  }
-
-  void _markLoaded() {
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  String _buildEmbedHtml(String url) {
-    return '''
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-      }
-      iframe {
-        width: 100%;
-        height: 100%;
-        border: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <iframe src="$url" allowfullscreen></iframe>
-  </body>
-</html>
-''';
-  }
-
-  Future<void> _openStreetView() async {
-    final urlString = widget.property.streetViewLaunchUrl;
-    if (urlString == null) return;
-    final url = Uri.tryParse(urlString);
-    if (url != null && await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      Get.snackbar(
-        'Unable to open Street View',
-        'Please check the Street View link',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppColors.snackbarBackground,
-        colorText: AppColors.snackbarText,
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final streetViewUrl = widget.property.streetViewLaunchUrl;
-    if (streetViewUrl == null) return const SizedBox.shrink();
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.getCardShadow(),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.streetview, color: AppColors.primaryYellow),
-              const SizedBox(width: 8),
-              Text(
-                'Google Street View',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: _openStreetView,
-                icon: const Icon(Icons.open_in_new, size: 16, color: AppColors.primaryYellow),
-                label: const Text('Open'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryYellow,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (_controller != null)
-            SizedBox(
-              height: 220,
-              child: Stack(
-                children: [
-                  WebViewWidget(controller: _controller!),
-                  if (_isLoading) const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ],
-              ),
-            )
-          else
-            Container(
-              height: 180,
-              decoration: BoxDecoration(
-                color: AppColors.inputBackground,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.streetview, color: AppColors.textSecondary),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tap open to view in Google Maps',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 // Image gallery for the header
 class _PropertyImageGallery extends StatefulWidget {
   final PropertyModel property;
@@ -1340,6 +980,11 @@ class _PropertyImageGallery extends StatefulWidget {
 class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
   late final PageController _pageController;
   int _current = 0;
+  bool _isPrefetching = false;
+
+  List<String> get _images => widget.property.galleryImageUrls.isNotEmpty
+      ? widget.property.galleryImageUrls
+      : [widget.property.mainImage];
 
   @override
   void initState() {
@@ -1348,32 +993,91 @@ class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _prefetchImages();
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
+  Future<void> _prefetchImages() async {
+    if (_isPrefetching) return;
+    _isPrefetching = true;
+    for (final url in _images.take(8)) {
+      try {
+        await ImageCacheService.instance.preloadImage(url);
+        if (!mounted) return;
+        await precacheImage(CachedNetworkImageProvider(url), context);
+      } catch (_) {}
+    }
+    if (mounted) {
+      setState(() {
+        _isPrefetching = false;
+      });
+    }
+  }
+
+  void _openGallery(int initialIndex) {
+    showDialog<void>(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          backgroundColor: Colors.black87,
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: PhotoViewGallery.builder(
+              itemCount: _images.length,
+              pageController: PageController(initialPage: initialIndex),
+              backgroundDecoration: const BoxDecoration(color: Colors.black87),
+              builder: (context, index) {
+                final url = _images[index];
+                return PhotoViewGalleryPageOptions(
+                  imageProvider: CachedNetworkImageProvider(url),
+                  heroAttributes: PhotoViewHeroAttributes(tag: url),
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2.5,
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final images = widget.property.galleryImageUrls;
+    final images = _images;
     final itemCount = images.isNotEmpty ? images.length : 1;
     return Stack(
       children: [
-        PageView.builder(
-          controller: _pageController,
-          itemCount: itemCount,
-          onPageChanged: (i) => setState(() => _current = i),
-          itemBuilder: (context, index) {
-            final url = images.isNotEmpty ? images[index] : widget.property.mainImage;
-            return RobustNetworkImage(
-              imageUrl: url,
-              fit: BoxFit.cover,
-              errorWidget: Container(
-                color: AppColors.inputBackground,
-                child: Icon(Icons.image, size: 50, color: AppColors.disabledColor),
-              ),
-            );
-          },
+        GestureDetector(
+          onTap: () => _openGallery(_current),
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: itemCount,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (context, index) {
+              final url = images.isNotEmpty ? images[index] : widget.property.mainImage;
+              return CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                placeholder: (context, _) => Container(
+                  color: AppColors.inputBackground,
+                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+                errorWidget: (context, error, stackTrace) => Container(
+                  color: AppColors.inputBackground,
+                  child: Icon(Icons.image, size: 50, color: AppColors.disabledColor),
+                ),
+              );
+            },
+          ),
         ),
         if (itemCount > 1)
           Positioned(
@@ -1388,296 +1092,6 @@ class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
               child: Text(
                 '${_current + 1}/$itemCount',
                 style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _VirtualTourSection extends StatefulWidget {
-  const _VirtualTourSection({required this.tourUrl, this.thumbnailUrl});
-
-  final String tourUrl;
-  final String? thumbnailUrl;
-
-  @override
-  State<_VirtualTourSection> createState() => _VirtualTourSectionState();
-}
-
-class _VirtualTourSectionState extends State<_VirtualTourSection> {
-  bool _showEmbeddedTour = false;
-
-  void _openFullScreen() {
-    Get.toNamed('/tour', arguments: widget.tourUrl);
-  }
-
-  void _handleLoadTour() {
-    if (!_showEmbeddedTour) {
-      setState(() {
-        _showEmbeddedTour = true;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  const Icon(Icons.threesixty, size: 24, color: AppColors.primaryYellow),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '360° Virtual Tour',
-                      style:
-                          theme.textTheme.titleMedium?.copyWith(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ) ??
-                          TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            TextButton.icon(
-              onPressed: _openFullScreen,
-              icon: const Icon(Icons.fullscreen, size: 18, color: AppColors.primaryYellow),
-              label: const Text('Fullscreen'),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                backgroundColor: AppColors.primaryYellow.withValues(alpha: 0.1),
-                foregroundColor: AppColors.primaryYellow,
-                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          child: _showEmbeddedTour
-              ? _TourContainer(
-                  key: const ValueKey('embeddedTour'),
-                  child: _Embedded360TourDetails(tourUrl: widget.tourUrl),
-                )
-              : _TourContainer(
-                  key: const ValueKey('tourPlaceholder'),
-                  child: GestureDetector(
-                    onTap: _handleLoadTour,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty)
-                          RobustNetworkImage(
-                            imageUrl: widget.thumbnailUrl!,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 800,
-                            memCacheHeight: 450,
-                          )
-                        else
-                          Container(color: AppColors.inputBackground),
-                        Container(color: Colors.black.withValues(alpha: 0.35)),
-                        Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.play_circle_fill,
-                                size: 64,
-                                color: AppColors.primaryYellow,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'tap_to_load_virtual_tour'.tr,
-                                style:
-                                    theme.textTheme.titleMedium?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ) ??
-                                    const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TourContainer extends StatelessWidget {
-  const _TourContainer({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 450,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.getCardShadow(),
-      ),
-      child: ClipRRect(borderRadius: BorderRadius.circular(16), child: child),
-    );
-  }
-}
-
-class _Embedded360TourDetails extends StatefulWidget {
-  final String tourUrl;
-
-  const _Embedded360TourDetails({required this.tourUrl});
-
-  @override
-  State<_Embedded360TourDetails> createState() => _Embedded360TourDetailsState();
-}
-
-class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
-  late final WebViewController controller;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    const consoleSilencer = '''
-      if (window && window.console) {
-        window.console.log = function() {};
-        window.console.warn = function() {};
-        window.console.error = function() {};
-        window.console.info = function() {};
-        window.console.debug = function() {};
-      }
-    ''';
-
-    controller = WebViewHelper.createBaseController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (String url) {
-            if (mounted) {
-              setState(() {
-                isLoading = true;
-              });
-            }
-            controller.runJavaScript(consoleSilencer);
-          },
-          onPageFinished: (String url) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-              });
-            }
-            controller.runJavaScript(consoleSilencer);
-          },
-          onWebResourceError: (WebResourceError error) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-              });
-            }
-          },
-        ),
-      );
-
-    final sanitizedUrl = widget.tourUrl;
-    final htmlContent =
-        '''
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body {
-            margin: 0;
-            padding: 0;
-            background: #f0f0f0;
-            overflow: hidden;
-          }
-          iframe {
-            width: 100vw;
-            height: 100vh;
-            border: none;
-            display: block;
-          }
-        </style>
-        <script type="text/javascript">
-          $consoleSilencer
-        </script>
-      </head>
-      <body>
-        <iframe class="ku-embed"
-                frameborder="0"
-                allow="xr-spatial-tracking; gyroscope; accelerometer"
-                allowfullscreen
-                scrolling="no"
-                src="$sanitizedUrl">
-        </iframe>
-      </body>
-      </html>
-    ''';
-
-    controller.loadHtmlString(htmlContent);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        WebViewWidget(
-          controller: controller,
-          gestureRecognizers: WebViewHelper.createInteractiveGestureRecognizers(),
-        ),
-        if (isLoading)
-          Container(
-            color: AppColors.inputBackground,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 3),
-                  const SizedBox(height: 12),
-                  Text(
-                    'loading_virtual_tour'.tr,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
               ),
             ),
           ),

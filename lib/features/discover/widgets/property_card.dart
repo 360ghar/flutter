@@ -118,6 +118,21 @@ class PropertyCard extends StatelessWidget {
                       _buildFeature(Icons.square_foot, '${property.areaSqft} sqft'),
                     ],
                   ),
+                  if (property.hasAnyMedia) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        if (property.hasPhotos) _mediaBadge(Icons.photo_library, 'Images'),
+                        if (property.hasVideos || property.hasVideoTour)
+                          _mediaBadge(Icons.videocam, 'Video'),
+                        if (property.hasVirtualTour) _mediaBadge(Icons.threesixty, '360\u00b0'),
+                        if (property.hasStreetView) _mediaBadge(Icons.streetview, 'Street'),
+                        if (property.hasFloorPlan) _mediaBadge(Icons.apartment, 'Plan'),
+                      ],
+                    ),
+                  ],
 
                   // 360° Tour Embedded Section
                   if (property.virtualTourUrl != null && property.virtualTourUrl!.isNotEmpty) ...[
@@ -210,6 +225,32 @@ class PropertyCard extends StatelessWidget {
           style: TextStyle(fontSize: 14, color: AppColors.propertyFeatureText, height: 1.4),
         ),
       ],
+    );
+  }
+
+  Widget _mediaBadge(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.textSecondary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
