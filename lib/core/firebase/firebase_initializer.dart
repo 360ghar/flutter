@@ -10,7 +10,6 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:ghar360/core/firebase/deep_link_service.dart';
 import 'package:ghar360/core/firebase/remote_config_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/firebase_options.dart';
@@ -137,9 +136,6 @@ class FirebaseInitializer {
     } catch (e, st) {
       DebugLogger.warning('Failed applying Remote Config toggles', e, st);
     }
-
-    // Deep Links listener (App Links - replaces deprecated Firebase Dynamic Links)
-    await DeepLinkService.initializeListener();
 
     // FCM background handler registration. Foreground permission prompt is opt-in.
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

@@ -26,13 +26,13 @@ class PropertyDetailsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Handle both PropertyModel object and String ID
-    final dynamic arguments = Get.arguments;
+    final dynamic id = Get.arguments;
     PropertyModel? property;
 
-    if (arguments is PropertyModel) {
-      property = arguments;
-    } else if (arguments is String || arguments is int) {
-      final int? propertyId = arguments is int ? arguments : int.tryParse(arguments as String);
+    if (id is PropertyModel) {
+      property = id;
+    } else if (id is String || id is int) {
+      final int? propertyId = id is int ? id : int.tryParse(id as String);
       if (propertyId == null) {
         return const _PropertyErrorScaffold(message: 'Invalid property id');
       }

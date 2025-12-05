@@ -3,16 +3,19 @@ import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ShareUtils {
+  static Uri _propertyUri(int id) => Uri.https('ghar.sale', '/p/$id');
+
   static String _shorten(String text, {int max = 80}) {
     if (text.length <= max) return text;
-    return '${text.substring(0, max - 1).trimRight()}…';
+    return '${text.substring(0, max - 1).trimRight()}...';
   }
 
-  static String propertyLink(int id) => 'https://360ghar.com/property/$id';
+  static String propertyLink(int id) => _propertyUri(id).toString();
 
   static Future<void> shareProperty(PropertyModel property, {BuildContext? context}) async {
     final title = _shorten(property.title);
-    final link = propertyLink(property.id);
+    final Uri link = _propertyUri(property.id);
+
     // Build share text: Title, optional location, then link
     final hasLocation =
         (property.locality?.isNotEmpty == true) ||

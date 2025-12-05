@@ -64,8 +64,8 @@ dependencies:
   # Native share sheets (Android/iOS/macOS/Web)
   share_plus: ^10.0.2
 
-  # Deep linking (replaces deprecated Firebase Dynamic Links)
-  app_links: ^6.4.1
+  # Deep linking via native App Links / Universal Links
+  uni_links: ^0.5.1
 
   meta: any
 dev_dependencies:
@@ -76,6 +76,12 @@ dev_dependencies:
   json_serializable: ^6.7.1
   import_sorter: ^4.6.0
   flutter_launcher_icons: ^0.13.1
+
+dependency_overrides:
+  # Keep the Firebase core pinned to the current major to align with other Firebase SDKs.
+  firebase_core: ^4.1.1
+  uni_links:
+    path: plugins/uni_links
 
 flutter:
   uses-material-design: true
