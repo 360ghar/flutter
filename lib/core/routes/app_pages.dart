@@ -99,6 +99,17 @@ class AppPages {
       binding: PropertyDetailsBinding(),
       middlewares: [AuthMiddleware()],
     ),
+    // Deep link routes - NO AuthMiddleware to allow public access from shared links
+    GetPage(
+      name: AppRoutes.propertyShortLink, // /p/:id
+      page: () => const PropertyDetailsView(),
+      binding: PropertyDetailsBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.propertyDeepLink, // /property/:id
+      page: () => const PropertyDetailsView(),
+      binding: PropertyDetailsBinding(),
+    ),
     GetPage(
       name: AppRoutes.editProfile,
       page: () => const EditProfileView(),

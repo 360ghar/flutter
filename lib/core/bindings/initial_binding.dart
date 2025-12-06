@@ -24,10 +24,6 @@ class InitialBinding extends Bindings {
     Get.put<ApiService>(ApiService());
     DebugLogger.success('✅ ApiService registered');
 
-    // Register Deep Link Service early (init happens onReady)
-    Get.put<DeepLinkService>(DeepLinkService());
-    DebugLogger.success('✅ DeepLinkService registered');
-
     // NEW: Register AuthRepository
     Get.put<AuthRepository>(AuthRepository());
     DebugLogger.success('✅ AuthRepository registered');
@@ -52,6 +48,11 @@ class InitialBinding extends Bindings {
     } catch (e) {
       DebugLogger.error('💥 Failed to initialize OfflineQueueService: $e');
     }
+
+    // Register Deep Link Service LAST
+    // It depends on AuthController, so it must be registered after it.
+    Get.put<DeepLinkService>(DeepLinkService());
+    DebugLogger.success('✅ DeepLinkService registered');
 
     // Note: Repositories and feature controllers will be initialized
     // in route-specific bindings to prevent unauthorized API calls

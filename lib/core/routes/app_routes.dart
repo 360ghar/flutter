@@ -8,6 +8,9 @@ abstract class AppRoutes {
   static const home = '/discover'; // standardize legacy home to discover
   static const discover = '/discover'; // Swipe deck interface
   static const propertyDetails = '/property-details';
+  // Deep link routes for property sharing
+  static const propertyShortLink = '/p/:id'; // Short link: ghar.sale/p/123
+  static const propertyDeepLink = '/property/:id'; // Full link: ghar.sale/property/123
   static const profile = '/profile';
   static const editProfile = '/edit-profile';
   static const likes = '/likes'; // Renamed from favourites for consistency

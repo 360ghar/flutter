@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
 import 'package:ghar360/core/data/repositories/properties_repository.dart';
-import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/image_cache_service.dart';
 import 'package:ghar360/core/utils/share_utils.dart';
@@ -25,8 +24,17 @@ class PropertyDetailsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Handle both PropertyModel object and String ID
-    final dynamic id = Get.arguments;
+    // Handle property ID from multiple sources:
+    // 1. Get.parameters['id'] - from URL routes like /p/:id or /property/:id
+    // 2. Get.arguments - from navigation with arguments (PropertyModel or String/int ID)
+    dynamic id = Get.arguments;
+
+    // Check URL parameters first for deep link routes
+    final urlId = Get.parameters['id'];
+    if (urlId != null && urlId.isNotEmpty) {
+      id = urlId;
+    }
+
     PropertyModel? property;
 
     if (id is PropertyModel) {
@@ -36,7 +44,7 @@ class PropertyDetailsView extends StatelessWidget {
       if (propertyId == null) {
         return const _PropertyErrorScaffold(message: 'Invalid property id');
       }
-      // Fetch property by id, then navigate to the same route with full data
+      // Fetch property by id and render directly (don't redirect to /property-details as it requires auth)
       final repo = Get.find<PropertiesRepository>();
       return FutureBuilder<PropertyModel>(
         future: repo.getPropertyDetail(propertyId),
@@ -45,13 +53,12 @@ class PropertyDetailsView extends StatelessWidget {
             return const _PropertyLoadingScaffold();
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return const _PropertyErrorScaffold(message: 'Failed to load property');
+            return _PropertyErrorScaffold(
+              message: 'Failed to load property: ${snapshot.error?.toString() ?? 'Unknown error'}',
+            );
           }
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            // Replace current route with one that has a full PropertyModel argument
-            Get.offNamed(AppRoutes.propertyDetails, arguments: snapshot.data);
-          });
-          return const _PropertyLoadingScaffold();
+          // Render property directly instead of redirecting (avoids AuthMiddleware on /property-details)
+          return _PropertyContentView(property: snapshot.data!);
         },
       );
     }
@@ -60,6 +67,19 @@ class PropertyDetailsView extends StatelessWidget {
       return const _PropertyErrorScaffold(message: 'Property not found');
     }
 
+    // Use the same widget for both direct PropertyModel and fetched property
+    return _PropertyContentView(property: property);
+  }
+}
+
+/// Encapsulates property content rendering - used for both direct navigation and deep links
+class _PropertyContentView extends StatelessWidget {
+  const _PropertyContentView({required this.property});
+
+  final PropertyModel property;
+
+  @override
+  Widget build(BuildContext context) {
     // Use LikesController for favorite management
     final controller = Get.find<LikesController>();
     final visitsController = Get.find<VisitsController>();
@@ -589,6 +609,22 @@ class PropertyDetailsView extends StatelessWidget {
     );
   }
 
+  // Small UI helpers
+  Widget _chip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
   Widget _buildPropertyInfoSection(PropertyModel property) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -766,22 +802,6 @@ class PropertyDetailsView extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // Small UI helpers
-  Widget _chip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
   }
