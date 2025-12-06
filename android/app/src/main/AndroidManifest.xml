@@ -55,8 +55,28 @@
 
                 <data
                     android:scheme="https"
+                    android:host="ghar.sale"
+                    android:pathPrefix="/property/" />
+
+                <data
+                    android:scheme="https"
+                    android:host="ghar.sale"
+                    android:pathPrefix="/tour/" />
+
+                <data
+                    android:scheme="https"
                     android:host="www.ghar.sale"
                     android:pathPrefix="/p/" />
+
+                <data
+                    android:scheme="https"
+                    android:host="www.ghar.sale"
+                    android:pathPrefix="/property/" />
+
+                <data
+                    android:scheme="https"
+                    android:host="www.ghar.sale"
+                    android:pathPrefix="/tour/" />
             </intent-filter>
         </activity>
 

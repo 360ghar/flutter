@@ -19,10 +19,6 @@ allprojects {
     }
 }
 
-plugins {
-    id 'com.android.library' version '8.2.1' apply false
-}
-
 apply plugin: 'com.android.library'
 
 android {

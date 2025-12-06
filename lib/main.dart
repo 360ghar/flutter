@@ -14,7 +14,6 @@ import 'package:ghar360/core/controllers/theme_controller.dart';
 import 'package:ghar360/core/firebase/firebase_initializer.dart';
 import 'package:ghar360/core/firebase/push_notifications_service.dart';
 import 'package:ghar360/core/routes/app_pages.dart';
-import 'package:ghar360/core/services/deep_link_service.dart';
 import 'package:ghar360/core/translations/app_translations.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/null_check_trap.dart';
@@ -98,9 +97,7 @@ void main() async {
         DebugLogger.warning('Failed to initialize Firebase', e, st);
       }
 
-      // Start listening for App/Universal Links (ghar.sale/p/<id>) via uni_links
-      final deepLinkService = DeepLinkService();
-      await deepLinkService.initDeepLinks();
+      // Deep link service is now initialized in InitialBinding (onReady)
 
       runApp(const MyApp());
 

@@ -8,7 +8,8 @@
       "namespace": "android_app",
       "package_name": "com.the360ghar.ghar360",
       "sha256_cert_fingerprints": [
-        "E2:9C:60:26:A3:79:20:19:25:5F:93:BE:D1:35:CF:5F:3A:89:52:DD:44:EA:F9:41:08:87:7C:08:74:B0:XX:XX"
+        "E2:9C:60:26:A3:79:20:19:25:5F:93:BE:D1:35:CF:5F:3A:89:52:DD:44:EA:F9:41:08:87:7C:08:74:B0:64:E2",
+        "4E:22:53:B4:E3:72:E8:2E:47:8D:4C:0E:51:7B:D1:DB:41:4C:E3:FE:B6:16:D2:E4:15:C4:55:AA:91:DA:D3:E3"
       ]
     }
   }

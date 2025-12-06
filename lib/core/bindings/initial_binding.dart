@@ -11,6 +11,7 @@ import 'package:ghar360/core/controllers/theme_controller.dart';
 import 'package:ghar360/core/data/providers/api_service.dart';
 import 'package:ghar360/core/data/repositories/app_update_repository.dart';
 import 'package:ghar360/core/data/repositories/profile_repository.dart';
+import 'package:ghar360/core/services/deep_link_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/features/auth/data/auth_repository.dart';
 
@@ -22,6 +23,10 @@ class InitialBinding extends Bindings {
     // Register API Service first
     Get.put<ApiService>(ApiService());
     DebugLogger.success('✅ ApiService registered');
+
+    // Register Deep Link Service early (init happens onReady)
+    Get.put<DeepLinkService>(DeepLinkService());
+    DebugLogger.success('✅ DeepLinkService registered');
 
     // NEW: Register AuthRepository
     Get.put<AuthRepository>(AuthRepository());
