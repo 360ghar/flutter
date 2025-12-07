@@ -4,30 +4,28 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:ghar360/core/data/models/app_update_models.dart';
 import 'package:ghar360/core/data/repositories/app_update_repository.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/widgets/common/app_update_dialog.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// Controller for managing app update checks and prompts.
+///
+/// Uses Firebase Remote Config for version checking and in_app_update for
+/// Android's native Play Store update flow. Shows update popup on every app
+/// open until the user updates, even if they click "Skip".
 class AppUpdateController extends GetxService with WidgetsBindingObserver {
-  AppUpdateController({GetStorage? storage}) : _storage = storage ?? GetStorage();
-
-  static const Duration _minimumCheckInterval = Duration(hours: 24);
   static const String _appIdentifier = 'user';
-  static const String _lastCheckKey = 'app_update:last_check_at';
-  static const String _dismissedVersionKey = 'app_update:last_dismissed_version';
 
   final AppUpdateRepository _repository = Get.find();
-  final GetStorage _storage;
 
   final RxBool isChecking = false.obs;
 
-  AppVersionCheckResponse? _lastResponse;
-  DateTime? _lastCheck;
   bool _isDialogVisible = false;
   AppVersionInfo? _currentVersionInfo;
 
@@ -35,15 +33,13 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
   void onInit() {
     super.onInit();
     WidgetsBinding.instance.addObserver(this);
-    _lastCheck = _readLastCheckFromStorage();
   }
 
   @override
   void onReady() {
     super.onReady();
-    // Restore initial app-update check on cold start so that
-    // unauthenticated/onboarding sessions also receive prompts.
-    scheduleCheckAfterFirstFrame(force: true);
+    // Check for updates on cold start
+    scheduleCheckAfterFirstFrame();
   }
 
   @override
@@ -52,34 +48,31 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
     super.onClose();
   }
 
+  /// Triggered when app comes to foreground - check for updates every time
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // Check for updates every time app resumes (no throttling)
       unawaited(_checkForUpdates());
     }
   }
 
-  Future<void> _checkForUpdates({bool force = false}) async {
+  /// Main update check logic
+  Future<void> _checkForUpdates() async {
     if (isChecking.value || _isDialogVisible) {
       return;
     }
 
-    final versionInfo = await _loadCurrentVersion(force: force);
-    if (versionInfo == null) {
-      DebugLogger.warning('Skipping app version check: unable to read package info');
+    // Skip on web
+    if (kIsWeb) {
+      DebugLogger.debug('Skipping app update check on web platform');
       return;
     }
 
-    final now = DateTime.now();
-    final hasMandatoryResponse =
-        _lastResponse?.updateAvailable == true && _lastResponse!.isMandatory;
-
-    if (!force && !hasMandatoryResponse) {
-      final lastCheck = _lastCheck ?? _readLastCheckFromStorage();
-      if (lastCheck != null && now.difference(lastCheck) < _minimumCheckInterval) {
-        DebugLogger.debug('Skipping version check - last check at $lastCheck');
-        return;
-      }
+    final versionInfo = await _loadCurrentVersion();
+    if (versionInfo == null) {
+      DebugLogger.warning('Skipping app version check: unable to read package info');
+      return;
     }
 
     final request = AppVersionCheckRequest(
@@ -92,23 +85,21 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
     try {
       isChecking.value = true;
       final response = await _repository.checkForUpdates(request);
-      _lastCheck = now;
-      _saveLastCheck(now);
 
       if (!response.updateAvailable) {
-        _lastResponse = null;
-        _clearDismissedVersion();
-        DebugLogger.debug('App is up to date.');
+        DebugLogger.debug('App is up to date (${versionInfo.version})');
         return;
       }
 
-      _lastResponse = response;
-
-      if (!response.isMandatory && _shouldSkipOptionalPrompt(response.latestVersion)) {
-        DebugLogger.debug('Optional update ${response.latestVersion} already dismissed.');
-        return;
+      // Try native in-app update for Android first
+      if (GetPlatform.isAndroid) {
+        final usedNativeUpdate = await _tryNativeAndroidUpdate(response.isMandatory);
+        if (usedNativeUpdate) {
+          return; // Native update flow handled it
+        }
       }
 
+      // Fall back to custom dialog (iOS, or Android if native fails)
       await _showUpdateDialog(response, versionInfo);
     } catch (e, stackTrace) {
       DebugLogger.warning('App update check failed', e, stackTrace);
@@ -117,15 +108,57 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
     }
   }
 
-  /// Public method to schedule an update check after the first frame
-  void scheduleCheckAfterFirstFrame({bool force = false}) {
+  /// Try to use Android's native in-app update API
+  /// Returns true if native update flow was used, false otherwise
+  Future<bool> _tryNativeAndroidUpdate(bool isMandatory) async {
+    try {
+      final updateInfo = await InAppUpdate.checkForUpdate();
+      DebugLogger.debug(
+        'In-app update check: availability=${updateInfo.updateAvailability}, '
+        'immediateAllowed=${updateInfo.immediateUpdateAllowed}, '
+        'flexibleAllowed=${updateInfo.flexibleUpdateAllowed}',
+      );
+
+      if (updateInfo.updateAvailability != UpdateAvailability.updateAvailable) {
+        // No update available via Play Store yet (might be recently published)
+        DebugLogger.debug('No update available via Play Store native API');
+        return false;
+      }
+
+      if (isMandatory && updateInfo.immediateUpdateAllowed) {
+        // Mandatory update: Use immediate flow (blocks the app)
+        DebugLogger.info('Starting immediate (mandatory) update');
+        await InAppUpdate.performImmediateUpdate();
+        return true;
+      } else if (updateInfo.flexibleUpdateAllowed) {
+        // Optional update: Use flexible flow (downloads in background)
+        DebugLogger.info('Starting flexible update');
+        await InAppUpdate.startFlexibleUpdate();
+        // Complete the update when ready
+        await InAppUpdate.completeFlexibleUpdate();
+        return true;
+      }
+
+      return false;
+    } on PlatformException catch (e) {
+      // in_app_update not supported (e.g., not installed from Play Store)
+      DebugLogger.debug('Native in-app update not available: ${e.message}');
+      return false;
+    } catch (e, stackTrace) {
+      DebugLogger.warning('Native in-app update failed', e, stackTrace);
+      return false;
+    }
+  }
+
+  /// Schedule an update check after the first frame renders
+  void scheduleCheckAfterFirstFrame() {
     try {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(_checkForUpdates(force: force));
+        unawaited(_checkForUpdates());
       });
     } catch (_) {
       // Fallback to immediate check
-      unawaited(_checkForUpdates(force: force));
+      unawaited(_checkForUpdates());
     }
   }
 
@@ -145,6 +178,7 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
     }
   }
 
+  /// Public getter for version info
   Future<AppVersionInfo?> getVersionInfo({bool forceRefresh = false}) {
     return _loadCurrentVersion(force: forceRefresh);
   }
@@ -153,6 +187,7 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
 
   int? get currentBuildNumber => _currentVersionInfo?.buildNumber;
 
+  /// Shows the update dialog
   Future<void> _showUpdateDialog(
     AppVersionCheckResponse response,
     AppVersionInfo versionInfo,
@@ -173,23 +208,24 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
       if (response.isMandatory) {
         if (action == AppUpdateAction.update) {
           await _openDownloadUrl(response.downloadUrl);
-          // After redirecting user, keep dialog blocked next time unless updated
-          _lastResponse = response;
         } else {
-          // Mandatory dialog should not be dismissible, but handle defensively
+          // Mandatory dialog dismissed somehow - show it again
           _isDialogVisible = false;
           await _showUpdateDialog(response, versionInfo);
         }
         return;
       }
 
+      // Optional update handling
       switch (action) {
         case AppUpdateAction.update:
           await _openDownloadUrl(response.downloadUrl);
           break;
         case AppUpdateAction.remindLater:
         case null:
-          _rememberDismissedVersion(response.latestVersion);
+          // User clicked "Skip" or dismissed - popup will show again next time
+          // (No longer storing dismissed version)
+          DebugLogger.debug('User skipped optional update - will show again on next app open');
           break;
       }
     } finally {
@@ -224,41 +260,5 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
       return 'android';
     }
     return 'android';
-  }
-
-  bool _shouldSkipOptionalPrompt(String? latestVersion) {
-    if (latestVersion == null || latestVersion.isEmpty) {
-      return false;
-    }
-    final dismissed = _storage.read(_dismissedVersionKey);
-    if (dismissed is String && dismissed == latestVersion) {
-      return true;
-    }
-    return false;
-  }
-
-  void _rememberDismissedVersion(String? latestVersion) {
-    if (latestVersion == null || latestVersion.isEmpty) {
-      return;
-    }
-    _storage.write(_dismissedVersionKey, latestVersion);
-  }
-
-  void _clearDismissedVersion() {
-    if (_storage.hasData(_dismissedVersionKey)) {
-      _storage.remove(_dismissedVersionKey);
-    }
-  }
-
-  DateTime? _readLastCheckFromStorage() {
-    final stored = _storage.read(_lastCheckKey);
-    if (stored is String) {
-      return DateTime.tryParse(stored);
-    }
-    return null;
-  }
-
-  void _saveLastCheck(DateTime timestamp) {
-    _storage.write(_lastCheckKey, timestamp.toIso8601String());
   }
 }
