@@ -14,6 +14,11 @@ class PropertyImageModel {
   final int displayOrder;
   @JsonKey(name: 'is_main_image', defaultValue: false)
   final bool isMainImage;
+  // Backend now also sends a lightweight flag for the main asset plus a media category
+  @JsonKey(name: 'is_main', defaultValue: false)
+  final bool isMain;
+  @JsonKey(defaultValue: 'gallery')
+  final String category;
 
   const PropertyImageModel({
     required this.id,
@@ -22,6 +27,8 @@ class PropertyImageModel {
     this.caption,
     this.displayOrder = 0,
     this.isMainImage = false,
+    this.isMain = false,
+    this.category = 'gallery',
   });
 
   factory PropertyImageModel.fromJson(Map<String, dynamic> json) =>
@@ -32,6 +39,21 @@ class PropertyImageModel {
   // Helper methods
   bool get isValid =>
       imageUrl.isNotEmpty && imageUrl != 'https://via.placeholder.com/400x300?text=No+Image';
+
+  /// Payload-friendly map keeping both legacy and new main flags
+  Map<String, dynamic> toApiJson() {
+    final payload = toJson();
+    payload['is_main'] = isMain || isMainImage;
+    payload['is_main_image'] = isMainImage || isMain;
+    payload['category'] = category.isEmpty ? 'gallery' : category;
+    return payload;
+  }
+
+  bool get isPrimary => isMain || isMainImage;
+
+  String get resolvedCategory => category.isEmpty ? 'gallery' : category;
+  bool get isGallery => resolvedCategory == 'gallery' || resolvedCategory == 'photo';
+  bool get isFloorPlan => resolvedCategory == 'floor_plan';
 
   String get thumbnailUrl {
     // If using a CDN, can append thumbnail parameters

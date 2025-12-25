@@ -97,6 +97,8 @@ void main() async {
         DebugLogger.warning('Failed to initialize Firebase', e, st);
       }
 
+      // Deep link service is now initialized in InitialBinding (onReady)
+
       runApp(const MyApp());
 
       // Defer notifications setup and prompts until after first frame

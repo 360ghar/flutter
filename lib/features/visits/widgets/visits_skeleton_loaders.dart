@@ -12,8 +12,6 @@ class VisitSkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Shimmer.fromColors(
       baseColor: AppColors.inputBackground,
       highlightColor: AppColors.surface,

@@ -127,10 +127,21 @@ class PropertyModel {
   // Features and amenities
   final List<PropertyAmenity>? amenities;
   final List<String>? features;
+  // Media
   @JsonKey(name: 'main_image_url')
   final String? mainImageUrl;
+  @JsonKey(name: 'images')
+  final List<PropertyImageModel>? images;
+  @JsonKey(name: 'video_tour_url')
+  final String? videoTourUrl;
+  @JsonKey(name: 'video_urls')
+  final List<String>? videoUrls;
   @JsonKey(name: 'virtual_tour_url')
   final String? virtualTourUrl;
+  @JsonKey(name: 'google_street_view_url')
+  final String? googleStreetViewUrl;
+  @JsonKey(name: 'floor_plan_url')
+  final String? floorPlanUrl;
 
   // Availability
   // Backend may send either is_active or is_available
@@ -163,9 +174,6 @@ class PropertyModel {
   final DateTime? createdAt;
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
-
-  // Relationships
-  final List<PropertyImageModel>? images;
 
   // Client-side calculated fields
   @JsonKey(name: 'distance_km')
@@ -220,7 +228,12 @@ class PropertyModel {
     this.amenities,
     this.features,
     this.mainImageUrl,
+    this.images,
+    this.videoTourUrl,
+    this.videoUrls,
     this.virtualTourUrl,
+    this.googleStreetViewUrl,
+    this.floorPlanUrl,
     required this.isAvailable,
     this.availableFrom,
     this.calendarData,
@@ -233,7 +246,6 @@ class PropertyModel {
     required this.interestCount,
     this.createdAt,
     this.updatedAt,
-    this.images,
     this.distanceKm,
     this.liked = false,
     this.userHasScheduledVisit = false,
@@ -348,41 +360,81 @@ class PropertyModel {
     return parts.join(', ');
   }
 
+  List<PropertyImageModel> get _sortedImages {
+    final sorted = [...(images ?? const <PropertyImageModel>[])];
+    sorted.sort((a, b) {
+      if (a.isPrimary != b.isPrimary) return a.isPrimary ? -1 : 1;
+      return a.displayOrder.compareTo(b.displayOrder);
+    });
+    return sorted;
+  }
+
+  List<PropertyImageModel> get galleryImages =>
+      _sortedImages.where((img) => img.isGallery && _looksLikeImageUrl(img.imageUrl)).toList();
+
+  List<PropertyImageModel> get floorPlanImages =>
+      _sortedImages.where((img) => img.isFloorPlan && _looksLikeImageUrl(img.imageUrl)).toList();
+
   String get mainImage {
     if (mainImageUrl?.isNotEmpty == true) return mainImageUrl!;
-    final firstImageUrl = (images != null && images!.isNotEmpty) ? images!.first.imageUrl : null;
-    return (firstImageUrl?.isNotEmpty == true)
-        ? firstImageUrl!
-        : 'https://via.placeholder.com/400x300?text=No+Image';
+    final primary = _sortedImages.firstWhere(
+      (img) => img.isPrimary && img.imageUrl.isNotEmpty,
+      orElse: () => _sortedImages.isNotEmpty
+          ? _sortedImages.first
+          : PropertyImageModel(
+              id: -1,
+              propertyId: id,
+              imageUrl: 'https://via.placeholder.com/400x300?text=No+Image',
+            ),
+    );
+    if (primary.isValid) return primary.imageUrl;
+    return 'https://via.placeholder.com/400x300?text=No+Image';
   }
 
   // Also make the imageUrls getter safer
   List<String> get imageUrls {
     final urls = <String>[];
     if (mainImageUrl?.isNotEmpty == true) urls.add(mainImageUrl!);
-    for (final img in images ?? const <PropertyImageModel>[]) {
+    for (final img in _sortedImages) {
       if (img.imageUrl.isNotEmpty) urls.add(img.imageUrl);
     }
+    if (floorPlanUrl?.isNotEmpty == true) urls.add(floorPlanUrl!);
     return urls.toSet().toList();
   }
 
   // Images suitable for gallery (filter out known non-image URLs like 360 tour links)
   List<String> get galleryImageUrls {
-    final candidates = <String>[];
-    // Prefer sorted images by display order when available
-    final sortedImages = [...(images ?? [])]
-      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
-    for (final img in sortedImages) {
-      final url = img.imageUrl;
-      if (_looksLikeImageUrl(url)) candidates.add(url);
-    }
-    // Include main image if list still empty
+    final candidates = <String>[...galleryImages.map((img) => img.imageUrl)];
     if (candidates.isEmpty && mainImageUrl?.isNotEmpty == true) {
       candidates.add(mainImageUrl!);
     }
-    // Final fallback: at least one placeholder handled by UI if still empty
-    return candidates;
+    return candidates.toSet().toList();
   }
+
+  List<String> get floorPlanImageUrls {
+    final urls = <String>[
+      if (floorPlanUrl?.isNotEmpty == true) floorPlanUrl!,
+      ...floorPlanImages.map((img) => img.imageUrl),
+    ];
+    return urls.toSet().toList();
+  }
+
+  List<String> get mediaVideoUrls {
+    final urls = <String>[];
+    if (videoTourUrl?.isNotEmpty == true) urls.add(videoTourUrl!);
+    if (videoUrls != null) {
+      urls.addAll(videoUrls!.where((url) => url.isNotEmpty));
+    }
+    return urls.toSet().toList();
+  }
+
+  String? get primaryVideoUrl => mediaVideoUrls.isNotEmpty ? mediaVideoUrls.first : null;
+
+  bool get hasVideos => mediaVideoUrls.isNotEmpty;
+  bool get hasVideoTour => primaryVideoUrl != null;
+  bool get hasPhotos => galleryImageUrls.isNotEmpty;
+  bool get hasFloorPlan => floorPlanImageUrls.isNotEmpty;
+  bool get hasAnyMedia => hasPhotos || hasVideos || hasVirtualTour || hasStreetView || hasFloorPlan;
 
   bool _looksLikeImageUrl(String url) {
     final lower = url.toLowerCase();
@@ -397,6 +449,39 @@ class PropertyModel {
 
   // Location convenience methods
   bool get hasLocation => latitude != null && longitude != null;
+  bool get hasStreetView => streetViewLaunchUrl != null;
+
+  String? get streetViewTarget {
+    if (googleStreetViewUrl?.isNotEmpty == true) return googleStreetViewUrl;
+    if (hasLocation) return '$latitude,$longitude';
+    return null;
+  }
+
+  String? get streetViewLaunchUrl {
+    final target = streetViewTarget;
+    if (target == null) return null;
+    if (googleStreetViewUrl?.isNotEmpty == true) return googleStreetViewUrl;
+    return 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=$latitude,$longitude';
+  }
+
+  String? get streetViewEmbedUrl =>
+      googleStreetViewUrl != null && googleStreetViewUrl!.isNotEmpty ? googleStreetViewUrl : null;
+
+  String? streetViewStaticImage(String apiKey, {int width = 640, int height = 320}) {
+    if (apiKey.isEmpty) return null;
+    final target = hasLocation ? '$latitude,$longitude' : null;
+    if (target == null) return null;
+    final size = '${width}x$height';
+    final query = {
+      'size': size,
+      'location': target,
+      'key': apiKey,
+      'pitch': '0',
+      'source': 'outdoor',
+    };
+    final uri = Uri.https('maps.googleapis.com', '/maps/api/streetview', query);
+    return uri.toString();
+  }
 
   // Amenities convenience methods
   bool get hasAmenities => amenities?.isNotEmpty == true;

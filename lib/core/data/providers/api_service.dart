@@ -814,6 +814,82 @@ class ApiService extends getx.GetConnect {
         }
       }
 
+      List<String>? toStringList(dynamic value) {
+        if (value == null) return null;
+        if (value is List) {
+          final cleaned = value
+              .map((e) => e?.toString().trim())
+              .whereType<String>()
+              .where((e) => e.isNotEmpty)
+              .toList();
+          return cleaned.isEmpty ? null : cleaned;
+        }
+        if (value is String) {
+          final parts = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+          return parts.isEmpty ? null : parts;
+        }
+        return null;
+      }
+
+      safeJson['video_urls'] = toStringList(safeJson['video_urls']);
+      // Normalize single video/floor-plan fields
+      final videoTour = safeJson['video_tour_url'];
+      if (videoTour is String && videoTour.trim().isNotEmpty) {
+        safeJson['video_tour_url'] = videoTour.trim();
+      } else {
+        safeJson['video_tour_url'] = null;
+      }
+
+      final floorPlan = safeJson['floor_plan_url'];
+      if (floorPlan is String && floorPlan.trim().isNotEmpty) {
+        safeJson['floor_plan_url'] = floorPlan.trim();
+      }
+      final streetView = safeJson['google_street_view_url'];
+      if (streetView is String) {
+        final trimmed = streetView.trim();
+        safeJson['google_street_view_url'] = trimmed.isEmpty ? null : trimmed;
+      }
+
+      // Normalize images into structured objects with media metadata
+      if (safeJson['images'] is List) {
+        final rawImages = safeJson['images'] as List;
+        final normalizedImages = <Map<String, dynamic>>[];
+        int tempId = -1;
+
+        for (final img in rawImages) {
+          if (img is Map<String, dynamic>) {
+            final normalized = Map<String, dynamic>.from(img);
+            normalized['id'] ??= tempId--;
+            normalized['property_id'] ??= safeJson['id'] ?? tempId;
+            normalized['is_main'] ??= normalized['is_main_image'] ?? false;
+            normalized['category'] ??= 'gallery';
+            normalizedImages.add(normalized);
+          } else if (img is String && img.trim().isNotEmpty) {
+            normalizedImages.add({
+              'id': tempId--,
+              'property_id': safeJson['id'] ?? tempId,
+              'image_url': img.trim(),
+              'display_order': 0,
+              'is_main_image': false,
+              'is_main': false,
+              'category': 'gallery',
+            });
+          }
+        }
+
+        if (normalizedImages.isNotEmpty) {
+          final flaggedMain = normalizedImages.firstWhere(
+            (e) => e['is_main'] == true || e['is_main_image'] == true,
+            orElse: () => normalizedImages.first,
+          );
+          if ((safeJson['main_image_url'] == null || '${safeJson['main_image_url']}'.isEmpty) &&
+              flaggedMain['image_url'] != null) {
+            safeJson['main_image_url'] = flaggedMain['image_url'];
+          }
+          safeJson['images'] = normalizedImages;
+        }
+      }
+
       return PropertyModel.fromJson(safeJson);
     } catch (e) {
       DebugLogger.error('❌ Error parsing property model: $e');
@@ -1398,6 +1474,56 @@ class ApiService extends getx.GetConnect {
       final propertyData = json['data'] ?? json;
       return _parsePropertyModel(propertyData);
     }, operationName: 'Get Property Details');
+  }
+
+  Map<String, dynamic> _cleanPropertyPayload(Map<String, dynamic> payload) {
+    final cleaned = <String, dynamic>{};
+    payload.forEach((key, value) {
+      if (value == null) return;
+      if (value is String && value.trim().isEmpty) return;
+      if (value is List && value.isEmpty) return;
+      if (value is Map && value.isEmpty) return;
+      cleaned[key] = value;
+    });
+    return cleaned;
+  }
+
+  Future<PropertyModel> createProperty(Map<String, dynamic> payload) async {
+    await _waitForAuthToken(maxWaitMs: 1500);
+    final cleaned = _cleanPropertyPayload(payload);
+    return await _makeRequest(
+      '/properties/',
+      (json) {
+        final propertyData = json['data'] ?? json;
+        return _parsePropertyModel(propertyData);
+      },
+      method: 'POST',
+      body: cleaned,
+      operationName: 'Create Property',
+    );
+  }
+
+  Future<PropertyModel> updateProperty(int propertyId, Map<String, dynamic> payload) async {
+    await _waitForAuthToken(maxWaitMs: 1500);
+    final cleaned = _cleanPropertyPayload(payload);
+    return await _makeRequest(
+      '/properties/$propertyId',
+      (json) {
+        final propertyData = json['data'] ?? json;
+        return _parsePropertyModel(propertyData);
+      },
+      method: 'PUT',
+      body: cleaned,
+      operationName: 'Update Property',
+    );
+  }
+
+  Future<PropertyModel> updatePropertyMedia(
+    int propertyId,
+    Map<String, dynamic> mediaPayload,
+  ) async {
+    final merged = _cleanPropertyPayload(mediaPayload);
+    return updateProperty(propertyId, merged);
   }
 
   // Connection Testing

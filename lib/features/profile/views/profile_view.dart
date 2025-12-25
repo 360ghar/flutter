@@ -11,8 +11,6 @@ class ProfileView extends GetView<AuthController> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
@@ -91,7 +89,6 @@ class ProfileView extends GetView<AuthController> {
   }
 
   Widget _buildProfileHeader(BuildContext context, dynamic user) {
-    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(

@@ -1,39 +1,50 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
 import 'package:ghar360/core/data/repositories/properties_repository.dart';
-import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/image_cache_service.dart';
 import 'package:ghar360/core/utils/share_utils.dart';
-import 'package:ghar360/core/utils/webview_helper.dart';
 import 'package:ghar360/core/widgets/common/loading_states.dart';
-import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:ghar360/core/widgets/property/property_details_features.dart';
 import 'package:ghar360/features/likes/controllers/likes_controller.dart';
+import 'package:ghar360/features/property_details/widgets/property_media_hub.dart';
 import 'package:ghar360/features/visits/controllers/visits_controller.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 class PropertyDetailsView extends StatelessWidget {
   const PropertyDetailsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Handle both PropertyModel object and String ID
-    final dynamic arguments = Get.arguments;
+    // Handle property ID from multiple sources:
+    // 1. Get.parameters['id'] - from URL routes like /p/:id or /property/:id
+    // 2. Get.arguments - from navigation with arguments (PropertyModel or String/int ID)
+    dynamic id = Get.arguments;
+
+    // Check URL parameters first for deep link routes
+    final urlId = Get.parameters['id'];
+    if (urlId != null && urlId.isNotEmpty) {
+      id = urlId;
+    }
+
     PropertyModel? property;
 
-    if (arguments is PropertyModel) {
-      property = arguments;
-    } else if (arguments is String || arguments is int) {
-      final int? propertyId = arguments is int ? arguments : int.tryParse(arguments as String);
+    if (id is PropertyModel) {
+      property = id;
+    } else if (id is String || id is int) {
+      final int? propertyId = id is int ? id : int.tryParse(id as String);
       if (propertyId == null) {
         return const _PropertyErrorScaffold(message: 'Invalid property id');
       }
-      // Fetch property by id, then navigate to the same route with full data
+      // Fetch property by id and render directly (don't redirect to /property-details as it requires auth)
       final repo = Get.find<PropertiesRepository>();
       return FutureBuilder<PropertyModel>(
         future: repo.getPropertyDetail(propertyId),
@@ -42,13 +53,12 @@ class PropertyDetailsView extends StatelessWidget {
             return const _PropertyLoadingScaffold();
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return const _PropertyErrorScaffold(message: 'Failed to load property');
+            return _PropertyErrorScaffold(
+              message: 'Failed to load property: ${snapshot.error?.toString() ?? 'Unknown error'}',
+            );
           }
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            // Replace current route with one that has a full PropertyModel argument
-            Get.offNamed(AppRoutes.propertyDetails, arguments: snapshot.data);
-          });
-          return const _PropertyLoadingScaffold();
+          // Render property directly instead of redirecting (avoids AuthMiddleware on /property-details)
+          return _PropertyContentView(property: snapshot.data!);
         },
       );
     }
@@ -57,6 +67,19 @@ class PropertyDetailsView extends StatelessWidget {
       return const _PropertyErrorScaffold(message: 'Property not found');
     }
 
+    // Use the same widget for both direct PropertyModel and fetched property
+    return _PropertyContentView(property: property);
+  }
+}
+
+/// Encapsulates property content rendering - used for both direct navigation and deep links
+class _PropertyContentView extends StatelessWidget {
+  const _PropertyContentView({required this.property});
+
+  final PropertyModel property;
+
+  @override
+  Widget build(BuildContext context) {
     // Use LikesController for favorite management
     final controller = Get.find<LikesController>();
     final visitsController = Get.find<VisitsController>();
@@ -262,13 +285,12 @@ class PropertyDetailsView extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // 360° Tour: priority after basic info
-                    if (safeProperty.virtualTourUrl != null &&
-                        safeProperty.virtualTourUrl!.isNotEmpty) ...[
-                      const SizedBox(height: 20),
-                      _VirtualTourSection(
-                        tourUrl: safeProperty.virtualTourUrl!,
-                        thumbnailUrl: safeProperty.mainImage,
+                    if (safeProperty.hasAnyMedia) ...[
+                      PropertyMediaBadges(property: safeProperty),
+                      const SizedBox(height: 12),
+                      PropertyMediaHub(
+                        property: safeProperty,
+                        googleMapsApiKey: dotenv.env['GOOGLE_PLACES_API_KEY'],
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -587,6 +609,22 @@ class PropertyDetailsView extends StatelessWidget {
     );
   }
 
+  // Small UI helpers
+  Widget _chip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
   Widget _buildPropertyInfoSection(PropertyModel property) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -764,22 +802,6 @@ class PropertyDetailsView extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // Small UI helpers
-  Widget _chip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.inputBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -978,6 +1000,11 @@ class _PropertyImageGallery extends StatefulWidget {
 class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
   late final PageController _pageController;
   int _current = 0;
+  bool _isPrefetching = false;
+
+  List<String> get _images => widget.property.galleryImageUrls.isNotEmpty
+      ? widget.property.galleryImageUrls
+      : [widget.property.mainImage];
 
   @override
   void initState() {
@@ -986,32 +1013,91 @@ class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _prefetchImages();
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
+  Future<void> _prefetchImages() async {
+    if (_isPrefetching) return;
+    _isPrefetching = true;
+    for (final url in _images.take(8)) {
+      try {
+        await ImageCacheService.instance.preloadImage(url);
+        if (!mounted) return;
+        await precacheImage(CachedNetworkImageProvider(url), context);
+      } catch (_) {}
+    }
+    if (mounted) {
+      setState(() {
+        _isPrefetching = false;
+      });
+    }
+  }
+
+  void _openGallery(int initialIndex) {
+    showDialog<void>(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          backgroundColor: Colors.black87,
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: PhotoViewGallery.builder(
+              itemCount: _images.length,
+              pageController: PageController(initialPage: initialIndex),
+              backgroundDecoration: const BoxDecoration(color: Colors.black87),
+              builder: (context, index) {
+                final url = _images[index];
+                return PhotoViewGalleryPageOptions(
+                  imageProvider: CachedNetworkImageProvider(url),
+                  heroAttributes: PhotoViewHeroAttributes(tag: url),
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2.5,
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final images = widget.property.galleryImageUrls;
+    final images = _images;
     final itemCount = images.isNotEmpty ? images.length : 1;
     return Stack(
       children: [
-        PageView.builder(
-          controller: _pageController,
-          itemCount: itemCount,
-          onPageChanged: (i) => setState(() => _current = i),
-          itemBuilder: (context, index) {
-            final url = images.isNotEmpty ? images[index] : widget.property.mainImage;
-            return RobustNetworkImage(
-              imageUrl: url,
-              fit: BoxFit.cover,
-              errorWidget: Container(
-                color: AppColors.inputBackground,
-                child: Icon(Icons.image, size: 50, color: AppColors.disabledColor),
-              ),
-            );
-          },
+        GestureDetector(
+          onTap: () => _openGallery(_current),
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: itemCount,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (context, index) {
+              final url = images.isNotEmpty ? images[index] : widget.property.mainImage;
+              return CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                placeholder: (context, _) => Container(
+                  color: AppColors.inputBackground,
+                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+                errorWidget: (context, error, stackTrace) => Container(
+                  color: AppColors.inputBackground,
+                  child: Icon(Icons.image, size: 50, color: AppColors.disabledColor),
+                ),
+              );
+            },
+          ),
         ),
         if (itemCount > 1)
           Positioned(
@@ -1026,296 +1112,6 @@ class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
               child: Text(
                 '${_current + 1}/$itemCount',
                 style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 12),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _VirtualTourSection extends StatefulWidget {
-  const _VirtualTourSection({required this.tourUrl, this.thumbnailUrl});
-
-  final String tourUrl;
-  final String? thumbnailUrl;
-
-  @override
-  State<_VirtualTourSection> createState() => _VirtualTourSectionState();
-}
-
-class _VirtualTourSectionState extends State<_VirtualTourSection> {
-  bool _showEmbeddedTour = false;
-
-  void _openFullScreen() {
-    Get.toNamed('/tour', arguments: widget.tourUrl);
-  }
-
-  void _handleLoadTour() {
-    if (!_showEmbeddedTour) {
-      setState(() {
-        _showEmbeddedTour = true;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  const Icon(Icons.threesixty, size: 24, color: AppColors.primaryYellow),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '360° Virtual Tour',
-                      style:
-                          theme.textTheme.titleMedium?.copyWith(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ) ??
-                          TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            TextButton.icon(
-              onPressed: _openFullScreen,
-              icon: const Icon(Icons.fullscreen, size: 18, color: AppColors.primaryYellow),
-              label: const Text('Fullscreen'),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                backgroundColor: AppColors.primaryYellow.withValues(alpha: 0.1),
-                foregroundColor: AppColors.primaryYellow,
-                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          child: _showEmbeddedTour
-              ? _TourContainer(
-                  key: const ValueKey('embeddedTour'),
-                  child: _Embedded360TourDetails(tourUrl: widget.tourUrl),
-                )
-              : _TourContainer(
-                  key: const ValueKey('tourPlaceholder'),
-                  child: GestureDetector(
-                    onTap: _handleLoadTour,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty)
-                          RobustNetworkImage(
-                            imageUrl: widget.thumbnailUrl!,
-                            fit: BoxFit.cover,
-                            memCacheWidth: 800,
-                            memCacheHeight: 450,
-                          )
-                        else
-                          Container(color: AppColors.inputBackground),
-                        Container(color: Colors.black.withValues(alpha: 0.35)),
-                        Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.play_circle_fill,
-                                size: 64,
-                                color: AppColors.primaryYellow,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'tap_to_load_virtual_tour'.tr,
-                                style:
-                                    theme.textTheme.titleMedium?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ) ??
-                                    const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TourContainer extends StatelessWidget {
-  const _TourContainer({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 450,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppColors.getCardShadow(),
-      ),
-      child: ClipRRect(borderRadius: BorderRadius.circular(16), child: child),
-    );
-  }
-}
-
-class _Embedded360TourDetails extends StatefulWidget {
-  final String tourUrl;
-
-  const _Embedded360TourDetails({required this.tourUrl});
-
-  @override
-  State<_Embedded360TourDetails> createState() => _Embedded360TourDetailsState();
-}
-
-class _Embedded360TourDetailsState extends State<_Embedded360TourDetails> {
-  late final WebViewController controller;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    const consoleSilencer = '''
-      if (window && window.console) {
-        window.console.log = function() {};
-        window.console.warn = function() {};
-        window.console.error = function() {};
-        window.console.info = function() {};
-        window.console.debug = function() {};
-      }
-    ''';
-
-    controller = WebViewHelper.createBaseController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (String url) {
-            if (mounted) {
-              setState(() {
-                isLoading = true;
-              });
-            }
-            controller.runJavaScript(consoleSilencer);
-          },
-          onPageFinished: (String url) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-              });
-            }
-            controller.runJavaScript(consoleSilencer);
-          },
-          onWebResourceError: (WebResourceError error) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-              });
-            }
-          },
-        ),
-      );
-
-    final sanitizedUrl = widget.tourUrl;
-    final htmlContent =
-        '''
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body {
-            margin: 0;
-            padding: 0;
-            background: #f0f0f0;
-            overflow: hidden;
-          }
-          iframe {
-            width: 100vw;
-            height: 100vh;
-            border: none;
-            display: block;
-          }
-        </style>
-        <script type="text/javascript">
-          $consoleSilencer
-        </script>
-      </head>
-      <body>
-        <iframe class="ku-embed"
-                frameborder="0"
-                allow="xr-spatial-tracking; gyroscope; accelerometer"
-                allowfullscreen
-                scrolling="no"
-                src="$sanitizedUrl">
-        </iframe>
-      </body>
-      </html>
-    ''';
-
-    controller.loadHtmlString(htmlContent);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        WebViewWidget(
-          controller: controller,
-          gestureRecognizers: WebViewHelper.createInteractiveGestureRecognizers(),
-        ),
-        if (isLoading)
-          Container(
-            color: AppColors.inputBackground,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(color: AppColors.primaryYellow, strokeWidth: 3),
-                  const SizedBox(height: 12),
-                  Text(
-                    'loading_virtual_tour'.tr,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
               ),
             ),
           ),

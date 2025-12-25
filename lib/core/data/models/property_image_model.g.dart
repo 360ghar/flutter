@@ -13,6 +13,8 @@ PropertyImageModel _$PropertyImageModelFromJson(Map<String, dynamic> json) => Pr
   caption: json['caption'] as String?,
   displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
   isMainImage: json['is_main_image'] as bool? ?? false,
+  isMain: json['is_main'] as bool? ?? false,
+  category: json['category'] as String? ?? 'gallery',
 );
 
 Map<String, dynamic> _$PropertyImageModelToJson(PropertyImageModel instance) => <String, dynamic>{
@@ -22,4 +24,6 @@ Map<String, dynamic> _$PropertyImageModelToJson(PropertyImageModel instance) => 
   'caption': instance.caption,
   'display_order': instance.displayOrder,
   'is_main_image': instance.isMainImage,
+  'is_main': instance.isMain,
+  'category': instance.category,
 };

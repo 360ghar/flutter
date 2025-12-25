@@ -11,6 +11,7 @@ import 'package:ghar360/core/controllers/theme_controller.dart';
 import 'package:ghar360/core/data/providers/api_service.dart';
 import 'package:ghar360/core/data/repositories/app_update_repository.dart';
 import 'package:ghar360/core/data/repositories/profile_repository.dart';
+import 'package:ghar360/core/services/deep_link_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/features/auth/data/auth_repository.dart';
 
@@ -47,6 +48,11 @@ class InitialBinding extends Bindings {
     } catch (e) {
       DebugLogger.error('💥 Failed to initialize OfflineQueueService: $e');
     }
+
+    // Register Deep Link Service LAST
+    // It depends on AuthController, so it must be registered after it.
+    Get.put<DeepLinkService>(DeepLinkService());
+    DebugLogger.success('✅ DeepLinkService registered');
 
     // Note: Repositories and feature controllers will be initialized
     // in route-specific bindings to prevent unauthorized API calls
