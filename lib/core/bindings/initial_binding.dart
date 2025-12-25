@@ -21,13 +21,13 @@ class InitialBinding extends Bindings {
   void dependencies() {
     DebugLogger.info('🔧 InitialBinding: Starting dependency injection...');
 
-    // Initialize new clean architecture services
-    ServiceLocator.init();
-    DebugLogger.success('✅ ServiceLocator initialized (new architecture)');
-
-    // Register API Service first
+    // Register ApiService before ServiceLocator (ServiceLocator dependencies require it)
     Get.put<ApiService>(ApiService());
     DebugLogger.success('✅ ApiService registered');
+
+    // Initialize new clean architecture services
+    ServiceLocator.init();
+    DebugLogger.success('✅ ServiceLocator initialized');
 
     // NEW: Register AuthRepository
     Get.put<AuthRepository>(AuthRepository());

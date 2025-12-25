@@ -6,6 +6,7 @@ import 'package:ghar360/core/controllers/location_controller.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 
 class LocationSelector extends GetView<LocationController> {
   final PageType pageType;
@@ -90,6 +91,39 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   final LocationController locationController = Get.find<LocationController>();
   final PageStateService pageStateService = Get.find<PageStateService>();
   double? _radiusKm;
+
+  bool _hasOverlay() {
+    final overlayContext = Get.overlayContext;
+    if (overlayContext == null) return false;
+    return Overlay.maybeOf(overlayContext) != null;
+  }
+
+  void _showSnackbarSafe({
+    required String title,
+    required String message,
+    SnackPosition snackPosition = SnackPosition.BOTTOM,
+    Duration? duration,
+    Color? backgroundColor,
+    Color? colorText,
+  }) {
+    if (!_hasOverlay()) {
+      DebugLogger.warning('Skipped snackbar (no overlay): $title');
+      return;
+    }
+
+    try {
+      Get.snackbar(
+        title,
+        message,
+        snackPosition: snackPosition,
+        duration: duration,
+        backgroundColor: backgroundColor,
+        colorText: colorText,
+      );
+    } catch (e, stackTrace) {
+      DebugLogger.error('Failed to show snackbar: $title', e, stackTrace);
+    }
+  }
 
   // Local helper to fetch the correct page state for this modal
   PageStateModel _getPageState(PageStateService service) {
@@ -390,17 +424,15 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       Navigator.of(context).pop();
       await pageStateService.useCurrentLocationForPage(widget.pageType);
 
-      Get.snackbar(
-        'location_updated'.tr,
-        'using_current_location'.tr,
-        snackPosition: SnackPosition.BOTTOM,
+      _showSnackbarSafe(
+        title: 'location_updated'.tr,
+        message: 'using_current_location'.tr,
         duration: const Duration(seconds: 2),
       );
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'unable_to_get_current_location'.tr,
-        snackPosition: SnackPosition.BOTTOM,
+      _showSnackbarSafe(
+        title: 'error'.tr,
+        message: 'unable_to_get_current_location'.tr,
         backgroundColor: AppColors.errorRed,
         colorText: onErrorColor,
       );
@@ -425,18 +457,16 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
           source: 'manual',
         );
 
-        Get.snackbar(
-          'location_selected'.tr,
-          suggestion.mainText,
-          snackPosition: SnackPosition.BOTTOM,
+        _showSnackbarSafe(
+          title: 'location_selected'.tr,
+          message: suggestion.mainText,
           duration: const Duration(seconds: 2),
         );
       }
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'unable_to_select_location'.tr,
-        snackPosition: SnackPosition.BOTTOM,
+      _showSnackbarSafe(
+        title: 'error'.tr,
+        message: 'unable_to_select_location'.tr,
         backgroundColor: AppColors.errorRed,
         colorText: onErrorColor,
       );

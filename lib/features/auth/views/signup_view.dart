@@ -169,9 +169,9 @@ class SignUpView extends GetView<SignUpController> {
                       ),
                       TextButton(
                         onPressed: () => Get.offNamed(AppRoutes.phoneEntry),
-                        child: const Text(
-                          'Change',
-                          style: TextStyle(
+                        child: Text(
+                          'change'.tr,
+                          style: const TextStyle(
                             color: AppTheme.primaryYellow,
                             fontWeight: FontWeight.w600,
                           ),

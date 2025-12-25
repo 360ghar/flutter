@@ -39,7 +39,7 @@ class ExploreView extends GetView<ExploreController> {
             if (!isRefreshing) return const SizedBox.shrink();
             return const LinearProgressIndicator(
               minHeight: 2,
-              backgroundColor: Colors.transparent,
+              backgroundColor: AppColors.transparent,
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
             );
           }),
@@ -104,7 +104,7 @@ class ExploreView extends GetView<ExploreController> {
             return LoadingStates.progressiveLoadingIndicator(
               current: controller.loadingProgress.value,
               total: controller.totalPages.value,
-              message: 'Loading properties for map...',
+              message: 'loading_properties'.tr,
             );
           }
           return LoadingStates.mapLoadingOverlay(context);
@@ -399,8 +399,8 @@ class ExploreView extends GetView<ExploreController> {
             ),
             const SizedBox(height: 4),
             Text(currentAreaText, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-            if (locationDisplayText != 'All Locations' &&
-                locationDisplayText != 'Select Location') ...[
+            if (locationDisplayText != 'all_locations'.tr &&
+                locationDisplayText != 'select_location'.tr) ...[
               const SizedBox(height: 4),
               Text(
                 locationDisplayText,

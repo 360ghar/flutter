@@ -177,12 +177,19 @@ class ApiClient {
   }
 
   String _buildUrl(String endpoint, Map<String, dynamic>? queryParams) {
-    var url = endpoint.startsWith('http') ? endpoint : '$_baseUrl$endpoint';
-    if (queryParams != null && queryParams.isNotEmpty) {
-      final query = queryParams.entries.map((e) => '${e.key}=${e.value}').join('&');
-      url += url.contains('?') ? '&$query' : '?$query';
+    final rawUrl = endpoint.startsWith('http') ? endpoint : '$_baseUrl$endpoint';
+    final uri = Uri.parse(rawUrl);
+    if (queryParams == null || queryParams.isEmpty) {
+      return uri.toString();
     }
-    return url;
+
+    final merged = Map<String, String>.from(uri.queryParameters);
+    for (final entry in queryParams.entries) {
+      if (entry.value == null) continue;
+      merged[entry.key] = entry.value.toString();
+    }
+
+    return uri.replace(queryParameters: merged).toString();
   }
 
   Future<Map<String, String>> _buildHeaders() async {
@@ -253,10 +260,4 @@ class ApiResponse {
   ApiResponse({required this.statusCode, required this.body, required this.headers});
 
   bool get isSuccess => statusCode >= 200 && statusCode < 300;
-}
-
-/// Custom exception for API errors.
-class ApiException extends AppException {
-  final int? statusCode;
-  ApiException(super.message, {this.statusCode});
 }

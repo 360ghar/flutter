@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
@@ -31,7 +32,7 @@ class LikesPropertyCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
-          Get.toNamed('/property-details', arguments: property);
+          Get.toNamed(AppRoutes.propertyDetails, arguments: property);
         },
         borderRadius: BorderRadius.circular(16),
         child: Column(
@@ -73,7 +74,7 @@ class LikesPropertyCard extends StatelessWidget {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Loading...',
+                                'loading'.tr,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: AppColors.textSecondary,
                                 ),

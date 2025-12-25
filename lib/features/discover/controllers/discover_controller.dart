@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
@@ -353,8 +354,8 @@ class DiscoverController extends GetxController {
       if (currentIndex.value > 0) {
         currentIndex.value--;
         Get.snackbar(
-          'Undone!',
-          'Moved back to previous property',
+          'undo_success'.tr,
+          'undo_previous_property'.tr,
           snackPosition: SnackPosition.BOTTOM,
           duration: const Duration(seconds: 2),
         );
@@ -362,8 +363,8 @@ class DiscoverController extends GetxController {
     } catch (e) {
       DebugLogger.error('❌ Failed to undo swipe: $e');
       Get.snackbar(
-        'Error',
-        'Could not undo last swipe',
+        'error'.tr,
+        'undo_failed'.tr,
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 2),
       );
@@ -403,7 +404,7 @@ class DiscoverController extends GetxController {
 
   // Navigation to property details
   void viewPropertyDetails(PropertyModel property) {
-    Get.toNamed('/property-details', arguments: {'property': property});
+    Get.toNamed(AppRoutes.propertyDetails, arguments: property);
   }
 
   // Quick filter shortcuts

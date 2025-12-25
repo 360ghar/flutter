@@ -214,8 +214,8 @@ class PageStateService extends GetxController {
       DebugLogger.error('❌ Failed to bootstrap initial location', e, st);
       // You can show a global error snackbar here if needed
       Get.snackbar(
-        'Location Error',
-        'Could not determine your initial location. Please check your settings and try again.',
+        'location_error'.tr,
+        'failed_to_get_location_message'.tr,
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 5),
       );
@@ -412,8 +412,8 @@ class PageStateService extends GetxController {
     } catch (e) {
       DebugLogger.error('Failed to get current location: $e');
       Get.snackbar(
-        'Location Error',
-        'Unable to get your current location',
+        'location_error'.tr,
+        'unable_to_get_current_location'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -552,9 +552,21 @@ class PageStateService extends GetxController {
           // Use ETag only for time-based/background revalidation; skip for explicit forceRefresh to avoid mismatched keys
           final useEtag = !forceRefresh;
           unawaited(
-            _fetchAndUpdatePage(pageType, page: 1, useEtag: useEtag).whenComplete(() {
-              notifyPageRefreshing(pageType, false);
-            }),
+            _fetchAndUpdatePage(pageType, page: 1, useEtag: useEtag)
+                .catchError((e, stackTrace) {
+                  DebugLogger.error('❌ Background refresh failed for ${pageType.name}', e);
+                  final current = _getStateForPage(pageType);
+                  _updatePageState(
+                    pageType,
+                    current.copyWith(
+                      isRefreshing: false,
+                      error: ErrorMapper.mapApiError(e, stackTrace),
+                    ),
+                  );
+                })
+                .whenComplete(() {
+                  notifyPageRefreshing(pageType, false);
+                }),
           );
         } else {
           // Fresh enough; nothing to do

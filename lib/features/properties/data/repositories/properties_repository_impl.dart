@@ -54,6 +54,9 @@ class PropertiesRepositoryImpl implements IPropertiesRepository {
   @override
   Future<Result<List<PropertyModel>>> searchProperties({
     required String query,
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
     UnifiedFilterModel? filters,
     int page = 1,
     int limit = 20,
@@ -61,6 +64,9 @@ class PropertiesRepositoryImpl implements IPropertiesRepository {
     try {
       final properties = await _remoteDatasource.searchProperties(
         query: query,
+        latitude: latitude,
+        longitude: longitude,
+        radiusKm: radiusKm,
         filters: filters,
         page: page,
         limit: limit,

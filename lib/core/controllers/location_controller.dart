@@ -21,6 +21,8 @@ class LocationController extends GetxController {
 
   final RxString currentAddress = ''.obs;
 
+  Future<void>? _permissionRequestInFlight;
+
   // Google Places suggestions
   final RxList<PlaceSuggestion> placeSuggestions = <PlaceSuggestion>[].obs;
   final RxBool isSearchingPlaces = false.obs;
@@ -85,7 +87,20 @@ class LocationController extends GetxController {
     }
   }
 
-  Future<void> _requestLocationPermission() async {
+  Future<void> _requestLocationPermission() {
+    final inFlight = _permissionRequestInFlight;
+    if (inFlight != null) return inFlight;
+
+    final future = _requestLocationPermissionInternal();
+    _permissionRequestInFlight = future;
+    return future.whenComplete(() {
+      if (identical(_permissionRequestInFlight, future)) {
+        _permissionRequestInFlight = null;
+      }
+    });
+  }
+
+  Future<void> _requestLocationPermissionInternal() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
 

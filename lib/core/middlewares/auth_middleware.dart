@@ -17,8 +17,8 @@ class AuthMiddleware extends GetMiddleware {
   RouteSettings? redirect(String? route) {
     // Safely check if AuthController is registered
     if (!Get.isRegistered<AuthController>()) {
-      DebugLogger.warning('AuthController not yet registered, redirecting to login');
-      return const RouteSettings(name: AppRoutes.login);
+      DebugLogger.warning('AuthController not yet registered, redirecting to phone entry');
+      return const RouteSettings(name: AppRoutes.phoneEntry);
     }
 
     final authController = Get.find<AuthController>();
@@ -29,14 +29,14 @@ class AuthMiddleware extends GetMiddleware {
     }
 
     // Store the attempted route for post-login navigation
-    if (route != null && route != AppRoutes.login) {
+    if (route != null && route != AppRoutes.phoneEntry) {
       final attemptedRoute = RouteSettings(name: route, arguments: Get.arguments);
       authController.redirectRoute.value = attemptedRoute;
       DebugLogger.info('🔒 Storing redirect route: $route');
     }
 
-    // Otherwise, redirect to the login page.
-    return const RouteSettings(name: AppRoutes.login);
+    // Otherwise, redirect to phone entry.
+    return const RouteSettings(name: AppRoutes.phoneEntry);
   }
 }
 

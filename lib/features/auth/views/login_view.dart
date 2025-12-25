@@ -1,7 +1,6 @@
 // lib/features/auth/views/login_view.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
 
@@ -47,91 +46,65 @@ class LoginView extends GetView<LoginController> {
                   const SizedBox(height: 48),
 
                   // Phone Display (Read-only with change option)
-                  Obx(() {
-                    final hasPrefilledPhone = controller.prefilledPhone.value.isNotEmpty;
-                    if (hasPrefilledPhone) {
-                      return Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppTheme.darkCard : AppTheme.backgroundGray,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppTheme.darkCard : AppTheme.backgroundGray,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryYellow.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.phone_outlined,
+                            color: AppTheme.primaryYellow,
+                            size: 22,
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryYellow.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.phone_outlined,
-                                color: AppTheme.primaryYellow,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'phone_number'.tr,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    controller.prefilledPhone.value,
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Get.offNamed(AppRoutes.phoneEntry),
-                              child: Text(
-                                'change'.tr,
-                                style: const TextStyle(
-                                  color: AppTheme.primaryYellow,
-                                  fontWeight: FontWeight.w600,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'phone_number'.tr,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Obx(
+                                () => Text(
+                                  controller.prefilledPhone.value.isNotEmpty
+                                      ? controller.prefilledPhone.value
+                                      : '+91 ${controller.phoneController.text}',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      );
-                    }
-                    // Fallback to editable phone field if no prefilled phone
-                    return TextFormField(
-                      controller: controller.phoneController,
-                      decoration: InputDecoration(
-                        labelText: 'phone_number'.tr,
-                        prefixIcon: const Icon(Icons.phone_outlined),
-                        border: const OutlineInputBorder(),
-                        hintText: 'phone_hint'.tr,
-                      ),
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s]'))],
-                      validator: (value) {
-                        final raw = (value ?? '').trim();
-                        if (raw.isEmpty) {
-                          return 'phone_required'.tr;
-                        }
-                        final cleaned = raw.replaceAll(RegExp(r'\s+'), '');
-                        final tenDigits = RegExp(r'^[0-9]{10}$');
-                        final e164IN = RegExp(r'^\+91[0-9]{10}$');
-                        if (!(tenDigits.hasMatch(cleaned) || e164IN.hasMatch(cleaned))) {
-                          return 'phone_invalid'.tr;
-                        }
-                        return null;
-                      },
-                    );
-                  }),
+                        TextButton(
+                          onPressed: () => Get.offNamed(AppRoutes.phoneEntry),
+                          child: Text(
+                            'change'.tr,
+                            style: const TextStyle(
+                              color: AppTheme.primaryYellow,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 16),
 
                   // Password Field

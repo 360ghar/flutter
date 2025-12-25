@@ -132,6 +132,7 @@ class PhoneEntryView extends GetView<PhoneEntryController> {
                       ),
                       child: TextFormField(
                         controller: controller.phoneController,
+                        autofocus: true,
                         decoration: InputDecoration(
                           hintText: 'phone_hint'.tr,
                           prefixIcon: Container(
@@ -242,7 +243,10 @@ class PhoneEntryView extends GetView<PhoneEntryController> {
                         () => ElevatedButton(
                           onPressed: controller.isLoading.value
                               ? null
-                              : controller.checkAndNavigate,
+                              : () {
+                                  HapticFeedback.mediumImpact();
+                                  controller.checkAndNavigate();
+                                },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryYellow,
                             foregroundColor: AppTheme.textDark,

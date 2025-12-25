@@ -9,6 +9,7 @@ import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/data/repositories/swipes_repository.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
@@ -604,8 +605,8 @@ class ExploreController extends GetxController {
       // Revert on failure
       likedOverrides[property.id] = current;
       Get.snackbar(
-        'Action failed',
-        'Could not update like. Please try again.',
+        'action_failed'.tr,
+        'like_update_failed'.tr,
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 2),
       );
@@ -631,7 +632,7 @@ class ExploreController extends GetxController {
 
   // Navigation to property details
   void viewPropertyDetails(PropertyModel property) {
-    Get.toNamed('/property-details', arguments: {'property': property});
+    Get.toNamed(AppRoutes.propertyDetails, arguments: property);
   }
 
   // Filter shortcuts

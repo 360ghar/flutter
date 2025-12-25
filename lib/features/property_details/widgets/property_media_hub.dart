@@ -2,10 +2,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/image_cache_service.dart';
+import 'package:ghar360/core/utils/theme.dart';
 import 'package:ghar360/core/utils/webview_helper.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:photo_view/photo_view.dart';
@@ -22,11 +24,11 @@ class PropertyMediaBadges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badges = <Widget>[
-      if (property.hasPhotos) _badge(icon: Icons.photo, label: 'Images'),
-      if (property.hasVideos) _badge(icon: Icons.videocam, label: 'Video'),
-      if (property.hasVirtualTour) _badge(icon: Icons.threesixty, label: '360\u00b0 Tour'),
-      if (property.hasStreetView) _badge(icon: Icons.streetview, label: 'Street View'),
-      if (property.hasFloorPlan) _badge(icon: Icons.apartment, label: 'Floor Plan'),
+      if (property.hasPhotos) _badge(icon: Icons.photo, label: 'images'.tr),
+      if (property.hasVideos) _badge(icon: Icons.videocam, label: 'video'.tr),
+      if (property.hasVirtualTour) _badge(icon: Icons.threesixty, label: 'virtual_tour_title'.tr),
+      if (property.hasStreetView) _badge(icon: Icons.streetview, label: 'street_view'.tr),
+      if (property.hasFloorPlan) _badge(icon: Icons.apartment, label: 'floor_plan'.tr),
     ];
 
     if (badges.isEmpty) return const SizedBox.shrink();
@@ -118,7 +120,7 @@ class _PropertyMediaHubState extends State<PropertyMediaHub> {
       addSection(_VirtualTourCard(url: property.virtualTourUrl!, thumbnail: property.mainImage));
     }
 
-    addSection(_MediaGalleryCard(images: _images, title: 'Gallery'));
+    addSection(_MediaGalleryCard(images: _images, title: 'gallery'.tr));
 
     if (property.hasStreetView) {
       addSection(_StreetViewCard(property: property, googleMapsApiKey: googleKey));
@@ -176,13 +178,15 @@ class _MediaGalleryCardState extends State<_MediaGalleryCard> {
       builder: (_) {
         return Dialog(
           insetPadding: const EdgeInsets.all(12),
-          backgroundColor: Colors.black87,
+          backgroundColor: AppColors.shadowColor.withValues(alpha: 0.9),
           child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.75,
             child: PhotoViewGallery.builder(
               itemCount: widget.images.length,
               pageController: PageController(initialPage: initialIndex),
-              backgroundDecoration: const BoxDecoration(color: Colors.black87),
+              backgroundDecoration: BoxDecoration(
+                color: AppColors.shadowColor.withValues(alpha: 0.9),
+              ),
               builder: (context, index) {
                 final url = widget.images[index];
                 return PhotoViewGalleryPageOptions(
@@ -227,7 +231,7 @@ class _MediaGalleryCardState extends State<_MediaGalleryCard> {
               ),
               const Spacer(),
               if (hasImages)
-                TextButton(onPressed: () => _openViewer(_index), child: const Text('View')),
+                TextButton(onPressed: () => _openViewer(_index), child: Text('view'.tr)),
             ],
           ),
           const SizedBox(height: 8),
@@ -263,12 +267,15 @@ class _MediaGalleryCardState extends State<_MediaGalleryCard> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.45),
+                                color: AppColors.shadowColor.withValues(alpha: 0.45),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 '${_index + 1}/${widget.images.length}',
-                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                                style: const TextStyle(
+                                  color: AppTheme.darkTextPrimary,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ),
@@ -278,7 +285,7 @@ class _MediaGalleryCardState extends State<_MediaGalleryCard> {
                       color: AppColors.inputBackground,
                       child: Center(
                         child: Text(
-                          'No images available',
+                          'no_images_available'.tr,
                           style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ),
@@ -379,7 +386,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
       _controller = controller;
     } catch (e) {
       DebugLogger.error('Video player init failed', e);
-      _error = 'Could not load video';
+      _error = 'video_load_failed'.tr;
     } finally {
       if (mounted) {
         setState(() {
@@ -414,14 +421,11 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
               const Icon(Icons.videocam, color: AppColors.primaryYellow),
               const SizedBox(width: 8),
               Text(
-                'Video Tour',
+                'video_tour'.tr,
                 style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               const Spacer(),
-              TextButton(
-                onPressed: () => _openExternal(widget.videoUrl),
-                child: const Text('Open'),
-              ),
+              TextButton(onPressed: () => _openExternal(widget.videoUrl), child: Text('open'.tr)),
             ],
           ),
           const SizedBox(height: 8),
@@ -435,7 +439,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
                     children: [
                       Text(_error!, style: TextStyle(color: AppColors.textSecondary)),
                       const SizedBox(height: 8),
-                      TextButton(onPressed: _initialize, child: const Text('Retry')),
+                      TextButton(onPressed: _initialize, child: Text('retry'.tr)),
                     ],
                   )
                 : _chewieController != null
@@ -451,7 +455,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
                   .map(
                     (url) => ActionChip(
                       label: Text(
-                        Uri.tryParse(url)?.host.replaceFirst('www.', '') ?? 'Video',
+                        Uri.tryParse(url)?.host.replaceFirst('www.', '') ?? 'video'.tr,
                         style: TextStyle(color: AppColors.textPrimary),
                       ),
                       avatar: const Icon(Icons.play_circle_fill, size: 18),
@@ -518,10 +522,10 @@ class _VirtualTourCardState extends State<_VirtualTourCard> {
 
     await showDialog<void>(
       context: context,
-      barrierColor: Colors.black87,
+      barrierColor: AppColors.shadowColor.withValues(alpha: 0.9),
       builder: (_) => Dialog(
         insetPadding: EdgeInsets.zero,
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.shadowColor,
         child: SafeArea(
           child: Stack(
             children: [
@@ -530,7 +534,7 @@ class _VirtualTourCardState extends State<_VirtualTourCard> {
                 right: 12,
                 top: 12,
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
+                  icon: const Icon(Icons.close, color: AppTheme.darkTextPrimary),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
@@ -597,13 +601,13 @@ class _VirtualTourCardState extends State<_VirtualTourCard> {
               const Icon(Icons.threesixty, color: AppColors.primaryYellow),
               const SizedBox(width: 8),
               Text(
-                '360\u00b0 Tour',
+                'virtual_tour_title'.tr,
                 style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               const Spacer(),
               TextButton(
                 onPressed: () => _openFullScreen(context),
-                child: const Text('Full Screen'),
+                child: Text('fullscreen_mode'.tr),
               ),
             ],
           ),
@@ -623,7 +627,7 @@ class _VirtualTourCardState extends State<_VirtualTourCard> {
                     RobustNetworkImage(imageUrl: widget.thumbnail, fit: BoxFit.cover),
                   if (_loading)
                     Container(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: AppColors.shadowColor.withValues(alpha: 0.2),
                       child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                     ),
                 ],
@@ -671,11 +675,11 @@ class _StreetViewCard extends StatelessWidget {
               const Icon(Icons.streetview, color: AppColors.primaryYellow),
               const SizedBox(width: 8),
               Text(
-                'Street View',
+                'street_view'.tr,
                 style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               const Spacer(),
-              TextButton(onPressed: _openStreetView, child: const Text('Open')),
+              TextButton(onPressed: _openStreetView, child: Text('open'.tr)),
             ],
           ),
           const SizedBox(height: 8),
@@ -689,7 +693,7 @@ class _StreetViewCard extends StatelessWidget {
                       color: AppColors.inputBackground,
                       child: Center(
                         child: Text(
-                          'Street View unavailable',
+                          'street_view_unavailable'.tr,
                           style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ),
@@ -713,13 +717,15 @@ class _FloorPlanCard extends StatelessWidget {
       builder: (_) {
         return Dialog(
           insetPadding: const EdgeInsets.all(12),
-          backgroundColor: Colors.black87,
+          backgroundColor: AppColors.shadowColor.withValues(alpha: 0.9),
           child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.75,
             child: PhotoViewGallery.builder(
               itemCount: imageUrls.length,
               pageController: PageController(initialPage: initialIndex),
-              backgroundDecoration: const BoxDecoration(color: Colors.black87),
+              backgroundDecoration: BoxDecoration(
+                color: AppColors.shadowColor.withValues(alpha: 0.9),
+              ),
               builder: (context, index) {
                 final url = imageUrls[index];
                 return PhotoViewGalleryPageOptions(
@@ -755,7 +761,7 @@ class _FloorPlanCard extends StatelessWidget {
               const Icon(Icons.apartment, color: AppColors.primaryYellow),
               const SizedBox(width: 8),
               Text(
-                'Floor Plan',
+                'floor_plan'.tr,
                 style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
             ],
@@ -774,7 +780,7 @@ class _FloorPlanCard extends StatelessWidget {
                       color: AppColors.inputBackground,
                       child: Center(
                         child: Text(
-                          'No floor plan uploaded',
+                          'no_floor_plan_uploaded'.tr,
                           style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ),

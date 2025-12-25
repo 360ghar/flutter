@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:ghar360/core/controllers/auth_controller.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
@@ -50,31 +51,31 @@ class ProfileView extends GetView<AuthController> {
                 icon: Icons.person_outline,
                 title: 'edit_profile'.tr,
                 subtitle: 'update_personal_information'.tr,
-                onTap: () => Get.toNamed('/edit-profile'),
+                onTap: () => Get.toNamed(AppRoutes.editProfile),
               ),
               _buildMenuItem(
                 icon: Icons.favorite_outline,
                 title: 'my_preferences'.tr,
                 subtitle: 'property_preferences_filters'.tr,
-                onTap: () => Get.toNamed('/preferences'),
+                onTap: () => Get.toNamed(AppRoutes.preferences),
               ),
               _buildMenuItem(
                 icon: Icons.security,
                 title: 'privacy_security'.tr,
                 subtitle: 'account_security_settings'.tr,
-                onTap: () => Get.toNamed('/privacy'),
+                onTap: () => Get.toNamed(AppRoutes.privacy),
               ),
               _buildMenuItem(
                 icon: Icons.help_outline,
                 title: 'help'.tr,
                 subtitle: 'get_help_contact_support'.tr,
-                onTap: () => Get.toNamed('/help'),
+                onTap: () => Get.toNamed(AppRoutes.help),
               ),
               _buildMenuItem(
                 icon: Icons.info_outline,
                 title: 'about'.tr,
                 subtitle: 'app_version_information'.tr,
-                onTap: () => Get.toNamed('/about'),
+                onTap: () => Get.toNamed(AppRoutes.about),
               ),
               const SizedBox(height: 20),
 

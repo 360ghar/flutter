@@ -399,7 +399,11 @@ class VisitsController extends GetxController {
       // Reload visits to get updated state from server
       await loadVisits(isRefresh: true, silent: true);
 
-      Get.snackbar('visit_cancelled'.tr, 'visit_cancelled'.tr, snackPosition: SnackPosition.TOP);
+      Get.snackbar(
+        'visit_cancelled'.tr,
+        'your_visit_has_been_cancelled'.tr,
+        snackPosition: SnackPosition.TOP,
+      );
 
       return true;
     } catch (e) {
@@ -434,7 +438,7 @@ class VisitsController extends GetxController {
 
       Get.snackbar(
         'visit_rescheduled'.tr,
-        '${'visit_rescheduled'.tr} ${formatVisitDate(newDateTime)} at ${formatVisitTime(newDateTime)}',
+        '${'visit_rescheduled_to'.tr} ${formatVisitDate(newDateTime)} ${'at'.tr} ${formatVisitTime(newDateTime)}',
         snackPosition: SnackPosition.TOP,
         duration: const Duration(seconds: 4),
       );

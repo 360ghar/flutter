@@ -97,11 +97,11 @@ class SplashController extends GetxController with GetTickerProviderStateMixin {
       if (auth.isAuthenticated) {
         Get.offAllNamed(AppRoutes.dashboard);
       } else {
-        Get.offAllNamed(AppRoutes.login);
+        Get.offAllNamed(AppRoutes.phoneEntry);
       }
     } catch (_) {
-      // Fallback to login
-      Get.offAllNamed(AppRoutes.login);
+      // Fallback to phone entry
+      Get.offAllNamed(AppRoutes.phoneEntry);
     }
   }
 

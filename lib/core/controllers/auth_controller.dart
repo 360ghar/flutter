@@ -343,7 +343,11 @@ class AuthController extends GetxController {
         );
       }
 
-      Get.snackbar('Success', 'Profile updated successfully!', snackPosition: SnackPosition.TOP);
+      Get.snackbar(
+        'success'.tr,
+        'profile_updated_successfully'.tr,
+        snackPosition: SnackPosition.TOP,
+      );
       return true;
     } catch (e) {
       ErrorHandler.handleNetworkError(e);

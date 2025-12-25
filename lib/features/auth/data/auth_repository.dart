@@ -23,10 +23,9 @@ class AuthRepository extends GetxService {
       final exists = response != null;
       DebugLogger.auth('User exists check result: $exists');
       return exists;
-    } catch (e) {
-      DebugLogger.error('Error checking user existence', e);
-      // In case of error, assume user doesn't exist to allow signup flow
-      return false;
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error checking user existence', e, stackTrace);
+      rethrow;
     }
   }
 

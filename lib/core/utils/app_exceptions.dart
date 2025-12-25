@@ -42,6 +42,16 @@ class CacheException extends AppException {
   CacheException(super.message, {super.code, super.details});
 }
 
+class ApiException extends AppException {
+  final int? statusCode;
+  final String? response;
+
+  ApiException(super.message, {super.code, super.details, this.statusCode, this.response});
+
+  @override
+  String toString() => 'ApiException: $message (Status: $statusCode)';
+}
+
 // HTTP caching: 304 Not Modified signal
 class NotModifiedException extends AppException {
   NotModifiedException(super.message, {super.code, super.details});

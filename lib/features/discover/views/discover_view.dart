@@ -33,7 +33,7 @@ class DiscoverView extends GetView<DiscoverController> {
             if (!isRefreshing) return const SizedBox.shrink();
             return const LinearProgressIndicator(
               minHeight: 2,
-              backgroundColor: Colors.transparent,
+              backgroundColor: AppColors.transparent,
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
             );
           }),
@@ -91,7 +91,7 @@ class DiscoverView extends GetView<DiscoverController> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Loading more properties...',
+                    'loading_more_properties'.tr,
                     style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                   ),
                 ],

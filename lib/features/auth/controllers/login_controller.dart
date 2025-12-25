@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_handler.dart';
 import 'package:ghar360/core/utils/formatters.dart';
@@ -29,6 +30,10 @@ class LoginController extends GetxController {
     if (args != null && args is Map<String, dynamic> && args['phone'] != null) {
       prefilledPhone.value = args['phone'] as String;
       phoneController.text = prefilledPhone.value.replaceFirst('+91', '');
+    } else {
+      // No phone provided - redirect back to phone entry
+      DebugLogger.warning('LoginView accessed without phone number, redirecting to phone entry');
+      Future.microtask(() => Get.offNamed(AppRoutes.phoneEntry));
     }
   }
 

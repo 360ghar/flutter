@@ -21,6 +21,9 @@ abstract class IPropertiesRepository {
   /// Searches properties by query string.
   Future<Result<List<PropertyModel>>> searchProperties({
     required String query,
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
     UnifiedFilterModel? filters,
     int page = 1,
     int limit = 20,
