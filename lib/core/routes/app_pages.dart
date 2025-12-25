@@ -4,10 +4,12 @@ import 'package:ghar360/core/middlewares/auth_middleware.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/features/auth/bindings/auth_binding.dart';
 import 'package:ghar360/features/auth/bindings/forgot_password_binding.dart';
+import 'package:ghar360/features/auth/bindings/phone_entry_binding.dart';
 import 'package:ghar360/features/auth/bindings/profile_completion_binding.dart';
 import 'package:ghar360/features/auth/bindings/signup_binding.dart';
 import 'package:ghar360/features/auth/views/forgot_password_view.dart';
 import 'package:ghar360/features/auth/views/login_view.dart';
+import 'package:ghar360/features/auth/views/phone_entry_view.dart';
 import 'package:ghar360/features/auth/views/profile_completion_view.dart';
 import 'package:ghar360/features/auth/views/signup_view.dart';
 import 'package:ghar360/features/dashboard/bindings/dashboard_binding.dart';
@@ -44,6 +46,12 @@ import 'package:ghar360/features/visits/views/visits_view.dart';
 class AppPages {
   static final routes = [
     GetPage(name: AppRoutes.splash, page: () => const SplashView(), binding: SplashBinding()),
+    GetPage(
+      name: AppRoutes.phoneEntry,
+      page: () => const PhoneEntryView(),
+      binding: PhoneEntryBinding(),
+      middlewares: [GuestMiddleware()],
+    ),
     GetPage(
       name: AppRoutes.login,
       page: () => const LoginView(),

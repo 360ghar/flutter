@@ -109,9 +109,12 @@ lib/
 │   │   └── initial_binding.dart
 │   ├── controllers/       # Core business logic controllers
 │   │   ├── auth_controller.dart         # Authentication management
+│   │   ├── app_update_controller.dart   # App update management
 │   │   ├── filter_service.dart          # Filtering and search service
 │   │   ├── localization_controller.dart # Multi-language support
 │   │   ├── location_controller.dart     # Location services
+│   │   ├── offline_queue_service.dart   # Offline request queue
+│   │   ├── page_state_service.dart      # Page state management
 │   │   └── theme_controller.dart        # Theme management (light/dark)
 │   ├── data/
 │   │   ├── models/        # Data models with JSON serialization
@@ -134,6 +137,7 @@ lib/
 │   ├── location_search/   # Location search functionality
 │   ├── onboarding/        # App onboarding flow
 │   ├── profile/           # User profile management
+│   ├── property_details/  # Property details view
 │   ├── property_details/  # Property details view
 │   ├── splash/            # Splash screen
 │   ├── tour/              # 360° tour feature
@@ -172,6 +176,7 @@ The app uses a centralized authentication state router that manages the entire a
 - **LikesController**: Manages liked/passed properties and favorites (`features/likes/`)
 - **VisitsController**: Property visits and scheduling management (`features/visits/`)
 - **ProfileControllers**: Multiple controllers for profile management (`features/profile/`)
+- **PhoneEntryController**: Phone number entry logic (`features/auth/`)
 - **LoginController**: Phone-based authentication with OTP verification (`features/auth/`)
 
 #### 2. Data Layer (`lib/core/data/`)
@@ -185,16 +190,19 @@ The app uses a centralized authentication state router that manages the entire a
   - **SwipeHistoryModel**: User swipe interactions tracking
   - **UnifiedFilterModel**: Advanced filtering system
   - **UnifiedPropertyResponse**: API response wrapper for properties
+  - **AppUpdateModel**: App update information
   - **AgentModel**: Real estate agent information
 - **Providers** (`core/data/providers/`): 
   - **ApiService**: Primary API integration with error handling and authentication
 - **Services** (`core/services/`):
   - **SecureTokenManager**: Enhanced secure token storage using FlutterSecureStorage with GetStorage fallback
+  - **DeepLinkService**: Handles deep links and navigation
 - **Repositories** (`core/data/repositories/`): Abstraction layer between controllers and data sources
   - **PropertiesRepository**: Property data access, caching, and filtering
   - **SwipesRepository**: Swipe interaction tracking and history
   - **ProfileRepository**: User profile data management and updates
   - **AuthRepository**: Authentication data handling and token management (`features/auth/data/`)
+  - **AppUpdateRepository**: App update data access
 
 #### 3. Module Structure
 **Core Infrastructure** (`lib/core/`):
@@ -256,7 +264,7 @@ feature_name/
 ### Navigation System
 - **GetX routing** with named routes
 - **AuthMiddleware** for protected routes (`core/middlewares/auth_middleware.dart`)
-- **Bottom navigation** with 5 tabs: **Profile → Explore → Discover → Likes → Visits**
+- **Bottom navigation** with 5 tabs: **Profile → Explore → Discover → Likes → Visits** (Order: 0, 1, 2, 3, 4)
   - **Profile**: User management and preferences
   - **Explore**: Map view with property markers  
   - **Discover**: Main swipe interface (center/home position)
@@ -357,16 +365,16 @@ LOG_API_CALLS=true
 ### Core Framework
 - **flutter**: SDK framework
 - **get**: ^4.6.6 - State management and routing
-- **json_annotation/json_serializable**: Model serialization
-- **http**: ^1.1.0 - HTTP client for API calls
+- **json_annotation**: ^4.9.0 / **json_serializable**: ^6.7.1 - Model serialization
+- **http**: ^1.2.2 - HTTP client for API calls
 - **supabase_flutter**: ^2.10.0 - Backend as a Service integration
 - **get_storage**: ^2.1.1 - Local data persistence
 - **flutter_secure_storage**: ^9.2.2 - Secure token storage for authentication
 
 ### UI/UX
-- **google_fonts**: ^6.1.0 - Typography (Inter font family)
-- **cached_network_image**: ^3.3.0 - Image caching and optimization
-- **flutter_svg**: ^2.0.9 - SVG icon support
+- **google_fonts**: ^6.2.1 - Typography (Inter font family)
+- **cached_network_image**: ^3.4.1 - Image caching and optimization
+- **flutter_svg**: ^2.0.15+1 - SVG icon support
 - **shimmer**: ^3.0.0 - Loading animations and skeletons
 - **flutter_rating_bar**: ^4.0.1 - Property ratings
 - **cupertino_icons**: ^1.0.2 - iOS-style icons
@@ -383,7 +391,7 @@ LOG_API_CALLS=true
 - **connectivity_plus**: ^6.1.5 - Network connectivity status
 - **flutter_localizations**: Internationalization support
 - **intl**: ^0.20.2 - Date/time formatting and localization
-- **shared_preferences**: ^2.2.2 - Platform-specific persistent storage
+- **shared_preferences**: ^2.3.2 - Platform-specific persistent storage
 - **flutter_dotenv**: ^6.0.0 - Environment variable management
 - **logger**: ^2.0.2+1 - Structured logging and debugging
 - **url_launcher**: ^6.3.0 - External URL and app launching
@@ -600,7 +608,7 @@ dart run build_runner build --delete-conflicting-outputs
 ## Authentication Flow
 
 ### Phone-Based Login Process
-1. User enters phone number in LoginView (no signup required)
+1. User enters phone number in PhoneEntryView/LoginView
 2. System sends OTP via SMS for verification
 3. AuthController validates OTP and calls AuthRepository
 4. Backend handles authentication and returns secure tokens

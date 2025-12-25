@@ -46,6 +46,12 @@ class PageStateService extends GetxController {
   Timer? _discoverDebouncer;
   Timer? _likesDebouncer;
 
+  // Persistence debounce timers (500ms to batch rapid state updates)
+  Timer? _explorePersistDebouncer;
+  Timer? _discoverPersistDebouncer;
+  Timer? _likesPersistDebouncer;
+  static const _persistDebounceMs = 500;
+
   // Stream subscriptions (to prevent memory leaks)
   StreamSubscription? _locationSubscription;
 
@@ -66,6 +72,10 @@ class PageStateService extends GetxController {
     _exploreDebouncer?.cancel();
     _discoverDebouncer?.cancel();
     _likesDebouncer?.cancel();
+    // Cancel persistence debouncers
+    _explorePersistDebouncer?.cancel();
+    _discoverPersistDebouncer?.cancel();
+    _likesPersistDebouncer?.cancel();
     // Cancel location subscription to prevent memory leaks
     _locationSubscription?.cancel();
     // Dispose search controllers to prevent memory leaks
@@ -81,22 +91,43 @@ class PageStateService extends GetxController {
       // Load saved states from local storage
       final savedExploreState = _storage.read('explore_state');
       if (savedExploreState != null) {
-        exploreState.value = PageStateModel.fromJson(savedExploreState);
+        // Migration: handle both old full-state format and new snapshot format
+        exploreState.value = _loadStateFromStorage(savedExploreState, PageType.explore);
       }
 
       final savedDiscoverState = _storage.read('discover_state');
       if (savedDiscoverState != null) {
-        discoverState.value = PageStateModel.fromJson(savedDiscoverState);
+        discoverState.value = _loadStateFromStorage(savedDiscoverState, PageType.discover);
       }
 
       final savedLikesState = _storage.read('likes_state');
       if (savedLikesState != null) {
-        likesState.value = PageStateModel.fromJson(savedLikesState);
+        likesState.value = _loadStateFromStorage(savedLikesState, PageType.likes);
       }
 
       DebugLogger.success('📂 Loaded saved page states');
     } catch (e) {
       DebugLogger.error('Error loading saved page states: $e');
+    }
+  }
+
+  /// Loads a PageStateModel from storage, handling migration from old full-state format.
+  PageStateModel _loadStateFromStorage(Map<String, dynamic> json, PageType fallbackType) {
+    try {
+      // Check if this is the new snapshot format (has 'pageType' as string, no 'properties')
+      if (json.containsKey('pageType') &&
+          json['pageType'] is String &&
+          !json.containsKey('properties')) {
+        // New lightweight snapshot format
+        final snapshot = PageStateSnapshot.fromJson(json);
+        return PageStateModel.fromSnapshot(snapshot);
+      }
+      // Old format: parse as full PageStateModel but discard properties (they're stale anyway)
+      final fullModel = PageStateModel.fromJson(json);
+      return fullModel.copyWith(properties: []); // Clear stale properties
+    } catch (e) {
+      DebugLogger.warning('Failed to parse saved state, using initial: $e');
+      return PageStateModel.initial(fallbackType);
     }
   }
 
@@ -192,20 +223,21 @@ class PageStateService extends GetxController {
   }
 
   void _setupListeners() {
-    // Save states whenever they change
+    // Save lightweight snapshots (NOT full properties list) with debouncing
     ever(exploreState, (state) {
-      _storage.write('explore_state', state.toJson());
+      _debouncedPersist(PageType.explore, state);
     });
 
     ever(discoverState, (state) {
-      _storage.write('discover_state', state.toJson());
+      _debouncedPersist(PageType.discover, state);
     });
 
     ever(likesState, (state) {
-      _storage.write('likes_state', state.toJson());
+      _debouncedPersist(PageType.likes, state);
     });
 
     // Listen to location updates; update only current page to keep independence
+    _locationSubscription?.cancel();
     _locationSubscription = _locationController.currentPosition.listen((position) async {
       if (position != null) {
         // Get real address from coordinates
@@ -221,6 +253,33 @@ class PageStateService extends GetxController {
         await updateLocationForPage(currentPageType.value, loc, source: 'gps');
       }
     });
+  }
+
+  /// Debounced persistence to avoid excessive disk writes on rapid state changes.
+  void _debouncedPersist(PageType pageType, PageStateModel state) {
+    switch (pageType) {
+      case PageType.explore:
+        _explorePersistDebouncer?.cancel();
+        _explorePersistDebouncer = Timer(
+          const Duration(milliseconds: _persistDebounceMs),
+          () => _storage.write('explore_state', state.toSnapshot().toJson()),
+        );
+        break;
+      case PageType.discover:
+        _discoverPersistDebouncer?.cancel();
+        _discoverPersistDebouncer = Timer(
+          const Duration(milliseconds: _persistDebounceMs),
+          () => _storage.write('discover_state', state.toSnapshot().toJson()),
+        );
+        break;
+      case PageType.likes:
+        _likesPersistDebouncer?.cancel();
+        _likesPersistDebouncer = Timer(
+          const Duration(milliseconds: _persistDebounceMs),
+          () => _storage.write('likes_state', state.toSnapshot().toJson()),
+        );
+        break;
+    }
   }
 
   // Load globally stored purpose/property_type and apply across pages

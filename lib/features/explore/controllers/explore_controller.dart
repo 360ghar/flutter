@@ -72,18 +72,12 @@ class ExploreController extends GetxController {
 
     // Add state listener for debugging
     ever(state, (ExploreState currentState) {
-      DebugLogger.info('📊 ExploreState changed to: $currentState');
-      DebugLogger.info('📊 Properties count: ${properties.length}');
-      DebugLogger.info('📊 Has error: ${error.value != null}');
+      DebugLogger.debug('📊 ExploreState changed: $currentState (props: ${properties.length})');
     });
 
     // Add properties listener for debugging and cache invalidation
     ever(properties, (List<PropertyModel> props) {
-      DebugLogger.info('🏠 Properties list updated: ${props.length} properties');
-      if (props.isNotEmpty) {
-        final withLocation = props.where((p) => p.hasLocation).length;
-        DebugLogger.info('🗺️ Properties with location: $withLocation/${props.length}');
-      }
+      DebugLogger.debug('🏠 Properties updated: ${props.length}');
       _invalidateMarkers('properties changed');
     });
 
@@ -99,28 +93,21 @@ class ExploreController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    DebugLogger.success('✅ ExploreController is ready! Current state: ${state.value}');
+    DebugLogger.debug('✅ ExploreController ready: ${state.value}');
 
     // Set up listener for page activation
     _pageActivationWorker = ever(_pageStateService.currentPageType, (pageType) {
-      DebugLogger.info('📱 Page type changed to: $pageType');
       if (pageType == PageType.explore) {
-        DebugLogger.info('🎯 Explore page activated via page type listener');
         activatePage();
       }
     });
 
     // Initial activation if already on this page (with delay to ensure full initialization)
     final currentPageType = _pageStateService.currentPageType.value;
-    DebugLogger.info('📋 Current page type on ready: $currentPageType');
     if (currentPageType == PageType.explore) {
-      DebugLogger.info('⏰ Scheduling initial activation with delay');
       Future.delayed(const Duration(milliseconds: 100), () {
-        DebugLogger.info('🎯 Initial activation triggered');
         activatePage();
       });
-    } else {
-      DebugLogger.info('⏸️ Skipping initial activation - not on explore page');
     }
   }
 
@@ -135,23 +122,17 @@ class ExploreController extends GetxController {
   }
 
   void activatePage() {
-    DebugLogger.info('🎯 ExploreController.activatePage() called');
+    DebugLogger.debug('🎯 ExploreController.activatePage()');
     final pageState = _pageStateService.exploreState.value;
-    DebugLogger.info('📋 PageState properties: ${pageState.properties.length}');
-    DebugLogger.info('📋 Controller state: ${state.value}');
-    DebugLogger.info('📋 Controller properties: ${properties.length}');
-    DebugLogger.info('📋 Is data stale: ${pageState.isDataStale}');
 
     // If initial or empty, initialize map center and trigger page data load
     if ((!pageState.hasLocation && state.value == ExploreState.initial) ||
         (pageState.properties.isEmpty && properties.isEmpty)) {
-      DebugLogger.info('🎯 Initializing map and triggering page data load');
       _initializeMapAndLoadProperties();
       return;
     }
 
     // Data present or being loaded: sync properties and state
-    DebugLogger.info('✅ Syncing controller with PageStateService');
     properties.assignAll(pageState.properties);
     if (pageState.isLoading) {
       state.value = ExploreState.loading;
@@ -225,61 +206,32 @@ class ExploreController extends GetxController {
         DebugLogger.info(
           '🔍 [EXPLORE_CONTROLLER] Explore page state updated; syncing properties and UI',
         );
-        DebugLogger.api(
-          '📊 [EXPLORE_CONTROLLER] Page state properties count: ${pageState.properties.length}',
-        );
-        DebugLogger.api('📊 [EXPLORE_CONTROLLER] Page state error: ${pageState.error}');
-        DebugLogger.api('📊 [EXPLORE_CONTROLLER] Page state isLoading: ${pageState.isLoading}');
 
         final isCurrentPage = _pageStateService.currentPageType.value == PageType.explore;
         if (!isCurrentPage) return;
 
-        DebugLogger.info('📊 [EXPLORE_CONTROLLER] Current page is explore, proceeding with sync');
-
-        // Sync properties - this is where the null check operator error likely occurs
-        DebugLogger.api(
-          '📊 [EXPLORE_CONTROLLER] About to call properties.assignAll() with ${pageState.properties.length} properties',
-        );
-
-        // Check each property individually before assigning to identify the problematic one
+        // Filter out properties with broken getters to avoid null check errors in UI
         final safeProperties = <PropertyModel>[];
         for (int i = 0; i < pageState.properties.length; i++) {
           try {
             final property = pageState.properties[i];
-            DebugLogger.debug(
-              '📊 [EXPLORE_CONTROLLER] Checking property $i: ${property.id} - ${property.title}',
-            );
 
-            // Try accessing common getters that might cause null check errors
+            // Validate common getters that might cause null check errors
             property.mainImage; // This accesses images?.first.imageUrl
             property.formattedPrice; // This accesses pricing fields
             property.addressDisplay; // This accesses location fields
 
-            DebugLogger.debug('📊 [EXPLORE_CONTROLLER] Property $i passed all getter checks');
             safeProperties.add(property);
           } catch (e, stackTrace) {
             DebugLogger.error(
               '🚨 [EXPLORE_CONTROLLER] FOUND THE PROBLEMATIC PROPERTY at index $i: $e',
             );
-            DebugLogger.error('🚨 [EXPLORE_CONTROLLER] Property ID: ${pageState.properties[i].id}');
-            DebugLogger.error(
-              '🚨 [EXPLORE_CONTROLLER] Property title: ${pageState.properties[i].title}',
-            );
-            DebugLogger.error('🚨 [EXPLORE_CONTROLLER] Stack trace: $stackTrace');
-
-            if (e.toString().contains('Null check operator used on a null value')) {
-              DebugLogger.error(
-                '🚨 [EXPLORE_CONTROLLER] NULL CHECK OPERATOR ERROR confirmed in property getter!',
-              );
-              DebugLogger.error('🚨 [EXPLORE_CONTROLLER] This is the root cause of the error!');
-            }
-
-            // Skip this problematic property and continue with others
+            DebugLogger.debug('🚨 Stack trace: $stackTrace');
           }
         }
 
-        DebugLogger.api(
-          '📊 [EXPLORE_CONTROLLER] Assigning ${safeProperties.length} safe properties out of ${pageState.properties.length} total',
+        DebugLogger.debug(
+          '📊 [EXPLORE] Assigning ${safeProperties.length}/${pageState.properties.length} properties',
         );
         properties.assignAll(safeProperties);
       } catch (e, stackTrace) {
@@ -536,7 +488,7 @@ class ExploreController extends GetxController {
           }
         });
       } else {
-        DebugLogger.info('⏳ Map not ready yet; deferred camera move');
+        DebugLogger.debug('⏳ Map not ready; deferred camera move');
       }
     } catch (e) {
       DebugLogger.warning('⚠️ Could not move map: $e');
@@ -549,11 +501,9 @@ class ExploreController extends GetxController {
   // Map movement handler with debounce
   void onMapMove(MapCamera position, bool hasGesture) {
     if (!hasGesture) {
-      DebugLogger.info('🗺️ Map moved programmatically to ${position.center}, ignoring');
       return; // Ignore programmatic moves
     }
     if (!isMapReady.value) {
-      DebugLogger.info('⏳ Map move ignored; map not ready');
       return;
     }
     // Compute deltas before mutating reactive values
@@ -562,9 +512,6 @@ class ExploreController extends GetxController {
     final distanceMeters = const Distance().as(LengthUnit.Meter, prevCenter, position.center);
     final zoomDelta = (position.zoom - prevZoom).abs();
 
-    DebugLogger.info(
-      '🗺️ Map moved by user gesture to ${position.center}, zoom: ${position.zoom} (Δz=${zoomDelta.toStringAsFixed(2)}, Δd=${distanceMeters.toStringAsFixed(0)}m)',
-    );
     currentCenter.value = position.center;
     currentZoom.value = position.zoom;
 
@@ -573,19 +520,12 @@ class ExploreController extends GetxController {
     if (zoomDelta > 0.1 || distanceMeters > 100) {
       _mapMoveDebouncer?.cancel();
       _mapMoveDebouncer = Timer(const Duration(milliseconds: 600), () {
-        DebugLogger.info('🔄 Map move debounce completed, updating location');
         _onMapMoveCompleted();
       });
-    } else {
-      DebugLogger.info('🧯 Ignoring minor map movement');
     }
   }
 
   Future<void> _onMapMoveCompleted() async {
-    DebugLogger.api(
-      '🗺️ Map move completed at ${currentCenter.value}, radius: ${currentRadius.value}km',
-    );
-
     // Update filters with new location
     try {
       final locationData = LocationData(
@@ -705,13 +645,17 @@ class ExploreController extends GetxController {
 
   void quickFilterByType(PropertyType type) {
     final currentFilters = _pageStateService.getCurrentPageState().filters;
-    final updatedFilters = currentFilters.copyWith(propertyType: [type.toString()]);
+    // Use the JSON value (e.g., 'house') instead of enum toString() (e.g., 'PropertyType.house')
+    final typeValue = type.name; // Dart 2.17+ enum name returns 'house', 'apartment', etc.
+    final updatedFilters = currentFilters.copyWith(propertyType: [typeValue]);
     _pageStateService.updatePageFilters(PageType.explore, updatedFilters);
   }
 
   void quickFilterByPurpose(PropertyPurpose purpose) {
     final currentFilters = _pageStateService.getCurrentPageState().filters;
-    final updatedFilters = currentFilters.copyWith(purpose: purpose.toString());
+    // Use the JSON value (e.g., 'buy') instead of enum toString() (e.g., 'PropertyPurpose.buy')
+    final purposeValue = purpose.name; // 'buy', 'rent', 'shortStay'
+    final updatedFilters = currentFilters.copyWith(purpose: purposeValue);
     _pageStateService.updatePageFilters(PageType.explore, updatedFilters);
   }
 

@@ -104,9 +104,9 @@ class AuthController extends GetxController {
               Get.offAllNamed(AppRoutes.splash);
             }
           } else {
-            if (Get.currentRoute != AppRoutes.login) {
-              DebugLogger.debug('📱 Navigation worker: Navigating to Login');
-              Get.offAllNamed(AppRoutes.login);
+            if (Get.currentRoute != AppRoutes.phoneEntry) {
+              DebugLogger.debug('📱 Navigation worker: Navigating to Phone Entry');
+              Get.offAllNamed(AppRoutes.phoneEntry);
             }
           }
           break;

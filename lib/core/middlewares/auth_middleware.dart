@@ -46,6 +46,12 @@ class GuestMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
+    // Safely check if AuthController is registered
+    if (!Get.isRegistered<AuthController>()) {
+      // Not yet registered - allow access to guest routes
+      return null;
+    }
+
     final authController = Get.find<AuthController>();
 
     // If the user is authenticated, redirect them away from guest-only pages.

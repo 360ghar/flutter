@@ -19,6 +19,18 @@ class LoginController extends GetxController {
   final isPasswordVisible = false.obs;
   final RxBool rememberMe = false.obs;
   final RxString errorMessage = ''.obs;
+  final RxString prefilledPhone = ''.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Check for pre-filled phone from arguments
+    final args = Get.arguments;
+    if (args != null && args is Map<String, dynamic> && args['phone'] != null) {
+      prefilledPhone.value = args['phone'] as String;
+      phoneController.text = prefilledPhone.value.replaceFirst('+91', '');
+    }
+  }
 
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;

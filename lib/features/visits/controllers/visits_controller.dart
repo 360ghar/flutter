@@ -265,11 +265,7 @@ class VisitsController extends GetxController {
     int guestsCount = 1,
   }) async {
     if (!_authController.isAuthenticated) {
-      Get.snackbar(
-        'Authentication Required',
-        'Please login to book property visits',
-        snackPosition: SnackPosition.TOP,
-      );
+      Get.snackbar('auth_required'.tr, 'login_to_book_visit'.tr, snackPosition: SnackPosition.TOP);
       return false;
     }
 
@@ -298,8 +294,8 @@ class VisitsController extends GetxController {
       await loadVisits(isRefresh: true, silent: true);
 
       Get.snackbar(
-        'Visit Scheduled',
-        'Your visit to $propertyTitle has been scheduled for ${formatVisitDate(visitDateTime)} at ${formatVisitTime(visitDateTime)}',
+        'visit_scheduled'.tr,
+        '${'visit_scheduled_message_prefix'.tr} $propertyTitle ${'visit_scheduled_message_infix'.tr} ${formatVisitDate(visitDateTime)} at ${formatVisitTime(visitDateTime)}',
         snackPosition: SnackPosition.TOP,
         duration: const Duration(seconds: 4),
       );
@@ -368,8 +364,8 @@ class VisitsController extends GetxController {
     _sortVisits();
 
     Get.snackbar(
-      'Visit Scheduled',
-      'Your visit to $propertyTitle has been scheduled for ${formatVisitDate(visitDateTime)} at ${formatVisitTime(visitDateTime)}',
+      'visit_scheduled'.tr,
+      '${'visit_scheduled_message_prefix'.tr} $propertyTitle ${'visit_scheduled_message_infix'.tr} ${formatVisitDate(visitDateTime)} at ${formatVisitTime(visitDateTime)}',
       snackPosition: SnackPosition.TOP,
       duration: const Duration(seconds: 4),
     );
@@ -385,8 +381,8 @@ class VisitsController extends GetxController {
 
     if (reason.trim().isEmpty) {
       Get.snackbar(
-        'Reason required',
-        'Please provide a reason to cancel this visit.',
+        'reason_required_label'.tr,
+        'reason_required_hint'.tr,
         snackPosition: SnackPosition.TOP,
       );
       return false;
@@ -403,20 +399,12 @@ class VisitsController extends GetxController {
       // Reload visits to get updated state from server
       await loadVisits(isRefresh: true, silent: true);
 
-      Get.snackbar(
-        'Visit Cancelled',
-        'Your visit has been cancelled',
-        snackPosition: SnackPosition.TOP,
-      );
+      Get.snackbar('visit_cancelled'.tr, 'visit_cancelled'.tr, snackPosition: SnackPosition.TOP);
 
       return true;
     } catch (e) {
       DebugLogger.error('Error cancelling visit: $e');
-      Get.snackbar(
-        'Cancellation Failed',
-        'Failed to cancel visit: ${e.toString()}',
-        snackPosition: SnackPosition.TOP,
-      );
+      Get.snackbar('error'.tr, 'could_not_cancel_visit'.tr, snackPosition: SnackPosition.TOP);
       return false;
     }
   }
@@ -445,8 +433,8 @@ class VisitsController extends GetxController {
       await loadVisits(isRefresh: true, silent: true);
 
       Get.snackbar(
-        'Visit Rescheduled',
-        'Your visit has been rescheduled to ${formatVisitDate(newDateTime)} at ${formatVisitTime(newDateTime)}',
+        'visit_rescheduled'.tr,
+        '${'visit_rescheduled'.tr} ${formatVisitDate(newDateTime)} at ${formatVisitTime(newDateTime)}',
         snackPosition: SnackPosition.TOP,
         duration: const Duration(seconds: 4),
       );
@@ -454,11 +442,7 @@ class VisitsController extends GetxController {
       return true;
     } catch (e) {
       DebugLogger.error('Error rescheduling visit: $e');
-      Get.snackbar(
-        'Reschedule Failed',
-        'Failed to reschedule visit: ${e.toString()}',
-        snackPosition: SnackPosition.TOP,
-      );
+      Get.snackbar('error'.tr, 'could_not_reschedule_visit'.tr, snackPosition: SnackPosition.TOP);
       return false;
     }
   }

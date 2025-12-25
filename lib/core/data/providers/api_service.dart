@@ -400,7 +400,6 @@ class ApiService extends getx.GetConnect {
 
         // Single-line API response log for debugging
         DebugLogger.api('📨 API $method $fullEndpoint → ${response.statusCode}');
-        DebugLogger.api('📨 API $method $fullEndpoint → ${response.bodyString}');
 
         // Stop metric after response
         try {
@@ -475,41 +474,25 @@ class ApiService extends getx.GetConnect {
             } catch (_) {}
           }
           final responseData = response.body;
-          DebugLogger.api('📊 [_makeRequest] Raw response data type: ${responseData?.runtimeType}');
-          DebugLogger.api('📊 [_makeRequest] Raw response data: $responseData');
+          DebugLogger.api('📊 [_makeRequest] Response type: ${responseData?.runtimeType}');
 
           try {
             if (responseData is Map<String, dynamic>) {
-              DebugLogger.api(
-                '📊 [_makeRequest] Calling fromJson with Map<String, dynamic>: $responseData',
-              );
               final result = fromJson(responseData);
               // Cache successful GET responses with ETag
               if (method.toUpperCase() == 'GET' && cacheKey != null) {
                 _maybeCacheResponse(cacheKey, response);
               }
-              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             } else if (responseData is List) {
-              DebugLogger.api('📊 [_makeRequest] Normalizing List response to Map for $operation');
               final normalizedData = {'data': responseData};
-              DebugLogger.api(
-                '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
-              );
               final result = fromJson(normalizedData);
               if (method.toUpperCase() == 'GET' && cacheKey != null) {
                 _maybeCacheResponse(cacheKey, response);
               }
-              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             } else {
-              DebugLogger.api(
-                '📊 [_makeRequest] Normalizing ${responseData?.runtimeType} response to Map for $operation',
-              );
               final normalizedData = {'data': responseData};
-              DebugLogger.api(
-                '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
-              );
               final result = fromJson(normalizedData);
               if (method.toUpperCase() == 'GET' && cacheKey != null) {
                 _maybeCacheResponse(cacheKey, response);
@@ -901,7 +884,6 @@ class ApiService extends getx.GetConnect {
   // Helper method for parsing unified property response
   static UnifiedPropertyResponse _parseUnifiedPropertyResponse(Map<String, dynamic> json) {
     try {
-      DebugLogger.api('📊 [UNIFIED_PARSER] RAW API RESPONSE: $json');
       final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
 
       // Accept multiple shapes: { properties: [...] }, { data: [...] }, or nested common keys
@@ -910,26 +892,19 @@ class ApiService extends getx.GetConnect {
       final List<dynamic> list = rawList is List ? rawList : <dynamic>[];
 
       DebugLogger.api('📦 [UNIFIED_PARSER] Found ${list.length} properties to parse');
-      DebugLogger.debug('📦 [UNIFIED_PARSER] Property list type: ${list.runtimeType}');
 
       final List<PropertyModel> parsed = <PropertyModel>[];
       int failedCount = 0;
       for (int i = 0; i < list.length; i++) {
         final item = list[i];
-        DebugLogger.debug('🏠 [UNIFIED_PARSER] Processing item $i: ${item?.runtimeType}');
 
         if (item is Map<String, dynamic>) {
           try {
-            DebugLogger.debug('🏠 [UNIFIED_PARSER] About to parse property $i: $item');
             final property = _parsePropertyModel(item);
             parsed.add(property);
-            DebugLogger.debug(
-              '🏠 [UNIFIED_PARSER] Successfully parsed property $i: ${property.title}',
-            );
           } catch (e, stackTrace) {
             DebugLogger.error('❌ [UNIFIED_PARSER] Failed to parse property $i: $e');
-            DebugLogger.error('❌ [UNIFIED_PARSER] Failed property data: $item');
-            DebugLogger.error('❌ [UNIFIED_PARSER] Stack trace: $stackTrace');
+            DebugLogger.debug('❌ [UNIFIED_PARSER] Stack trace: $stackTrace');
 
             if (e.toString().contains('Null check operator used on a null value')) {
               DebugLogger.error(

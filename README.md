@@ -1,7 +1,7 @@
 # 360Ghar - Flutter Real Estate App
 
-![Flutter](https://img.shields.io/badge/Flutter-3.x-blue?logo=flutter)
-![Dart](https://img.shields.io/badge/Dart-3.x-blue?logo=dart)
+![Flutter](https://img.shields.io/badge/Flutter-3.35+-blue?logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-3.8+-blue?logo=dart)
 ![GetX](https://img.shields.io/badge/State%20Management-GetX-orange)
 ![Supabase](https://img.shields.io/badge/Backend-Supabase-green?logo=supabase)
 

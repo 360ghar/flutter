@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/core/utils/theme.dart';
 import 'package:ghar360/features/auth/controllers/signup_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,15 +15,68 @@ class SignUpView extends GetView<SignUpController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Obx(() {
-            return controller.currentStep.value == 0
-                ? _buildSignUpForm(context)
-                : _buildOtpForm(context);
-          }),
+        child: Column(
+          children: [
+            // Progress Bar
+            Obx(() {
+              final step = controller.currentStep.value;
+              return Column(
+                children: [
+                  LinearProgressIndicator(
+                    value: step < 2 ? (step + 1) / 3 : 1.0,
+                    backgroundColor: colorScheme.outline.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryYellow),
+                    minHeight: 4,
+                  ),
+                  if (step < 2)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            step == 0 ? 'personal_info_step'.tr : 'security_step'.tr,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            'step_of'.tr
+                                .replaceAll('@step', '${step + 1}')
+                                .replaceAll('@total', '3'),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              );
+            }),
+
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Obx(() {
+                  final step = controller.currentStep.value;
+                  if (step == 0) {
+                    return _buildPersonalInfoStep(context);
+                  } else if (step == 1) {
+                    return _buildSecurityStep(context);
+                  } else {
+                    return _buildOtpStep(context);
+                  }
+                }),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -39,60 +93,242 @@ class SignUpView extends GetView<SignUpController> {
     }
   }
 
-  Widget _buildSignUpForm(BuildContext context) {
+  Widget _buildPersonalInfoStep(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Form(
-      key: controller.formKey,
+      key: controller.personalInfoFormKey,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
 
             // Header
             Text(
               'create_account'.tr,
-              style: theme.textTheme.headlineSmall,
-              textAlign: TextAlign.center,
+              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'signup_subtitle'.tr,
+              'tell_us_about_yourself'.tr,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.7),
               ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
 
-            // Phone Field
+            // Phone Display (Read-only)
+            Obx(() {
+              final hasPrefilledPhone = controller.prefilledPhone.value.isNotEmpty;
+              if (hasPrefilledPhone) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppTheme.darkCard : AppTheme.backgroundGray,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryYellow.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.phone_outlined,
+                          color: AppTheme.primaryYellow,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'phone_number'.tr,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurface.withValues(alpha: 0.6),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              controller.prefilledPhone.value,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Get.offNamed(AppRoutes.phoneEntry),
+                        child: const Text(
+                          'Change',
+                          style: TextStyle(
+                            color: AppTheme.primaryYellow,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+
+            // Full Name
             TextFormField(
-              controller: controller.phoneController,
+              controller: controller.fullNameController,
               decoration: InputDecoration(
-                labelText: 'phone_number'.tr,
-                prefixIcon: const Icon(Icons.phone_outlined),
+                labelText: 'full_name'.tr,
+                prefixIcon: const Icon(Icons.person_outline),
                 border: const OutlineInputBorder(),
-                hintText: 'phone_hint'.tr,
               ),
-              keyboardType: TextInputType.phone,
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s]'))],
+              textInputAction: TextInputAction.next,
               validator: (value) {
-                final raw = (value ?? '').trim();
-                if (raw.isEmpty) {
-                  return 'phone_required'.tr;
-                }
-                final cleaned = raw.replaceAll(RegExp(r'\s+'), '');
-                final tenDigits = RegExp(r'^[0-9]{10}$');
-                final e164IN = RegExp(r'^\+91[0-9]{10}$');
-                if (!(tenDigits.hasMatch(cleaned) || e164IN.hasMatch(cleaned))) {
-                  return 'phone_invalid'.tr;
+                if (value == null || value.trim().isEmpty) {
+                  return 'full_name_required'.tr;
                 }
                 return null;
               },
             ),
             const SizedBox(height: 16),
+
+            // Email
+            TextFormField(
+              controller: controller.emailController,
+              decoration: InputDecoration(
+                labelText: 'email_address'.tr,
+                prefixIcon: const Icon(Icons.email_outlined),
+                border: const OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'email_required'.tr;
+                }
+                if (!GetUtils.isEmail(value.trim())) {
+                  return 'email_invalid'.tr;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Date of Birth
+            TextFormField(
+              controller: controller.dateOfBirthController,
+              decoration: InputDecoration(
+                labelText: 'date_of_birth'.tr,
+                prefixIcon: const Icon(Icons.cake_outlined),
+                border: const OutlineInputBorder(),
+                hintText: 'dob_format_hint'.tr,
+              ),
+              readOnly: true,
+              onTap: controller.selectDateOfBirth,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'dob_required'.tr;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 32),
+
+            // Error Message
+            Obx(() {
+              if (controller.errorMessage.value.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: colorScheme.error, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        controller.errorMessage.value,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+
+            // Next Button
+            SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: controller.nextStep,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryYellow,
+                  foregroundColor: AppTheme.textDark,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  'next'.tr,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Back to Login
+            Center(
+              child: TextButton(
+                onPressed: () => Get.offNamed(AppRoutes.phoneEntry),
+                child: Text('already_have_account'.tr),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecurityStep(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Form(
+      key: controller.securityFormKey,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 8),
+
+            // Header
+            Text(
+              'create_password'.tr,
+              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'secure_your_account'.tr,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 32),
 
             // Password Field
             Obx(
@@ -110,6 +346,7 @@ class SignUpView extends GetView<SignUpController> {
                   ),
                 ),
                 obscureText: !controller.isPasswordVisible.value,
+                textInputAction: TextInputAction.next,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'password_required'.tr;
@@ -121,6 +358,66 @@ class SignUpView extends GetView<SignUpController> {
                 },
               ),
             ),
+
+            // Password Strength Indicator
+            const SizedBox(height: 8),
+            Obx(() {
+              final strength = controller.passwordStrength.value;
+              if (strength == 0) return const SizedBox(height: 8);
+
+              Color strengthColor;
+              String strengthText;
+              double strengthValue;
+
+              switch (strength) {
+                case 1:
+                  strengthColor = AppTheme.errorRed;
+                  strengthText = 'password_strength_weak'.tr;
+                  strengthValue = 0.33;
+                  break;
+                case 2:
+                  strengthColor = AppTheme.warningAmber;
+                  strengthText = 'password_strength_medium'.tr;
+                  strengthValue = 0.66;
+                  break;
+                case 3:
+                  strengthColor = AppTheme.successGreen;
+                  strengthText = 'password_strength_strong'.tr;
+                  strengthValue = 1.0;
+                  break;
+                default:
+                  return const SizedBox(height: 8);
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: strengthValue,
+                          backgroundColor: colorScheme.outline.withValues(alpha: 0.2),
+                          valueColor: AlwaysStoppedAnimation<Color>(strengthColor),
+                          minHeight: 6,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        strengthText,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: strengthColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              );
+            }),
+
             const SizedBox(height: 16),
 
             // Confirm Password Field
@@ -141,6 +438,7 @@ class SignUpView extends GetView<SignUpController> {
                   ),
                 ),
                 obscureText: !controller.isConfirmPasswordVisible.value,
+                textInputAction: TextInputAction.done,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'confirm_password_required'.tr;
@@ -152,81 +450,42 @@ class SignUpView extends GetView<SignUpController> {
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
             // Terms and Conditions Checkbox
             Obx(
-              () => FormField<bool>(
-                initialValue: controller.isTermsAccepted.value,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                validator: (value) {
-                  if (value != true) {
-                    return 'terms_consent_required'.tr;
-                  }
-                  return null;
+              () => CheckboxListTile(
+                value: controller.isTermsAccepted.value,
+                onChanged: (value) {
+                  controller.isTermsAccepted.value = value ?? false;
                 },
-                builder: (state) {
-                  final isChecked = controller.isTermsAccepted.value;
-                  final prefixText = 'agree_terms_prefix'.tr;
-                  final suffixText = 'agree_terms_suffix'.tr;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ListTileTheme(
-                        data: const ListTileThemeData(horizontalTitleGap: 12),
-                        child: CheckboxListTile(
-                          value: isChecked,
-                          onChanged: (value) {
-                            final accepted = value ?? false;
-                            controller.isTermsAccepted.value = accepted;
-                            state.didChange(accepted);
-                            state.validate();
-                          },
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            runAlignment: WrapAlignment.center,
-                            spacing: 4,
-                            runSpacing: 2,
-                            children: [
-                              Text(prefixText, style: theme.textTheme.bodyMedium),
-                              TextButton(
-                                onPressed: () => _openTerms(),
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: const Size(0, 0),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Text(
-                                  'terms_and_conditions'.tr,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.primary,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                              ),
-                              if (suffixText.isNotEmpty)
-                                Text(suffixText, style: theme.textTheme.bodyMedium),
-                            ],
-                          ),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text('agree_terms_prefix'.tr, style: theme.textTheme.bodyMedium),
+                    TextButton(
+                      onPressed: _openTerms,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'terms_and_conditions'.tr,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.primaryYellow,
+                          decoration: TextDecoration.underline,
                         ),
                       ),
-                      if (state.hasError)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 12, top: 4),
-                          child: Text(
-                            state.errorText ?? '',
-                            style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.error),
-                          ),
-                        ),
-                    ],
-                  );
-                },
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Error Message
             Obx(() {
@@ -235,50 +494,71 @@ class SignUpView extends GetView<SignUpController> {
               }
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  controller.errorMessage.value,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.error,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: colorScheme.error, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        controller.errorMessage.value,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }),
 
-            // Sign Up Button
-            Obx(
-              () => ElevatedButton(
-                onPressed: controller.isLoading.value ? null : controller.signUp,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            // Navigation Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: controller.previousStep,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: BorderSide(color: colorScheme.outline),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('back'.tr),
+                  ),
                 ),
-                child: controller.isLoading.value
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: colorScheme.onPrimary,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Text(
-                        'create_account'.tr,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onPrimary,
-                        ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 2,
+                  child: Obx(
+                    () => ElevatedButton(
+                      onPressed: controller.isLoading.value ? null : controller.nextStep,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryYellow,
+                        foregroundColor: AppTheme.textDark,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Login Link
-            TextButton(
-              onPressed: () => Get.offNamed(AppRoutes.login),
-              child: Text('already_have_account'.tr),
+                      child: controller.isLoading.value
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                color: AppTheme.textDark,
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              'create_account'.tr,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textDark,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -286,7 +566,7 @@ class SignUpView extends GetView<SignUpController> {
     );
   }
 
-  Widget _buildOtpForm(BuildContext context) {
+  Widget _buildOtpStep(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -296,19 +576,11 @@ class SignUpView extends GetView<SignUpController> {
         children: [
           const SizedBox(height: 24),
 
-          // Back Button and Header
-          Row(
-            children: [
-              IconButton(onPressed: controller.goBackToForm, icon: const Icon(Icons.arrow_back)),
-              Expanded(
-                child: Text(
-                  'verify_phone_number'.tr,
-                  style: theme.textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(width: 48),
-            ],
+          // Header
+          Text(
+            'verify_phone_number'.tr,
+            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
@@ -333,6 +605,7 @@ class SignUpView extends GetView<SignUpController> {
             maxLength: 6,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 18, letterSpacing: 2),
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
           const SizedBox(height: 16),
 
@@ -343,42 +616,52 @@ class SignUpView extends GetView<SignUpController> {
             }
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: Text(
-                controller.errorMessage.value,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.error,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, color: colorScheme.error, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    controller.errorMessage.value,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.error,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             );
           }),
 
           // Verify Button
-          Obx(
-            () => ElevatedButton(
-              onPressed: controller.isLoading.value ? null : controller.verifyOtp,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          SizedBox(
+            height: 56,
+            child: Obx(
+              () => ElevatedButton(
+                onPressed: controller.isLoading.value ? null : controller.verifyOtp,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryYellow,
+                  foregroundColor: AppTheme.textDark,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: controller.isLoading.value
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          color: AppTheme.textDark,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : Text(
+                        'verify_otp'.tr,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textDark,
+                        ),
+                      ),
               ),
-              child: controller.isLoading.value
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: colorScheme.onPrimary,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      'verify_otp'.tr,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimary,
-                      ),
-                    ),
             ),
           ),
           const SizedBox(height: 16),
@@ -393,6 +676,19 @@ class SignUpView extends GetView<SignUpController> {
                     : '${'resend_in'.tr} ${controller.otpCountdown.value}s',
               ),
             ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Back Button
+          OutlinedButton(
+            onPressed: controller.goBackToForm,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              side: BorderSide(color: colorScheme.outline),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text('back'.tr),
           ),
         ],
       ),
