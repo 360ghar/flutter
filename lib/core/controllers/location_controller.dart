@@ -22,6 +22,22 @@ class LocationController extends GetxController {
   final RxString currentAddress = ''.obs;
 
   Future<void>? _permissionRequestInFlight;
+  Future<void>? _streamStartInFlight;
+  StreamSubscription<Position>? _positionStreamSubscription;
+
+  Position? _lastBackendSyncPosition;
+  DateTime? _lastBackendSyncAt;
+  Position? _lastGeocodePosition;
+  DateTime? _lastGeocodeAt;
+
+  static const Duration _currentPositionStaleThreshold = Duration(minutes: 2);
+  static const Duration _lastKnownMaxAge = Duration(minutes: 10);
+  static const Duration _currentPositionTimeout = Duration(seconds: 12);
+  static const Duration _backendSyncMinInterval = Duration(minutes: 2);
+  static const double _backendSyncMinDistanceMeters = 250;
+  static const Duration _geocodeMinInterval = Duration(minutes: 2);
+  static const double _geocodeMinDistanceMeters = 100;
+  static const int _streamDistanceFilterMeters = 25;
 
   // Google Places suggestions
   final RxList<PlaceSuggestion> placeSuggestions = <PlaceSuggestion>[].obs;
@@ -138,15 +154,144 @@ class LocationController extends GetxController {
     }
   }
 
-  Future<void> getCurrentLocation({bool forceRefresh = false}) async {
+  Future<bool> _ensureLocationReady() async {
+    await _checkLocationService();
+    await _requestLocationPermission();
+    return isLocationEnabled.value && isLocationPermissionGranted.value;
+  }
+
+  bool _isPositionFresh(Position position, Duration maxAge) {
+    final timestamp = position.timestamp;
+    return DateTime.now().difference(timestamp) <= maxAge;
+  }
+
+  double _distanceMeters(Position a, Position b) {
+    return Geolocator.distanceBetween(a.latitude, a.longitude, b.latitude, b.longitude);
+  }
+
+  bool _shouldRefreshGeocode(Position position) {
+    if (currentAddress.value.isEmpty) return true;
+    if (_lastGeocodeAt == null || _lastGeocodePosition == null) return true;
+    final age = DateTime.now().difference(_lastGeocodeAt!);
+    if (age >= _geocodeMinInterval) return true;
+    return _distanceMeters(_lastGeocodePosition!, position) >= _geocodeMinDistanceMeters;
+  }
+
+  Future<void> _refreshAddressForPosition(Position position, {bool force = false}) async {
+    if (!force && !_shouldRefreshGeocode(position)) return;
+    await _getAddressFromCoordinates(position.latitude, position.longitude);
+    _lastGeocodeAt = DateTime.now();
+    _lastGeocodePosition = position;
+  }
+
+  bool _shouldSyncBackend(Position position) {
+    if (!_authController.isAuthenticated) return false;
+    if (_lastBackendSyncAt == null || _lastBackendSyncPosition == null) return true;
+    final age = DateTime.now().difference(_lastBackendSyncAt!);
+    if (age >= _backendSyncMinInterval) return true;
+    return _distanceMeters(_lastBackendSyncPosition!, position) >= _backendSyncMinDistanceMeters;
+  }
+
+  Future<void> _syncBackendLocation(Position position) async {
+    if (!_shouldSyncBackend(position)) return;
+    try {
+      await _authController.updateUserLocation({
+        'current_latitude': position.latitude,
+        'current_longitude': position.longitude,
+      });
+      _lastBackendSyncAt = DateTime.now();
+      _lastBackendSyncPosition = position;
+    } catch (e, stackTrace) {
+      DebugLogger.error('Failed to update backend location', e, stackTrace);
+    }
+  }
+
+  Future<void> _applyPosition(
+    Position position, {
+    bool allowBackendSync = true,
+    bool forceGeocode = false,
+  }) async {
+    currentPosition.value = position;
+    if (allowBackendSync) {
+      await _syncBackendLocation(position);
+    }
+    await _refreshAddressForPosition(position, force: forceGeocode);
+  }
+
+  Future<Position?> _getLastKnownPosition() async {
+    try {
+      return await Geolocator.getLastKnownPosition();
+    } catch (e, stackTrace) {
+      DebugLogger.warning('Failed to read last known position', e, stackTrace);
+      return null;
+    }
+  }
+
+  Future<Position?> _getCurrentPositionWithTimeout() async {
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10,
+        ),
+      ).timeout(_currentPositionTimeout);
+    } on TimeoutException catch (e) {
+      DebugLogger.warning('Current position request timed out', e);
+      return null;
+    } catch (e, stackTrace) {
+      DebugLogger.error('Failed to get current position', e, stackTrace);
+      return null;
+    }
+  }
+
+  Future<void> _startPositionStream() {
+    if (_positionStreamSubscription != null) return Future.value();
     if (!isLocationPermissionGranted.value || !isLocationEnabled.value) {
-      await _checkLocationService();
-      await _requestLocationPermission();
-      return;
+      return Future.value();
     }
 
-    if (!forceRefresh && currentPosition.value != null) {
-      // Use cached location if available and not forcing refresh
+    final inFlight = _streamStartInFlight;
+    if (inFlight != null) return inFlight;
+
+    final future = _startPositionStreamInternal();
+    _streamStartInFlight = future;
+    return future.whenComplete(() {
+      if (identical(_streamStartInFlight, future)) {
+        _streamStartInFlight = null;
+      }
+    });
+  }
+
+  Future<void> _startPositionStreamInternal() async {
+    try {
+      _positionStreamSubscription =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: _streamDistanceFilterMeters,
+            ),
+          ).listen(
+            (position) {
+              unawaited(_applyPosition(position));
+            },
+            onError: (error) {
+              DebugLogger.warning('Location stream error: $error');
+            },
+          );
+    } catch (e, stackTrace) {
+      DebugLogger.error('Failed to start location stream', e, stackTrace);
+    }
+  }
+
+  Future<void> getCurrentLocation({bool forceRefresh = false}) async {
+    final ready = await _ensureLocationReady();
+    if (!ready) return;
+
+    final cached = currentPosition.value;
+    if (!forceRefresh &&
+        cached != null &&
+        _isPositionFresh(cached, _currentPositionStaleThreshold)) {
+      await _startPositionStream();
       return;
     }
 
@@ -154,25 +299,31 @@ class LocationController extends GetxController {
       isLoading.value = true;
       locationError.value = '';
 
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      );
+      Position? resolved;
 
-      currentPosition.value = position;
-
-      // Update user location in backend
-      if (_authController.isAuthenticated) {
-        await _authController.updateUserLocation({
-          'current_latitude': position.latitude,
-          'current_longitude': position.longitude,
-        });
+      final lastKnown = await _getLastKnownPosition();
+      if (lastKnown != null) {
+        final lastKnownFresh = _isPositionFresh(lastKnown, _lastKnownMaxAge);
+        if (lastKnownFresh || cached == null) {
+          await _applyPosition(lastKnown, allowBackendSync: false);
+          resolved = lastKnown;
+        }
       }
 
-      // Get address from coordinates
-      await _getAddressFromCoordinates(position.latitude, position.longitude);
+      final current = await _getCurrentPositionWithTimeout();
+      if (current != null) {
+        await _applyPosition(current, forceGeocode: true);
+        resolved = current;
+      }
+
+      if (resolved == null && currentPosition.value == null) {
+        locationError.value = 'failed_to_get_current_location'.tr;
+        Get.snackbar(
+          'location_error'.tr,
+          'failed_to_get_location_message'.tr,
+          snackPosition: SnackPosition.TOP,
+        );
+      }
     } catch (e, stackTrace) {
       locationError.value = 'failed_to_get_current_location'.tr;
       DebugLogger.error('Error getting current location', e, stackTrace);
@@ -185,6 +336,8 @@ class LocationController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+
+    await _startPositionStream();
   }
 
   Future<void> _getAddressFromCoordinates(double latitude, double longitude) async {
@@ -215,59 +368,63 @@ class LocationController extends GetxController {
   /// Priority: High-accuracy GPS -> IP-based location.
   /// Throws an exception if no location can be determined.
   Future<LocationData> getInitialLocation() async {
-    DebugLogger.info('📍 Getting initial user location...');
+    DebugLogger.info('Getting initial user location...');
 
-    // 1. Check permissions and services first
-    await _checkLocationService();
-    await _requestLocationPermission();
+    final ready = await _ensureLocationReady();
+    Position? resolved;
 
-    // 2. Try for high-accuracy GPS location
-    if (isLocationPermissionGranted.value && isLocationEnabled.value) {
+    if (ready) {
       try {
         isLoading.value = true;
-        final position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 10,
-          ),
-        ).timeout(const Duration(seconds: 15));
 
-        currentPosition.value = position;
-
-        // Reverse geocode to get the location name
-        final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-        if (placemarks.isNotEmpty) {
-          final placemark = placemarks.first;
-          final locationName = _formatAddress(placemark);
-          currentAddress.value = locationName;
-          DebugLogger.success('✅ GPS Location found: $locationName');
-          return LocationData(
-            name: locationName,
-            latitude: position.latitude,
-            longitude: position.longitude,
-          );
+        final lastKnown = await _getLastKnownPosition();
+        if (lastKnown != null) {
+          final lastKnownFresh = _isPositionFresh(lastKnown, _lastKnownMaxAge);
+          if (lastKnownFresh || currentPosition.value == null) {
+            await _applyPosition(lastKnown, allowBackendSync: false);
+            resolved = lastKnown;
+          }
         }
-      } on TimeoutException {
-        DebugLogger.warning('⚠️ High-accuracy location timed out. Falling back...');
+
+        final current = await _getCurrentPositionWithTimeout();
+        if (current != null) {
+          await _applyPosition(current, forceGeocode: true);
+          resolved = current;
+        }
       } catch (e, st) {
-        DebugLogger.warning('⚠️ Failed to get high-accuracy location: $e', e, st);
+        DebugLogger.warning('Failed to get high-accuracy location: $e', e, st);
       } finally {
         isLoading.value = false;
       }
     } else {
-      DebugLogger.warning('⚠️ GPS permissions not granted or service disabled. Falling back...');
+      DebugLogger.warning('GPS permissions not granted or service disabled. Falling back...');
     }
 
-    // 3. Fallback to IP-based location
-    DebugLogger.info('🌍 Attempting IP-based location fallback...');
+    final position = resolved ?? currentPosition.value;
+    if (position != null) {
+      final locationName = currentAddress.value.isNotEmpty
+          ? currentAddress.value
+          : await getAddressFromCoordinates(position.latitude, position.longitude);
+      await _startPositionStream();
+      return LocationData(
+        name: locationName,
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+    }
+
+    if (ready) {
+      await _startPositionStream();
+    }
+
+    DebugLogger.info('Attempting IP-based location fallback...');
     final ipLocation = await getIpLocation();
     if (ipLocation != null) {
-      DebugLogger.success('✅ IP-based location fallback successful: ${ipLocation.name}');
+      DebugLogger.success('IP-based location fallback successful: ${ipLocation.name}');
       return ipLocation;
     }
 
-    // 4. If all fails, throw an exception as per requirements
-    DebugLogger.error('❌ Critical: Could not determine any user location.');
+    DebugLogger.error('Critical: Could not determine any user location.');
     throw Exception(
       'Unable to determine user location. Please check network and location settings.',
     );
@@ -616,7 +773,8 @@ class LocationController extends GetxController {
 
   @override
   void onClose() {
-    // Clean up any location streams if using them
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
     super.onClose();
   }
 }

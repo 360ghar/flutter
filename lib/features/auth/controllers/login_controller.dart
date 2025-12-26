@@ -18,7 +18,6 @@ class LoginController extends GetxController {
 
   final isLoading = false.obs;
   final isPasswordVisible = false.obs;
-  final RxBool rememberMe = false.obs;
   final RxString errorMessage = ''.obs;
   final RxString prefilledPhone = ''.obs;
 
@@ -39,10 +38,6 @@ class LoginController extends GetxController {
 
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;
-  }
-
-  void toggleRememberMe() {
-    rememberMe.value = !rememberMe.value;
   }
 
   Future<void> signIn() async {

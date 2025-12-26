@@ -24,4 +24,12 @@ abstract class AppRoutes {
   static const feedback = '/feedback';
   static const about = '/about';
   static const locationSearch = '/location-search';
+  // Tools and calculators
+  static const tools = '/tools';
+  static const areaConverter = '/tools/area-converter';
+  static const loanEligibility = '/tools/loan-eligibility';
+  static const emiCalculator = '/tools/emi-calculator';
+  static const carpetArea = '/tools/carpet-area';
+  static const documentChecklist = '/tools/document-checklist';
+  static const capitalGains = '/tools/capital-gains';
 }

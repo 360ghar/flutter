@@ -48,16 +48,16 @@ class ProfileView extends GetView<AuthController> {
 
               // Menu Items
               _buildMenuItem(
-                icon: Icons.person_outline,
-                title: 'edit_profile'.tr,
-                subtitle: 'update_personal_information'.tr,
-                onTap: () => Get.toNamed(AppRoutes.editProfile),
-              ),
-              _buildMenuItem(
                 icon: Icons.favorite_outline,
                 title: 'my_preferences'.tr,
                 subtitle: 'property_preferences_filters'.tr,
                 onTap: () => Get.toNamed(AppRoutes.preferences),
+              ),
+              _buildMenuItem(
+                icon: Icons.calculate_outlined,
+                title: 'tools_calculators'.tr,
+                subtitle: 'tools_calculators_subtitle'.tr,
+                onTap: () => Get.toNamed(AppRoutes.tools),
               ),
               _buildMenuItem(
                 icon: Icons.security,
@@ -90,86 +90,80 @@ class ProfileView extends GetView<AuthController> {
   }
 
   Widget _buildProfileHeader(BuildContext context, dynamic user) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppColors.getCardShadow(),
-      ),
-      child: Column(
-        children: [
-          // Profile Picture
-          Stack(
-            children: [
-              user.profileImage != null && user.profileImage!.isNotEmpty
-                  ? RobustNetworkImageExtension.circular(
-                      imageUrl: user.profileImage!,
-                      radius: 50,
-                      errorWidget: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: AppColors.primaryYellow,
-                        child: Text(
-                          user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ),
-                    )
-                  : CircleAvatar(
-                      radius: 50,
+    return GestureDetector(
+      onTap: () => Get.toNamed(AppRoutes.editProfile),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: AppColors.getCardShadow(),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Profile Picture
+            user.profileImage != null && user.profileImage!.isNotEmpty
+                ? RobustNetworkImageExtension.circular(
+                    imageUrl: user.profileImage!,
+                    radius: 40,
+                    errorWidget: CircleAvatar(
+                      radius: 40,
                       backgroundColor: AppColors.primaryYellow,
                       child: Text(
                         user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.buttonText,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       ),
                     ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryYellow,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.surface, width: 2),
+                  )
+                : CircleAvatar(
+                    radius: 40,
+                    backgroundColor: AppColors.primaryYellow,
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.buttonText,
+                      ),
+                    ),
                   ),
-                  child: Icon(Icons.camera_alt, size: 16, color: AppColors.buttonText),
-                ),
+            const SizedBox(width: 16),
+            // User Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.name.isNotEmpty ? user.name : 'user_name'.tr,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (user.email.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      user.email,
+                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                    ),
+                  ],
+                  if (user.phone.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(user.phone, style: TextStyle(fontSize: 13, color: AppColors.textTertiary)),
+                  ],
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Name
-          Text(
-            user.name.isNotEmpty ? user.name : 'user_name'.tr,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
             ),
-          ),
-          const SizedBox(height: 4),
-
-          // Email
-          Text(
-            user.email.isNotEmpty ? user.email : '',
-            style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 8),
-
-          // Phone
-          if (user.phone.isNotEmpty)
-            Text(user.phone, style: TextStyle(fontSize: 14, color: AppColors.textTertiary)),
-        ],
+            // Edit Profile Arrow
+            Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.iconColor),
+          ],
+        ),
       ),
     );
   }

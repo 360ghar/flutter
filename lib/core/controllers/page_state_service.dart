@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -54,6 +55,16 @@ class PageStateService extends GetxController {
 
   // Stream subscriptions (to prevent memory leaks)
   StreamSubscription? _locationSubscription;
+
+  Position? _lastGpsPosition;
+  Position? _lastGpsGeocodePosition;
+  DateTime? _lastGpsRefreshAt;
+  DateTime? _lastGpsGeocodeAt;
+
+  static const Duration _gpsRefreshMinInterval = Duration(minutes: 3);
+  static const double _gpsRefreshMinDistanceMeters = 300;
+  static const Duration _gpsGeocodeMinInterval = Duration(minutes: 2);
+  static const double _gpsGeocodeMinDistanceMeters = 150;
 
   @override
   void onInit() {
@@ -238,21 +249,66 @@ class PageStateService extends GetxController {
 
     // Listen to location updates; update only current page to keep independence
     _locationSubscription?.cancel();
-    _locationSubscription = _locationController.currentPosition.listen((position) async {
-      if (position != null) {
-        // Get real address from coordinates
-        final locationName = await _locationController.getAddressFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-        final loc = LocationData(
-          name: locationName,
-          latitude: position.latitude,
-          longitude: position.longitude,
-        );
-        await updateLocationForPage(currentPageType.value, loc, source: 'gps');
-      }
+    _locationSubscription = _locationController.currentPosition.listen((position) {
+      if (position == null) return;
+      unawaited(_handleGpsPositionUpdate(position));
     });
+  }
+
+  double _distanceMeters(Position a, Position b) {
+    return Geolocator.distanceBetween(a.latitude, a.longitude, b.latitude, b.longitude);
+  }
+
+  Future<void> _handleGpsPositionUpdate(Position position) async {
+    final now = DateTime.now();
+    final last = _lastGpsPosition;
+    _lastGpsPosition = position;
+
+    final movedMeters = last == null ? double.infinity : _distanceMeters(last, position);
+    final shouldRefresh =
+        movedMeters >= _gpsRefreshMinDistanceMeters ||
+        _lastGpsRefreshAt == null ||
+        now.difference(_lastGpsRefreshAt!) >= _gpsRefreshMinInterval;
+
+    final lastGeocode = _lastGpsGeocodePosition;
+    final geocodeMoved = lastGeocode == null
+        ? double.infinity
+        : _distanceMeters(lastGeocode, position);
+    final shouldGeocode =
+        _lastGpsGeocodeAt == null ||
+        geocodeMoved >= _gpsGeocodeMinDistanceMeters ||
+        now.difference(_lastGpsGeocodeAt!) >= _gpsGeocodeMinInterval;
+
+    final pageType = currentPageType.value;
+    final currentState = _getStateForPage(pageType);
+
+    String locationName;
+    if (shouldGeocode) {
+      locationName = await _locationController.getAddressFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      _lastGpsGeocodeAt = now;
+      _lastGpsGeocodePosition = position;
+    } else {
+      locationName =
+          currentState.selectedLocation?.name ?? _locationController.currentAddress.value;
+      if (locationName.isEmpty) {
+        locationName = 'location_found'.tr;
+      }
+    }
+
+    final loc = LocationData(
+      name: locationName,
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+
+    await updateLocationForPage(pageType, loc, source: shouldRefresh ? 'gps' : 'gps_passive');
+
+    if (shouldRefresh) {
+      _lastGpsRefreshAt = now;
+    }
   }
 
   /// Debounced persistence to avoid excessive disk writes on rapid state changes.
@@ -314,7 +370,8 @@ class PageStateService extends GetxController {
 
     // Resolve human-friendly name if placeholder
     LocationData finalLocation = location;
-    if (_isPlaceholderLocationName(location.name)) {
+    final shouldResolveName = source != 'gps_passive';
+    if (shouldResolveName && _isPlaceholderLocationName(location.name)) {
       try {
         final resolvedName = await _locationController.getAddressFromCoordinates(
           location.latitude,
@@ -338,11 +395,11 @@ class PageStateService extends GetxController {
     _updatePageState(pageType, updated);
 
     // Only trigger a data refresh if the source is not 'initial' or 'hydrate'
-    if (source != 'initial' && source != 'hydrate') {
+    if (source != 'initial' && source != 'hydrate' && source != 'gps_passive') {
       DebugLogger.info('🔄 Debouncing refresh for ${pageType.name} after location update');
       _debounceRefresh(pageType);
     } else {
-      DebugLogger.info('⏭️ Skipping refresh for initial/hydrate location update.');
+      DebugLogger.info('Skipping refresh for passive or initial location update.');
     }
   }
 
@@ -384,7 +441,7 @@ class PageStateService extends GetxController {
       DebugLogger.success('✅ Location updated: ${location.name}');
 
       // Trigger data refresh just for current page (only for non-initial sources)
-      if (source != 'initial' && source != 'hydrate') {
+      if (source != 'initial' && source != 'hydrate' && source != 'gps_passive') {
         _debounceRefresh(currentPageType.value);
       }
     } catch (e) {
@@ -394,7 +451,7 @@ class PageStateService extends GetxController {
 
   Future<void> useCurrentLocation() async {
     try {
-      await _locationController.getCurrentLocation();
+      await _locationController.getCurrentLocation(forceRefresh: true);
       final position = _locationController.currentPosition.value;
       if (position != null) {
         // Get real address from coordinates
@@ -422,7 +479,7 @@ class PageStateService extends GetxController {
   // Page-specific current location (with IP fallback)
   Future<void> useCurrentLocationForPage(PageType pageType) async {
     try {
-      await _locationController.getCurrentLocation();
+      await _locationController.getCurrentLocation(forceRefresh: true);
       final position = _locationController.currentPosition.value;
       if (position != null) {
         // Get real address from coordinates

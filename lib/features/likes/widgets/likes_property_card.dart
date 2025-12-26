@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/app_spacing.dart';
+import 'package:ghar360/core/widgets/common/animated_tap_wrapper.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 
 class LikesPropertyCard extends StatelessWidget {
@@ -24,17 +26,14 @@ class LikesPropertyCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Card(
-      margin: const EdgeInsets.all(0),
-      elevation: 2,
-      color: AppColors.propertyCardBackground,
-      shadowColor: AppColors.shadowColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onTap: () {
-          Get.toNamed(AppRoutes.propertyDetails, arguments: property);
-        },
-        borderRadius: BorderRadius.circular(16),
+    return AnimatedTapWrapper(
+      onTap: () => Get.toNamed(AppRoutes.propertyDetails, arguments: property),
+      child: Card(
+        margin: const EdgeInsets.all(0),
+        elevation: 2,
+        color: AppColors.propertyCardBackground,
+        shadowColor: AppColors.shadowColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppBorderRadius.card)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,55 +43,65 @@ class LikesPropertyCard extends StatelessWidget {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: RobustNetworkImage(
-                      imageUrl: property.mainImage,
-                      height: 100,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                      memCacheWidth: 200,
-                      memCacheHeight: 100,
-                      placeholder: Container(
+                    child: Hero(
+                      tag: 'property_image_${property.id}',
+                      child: RobustNetworkImage(
+                        imageUrl: property.mainImage,
                         height: 100,
                         width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: AppColors.inputBackground,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                        fit: BoxFit.cover,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(AppBorderRadius.card),
                         ),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: colorScheme.primary,
-                                  strokeWidth: 2,
+                        memCacheWidth: 200,
+                        memCacheHeight: 100,
+                        placeholder: Container(
+                          height: 100,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: AppColors.inputBackground,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(AppBorderRadius.card),
+                            ),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: colorScheme.primary,
+                                    strokeWidth: 2,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'loading'.tr,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary,
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  'loading'.tr,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                   Positioned(
-                    top: 8,
-                    left: 8,
+                    top: AppSpacing.sm,
+                    left: AppSpacing.sm,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
                       decoration: BoxDecoration(
                         color: colorScheme.primary,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppBorderRadius.chip),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.shadowColor,
@@ -112,20 +121,20 @@ class LikesPropertyCard extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: AppSpacing.sm,
+                    right: AppSpacing.sm,
                     child: Container(
                       decoration: BoxDecoration(
                         color: colorScheme.scrim.withValues(alpha: 0.5),
                         shape: BoxShape.circle,
                       ),
-                      child: IconButton(
-                        icon: Icon(
-                          isFavourite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavourite ? AppColors.favoriteActive : colorScheme.onPrimary,
-                          size: 20,
-                        ),
-                        onPressed: onFavouriteToggle,
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      child: AnimatedFavoriteIcon(
+                        isFavorite: isFavourite,
+                        onToggle: onFavouriteToggle,
+                        size: 20,
+                        activeColor: AppColors.favoriteActive,
+                        inactiveColor: colorScheme.onPrimary,
                       ),
                     ),
                   ),
@@ -133,7 +142,12 @@ class LikesPropertyCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.sm,
+                AppSpacing.xs + 2,
+                AppSpacing.sm,
+                AppSpacing.xs + 2,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +166,7 @@ class LikesPropertyCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                       Text(
                         property.formattedPrice,
                         style: TextStyle(
@@ -170,12 +184,12 @@ class LikesPropertyCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: [
                       if (property.bedroomBathroomText.isNotEmpty) ...[
                         Icon(Icons.bed_outlined, size: 14, color: AppColors.propertyFeatureText),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: AppSpacing.xs),
                         Flexible(
                           child: Text(
                             property.bedroomBathroomText,
@@ -190,9 +204,9 @@ class LikesPropertyCard extends StatelessWidget {
                         ),
                       ],
                       if (property.areaText.isNotEmpty) ...[
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.listItemSpacing),
                         Icon(Icons.square_foot, size: 14, color: AppColors.propertyFeatureText),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: AppSpacing.xs),
                         Flexible(
                           child: Text(
                             property.areaText,

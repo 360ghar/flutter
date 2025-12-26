@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/controllers/auth_controller.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/theme.dart';
 import 'package:ghar360/features/auth/controllers/signup_controller.dart';
@@ -17,67 +18,129 @@ class SignUpView extends GetView<SignUpController> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final authController = Get.find<AuthController>();
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Progress Bar
-            Obx(() {
-              final step = controller.currentStep.value;
-              return Column(
-                children: [
-                  LinearProgressIndicator(
-                    value: step < 2 ? (step + 1) / 3 : 1.0,
-                    backgroundColor: colorScheme.outline.withValues(alpha: 0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryYellow),
-                    minHeight: 4,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                // Progress Bar
+                Obx(() {
+                  final step = controller.currentStep.value;
+                  return Column(
+                    children: [
+                      LinearProgressIndicator(
+                        value: step < 2 ? (step + 1) / 3 : 1.0,
+                        backgroundColor: colorScheme.outline.withValues(alpha: 0.2),
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryYellow),
+                        minHeight: 4,
+                      ),
+                      if (step < 2)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                step == 0 ? 'personal_info_step'.tr : 'security_step'.tr,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                'step_of'.tr
+                                    .replaceAll('@step', '${step + 1}')
+                                    .replaceAll('@total', '3'),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  );
+                }),
+
+                // Content
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Obx(() {
+                      final step = controller.currentStep.value;
+                      if (step == 0) {
+                        return _buildPersonalInfoStep(context);
+                      } else if (step == 1) {
+                        return _buildSecurityStep(context);
+                      } else {
+                        return _buildOtpStep(context);
+                      }
+                    }),
                   ),
-                  if (step < 2)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            step == 0 ? 'personal_info_step'.tr : 'security_step'.tr,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+                ),
+              ],
+            ),
+          ),
+          Obx(() {
+            if (!authController.isAuthResolving.value) {
+              return const SizedBox.shrink();
+            }
+            return Positioned.fill(
+              child: Stack(
+                children: [
+                  ModalBarrier(
+                    dismissible: false,
+                    color: colorScheme.surface.withValues(alpha: isDark ? 0.85 : 0.6),
+                  ),
+                  Center(
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppTheme.darkCard : AppTheme.backgroundWhite,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isDark ? AppTheme.darkShadow : AppTheme.cardShadow)
+                                  .withValues(alpha: isDark ? 0.6 : 0.4),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
                             ),
-                          ),
-                          Text(
-                            'step_of'.tr
-                                .replaceAll('@step', '${step + 1}')
-                                .replaceAll('@total', '3'),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              height: 28,
+                              width: 28,
+                              child: CircularProgressIndicator(
+                                color: AppTheme.primaryYellow,
+                                strokeWidth: 2.5,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 12),
+                            Text(
+                              'loading'.tr,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  ),
                 ],
-              );
-            }),
-
-            // Content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Obx(() {
-                  final step = controller.currentStep.value;
-                  if (step == 0) {
-                    return _buildPersonalInfoStep(context);
-                  } else if (step == 1) {
-                    return _buildSecurityStep(context);
-                  } else {
-                    return _buildOtpStep(context);
-                  }
-                }),
               ),
-            ),
-          ],
-        ),
+            );
+          }),
+        ],
       ),
     );
   }
