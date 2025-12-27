@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_handler.dart';
 import 'package:ghar360/core/utils/formatters.dart';
@@ -17,15 +18,26 @@ class LoginController extends GetxController {
 
   final isLoading = false.obs;
   final isPasswordVisible = false.obs;
-  final RxBool rememberMe = false.obs;
   final RxString errorMessage = ''.obs;
+  final RxString prefilledPhone = ''.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Check for pre-filled phone from arguments
+    final args = Get.arguments;
+    if (args != null && args is Map<String, dynamic> && args['phone'] != null) {
+      prefilledPhone.value = args['phone'] as String;
+      phoneController.text = prefilledPhone.value.replaceFirst('+91', '');
+    } else {
+      // No phone provided - redirect back to phone entry
+      DebugLogger.warning('LoginView accessed without phone number, redirecting to phone entry');
+      Future.microtask(() => Get.offNamed(AppRoutes.phoneEntry));
+    }
+  }
 
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;
-  }
-
-  void toggleRememberMe() {
-    rememberMe.value = !rememberMe.value;
   }
 
   Future<void> signIn() async {

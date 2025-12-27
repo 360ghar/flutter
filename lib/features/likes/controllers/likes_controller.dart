@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
@@ -135,8 +136,6 @@ class LikesController extends GetxController {
     _pageStateService.updateLikesSegment(segment == LikesSegment.liked ? 'liked' : 'passed');
   }
 
-  // Deprecated loaders replaced by PageStateService handlers (kept to avoid breaking references)
-
   // Search functionality
   void updateSearchQuery(String query) {
     searchQuery.value = query;
@@ -185,10 +184,6 @@ class LikesController extends GetxController {
     searchQuery.value = '';
   }
 
-  // Helper method to build filters with search query
-
-  // Client-side matching deprecated in favor of server-side filtering
-
   // Infinite scroll - load more
   Future<void> loadMoreCurrentSegment() async {
     await _pageStateService.loadMorePageData(PageType.likes);
@@ -225,7 +220,7 @@ class LikesController extends GetxController {
 
   // Navigation
   void viewPropertyDetails(PropertyModel property) {
-    Get.toNamed('/property-details', arguments: {'property': property});
+    Get.toNamed(AppRoutes.propertyDetails, arguments: property);
   }
 
   // Remove property from likes by recording a "dislike" swipe

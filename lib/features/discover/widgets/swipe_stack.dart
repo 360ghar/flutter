@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:get/get.dart';
+
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/features/discover/widgets/property_card.dart';
@@ -49,7 +51,7 @@ class _SwipeStackState extends State<SwipeStack> with SingleTickerProviderStateM
     if (_properties.isEmpty) {
       return Center(
         child: Text(
-          'No more properties to show',
+          'no_more_properties'.tr,
           style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
         ),
       );

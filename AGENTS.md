@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `lib/`: Flutter source using feature-first GetX layers.
+- `lib/`: Flutter source using feature-first GetX layers with clean architecture.
   - Features: `lib/features/<feature>/{views,controllers,bindings}` (e.g., `discover`, `profile`).
   - Shared: `lib/core/` (`core/data/models`, providers, routing, `core/widgets`).
 - `assets/`: images and static files (declare in `pubspec.yaml`).
@@ -21,7 +21,7 @@
 ## Coding Style & Naming Conventions
 - Indentation: 2 spaces; follow `analysis_options.yaml`.
 - Files: `snake_case.dart` (e.g., `property_details_view.dart`).
-- Classes: `UpperCamelCase`; variables/methods: `lowerCamelCase`.
+- Classes: `UpperCamelCase` (PascalCase); variables/methods: `lowerCamelCase`.
 - Suffixes: `*_view.dart`, `*_controller.dart`, `*_binding.dart`.
 - Placement: new screens under `lib/features/<feature>/...`; shared utilities in `lib/core/`.
 
@@ -34,7 +34,7 @@
 ## Commit & Pull Request Guidelines
 - Commits: imperative, scope-first (e.g., "Refactor filters: unify models"). Keep them focused.
 - Before PR: run `flutter analyze`, `dart format .`, `flutter test`, and regenerate code (`build_runner`).
-- PRs: include summary, linked issues, test plan, and screenshots for UI changes. Note any env/config or docs updates.
+- PRs: include summary, linked issues, test plan, and screenshots for UI changes. Note any env/config or docs updates. Keep changes minimal.
 
 ## Security & Configuration
 - Never hardcode secrets; load via `.env.*` or secure stores.

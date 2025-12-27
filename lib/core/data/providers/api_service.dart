@@ -18,10 +18,52 @@ import 'package:ghar360/core/data/models/unified_property_response.dart';
 import 'package:ghar360/core/data/models/user_model.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
 import 'package:ghar360/core/firebase/remote_config_service.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+const int _logKeyLimit = 8;
+const Set<String> _sensitiveKeys = {
+  'password',
+  'token',
+  'access_token',
+  'refresh_token',
+  'secret',
+  'api_key',
+  'apikey',
+  'authorization',
+  'auth',
+  'credential',
+  'otp',
+  'pin',
+};
+
+String _summarizeForLog(Object? value) {
+  if (value == null) return 'null';
+  if (value is Map) {
+    // Filter out sensitive keys from logs
+    final keys =
+        value.keys
+            .map((k) => k.toString())
+            .where((k) => !_sensitiveKeys.contains(k.toLowerCase()))
+            .toList()
+          ..sort();
+    final hiddenCount = value.keys.length - keys.length;
+    final hiddenNote = hiddenCount > 0 ? ' +$hiddenCount hidden' : '';
+    final shown = keys.take(_logKeyLimit).join(', ');
+    final extra = keys.length > _logKeyLimit ? ' +${keys.length - _logKeyLimit} more' : '';
+    return 'map(keys=[$shown$extra]$hiddenNote)';
+  }
+  if (value is Iterable) {
+    return 'list(length=${value.length})';
+  }
+  if (value is String) {
+    return 'string(length=${value.length})';
+  }
+  return 'type=${value.runtimeType}';
+}
 
 class ApiAuthException implements Exception {
   final String message;
@@ -31,17 +73,6 @@ class ApiAuthException implements Exception {
 
   @override
   String toString() => 'ApiAuthException: $message';
-}
-
-class ApiException implements Exception {
-  final String message;
-  final int? statusCode;
-  final String? response;
-
-  ApiException(this.message, {this.statusCode, this.response});
-
-  @override
-  String toString() => 'ApiException: $message (Status: $statusCode)';
 }
 
 class ApiResponse<T> {
@@ -138,7 +169,7 @@ class VisitListResponse {
       );
     } catch (e, stackTrace) {
       DebugLogger.error('Error in VisitListResponse.fromJson', e, stackTrace);
-      DebugLogger.api('Raw JSON: $json');
+      DebugLogger.api('Raw JSON summary: ${_summarizeForLog(json)}');
       rethrow;
     }
   }
@@ -158,6 +189,9 @@ class ApiService extends getx.GetConnect {
   late final String _baseUrl;
   late final SupabaseClient _supabase;
   final GetStorage _cacheStorage = GetStorage();
+  static const String _cacheKeyPrefix = 'HTTP_CACHE|';
+  static const Duration _cacheTtl = Duration(minutes: 15);
+  static const int _maxCacheEntries = 200;
   // Track in-flight profile fetch to avoid duplicate concurrent calls
   Future<UserModel>? _getCurrentUserInFlight;
   // Removed token cache - trust Supabase session management
@@ -307,7 +341,7 @@ class ApiService extends getx.GetConnect {
     } else {
       // Fallback if AuthController isn't available for some reason
       _supabase.auth.signOut();
-      getx.Get.offAllNamed('/login');
+      getx.Get.offAllNamed(AppRoutes.phoneEntry);
     }
   }
 
@@ -368,11 +402,16 @@ class ApiService extends getx.GetConnect {
         }
 
         // Single-line API request log for debugging
+        final querySummary = queryParams != null && queryParams.isNotEmpty
+            ? _summarizeForLog(queryParams)
+            : '';
+        final bodySummary = body != null && body.isNotEmpty ? _summarizeForLog(body) : '';
         DebugLogger.api(
-          '🚀 API $method $fullEndpoint${queryParams != null && queryParams.isNotEmpty ? ' | Query: $queryParams' : ''}${body != null && body.isNotEmpty ? ' | Body: $body' : ''}',
+          '🚀 API $method $fullEndpoint${querySummary.isNotEmpty ? ' | Query: $querySummary' : ''}${bodySummary.isNotEmpty ? ' | Body: $bodySummary' : ''}',
         );
 
-        DebugLogger.logAPIRequest(method: method, endpoint: fullEndpoint, body: body);
+        final requestBodyForLog = bodySummary.isNotEmpty ? bodySummary : null;
+        DebugLogger.logAPIRequest(method: method, endpoint: fullEndpoint, body: requestBodyForLog);
 
         getx.Response response;
 
@@ -400,7 +439,6 @@ class ApiService extends getx.GetConnect {
 
         // Single-line API response log for debugging
         DebugLogger.api('📨 API $method $fullEndpoint → ${response.statusCode}');
-        DebugLogger.api('📨 API $method $fullEndpoint → ${response.bodyString}');
 
         // Stop metric after response
         try {
@@ -475,41 +513,25 @@ class ApiService extends getx.GetConnect {
             } catch (_) {}
           }
           final responseData = response.body;
-          DebugLogger.api('📊 [_makeRequest] Raw response data type: ${responseData?.runtimeType}');
-          DebugLogger.api('📊 [_makeRequest] Raw response data: $responseData');
+          DebugLogger.api('📊 [_makeRequest] Response type: ${responseData?.runtimeType}');
 
           try {
             if (responseData is Map<String, dynamic>) {
-              DebugLogger.api(
-                '📊 [_makeRequest] Calling fromJson with Map<String, dynamic>: $responseData',
-              );
               final result = fromJson(responseData);
               // Cache successful GET responses with ETag
               if (method.toUpperCase() == 'GET' && cacheKey != null) {
                 _maybeCacheResponse(cacheKey, response);
               }
-              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             } else if (responseData is List) {
-              DebugLogger.api('📊 [_makeRequest] Normalizing List response to Map for $operation');
               final normalizedData = {'data': responseData};
-              DebugLogger.api(
-                '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
-              );
               final result = fromJson(normalizedData);
               if (method.toUpperCase() == 'GET' && cacheKey != null) {
                 _maybeCacheResponse(cacheKey, response);
               }
-              DebugLogger.api('📊 [_makeRequest] fromJson completed successfully for $operation');
               return result;
             } else {
-              DebugLogger.api(
-                '📊 [_makeRequest] Normalizing ${responseData?.runtimeType} response to Map for $operation',
-              );
               final normalizedData = {'data': responseData};
-              DebugLogger.api(
-                '📊 [_makeRequest] Calling fromJson with normalized data: $normalizedData',
-              );
               final result = fromJson(normalizedData);
               if (method.toUpperCase() == 'GET' && cacheKey != null) {
                 _maybeCacheResponse(cacheKey, response);
@@ -519,7 +541,9 @@ class ApiService extends getx.GetConnect {
             }
           } catch (e) {
             DebugLogger.error('🚨 [_makeRequest] ERROR in fromJson callback for $operation: $e');
-            DebugLogger.error('🚨 [_makeRequest] Response data: $responseData');
+            DebugLogger.error(
+              '🚨 [_makeRequest] Response summary: ${_summarizeForLog(responseData)}',
+            );
             rethrow;
           }
         } else if (response.statusCode == 401) {
@@ -543,10 +567,14 @@ class ApiService extends getx.GetConnect {
             DebugLogger.error('🚫 422 Unprocessable Entity for $operation');
             DebugLogger.error('🚫 Endpoint: $fullEndpoint');
             DebugLogger.error('🚫 Method: $method');
-            DebugLogger.error('🚫 Query Params: $queryParams');
-            DebugLogger.error('🚫 Request Body: $body');
-            DebugLogger.error('🚫 Response Body: ${response.bodyString}');
-            DebugLogger.error('🚫 Response Headers: ${response.headers}');
+            DebugLogger.error(
+              '🚫 Query Params: ${queryParams != null ? _summarizeForLog(queryParams) : 'none'}',
+            );
+            DebugLogger.error('🚫 Request Body: ${body != null ? _summarizeForLog(body) : 'none'}');
+            DebugLogger.error('🚫 Response Body: ${_summarizeForLog(response.bodyString)}');
+            DebugLogger.error(
+              '🚫 Response Headers: ${response.headers != null ? _summarizeForLog(response.headers) : 'none'}',
+            );
           }
 
           // Enhanced error logging for 409 Conflict errors
@@ -554,7 +582,7 @@ class ApiService extends getx.GetConnect {
             DebugLogger.error('⚡ 409 Conflict detected for $operation');
             DebugLogger.error('⚡ This indicates a concurrent update conflict');
             DebugLogger.error('⚡ Endpoint: $fullEndpoint');
-            DebugLogger.error('⚡ Response Body: ${response.bodyString}');
+            DebugLogger.error('⚡ Response Body: ${_summarizeForLog(response.bodyString)}');
           }
 
           // Create an ApiException to be mapped to AppException below
@@ -681,19 +709,31 @@ class ApiService extends getx.GetConnect {
     final keys = qp.keys.toList()..sort();
     final qpString = keys.map((k) => '$k=${qp[k]}').join('&');
     final scope = (userScope != null && userScope.isNotEmpty) ? '|uid=$userScope' : '|uid=anon';
-    return 'HTTP_CACHE|${method.toUpperCase()}|$url|$qpString$scope';
+    return '$_cacheKeyPrefix${method.toUpperCase()}|$url|$qpString$scope';
   }
 
   Map<String, dynamic>? _readCacheEntry(String key) {
     try {
       final v = _cacheStorage.read(key);
       if (v is Map) {
-        return Map<String, dynamic>.from(v);
+        final entry = Map<String, dynamic>.from(v);
+        if (_isCacheEntryExpired(entry)) {
+          _cacheStorage.remove(key);
+          return null;
+        }
+        return entry;
       }
     } catch (e) {
       DebugLogger.warning('Failed to read cache entry', e);
     }
     return null;
+  }
+
+  bool _isCacheEntryExpired(Map<String, dynamic> entry, {int? nowMs}) {
+    final ts = entry['timestamp'];
+    if (ts is! int) return true;
+    final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+    return now - ts > _cacheTtl.inMilliseconds;
   }
 
   void _maybeCacheResponse(String cacheKey, getx.Response response) {
@@ -714,8 +754,50 @@ class ApiService extends getx.GetConnect {
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
       DebugLogger.api('✅ Cached response (etag=$etag) for $cacheKey');
+      _evictCacheEntriesIfNeeded();
     } catch (e) {
       DebugLogger.warning('Failed to cache response for $cacheKey', e);
+    }
+  }
+
+  void _evictCacheEntriesIfNeeded() {
+    try {
+      final keys = _cacheStorage.getKeys().where((k) => k.startsWith(_cacheKeyPrefix)).toList();
+
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      final entries = <_CacheEntry>[];
+      final expiredKeys = <String>[];
+
+      // Collect valid entries and identify expired ones
+      for (final key in keys) {
+        final entry = _readCacheEntry(key);
+        if (entry == null) {
+          // Entry was already removed by _readCacheEntry or is invalid
+          continue;
+        }
+        final ts = entry['timestamp'];
+        if (ts is int && !_isCacheEntryExpired(entry, nowMs: nowMs)) {
+          entries.add(_CacheEntry(key, ts));
+        } else {
+          // Entry is expired, mark for removal
+          expiredKeys.add(key);
+        }
+      }
+
+      // Remove expired entries
+      for (final key in expiredKeys) {
+        _cacheStorage.remove(key);
+      }
+
+      // Evict oldest entries if still over limit
+      if (entries.length <= _maxCacheEntries) return;
+      entries.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      final removeCount = entries.length - _maxCacheEntries;
+      for (int i = 0; i < removeCount; i++) {
+        _cacheStorage.remove(entries[i].key);
+      }
+    } catch (e) {
+      DebugLogger.warning('Failed to evict cache entries', e);
     }
   }
 
@@ -775,7 +857,7 @@ class ApiService extends getx.GetConnect {
       return UserModel.fromJson(safeJson);
     } catch (e) {
       DebugLogger.error('❌ Error parsing user model: $e');
-      DebugLogger.api('📊 Raw JSON: $json');
+      DebugLogger.api('📊 Raw JSON summary: ${_summarizeForLog(json)}');
       rethrow;
     }
   }
@@ -893,7 +975,7 @@ class ApiService extends getx.GetConnect {
       return PropertyModel.fromJson(safeJson);
     } catch (e) {
       DebugLogger.error('❌ Error parsing property model: $e');
-      DebugLogger.api('📊 Raw JSON: $json');
+      DebugLogger.api('📊 Raw JSON summary: ${_summarizeForLog(json)}');
       rethrow;
     }
   }
@@ -901,7 +983,6 @@ class ApiService extends getx.GetConnect {
   // Helper method for parsing unified property response
   static UnifiedPropertyResponse _parseUnifiedPropertyResponse(Map<String, dynamic> json) {
     try {
-      DebugLogger.api('📊 [UNIFIED_PARSER] RAW API RESPONSE: $json');
       final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
 
       // Accept multiple shapes: { properties: [...] }, { data: [...] }, or nested common keys
@@ -910,26 +991,19 @@ class ApiService extends getx.GetConnect {
       final List<dynamic> list = rawList is List ? rawList : <dynamic>[];
 
       DebugLogger.api('📦 [UNIFIED_PARSER] Found ${list.length} properties to parse');
-      DebugLogger.debug('📦 [UNIFIED_PARSER] Property list type: ${list.runtimeType}');
 
       final List<PropertyModel> parsed = <PropertyModel>[];
       int failedCount = 0;
       for (int i = 0; i < list.length; i++) {
         final item = list[i];
-        DebugLogger.debug('🏠 [UNIFIED_PARSER] Processing item $i: ${item?.runtimeType}');
 
         if (item is Map<String, dynamic>) {
           try {
-            DebugLogger.debug('🏠 [UNIFIED_PARSER] About to parse property $i: $item');
             final property = _parsePropertyModel(item);
             parsed.add(property);
-            DebugLogger.debug(
-              '🏠 [UNIFIED_PARSER] Successfully parsed property $i: ${property.title}',
-            );
           } catch (e, stackTrace) {
             DebugLogger.error('❌ [UNIFIED_PARSER] Failed to parse property $i: $e');
-            DebugLogger.error('❌ [UNIFIED_PARSER] Failed property data: $item');
-            DebugLogger.error('❌ [UNIFIED_PARSER] Stack trace: $stackTrace');
+            DebugLogger.debug('❌ [UNIFIED_PARSER] Stack trace: $stackTrace');
 
             if (e.toString().contains('Null check operator used on a null value')) {
               DebugLogger.error(
@@ -1000,7 +1074,7 @@ class ApiService extends getx.GetConnect {
       );
     } catch (e) {
       DebugLogger.error('❌ Error parsing unified property response: $e');
-      DebugLogger.api('📊 Raw JSON: $json');
+      DebugLogger.api('📊 Raw JSON summary: ${_summarizeForLog(json)}');
       rethrow;
     }
   }
@@ -1248,7 +1322,7 @@ class ApiService extends getx.GetConnect {
       queryParams['_'] = DateTime.now().millisecondsSinceEpoch.toString();
     }
 
-    DebugLogger.api('🔍 Search parameters - lat: $latitude, lng: $longitude, radius: $radiusKm km');
+    DebugLogger.api('🔍 Search parameters set (radius: $radiusKm km)');
 
     // Convert filters to query parameters with validation
     final filterMap = filters.toJson();
@@ -1286,7 +1360,7 @@ class ApiService extends getx.GetConnect {
       queryParams['exclude_swiped'] = 'true';
     }
 
-    DebugLogger.api('🔍 Final query params: $queryParams');
+    DebugLogger.api('🔍 Final query params: ${_summarizeForLog(queryParams)}');
 
     return await _makeRequest(
       '/properties/',
@@ -1970,4 +2044,11 @@ class ApiWithEtag<T> {
   final int? statusCode;
 
   ApiWithEtag({this.data, this.etag, this.notModified = false, this.statusCode});
+}
+
+class _CacheEntry {
+  final String key;
+  final int timestamp;
+
+  _CacheEntry(this.key, this.timestamp);
 }

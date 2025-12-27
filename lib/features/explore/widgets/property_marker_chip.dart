@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:get/get.dart';
+
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 
@@ -23,11 +25,11 @@ class PropertyMarkerChip extends StatelessWidget {
     final bool selected = isSelected;
     final Color bg = selected ? AppColors.primaryYellow : AppColors.surface;
     final Color border = selected ? AppColors.accentOrange : AppColors.accentBlue;
-    final Color text = selected ? Colors.black : AppColors.textPrimary;
+    final Color text = selected ? AppColors.buttonText : AppColors.textPrimary;
 
     final semanticLabel = property.title.isNotEmpty
-        ? 'Property price marker for ${property.title}'
-        : 'Property price marker';
+        ? 'property_price_marker_label'.trParams({'property': property.title})
+        : 'property_price_marker_label_generic'.tr;
 
     return Semantics(
       label: semanticLabel,

@@ -34,6 +34,7 @@ class AuthController extends GetxController {
   final Rx<AuthStatus> authStatus = AuthStatus.initial.obs;
   final Rxn<UserModel> currentUser = Rxn<UserModel>();
   final RxBool isLoading = false.obs;
+  final RxBool isAuthResolving = false.obs;
   final Rxn<RouteSettings> redirectRoute = Rxn<RouteSettings>();
   final RxInt _profileCompletionPercentage = 0.obs;
 
@@ -104,9 +105,9 @@ class AuthController extends GetxController {
               Get.offAllNamed(AppRoutes.splash);
             }
           } else {
-            if (Get.currentRoute != AppRoutes.login) {
-              DebugLogger.debug('📱 Navigation worker: Navigating to Login');
-              Get.offAllNamed(AppRoutes.login);
+            if (Get.currentRoute != AppRoutes.phoneEntry) {
+              DebugLogger.debug('📱 Navigation worker: Navigating to Phone Entry');
+              Get.offAllNamed(AppRoutes.phoneEntry);
             }
           }
           break;
@@ -174,6 +175,7 @@ class AuthController extends GetxController {
       DebugLogger.auth('Auth state changed: User is signed out.');
       currentUser.value = null;
       authStatus.value = AuthStatus.unauthenticated;
+      isAuthResolving.value = false;
       // Clear analytics/Crashlytics user context
       try {
         await AnalyticsService.setUserId(null);
@@ -182,6 +184,7 @@ class AuthController extends GetxController {
     } else {
       // --- USER IS SIGNED IN ---
       DebugLogger.auth('Auth state changed: User is signed in. UID: ${supabaseUser.id}');
+      isAuthResolving.value = true;
       // Set analytics/Crashlytics user context
       try {
         await AnalyticsService.setUserId(supabaseUser.id);
@@ -206,6 +209,8 @@ class AuthController extends GetxController {
         // Surface an error state that allows retry or sign-out
         authStatus.value = AuthStatus.error;
       }
+    } finally {
+      isAuthResolving.value = false;
     }
   }
 
@@ -343,7 +348,11 @@ class AuthController extends GetxController {
         );
       }
 
-      Get.snackbar('Success', 'Profile updated successfully!', snackPosition: SnackPosition.TOP);
+      Get.snackbar(
+        'success'.tr,
+        'profile_updated_successfully'.tr,
+        snackPosition: SnackPosition.TOP,
+      );
       return true;
     } catch (e) {
       ErrorHandler.handleNetworkError(e);

@@ -28,65 +28,73 @@ class ExploreView extends GetView<ExploreController> {
 
     final pageStateService = Get.find<PageStateService>();
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      appBar: const _ReactiveExploreAppBar(),
-      body: Column(
-        children: [
-          // Subtle refresh indicator (reactive only)
-          Obx(() {
-            final isRefreshing = pageStateService.exploreState.value.isRefreshing;
-            if (!isRefreshing) return const SizedBox.shrink();
-            return const LinearProgressIndicator(
-              minHeight: 2,
-              backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
-            );
-          }),
-          // Main content (reactive state switch)
-          Expanded(
-            child: Obx(() {
-              final currentState = controller.state.value;
-              DebugLogger.info('🌨️ View Builder (Obx) - State: $currentState');
-
-              switch (currentState) {
-                case ExploreState.loading:
-                  // If location is available, keep the map visible and let markers update
-                  final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
-                  if (hasLocation) {
-                    DebugLogger.info('💻 Loading properties, rendering map with pending markers');
-                    return _buildMapInterface(context);
-                  }
-                  DebugLogger.info('💻 Rendering loading state (no location yet)');
-                  return _buildLoadingState(context);
-
-                case ExploreState.error:
-                  DebugLogger.info('⚠️ Rendering error state');
-                  return _buildErrorState();
-
-                case ExploreState.empty:
-                  DebugLogger.info('💭 Rendering empty state');
-                  return _buildEmptyState(context);
-
-                case ExploreState.loaded:
-                case ExploreState.loadingMore:
-                  DebugLogger.info('🗺️ Rendering map interface');
-                  return _buildMapInterface(context);
-
-                default:
-                  final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
-                  if (hasLocation) {
-                    DebugLogger.info('🔄 Initializing; rendering map while loading');
-                    return _buildMapInterface(context);
-                  }
-                  DebugLogger.info('🔄 Rendering default loading state (no location yet)');
-                  return _buildLoadingState(context);
-              }
+    // Wrap in Obx to rebuild Scaffold when search visibility changes
+    return Obx(() {
+      final searchVisible = pageStateService.isSearchVisible(PageType.explore);
+      return Scaffold(
+        key: ValueKey('explore_scaffold_$searchVisible'),
+        backgroundColor: AppColors.scaffoldBackground,
+        appBar: ExploreTopBar(
+          onSearchChanged: (query) => controller.updateSearchQuery(query),
+          onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
+        ),
+        body: Column(
+          children: [
+            // Subtle refresh indicator (reactive only)
+            Obx(() {
+              final isRefreshing = pageStateService.exploreState.value.isRefreshing;
+              if (!isRefreshing) return const SizedBox.shrink();
+              return const LinearProgressIndicator(
+                minHeight: 2,
+                backgroundColor: AppColors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+              );
             }),
-          ),
-        ],
-      ),
-    );
+            // Main content (reactive state switch)
+            Expanded(
+              child: Obx(() {
+                final currentState = controller.state.value;
+                DebugLogger.info('🌨️ View Builder (Obx) - State: $currentState');
+
+                switch (currentState) {
+                  case ExploreState.loading:
+                    // If location is available, keep the map visible and let markers update
+                    final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                    if (hasLocation) {
+                      DebugLogger.info('💻 Loading properties, rendering map with pending markers');
+                      return _buildMapInterface(context);
+                    }
+                    DebugLogger.info('💻 Rendering loading state (no location yet)');
+                    return _buildLoadingState(context);
+
+                  case ExploreState.error:
+                    DebugLogger.info('⚠️ Rendering error state');
+                    return _buildErrorState();
+
+                  case ExploreState.empty:
+                    DebugLogger.info('💭 Rendering empty state');
+                    return _buildEmptyState(context);
+
+                  case ExploreState.loaded:
+                  case ExploreState.loadingMore:
+                    DebugLogger.info('🗺️ Rendering map interface');
+                    return _buildMapInterface(context);
+
+                  default:
+                    final hasLocation = Get.find<PageStateService>().exploreState.value.hasLocation;
+                    if (hasLocation) {
+                      DebugLogger.info('🔄 Initializing; rendering map while loading');
+                      return _buildMapInterface(context);
+                    }
+                    DebugLogger.info('🔄 Rendering default loading state (no location yet)');
+                    return _buildLoadingState(context);
+                }
+              }),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildLoadingState(BuildContext context) {
@@ -104,7 +112,7 @@ class ExploreView extends GetView<ExploreController> {
             return LoadingStates.progressiveLoadingIndicator(
               current: controller.loadingProgress.value,
               total: controller.totalPages.value,
-              message: 'Loading properties for map...',
+              message: 'loading_properties'.tr,
             );
           }
           return LoadingStates.mapLoadingOverlay(context);
@@ -399,8 +407,8 @@ class ExploreView extends GetView<ExploreController> {
             ),
             const SizedBox(height: 4),
             Text(currentAreaText, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-            if (locationDisplayText != 'All Locations' &&
-                locationDisplayText != 'Select Location') ...[
+            if (locationDisplayText != 'all_locations'.tr &&
+                locationDisplayText != 'select_location'.tr) ...[
               const SizedBox(height: 4),
               Text(
                 locationDisplayText,
@@ -467,31 +475,5 @@ class _ClusterChip extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-// PreferredSizeWidget wrapper which only rebuilds the AppBar when search visibility toggles
-class _ReactiveExploreAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const _ReactiveExploreAppBar();
-
-  @override
-  Size get preferredSize {
-    final pageStateService = Get.find<PageStateService>();
-    final searchVisible = pageStateService.isSearchVisible(PageType.explore);
-    final height = kToolbarHeight + (searchVisible ? 52 : 0);
-    return Size.fromHeight(height);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final pageStateService = Get.find<PageStateService>();
-      final searchVisible = pageStateService.isSearchVisible(PageType.explore);
-      return ExploreTopBar(
-        key: ValueKey('explore_topbar_$searchVisible'),
-        onSearchChanged: (query) => Get.find<ExploreController>().updateSearchQuery(query),
-        onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'explore'),
-      );
-    });
   }
 }

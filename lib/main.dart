@@ -67,7 +67,10 @@ void main() async {
         await Supabase.initialize(
           url: dotenv.env['SUPABASE_URL'] ?? '',
           anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
-          authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
+          authOptions: const FlutterAuthClientOptions(
+            detectSessionInUri: false,
+            autoRefreshToken: true,
+          ),
         );
         DebugLogger.success('Supabase initialized successfully');
       } catch (e) {
@@ -142,6 +145,9 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: themeController.themeMode,
+        defaultTransition: Transition.native,
+        transitionDuration: AppTheme.defaultTransitionDuration,
+        popGesture: true,
         supportedLocales: LocalizationController.supportedLocales,
         translations: AppTranslations(),
         fallbackLocale: const Locale('en', 'US'),

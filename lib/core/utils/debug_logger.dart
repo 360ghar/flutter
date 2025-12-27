@@ -140,17 +140,19 @@ class DebugLogger {
 
     _ensureInitialized();
 
-    // Only log first and last few characters for security
-    final tokenPreview = token.length > 20
-        ? '${token.substring(0, 10)}...${token.substring(token.length - 10)}'
-        : token;
-
-    String message = '🔑 JWT Token: $tokenPreview';
+    // Never log token material - just confirm token presence and metadata
+    String message = '🔑 JWT Token received (length: ${token.length})';
     if (expiresAt != null) message += '\n   Expires: $expiresAt';
-    if (userId != null) message += '\n   User ID: $userId';
-    if (userEmail != null) message += '\n   Email: $userEmail';
+    if (userId != null) message += '\n   User ID: ${_truncateId(userId)}';
+    // Never log email - PII concern
 
     _logger.d(message);
+  }
+
+  /// Truncate IDs to first 8 chars for logging (avoid full exposure)
+  static String _truncateId(String id) {
+    if (id.length <= 8) return id;
+    return '${id.substring(0, 8)}...';
   }
 
   /// Log API request details

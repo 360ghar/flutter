@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/webview_helper.dart';
@@ -111,11 +112,14 @@ class PropertyCard extends StatelessWidget {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _buildFeature(Icons.bed, '${property.bedrooms} Beds'),
+                      _buildFeature(Icons.bed, '${property.bedrooms} ${'bedrooms'.tr}'),
                       const SizedBox(width: 16),
-                      _buildFeature(Icons.bathtub_outlined, '${property.bathrooms} Baths'),
+                      _buildFeature(
+                        Icons.bathtub_outlined,
+                        '${property.bathrooms} ${'bathrooms'.tr}',
+                      ),
                       const SizedBox(width: 16),
-                      _buildFeature(Icons.square_foot, '${property.areaSqft} sqft'),
+                      _buildFeature(Icons.square_foot, '${property.areaSqft} ${'sqft'.tr}'),
                     ],
                   ),
                   if (property.hasAnyMedia) ...[
@@ -124,12 +128,12 @@ class PropertyCard extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 6,
                       children: [
-                        if (property.hasPhotos) _mediaBadge(Icons.photo_library, 'Images'),
+                        if (property.hasPhotos) _mediaBadge(Icons.photo_library, 'images'.tr),
                         if (property.hasVideos || property.hasVideoTour)
-                          _mediaBadge(Icons.videocam, 'Video'),
+                          _mediaBadge(Icons.videocam, 'video'.tr),
                         if (property.hasVirtualTour) _mediaBadge(Icons.threesixty, '360\u00b0'),
-                        if (property.hasStreetView) _mediaBadge(Icons.streetview, 'Street'),
-                        if (property.hasFloorPlan) _mediaBadge(Icons.apartment, 'Plan'),
+                        if (property.hasStreetView) _mediaBadge(Icons.streetview, 'street_view'.tr),
+                        if (property.hasFloorPlan) _mediaBadge(Icons.apartment, 'floor_plan'.tr),
                       ],
                     ),
                   ],
@@ -145,7 +149,7 @@ class PropertyCard extends StatelessWidget {
                             const Icon(Icons.threesixty, size: 20, color: AppColors.primaryYellow),
                             const SizedBox(width: 8),
                             Text(
-                              '360° Virtual Tour',
+                              'virtual_tour_title'.tr,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -155,7 +159,7 @@ class PropertyCard extends StatelessWidget {
                             const Spacer(),
                             InkWell(
                               onTap: () {
-                                Get.toNamed('/tour', arguments: property.virtualTourUrl);
+                                Get.toNamed(AppRoutes.tour, arguments: property.virtualTourUrl);
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -166,18 +170,18 @@ class PropertyCard extends StatelessWidget {
                                     color: AppColors.primaryYellow.withValues(alpha: 0.3),
                                   ),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.fullscreen,
                                       size: 14,
                                       color: AppColors.primaryYellow,
                                     ),
-                                    SizedBox(width: 4),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'Fullscreen',
-                                      style: TextStyle(
+                                      'fullscreen_mode'.tr,
+                                      style: const TextStyle(
                                         fontSize: 12,
                                         color: AppColors.primaryYellow,
                                         fontWeight: FontWeight.w500,

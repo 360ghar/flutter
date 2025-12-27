@@ -7,6 +7,34 @@ part 'page_state_model.g.dart';
 
 enum PageType { explore, discover, likes }
 
+/// Lightweight data structure for persisting only essential state to storage.
+/// Does NOT include properties list to avoid large disk writes and storage bloat.
+@JsonSerializable()
+class PageStateSnapshot {
+  final String pageType;
+  final LocationData? selectedLocation;
+  final String? locationSource;
+  final UnifiedFilterModel filters;
+  final String? searchQuery;
+  final Map<String, dynamic>? additionalData;
+  final DateTime? lastFetched;
+
+  const PageStateSnapshot({
+    required this.pageType,
+    this.selectedLocation,
+    this.locationSource,
+    required this.filters,
+    this.searchQuery,
+    this.additionalData,
+    this.lastFetched,
+  });
+
+  factory PageStateSnapshot.fromJson(Map<String, dynamic> json) =>
+      _$PageStateSnapshotFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PageStateSnapshotToJson(this);
+}
+
 @JsonSerializable()
 class PageStateModel {
   // Page identification
@@ -129,6 +157,39 @@ class PageStateModel {
   // Helper methods for specific page data
   T? getAdditionalData<T>(String key) {
     return additionalData?[key] as T?;
+  }
+
+  /// Creates a lightweight snapshot for persistence.
+  /// Excludes properties list to avoid large disk writes.
+  PageStateSnapshot toSnapshot() {
+    return PageStateSnapshot(
+      pageType: pageType.name,
+      selectedLocation: selectedLocation,
+      locationSource: locationSource,
+      filters: filters,
+      searchQuery: searchQuery,
+      additionalData: additionalData,
+      lastFetched: lastFetched,
+    );
+  }
+
+  /// Creates a PageStateModel from a persisted snapshot.
+  /// Properties list is initialized as empty (will be fetched on demand).
+  static PageStateModel fromSnapshot(PageStateSnapshot snapshot) {
+    final pageType = PageType.values.firstWhere(
+      (e) => e.name == snapshot.pageType,
+      orElse: () => PageType.discover,
+    );
+    return PageStateModel(
+      pageType: pageType,
+      selectedLocation: snapshot.selectedLocation,
+      locationSource: snapshot.locationSource,
+      filters: snapshot.filters,
+      searchQuery: snapshot.searchQuery,
+      additionalData: snapshot.additionalData,
+      lastFetched: snapshot.lastFetched,
+      properties: [], // Never persisted; fetched on demand
+    );
   }
 
   PageStateModel updateAdditionalData(String key, dynamic value) {

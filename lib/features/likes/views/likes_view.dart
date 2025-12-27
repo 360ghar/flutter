@@ -26,114 +26,116 @@ class LikesView extends GetView<LikesController> {
 
     final pageStateService = Get.find<PageStateService>();
 
-    // Reactive AppBar without rebuilding the whole Scaffold
-    final appBar = _ReactiveLikesAppBar(
-      onSearchChanged: controller.updateSearchQuery,
-      onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'likes'),
-    );
-
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: AppColors.scaffoldBackground,
-        appBar: appBar,
-        body: Column(
-          children: [
-            // Subtle refresh indicator
-            Obx(() {
-              if (!pageStateService.likesState.value.isRefreshing) {
-                return const SizedBox.shrink();
-              }
-              return LinearProgressIndicator(
-                minHeight: 2,
-                backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-              );
-            }),
-            // Tab bar directly under the unified top bar
-            Container(
-              color: AppColors.appBarBackground,
-              child: TabBar(
-                labelColor: colorScheme.primary,
-                unselectedLabelColor: AppColors.textSecondary,
-                indicatorColor: colorScheme.primary,
-                indicatorWeight: 3,
-                labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                onTap: (index) {
-                  final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
-                  controller.switchToSegment(segment);
-                },
-                tabs: [
-                  Tab(
-                    child: Obx(
-                      () => Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.favorite, size: 18),
-                          const SizedBox(width: 8),
-                          Text('liked'.tr),
-                          if (controller.currentSegment.value == LikesSegment.liked &&
-                              controller.hasCurrentProperties) ...[
+    // Wrap in Obx to rebuild Scaffold when search visibility changes
+    return Obx(() {
+      final searchVisible = pageStateService.isSearchVisible(PageType.likes);
+      return DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          key: ValueKey('likes_scaffold_$searchVisible'),
+          backgroundColor: AppColors.scaffoldBackground,
+          appBar: LikesTopBar(
+            onSearchChanged: controller.updateSearchQuery,
+            onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'likes'),
+          ),
+          body: Column(
+            children: [
+              // Subtle refresh indicator
+              Obx(() {
+                if (!pageStateService.likesState.value.isRefreshing) {
+                  return const SizedBox.shrink();
+                }
+                return LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                );
+              }),
+              // Tab bar directly under the unified top bar
+              Container(
+                color: AppColors.appBarBackground,
+                child: TabBar(
+                  labelColor: colorScheme.primary,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: colorScheme.primary,
+                  indicatorWeight: 3,
+                  labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  onTap: (index) {
+                    final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
+                    controller.switchToSegment(segment);
+                  },
+                  tabs: [
+                    Tab(
+                      child: Obx(
+                        () => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.favorite, size: 18),
                             const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '${controller.currentProperties.length}',
-                                style: TextStyle(
-                                  color: colorScheme.onPrimary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+                            Text('liked'.tr),
+                            if (controller.currentSegment.value == LikesSegment.liked &&
+                                controller.hasCurrentProperties) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${controller.currentProperties.length}',
+                                  style: TextStyle(
+                                    color: colorScheme.onPrimary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  Tab(
-                    child: Obx(
-                      () => Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.not_interested, size: 18),
-                          const SizedBox(width: 8),
-                          Text('passed'.tr),
-                          if (controller.currentSegment.value == LikesSegment.passed &&
-                              controller.hasCurrentProperties) ...[
+                    Tab(
+                      child: Obx(
+                        () => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.not_interested, size: 18),
                             const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '${controller.currentProperties.length}',
-                                style: TextStyle(
-                                  color: colorScheme.onSurface,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+                            Text('passed'.tr),
+                            if (controller.currentSegment.value == LikesSegment.passed &&
+                                controller.hasCurrentProperties) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${controller.currentProperties.length}',
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Expanded(child: TabBarView(children: [_buildLikesTab(), _buildPassedTab()])),
-          ],
+              Expanded(child: TabBarView(children: [_buildLikesTab(), _buildPassedTab()])),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildLikesTab() {
@@ -318,34 +320,5 @@ class LikesView extends GetView<LikesController> {
         duration: const Duration(seconds: 2),
       );
     }
-  }
-}
-
-// Reactive AppBar placed at top-level to satisfy Dart rules
-class _ReactiveLikesAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final ValueChanged<String>? onSearchChanged;
-  final VoidCallback? onFilterTap;
-
-  const _ReactiveLikesAppBar({this.onSearchChanged, this.onFilterTap});
-
-  @override
-  Size get preferredSize {
-    final pageStateService = Get.find<PageStateService>();
-    final searchVisible = pageStateService.isSearchVisible(PageType.likes);
-    final height = kToolbarHeight + (searchVisible ? 52 : 0);
-    return Size.fromHeight(height);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final pageStateService = Get.find<PageStateService>();
-      final searchVisible = pageStateService.isSearchVisible(PageType.likes);
-      return LikesTopBar(
-        key: ValueKey('likes_topbar_$searchVisible'),
-        onSearchChanged: onSearchChanged,
-        onFilterTap: onFilterTap,
-      );
-    });
   }
 }

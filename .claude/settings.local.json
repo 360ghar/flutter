@@ -2,5 +2,6 @@
   "enabledMcpjsonServers": [
     "dart",
     "exa"
-  ]
+  ],
+  "enableAllProjectMcpServers": true
 }

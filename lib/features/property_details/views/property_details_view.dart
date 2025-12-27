@@ -5,13 +5,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
-import 'package:ghar360/core/data/repositories/properties_repository.dart';
 import 'package:ghar360/core/utils/app_colors.dart';
 import 'package:ghar360/core/utils/image_cache_service.dart';
 import 'package:ghar360/core/utils/share_utils.dart';
 import 'package:ghar360/core/widgets/common/loading_states.dart';
 import 'package:ghar360/core/widgets/property/property_details_features.dart';
 import 'package:ghar360/features/likes/controllers/likes_controller.dart';
+import 'package:ghar360/features/property_details/controllers/property_details_controller.dart';
 import 'package:ghar360/features/property_details/widgets/property_media_hub.dart';
 import 'package:ghar360/features/visits/controllers/visits_controller.dart';
 import 'package:latlong2/latlong.dart';
@@ -19,56 +19,28 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class PropertyDetailsView extends StatelessWidget {
+class PropertyDetailsView extends GetView<PropertyDetailsController> {
   const PropertyDetailsView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Handle property ID from multiple sources:
-    // 1. Get.parameters['id'] - from URL routes like /p/:id or /property/:id
-    // 2. Get.arguments - from navigation with arguments (PropertyModel or String/int ID)
-    dynamic id = Get.arguments;
-
-    // Check URL parameters first for deep link routes
-    final urlId = Get.parameters['id'];
-    if (urlId != null && urlId.isNotEmpty) {
-      id = urlId;
-    }
-
-    PropertyModel? property;
-
-    if (id is PropertyModel) {
-      property = id;
-    } else if (id is String || id is int) {
-      final int? propertyId = id is int ? id : int.tryParse(id as String);
-      if (propertyId == null) {
-        return const _PropertyErrorScaffold(message: 'Invalid property id');
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const _PropertyLoadingScaffold();
       }
-      // Fetch property by id and render directly (don't redirect to /property-details as it requires auth)
-      final repo = Get.find<PropertiesRepository>();
-      return FutureBuilder<PropertyModel>(
-        future: repo.getPropertyDetail(propertyId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const _PropertyLoadingScaffold();
-          }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return _PropertyErrorScaffold(
-              message: 'Failed to load property: ${snapshot.error?.toString() ?? 'Unknown error'}',
-            );
-          }
-          // Render property directly instead of redirecting (avoids AuthMiddleware on /property-details)
-          return _PropertyContentView(property: snapshot.data!);
-        },
-      );
-    }
 
-    if (property == null) {
-      return const _PropertyErrorScaffold(message: 'Property not found');
-    }
+      final errorMessage = controller.errorMessage;
+      if (errorMessage != null) {
+        return _PropertyErrorScaffold(message: errorMessage);
+      }
 
-    // Use the same widget for both direct PropertyModel and fetched property
-    return _PropertyContentView(property: property);
+      final property = controller.property.value;
+      if (property == null) {
+        return _PropertyErrorScaffold(message: 'property_not_found'.tr);
+      }
+
+      return _PropertyContentView(property: property);
+    });
   }
 }
 
@@ -87,13 +59,6 @@ class _PropertyContentView extends StatelessWidget {
     // Add null check to ensure property is not null
     final PropertyModel safeProperty = property;
 
-    // Ensure visits are loaded to reflect scheduled state in UI
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!visitsController.hasLoadedVisits.value && !visitsController.isLoading.value) {
-        visitsController.loadVisitsLazy();
-      }
-    });
-
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: CustomScrollView(
@@ -106,7 +71,7 @@ class _PropertyContentView extends StatelessWidget {
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: AppColors.shadowColor.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -118,7 +83,7 @@ class _PropertyContentView extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: AppColors.shadowColor.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: Obx(
@@ -144,7 +109,7 @@ class _PropertyContentView extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: AppColors.shadowColor.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -195,7 +160,7 @@ class _PropertyContentView extends StatelessWidget {
                                       ),
                                       if (safeProperty.purpose == PropertyPurpose.rent)
                                         TextSpan(
-                                          text: ' /mo',
+                                          text: 'per_month_short'.tr,
                                           style: TextStyle(
                                             color: AppColors.textSecondary,
                                             fontSize: 14,
@@ -204,7 +169,7 @@ class _PropertyContentView extends StatelessWidget {
                                         ),
                                       if (safeProperty.purpose == PropertyPurpose.shortStay)
                                         TextSpan(
-                                          text: ' /day',
+                                          text: 'per_day_short'.tr,
                                           style: TextStyle(
                                             color: AppColors.textSecondary,
                                             fontSize: 14,
@@ -235,11 +200,18 @@ class _PropertyContentView extends StatelessWidget {
                                       ),
                                     if (safeProperty.securityDeposit != null)
                                       _chip(
-                                        'Deposit ₹${safeProperty.securityDeposit!.toStringAsFixed(0)}',
+                                        'security_deposit_amount'.trParams({
+                                          'amount': safeProperty.securityDeposit!.toStringAsFixed(
+                                            0,
+                                          ),
+                                        }),
                                       ),
                                     if (safeProperty.maintenanceCharges != null)
                                       _chip(
-                                        'Maintenance ₹${safeProperty.maintenanceCharges!.toStringAsFixed(0)}',
+                                        'maintenance_amount'.trParams({
+                                          'amount': safeProperty.maintenanceCharges!
+                                              .toStringAsFixed(0),
+                                        }),
                                       ),
                                   ],
                                 ),
@@ -301,7 +273,7 @@ class _PropertyContentView extends StatelessWidget {
 
                     // Description
                     Text(
-                      'Description',
+                      'description'.tr,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -310,13 +282,13 @@ class _PropertyContentView extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      safeProperty.description ?? 'No description available',
+                      safeProperty.description ?? 'no_description_available'.tr,
                       style: TextStyle(fontSize: 16, color: AppColors.textSecondary, height: 1.5),
                     ),
                     const SizedBox(height: 16),
                     if ((safeProperty.features?.isNotEmpty ?? false)) ...[
                       Text(
-                        'Highlights',
+                        'highlights'.tr,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -370,7 +342,7 @@ class _PropertyContentView extends StatelessWidget {
 
                     // Amenities
                     Text(
-                      'Amenities',
+                      'amenities'.tr,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -431,7 +403,7 @@ class _PropertyContentView extends StatelessWidget {
                     if (safeProperty.hasLocation) ...[
                       const SizedBox(height: 8),
                       Text(
-                        'Location',
+                        'location'.tr,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -641,7 +613,7 @@ class _PropertyContentView extends StatelessWidget {
               const Icon(Icons.info_outline, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Property Information',
+                'property_information'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -651,8 +623,8 @@ class _PropertyContentView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _buildInfoRow('Purpose', property.purposeString),
-          if (property.ageText.isNotEmpty) _buildInfoRow('Age', property.ageText),
+          _buildInfoRow('purpose'.tr, property.purposeString),
+          if (property.ageText.isNotEmpty) _buildInfoRow('age'.tr, property.ageText),
         ],
       ),
     );
@@ -674,7 +646,7 @@ class _PropertyContentView extends StatelessWidget {
               const Icon(Icons.payments_outlined, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Pricing Details',
+                'pricing_details'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -689,11 +661,11 @@ class _PropertyContentView extends StatelessWidget {
             final rows = <Widget>[];
             if (purpose == PropertyPurpose.rent) {
               final rent = property.monthlyRent ?? property.basePrice;
-              rows.add(_buildInfoRow('Monthly Rent', '₹${rent.toStringAsFixed(0)}'));
+              rows.add(_buildInfoRow('monthly_rent'.tr, '₹${rent.toStringAsFixed(0)}'));
               if (property.securityDeposit != null) {
                 rows.add(
                   _buildInfoRow(
-                    'Security Deposit',
+                    'security_deposit'.tr,
                     '₹${property.securityDeposit!.toStringAsFixed(0)}',
                   ),
                 );
@@ -701,34 +673,37 @@ class _PropertyContentView extends StatelessWidget {
               if (property.maintenanceCharges != null) {
                 rows.add(
                   _buildInfoRow(
-                    'Maintenance',
+                    'maintenance'.tr,
                     '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
                   ),
                 );
               }
             } else if (purpose == PropertyPurpose.shortStay) {
               final rate = property.dailyRate ?? property.basePrice;
-              rows.add(_buildInfoRow('Daily Rate', '₹${rate.toStringAsFixed(0)}'));
+              rows.add(_buildInfoRow('daily_rate'.tr, '₹${rate.toStringAsFixed(0)}'));
               if (property.securityDeposit != null) {
                 rows.add(
                   _buildInfoRow(
-                    'Security Deposit',
+                    'security_deposit'.tr,
                     '₹${property.securityDeposit!.toStringAsFixed(0)}',
                   ),
                 );
               }
             } else {
               // Buy/default
-              rows.add(_buildInfoRow('Sale Price', '₹${property.basePrice.toStringAsFixed(0)}'));
+              rows.add(_buildInfoRow('sale_price'.tr, '₹${property.basePrice.toStringAsFixed(0)}'));
               if (property.pricePerSqft != null) {
                 rows.add(
-                  _buildInfoRow('Price per Sq Ft', '₹${property.pricePerSqft!.toStringAsFixed(0)}'),
+                  _buildInfoRow(
+                    'price_per_sq_ft'.tr,
+                    '₹${property.pricePerSqft!.toStringAsFixed(0)}',
+                  ),
                 );
               }
               if (property.maintenanceCharges != null) {
                 rows.add(
                   _buildInfoRow(
-                    'Maintenance',
+                    'maintenance'.tr,
                     '₹${property.maintenanceCharges!.toStringAsFixed(0)}',
                   ),
                 );
@@ -757,7 +732,7 @@ class _PropertyContentView extends StatelessWidget {
               const Icon(Icons.contact_phone, color: AppColors.primaryYellow, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Builder Information',
+                'builder_information'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -768,7 +743,7 @@ class _PropertyContentView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (property.builderName?.isNotEmpty == true)
-            _buildInfoRow('Builder', property.builderName!),
+            _buildInfoRow('builder'.tr, property.builderName!),
         ],
       ),
     );
@@ -820,14 +795,14 @@ class _PropertyContentView extends StatelessWidget {
     Get.dialog(
       AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text('Schedule Visit', style: TextStyle(color: AppColors.textPrimary)),
+        title: Text('schedule_visit'.tr, style: TextStyle(color: AppColors.textPrimary)),
         content: StatefulBuilder(
           builder: (context, setState) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Schedule a visit to ${safeProperty.title}',
+                  'schedule_visit_to'.trParams({'property': safeProperty.title}),
                   style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
@@ -835,7 +810,7 @@ class _PropertyContentView extends StatelessWidget {
                 // Date Selection
                 ListTile(
                   leading: const Icon(Icons.calendar_today, color: AppColors.primaryYellow),
-                  title: Text('Date', style: TextStyle(color: AppColors.textPrimary)),
+                  title: Text('date'.tr, style: TextStyle(color: AppColors.textPrimary)),
                   subtitle: Text(
                     '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
                     style: TextStyle(color: AppColors.textSecondary),
@@ -878,7 +853,7 @@ class _PropertyContentView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('cancel'.tr, style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -979,8 +954,8 @@ Future<void> _openGoogleMaps(double latitude, double longitude, String label) as
     await launchUrl(url, mode: LaunchMode.externalApplication);
   } else {
     Get.snackbar(
-      'Unable to open maps',
-      'Please check your device settings',
+      'unable_to_open_maps'.tr,
+      'check_device_settings'.tr,
       snackPosition: SnackPosition.TOP,
       backgroundColor: AppColors.snackbarBackground,
       colorText: AppColors.snackbarText,
@@ -1047,13 +1022,15 @@ class _PropertyImageGalleryState extends State<_PropertyImageGallery> {
       builder: (_) {
         return Dialog(
           insetPadding: const EdgeInsets.all(16),
-          backgroundColor: Colors.black87,
+          backgroundColor: AppColors.shadowColor.withValues(alpha: 0.9),
           child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.7,
             child: PhotoViewGallery.builder(
               itemCount: _images.length,
               pageController: PageController(initialPage: initialIndex),
-              backgroundDecoration: const BoxDecoration(color: Colors.black87),
+              backgroundDecoration: BoxDecoration(
+                color: AppColors.shadowColor.withValues(alpha: 0.9),
+              ),
               builder: (context, index) {
                 final url = _images[index];
                 return PhotoViewGalleryPageOptions(

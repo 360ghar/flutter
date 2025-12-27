@@ -6,6 +6,28 @@ part of 'page_state_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+PageStateSnapshot _$PageStateSnapshotFromJson(Map<String, dynamic> json) => PageStateSnapshot(
+  pageType: json['pageType'] as String,
+  selectedLocation: json['selectedLocation'] == null
+      ? null
+      : LocationData.fromJson(json['selectedLocation'] as Map<String, dynamic>),
+  locationSource: json['locationSource'] as String?,
+  filters: UnifiedFilterModel.fromJson(json['filters'] as Map<String, dynamic>),
+  searchQuery: json['searchQuery'] as String?,
+  additionalData: json['additionalData'] as Map<String, dynamic>?,
+  lastFetched: json['lastFetched'] == null ? null : DateTime.parse(json['lastFetched'] as String),
+);
+
+Map<String, dynamic> _$PageStateSnapshotToJson(PageStateSnapshot instance) => <String, dynamic>{
+  'pageType': instance.pageType,
+  'selectedLocation': instance.selectedLocation,
+  'locationSource': instance.locationSource,
+  'filters': instance.filters,
+  'searchQuery': instance.searchQuery,
+  'additionalData': instance.additionalData,
+  'lastFetched': instance.lastFetched?.toIso8601String(),
+};
+
 PageStateModel _$PageStateModelFromJson(Map<String, dynamic> json) => PageStateModel(
   pageType: $enumDecode(_$PageTypeEnumMap, json['pageType']),
   selectedLocation: json['selectedLocation'] == null

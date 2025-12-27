@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:ghar360/core/utils/app_spacing.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
@@ -39,6 +39,120 @@ class AppTheme {
   // Alias for backward compatibility
   static const Color primaryColor = primaryYellow;
 
+  // Standard transitions
+  static const Duration defaultTransitionDuration = Duration(milliseconds: 300);
+  static const Curve defaultTransitionCurve = Curves.easeOutCubic;
+
+  static TextTheme _buildTextTheme({required Brightness brightness}) {
+    final isDark = brightness == Brightness.dark;
+    final primary = isDark ? darkTextPrimary : textDark;
+    final secondary = isDark ? darkTextSecondary : textGray;
+    final tertiary = isDark ? darkTextTertiary : textLight;
+
+    final base = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+
+    return GoogleFonts.interTextTheme(
+      base.copyWith(
+        displayLarge: TextStyle(
+          fontSize: 34,
+          fontWeight: FontWeight.w800,
+          color: primary,
+          height: 1.12,
+          letterSpacing: -0.75,
+        ),
+        displayMedium: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
+          color: primary,
+          height: 1.16,
+          letterSpacing: -0.5,
+        ),
+        displaySmall: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          color: primary,
+          height: 1.2,
+          letterSpacing: -0.25,
+        ),
+        headlineLarge: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: primary,
+          height: 1.25,
+          letterSpacing: -0.2,
+        ),
+        headlineMedium: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: primary,
+          height: 1.3,
+          letterSpacing: -0.15,
+        ),
+        headlineSmall: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: primary,
+          height: 1.3,
+          letterSpacing: -0.1,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: primary,
+          height: 1.35,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: primary,
+          height: 1.35,
+        ),
+        titleSmall: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: primary,
+          height: 1.35,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: primary,
+          height: 1.65,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: secondary,
+          height: 1.6,
+        ),
+        bodySmall: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          color: tertiary,
+          height: 1.5,
+        ),
+        labelLarge: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: primary,
+          height: 1.2,
+        ),
+        labelMedium: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: primary,
+          height: 1.2,
+        ),
+        labelSmall: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: primary,
+          height: 1.2,
+        ),
+      ),
+    );
+  }
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -55,42 +169,7 @@ class AppTheme {
         onError: backgroundWhite,
         outline: textLight,
       ),
-      textTheme: GoogleFonts.interTextTheme(
-        ThemeData.light().textTheme.copyWith(
-          displayLarge: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: textDark,
-            letterSpacing: -0.5,
-          ),
-          displayMedium: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: textDark,
-            letterSpacing: -0.25,
-          ),
-          titleLarge: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: textDark),
-          titleMedium: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: textDark),
-          bodyLarge: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-            color: textDark,
-            height: 1.5,
-          ),
-          bodyMedium: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.normal,
-            color: textGray,
-            height: 1.4,
-          ),
-          bodySmall: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.normal,
-            color: textLight,
-            height: 1.3,
-          ),
-        ),
-      ),
+      textTheme: _buildTextTheme(brightness: Brightness.light),
       appBarTheme: const AppBarTheme(
         backgroundColor: backgroundWhite,
         foregroundColor: textDark,
@@ -106,6 +185,37 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: textDark,
+          side: const BorderSide(color: primaryYellow, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          minimumSize: const Size(0, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.button),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryYellow,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.button),
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: primaryYellow,
+          foregroundColor: textDark,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          minimumSize: const Size(0, 52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.button),
+          ),
         ),
       ),
       cardTheme: CardThemeData(
@@ -159,50 +269,7 @@ class AppTheme {
         onError: darkTextPrimary,
         outline: darkTextTertiary,
       ),
-      textTheme: GoogleFonts.interTextTheme(
-        ThemeData.dark().textTheme.copyWith(
-          displayLarge: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: darkTextPrimary,
-            letterSpacing: -0.5,
-          ),
-          displayMedium: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: darkTextPrimary,
-            letterSpacing: -0.25,
-          ),
-          titleLarge: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: darkTextPrimary,
-          ),
-          titleMedium: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: darkTextPrimary,
-          ),
-          bodyLarge: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.normal,
-            color: darkTextPrimary,
-            height: 1.5,
-          ),
-          bodyMedium: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.normal,
-            color: darkTextSecondary,
-            height: 1.4,
-          ),
-          bodySmall: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.normal,
-            color: darkTextTertiary,
-            height: 1.3,
-          ),
-        ),
-      ),
+      textTheme: _buildTextTheme(brightness: Brightness.dark),
       appBarTheme: const AppBarTheme(
         backgroundColor: darkSurface,
         foregroundColor: darkTextPrimary,
@@ -222,6 +289,37 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: darkTextPrimary,
+          side: const BorderSide(color: primaryYellow, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          minimumSize: const Size(0, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.button),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryYellow,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.button),
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: primaryYellow,
+          foregroundColor: textDark,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          minimumSize: const Size(0, 52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.button),
+          ),
         ),
       ),
       cardTheme: CardThemeData(

@@ -232,6 +232,8 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
 
     if (searchVisible) {
       height += 52; // Add height for search bar
+    } else if (bottom != null) {
+      height += bottom!.preferredSize.height;
     }
     return Size.fromHeight(height);
   }

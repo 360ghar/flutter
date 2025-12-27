@@ -9,6 +9,26 @@ class AuthRepository extends GetxService {
 
   // --- STREAMS & GETTERS ---
 
+  // --- USER EXISTENCE CHECK ---
+
+  /// Check if a user with the given phone number exists in the system.
+  /// Queries the users table to determine if the phone is already registered.
+  Future<bool> checkUserExists(String phone) async {
+    try {
+      DebugLogger.auth('Checking if user exists for phone: $phone');
+
+      // Query the users table to check if phone exists
+      final response = await _supabase.from('users').select('id').eq('phone', phone).maybeSingle();
+
+      final exists = response != null;
+      DebugLogger.auth('User exists check result: $exists');
+      return exists;
+    } catch (e, stackTrace) {
+      DebugLogger.error('Error checking user existence', e, stackTrace);
+      rethrow;
+    }
+  }
+
   /// Stream of user authentication state changes from Supabase.
   Stream<User?> get onAuthStateChange =>
       _supabase.auth.onAuthStateChange.map((data) => data.session?.user);

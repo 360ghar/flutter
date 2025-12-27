@@ -94,7 +94,7 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
       if (properties.isEmpty) {
         return Container(
           height: 10, // keep minimal footprint when empty
-          color: Colors.transparent,
+          color: AppColors.transparent,
         );
       }
 
@@ -118,7 +118,7 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: isSelected ? AppColors.getCardShadow() : null,
                 border: Border.all(
-                  color: isSelected ? AppColors.primaryYellow : Colors.transparent,
+                  color: isSelected ? AppColors.primaryYellow : AppColors.transparent,
                   width: 2,
                 ),
               ),

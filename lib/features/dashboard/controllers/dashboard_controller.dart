@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/controllers/auth_controller.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
+import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
@@ -93,8 +94,8 @@ class DashboardController extends GetxController {
       DebugLogger.error('Error loading dashboard data', e, stackTrace);
 
       Get.snackbar(
-        'Dashboard Error',
-        'Failed to load dashboard data. Please try again.',
+        'dashboard_error_title'.tr,
+        'dashboard_error_message'.tr,
         snackPosition: SnackPosition.TOP,
       );
     } finally {
@@ -288,22 +289,22 @@ class DashboardController extends GetxController {
   // Sync tab with current route
   void syncTabWithRoute(String route) {
     switch (route) {
-      case '/profile':
+      case AppRoutes.profile:
         currentIndex.value = 0; // ProfileView
         break;
-      case '/explore':
+      case AppRoutes.explore:
         currentIndex.value = 1; // ExploreView
         break;
-      case '/discover':
+      case AppRoutes.discover:
         currentIndex.value = 2; // DiscoverView
         break;
-      case '/likes':
+      case AppRoutes.likes:
         currentIndex.value = 3; // LikesView
         break;
-      case '/visits':
+      case AppRoutes.visits:
         currentIndex.value = 4; // VisitsView
         break;
-      case '/dashboard':
+      case AppRoutes.dashboard:
       case '/':
         // Keep current tab for dashboard route to avoid unwanted switches
         break;

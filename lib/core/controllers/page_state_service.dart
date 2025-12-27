@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -46,8 +47,24 @@ class PageStateService extends GetxController {
   Timer? _discoverDebouncer;
   Timer? _likesDebouncer;
 
+  // Persistence debounce timers (500ms to batch rapid state updates)
+  Timer? _explorePersistDebouncer;
+  Timer? _discoverPersistDebouncer;
+  Timer? _likesPersistDebouncer;
+  static const _persistDebounceMs = 500;
+
   // Stream subscriptions (to prevent memory leaks)
   StreamSubscription? _locationSubscription;
+
+  Position? _lastGpsPosition;
+  Position? _lastGpsGeocodePosition;
+  DateTime? _lastGpsRefreshAt;
+  DateTime? _lastGpsGeocodeAt;
+
+  static const Duration _gpsRefreshMinInterval = Duration(minutes: 3);
+  static const double _gpsRefreshMinDistanceMeters = 300;
+  static const Duration _gpsGeocodeMinInterval = Duration(minutes: 2);
+  static const double _gpsGeocodeMinDistanceMeters = 150;
 
   @override
   void onInit() {
@@ -66,6 +83,10 @@ class PageStateService extends GetxController {
     _exploreDebouncer?.cancel();
     _discoverDebouncer?.cancel();
     _likesDebouncer?.cancel();
+    // Cancel persistence debouncers
+    _explorePersistDebouncer?.cancel();
+    _discoverPersistDebouncer?.cancel();
+    _likesPersistDebouncer?.cancel();
     // Cancel location subscription to prevent memory leaks
     _locationSubscription?.cancel();
     // Dispose search controllers to prevent memory leaks
@@ -81,22 +102,43 @@ class PageStateService extends GetxController {
       // Load saved states from local storage
       final savedExploreState = _storage.read('explore_state');
       if (savedExploreState != null) {
-        exploreState.value = PageStateModel.fromJson(savedExploreState);
+        // Migration: handle both old full-state format and new snapshot format
+        exploreState.value = _loadStateFromStorage(savedExploreState, PageType.explore);
       }
 
       final savedDiscoverState = _storage.read('discover_state');
       if (savedDiscoverState != null) {
-        discoverState.value = PageStateModel.fromJson(savedDiscoverState);
+        discoverState.value = _loadStateFromStorage(savedDiscoverState, PageType.discover);
       }
 
       final savedLikesState = _storage.read('likes_state');
       if (savedLikesState != null) {
-        likesState.value = PageStateModel.fromJson(savedLikesState);
+        likesState.value = _loadStateFromStorage(savedLikesState, PageType.likes);
       }
 
       DebugLogger.success('📂 Loaded saved page states');
     } catch (e) {
       DebugLogger.error('Error loading saved page states: $e');
+    }
+  }
+
+  /// Loads a PageStateModel from storage, handling migration from old full-state format.
+  PageStateModel _loadStateFromStorage(Map<String, dynamic> json, PageType fallbackType) {
+    try {
+      // Check if this is the new snapshot format (has 'pageType' as string, no 'properties')
+      if (json.containsKey('pageType') &&
+          json['pageType'] is String &&
+          !json.containsKey('properties')) {
+        // New lightweight snapshot format
+        final snapshot = PageStateSnapshot.fromJson(json);
+        return PageStateModel.fromSnapshot(snapshot);
+      }
+      // Old format: parse as full PageStateModel but discard properties (they're stale anyway)
+      final fullModel = PageStateModel.fromJson(json);
+      return fullModel.copyWith(properties: []); // Clear stale properties
+    } catch (e) {
+      DebugLogger.warning('Failed to parse saved state, using initial: $e');
+      return PageStateModel.initial(fallbackType);
     }
   }
 
@@ -183,8 +225,8 @@ class PageStateService extends GetxController {
       DebugLogger.error('❌ Failed to bootstrap initial location', e, st);
       // You can show a global error snackbar here if needed
       Get.snackbar(
-        'Location Error',
-        'Could not determine your initial location. Please check your settings and try again.',
+        'location_error'.tr,
+        'failed_to_get_location_message'.tr,
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 5),
       );
@@ -192,35 +234,108 @@ class PageStateService extends GetxController {
   }
 
   void _setupListeners() {
-    // Save states whenever they change
+    // Save lightweight snapshots (NOT full properties list) with debouncing
     ever(exploreState, (state) {
-      _storage.write('explore_state', state.toJson());
+      _debouncedPersist(PageType.explore, state);
     });
 
     ever(discoverState, (state) {
-      _storage.write('discover_state', state.toJson());
+      _debouncedPersist(PageType.discover, state);
     });
 
     ever(likesState, (state) {
-      _storage.write('likes_state', state.toJson());
+      _debouncedPersist(PageType.likes, state);
     });
 
     // Listen to location updates; update only current page to keep independence
-    _locationSubscription = _locationController.currentPosition.listen((position) async {
-      if (position != null) {
-        // Get real address from coordinates
-        final locationName = await _locationController.getAddressFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-        final loc = LocationData(
-          name: locationName,
-          latitude: position.latitude,
-          longitude: position.longitude,
-        );
-        await updateLocationForPage(currentPageType.value, loc, source: 'gps');
-      }
+    _locationSubscription?.cancel();
+    _locationSubscription = _locationController.currentPosition.listen((position) {
+      if (position == null) return;
+      unawaited(_handleGpsPositionUpdate(position));
     });
+  }
+
+  double _distanceMeters(Position a, Position b) {
+    return Geolocator.distanceBetween(a.latitude, a.longitude, b.latitude, b.longitude);
+  }
+
+  Future<void> _handleGpsPositionUpdate(Position position) async {
+    final now = DateTime.now();
+    final last = _lastGpsPosition;
+    _lastGpsPosition = position;
+
+    final movedMeters = last == null ? double.infinity : _distanceMeters(last, position);
+    final shouldRefresh =
+        movedMeters >= _gpsRefreshMinDistanceMeters ||
+        _lastGpsRefreshAt == null ||
+        now.difference(_lastGpsRefreshAt!) >= _gpsRefreshMinInterval;
+
+    final lastGeocode = _lastGpsGeocodePosition;
+    final geocodeMoved = lastGeocode == null
+        ? double.infinity
+        : _distanceMeters(lastGeocode, position);
+    final shouldGeocode =
+        _lastGpsGeocodeAt == null ||
+        geocodeMoved >= _gpsGeocodeMinDistanceMeters ||
+        now.difference(_lastGpsGeocodeAt!) >= _gpsGeocodeMinInterval;
+
+    final pageType = currentPageType.value;
+    final currentState = _getStateForPage(pageType);
+
+    String locationName;
+    if (shouldGeocode) {
+      locationName = await _locationController.getAddressFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+      _lastGpsGeocodeAt = now;
+      _lastGpsGeocodePosition = position;
+    } else {
+      locationName =
+          currentState.selectedLocation?.name ?? _locationController.currentAddress.value;
+      if (locationName.isEmpty) {
+        locationName = 'location_found'.tr;
+      }
+    }
+
+    final loc = LocationData(
+      name: locationName,
+      latitude: position.latitude,
+      longitude: position.longitude,
+    );
+
+    await updateLocationForPage(pageType, loc, source: shouldRefresh ? 'gps' : 'gps_passive');
+
+    if (shouldRefresh) {
+      _lastGpsRefreshAt = now;
+    }
+  }
+
+  /// Debounced persistence to avoid excessive disk writes on rapid state changes.
+  void _debouncedPersist(PageType pageType, PageStateModel state) {
+    switch (pageType) {
+      case PageType.explore:
+        _explorePersistDebouncer?.cancel();
+        _explorePersistDebouncer = Timer(
+          const Duration(milliseconds: _persistDebounceMs),
+          () => _storage.write('explore_state', state.toSnapshot().toJson()),
+        );
+        break;
+      case PageType.discover:
+        _discoverPersistDebouncer?.cancel();
+        _discoverPersistDebouncer = Timer(
+          const Duration(milliseconds: _persistDebounceMs),
+          () => _storage.write('discover_state', state.toSnapshot().toJson()),
+        );
+        break;
+      case PageType.likes:
+        _likesPersistDebouncer?.cancel();
+        _likesPersistDebouncer = Timer(
+          const Duration(milliseconds: _persistDebounceMs),
+          () => _storage.write('likes_state', state.toSnapshot().toJson()),
+        );
+        break;
+    }
   }
 
   // Load globally stored purpose/property_type and apply across pages
@@ -255,7 +370,8 @@ class PageStateService extends GetxController {
 
     // Resolve human-friendly name if placeholder
     LocationData finalLocation = location;
-    if (_isPlaceholderLocationName(location.name)) {
+    final shouldResolveName = source != 'gps_passive';
+    if (shouldResolveName && _isPlaceholderLocationName(location.name)) {
       try {
         final resolvedName = await _locationController.getAddressFromCoordinates(
           location.latitude,
@@ -279,11 +395,11 @@ class PageStateService extends GetxController {
     _updatePageState(pageType, updated);
 
     // Only trigger a data refresh if the source is not 'initial' or 'hydrate'
-    if (source != 'initial' && source != 'hydrate') {
+    if (source != 'initial' && source != 'hydrate' && source != 'gps_passive') {
       DebugLogger.info('🔄 Debouncing refresh for ${pageType.name} after location update');
       _debounceRefresh(pageType);
     } else {
-      DebugLogger.info('⏭️ Skipping refresh for initial/hydrate location update.');
+      DebugLogger.info('Skipping refresh for passive or initial location update.');
     }
   }
 
@@ -325,7 +441,7 @@ class PageStateService extends GetxController {
       DebugLogger.success('✅ Location updated: ${location.name}');
 
       // Trigger data refresh just for current page (only for non-initial sources)
-      if (source != 'initial' && source != 'hydrate') {
+      if (source != 'initial' && source != 'hydrate' && source != 'gps_passive') {
         _debounceRefresh(currentPageType.value);
       }
     } catch (e) {
@@ -335,7 +451,7 @@ class PageStateService extends GetxController {
 
   Future<void> useCurrentLocation() async {
     try {
-      await _locationController.getCurrentLocation();
+      await _locationController.getCurrentLocation(forceRefresh: true);
       final position = _locationController.currentPosition.value;
       if (position != null) {
         // Get real address from coordinates
@@ -353,8 +469,8 @@ class PageStateService extends GetxController {
     } catch (e) {
       DebugLogger.error('Failed to get current location: $e');
       Get.snackbar(
-        'Location Error',
-        'Unable to get your current location',
+        'location_error'.tr,
+        'unable_to_get_current_location'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
     }
@@ -363,7 +479,7 @@ class PageStateService extends GetxController {
   // Page-specific current location (with IP fallback)
   Future<void> useCurrentLocationForPage(PageType pageType) async {
     try {
-      await _locationController.getCurrentLocation();
+      await _locationController.getCurrentLocation(forceRefresh: true);
       final position = _locationController.currentPosition.value;
       if (position != null) {
         // Get real address from coordinates
@@ -493,9 +609,21 @@ class PageStateService extends GetxController {
           // Use ETag only for time-based/background revalidation; skip for explicit forceRefresh to avoid mismatched keys
           final useEtag = !forceRefresh;
           unawaited(
-            _fetchAndUpdatePage(pageType, page: 1, useEtag: useEtag).whenComplete(() {
-              notifyPageRefreshing(pageType, false);
-            }),
+            _fetchAndUpdatePage(pageType, page: 1, useEtag: useEtag)
+                .catchError((e, stackTrace) {
+                  DebugLogger.error('❌ Background refresh failed for ${pageType.name}', e);
+                  final current = _getStateForPage(pageType);
+                  _updatePageState(
+                    pageType,
+                    current.copyWith(
+                      isRefreshing: false,
+                      error: ErrorMapper.mapApiError(e, stackTrace),
+                    ),
+                  );
+                })
+                .whenComplete(() {
+                  notifyPageRefreshing(pageType, false);
+                }),
           );
         } else {
           // Fresh enough; nothing to do
