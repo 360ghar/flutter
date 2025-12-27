@@ -36,7 +36,16 @@ class ProfileCompletionController extends GetxController {
   }
 
   Future<void> completeProfile() async {
-    if (isLoading.value || !(formKey.currentState?.validate() ?? false)) return;
+    if (isLoading.value) return;
+
+    final isValid = formKey.currentState?.validate() ?? false;
+    if (!isValid) {
+      if (currentStep.value != 0) {
+        currentStep.value = 0;
+        update();
+      }
+      return;
+    }
 
     try {
       isLoading.value = true;
@@ -85,6 +94,11 @@ class ProfileCompletionController extends GetxController {
   }
 
   void nextStep() {
+    if (currentStep.value == 0) {
+      final isValid = formKey.currentState?.validate() ?? false;
+      if (!isValid) return;
+    }
+
     if (currentStep.value < 1) {
       currentStep.value++;
       update(); // Trigger UI rebuild for GetBuilder
@@ -118,6 +132,7 @@ class ProfileCompletionController extends GetxController {
       dateOfBirthController.text = formattedDate;
 
       update(); // Trigger UI rebuild for GetBuilder
+      formKey.currentState?.validate();
     }
   }
 

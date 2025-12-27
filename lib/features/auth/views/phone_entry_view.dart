@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
 
+import 'package:ghar360/core/utils/app_spacing.dart';
 import 'package:ghar360/core/utils/theme.dart';
+import 'package:ghar360/core/widgets/common/shake_widget.dart';
 import 'package:ghar360/features/auth/controllers/phone_entry_controller.dart';
 
 class PhoneEntryView extends GetView<PhoneEntryController> {
@@ -30,7 +32,7 @@ class PhoneEntryView extends GetView<PhoneEntryController> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Form(
               key: controller.formKey,
               child: Column(
@@ -117,81 +119,111 @@ class PhoneEntryView extends GetView<PhoneEntryController> {
                         ),
                       );
                     },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark
-                                ? AppTheme.darkShadow
-                                : AppTheme.cardShadow.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                    child: Obx(() {
+                      final isFocused = controller.isPhoneFocused.value;
+                      final shakeTrigger = controller.validationShakeTrigger.value;
+
+                      return ShakeWidget(
+                        trigger: shakeTrigger,
+                        child: AnimatedContainer(
+                          duration: AppDurations.fast,
+                          curve: Curves.easeOutCubic,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isFocused
+                                    ? AppTheme.primaryYellow.withValues(alpha: isDark ? 0.22 : 0.18)
+                                    : (isDark
+                                          ? AppTheme.darkShadow
+                                          : AppTheme.cardShadow.withValues(alpha: 0.1)),
+                                blurRadius: isFocused ? 28 : 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: TextFormField(
-                        controller: controller.phoneController,
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          hintText: 'phone_hint'.tr,
-                          prefixIcon: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('🇮🇳', style: TextStyle(fontSize: 24)),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '+91',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onSurface,
-                                  ),
+                          child: TextFormField(
+                            controller: controller.phoneController,
+                            focusNode: controller.phoneFocusNode,
+                            autofocus: true,
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            decoration: InputDecoration(
+                              hintText: 'phone_hint'.tr,
+                              prefixIcon: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('🇮🇳', style: TextStyle(fontSize: 24)),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Text(
+                                      '+91',
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    Container(
+                                      height: 24,
+                                      width: 1,
+                                      margin: const EdgeInsets.only(left: AppSpacing.md - 4),
+                                      color: colorScheme.outline.withValues(alpha: 0.3),
+                                    ),
+                                  ],
                                 ),
-                                Container(
-                                  height: 24,
-                                  width: 1,
-                                  margin: const EdgeInsets.only(left: 12),
-                                  color: colorScheme.outline.withValues(alpha: 0.3),
+                              ),
+                              filled: true,
+                              fillColor: isDark ? AppTheme.darkCard : AppTheme.backgroundWhite,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: const BorderSide(
+                                  color: AppTheme.primaryYellow,
+                                  width: 2,
                                 ),
-                              ],
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: colorScheme.error, width: 1),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide(color: colorScheme.error, width: 2),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                                vertical: AppSpacing.lg,
+                              ),
+                              errorStyle: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.error,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              letterSpacing: 1.6,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                            validator: controller.validatePhone,
+                            textInputAction: TextInputAction.done,
+                            onChanged: (_) {
+                              if (controller.errorMessage.value.isNotEmpty) {
+                                controller.errorMessage.value = '';
+                              }
+                            },
+                            onFieldSubmitted: (_) => controller.checkAndNavigate(),
                           ),
-                          filled: true,
-                          fillColor: isDark ? AppTheme.darkCard : AppTheme.backgroundWhite,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: AppTheme.primaryYellow, width: 2),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: colorScheme.error, width: 1),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: colorScheme.error, width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                         ),
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(10),
-                        ],
-                        validator: controller.validatePhone,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => controller.checkAndNavigate(),
-                      ),
-                    ),
+                      );
+                    }),
                   ),
 
                   const SizedBox(height: 16),

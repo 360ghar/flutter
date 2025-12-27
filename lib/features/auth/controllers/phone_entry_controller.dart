@@ -17,11 +17,14 @@ class PhoneEntryController extends GetxController {
   final formKey = GlobalKey<FormState>();
 
   final phoneController = TextEditingController();
+  final phoneFocusNode = FocusNode();
 
   final Rx<PhoneEntryState> state = PhoneEntryState.idle.obs;
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   final RxBool userExists = false.obs;
+  final RxBool isPhoneFocused = false.obs;
+  final RxInt validationShakeTrigger = 0.obs;
 
   String? validatePhone(String? value) {
     final raw = (value ?? '').trim();
@@ -37,8 +40,20 @@ class PhoneEntryController extends GetxController {
     return null;
   }
 
+  @override
+  void onInit() {
+    super.onInit();
+    phoneFocusNode.addListener(() {
+      isPhoneFocused.value = phoneFocusNode.hasFocus;
+    });
+  }
+
   Future<void> checkAndNavigate() async {
-    if (!formKey.currentState!.validate()) return;
+    final isValid = formKey.currentState?.validate() ?? false;
+    if (!isValid) {
+      validationShakeTrigger.value++;
+      return;
+    }
 
     state.value = PhoneEntryState.checking;
     isLoading.value = true;
@@ -72,6 +87,7 @@ class PhoneEntryController extends GetxController {
   @override
   void onClose() {
     phoneController.dispose();
+    phoneFocusNode.dispose();
     super.onClose();
   }
 }

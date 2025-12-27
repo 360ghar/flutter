@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/utils/app_spacing.dart';
 import 'package:ghar360/core/utils/theme.dart';
+import 'package:ghar360/core/widgets/common/app_text_field.dart';
 import 'package:ghar360/features/auth/controllers/profile_completion_controller.dart';
 
 class ProfileCompletionView extends StatelessWidget {
@@ -11,62 +13,85 @@ class ProfileCompletionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return GetBuilder<ProfileCompletionController>(
       builder: (controller) {
         return Scaffold(
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Form(
                 key: controller.formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.lg),
 
                       // Header
                       Text(
                         'complete_your_profile'.tr,
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: colorScheme.onSurface,
+                        ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Text(
                         'personalize_experience_subtitle'.tr,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: AppSpacing.xl),
 
                       // Progress Indicator (2 steps)
-                      LinearProgressIndicator(
-                        value: (controller.currentStep.value + 1) / 2,
-                        backgroundColor: Colors.grey[300],
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppBorderRadius.round),
+                        child: LinearProgressIndicator(
+                          value: (controller.currentStep.value + 1) / 2,
+                          backgroundColor: colorScheme.outline.withValues(alpha: 0.2),
+                          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                          minHeight: 6,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Step ${controller.currentStep.value + 1} of 2',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        'step_of'.trParams({
+                          'step': '${controller.currentStep.value + 1}',
+                          'total': '2',
+                        }),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: AppSpacing.xl),
 
                       // Step Content
                       _buildStepContent(controller),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: AppSpacing.xl),
 
                       // Navigation Buttons
                       _buildNavigationButtons(context, controller),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.md),
 
                       // Skip Button
                       TextButton(
                         onPressed: controller.skipToHome,
-                        child: Text('skip_for_now'.tr, style: const TextStyle(color: Colors.grey)),
+                        child: Text(
+                          'skip_for_now'.tr,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -80,28 +105,35 @@ class ProfileCompletionView extends StatelessWidget {
   }
 
   Widget _buildStepContent(ProfileCompletionController controller) {
-    switch (controller.currentStep.value) {
-      case 0:
-        return _buildPersonalInfoStep(controller);
-      case 1:
-        return _buildPurposeStep(controller);
-      default:
-        return _buildPersonalInfoStep(controller);
-    }
+    return Column(
+      children: [
+        Offstage(
+          offstage: controller.currentStep.value != 0,
+          child: _buildPersonalInfoStep(controller),
+        ),
+        Offstage(offstage: controller.currentStep.value != 1, child: _buildPurposeStep(controller)),
+      ],
+    );
   }
 
   Widget _buildNavigationButtons(BuildContext context, ProfileCompletionController controller) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         if (controller.currentStep.value > 0)
           Expanded(
             child: OutlinedButton(
               onPressed: controller.previousStep,
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.button),
+                ),
+              ),
               child: Text('back'.tr),
             ),
           ),
-        if (controller.currentStep.value > 0) const SizedBox(width: 16),
+        if (controller.currentStep.value > 0) const SizedBox(width: AppSpacing.md),
         Expanded(
           flex: 2,
           child: ElevatedButton(
@@ -111,9 +143,12 @@ class ProfileCompletionView extends StatelessWidget {
                       ? controller.nextStep
                       : controller.completeProfile),
             style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               backgroundColor: AppColors.primaryYellow,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              foregroundColor: AppColors.buttonText,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppBorderRadius.button),
+              ),
             ),
             child: controller.isLoading.value
                 ? SizedBox(
@@ -126,10 +161,10 @@ class ProfileCompletionView extends StatelessWidget {
                   )
                 : Text(
                     controller.currentStep.value < 1 ? 'next'.tr : 'complete'.tr,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimary,
+                      color: theme.colorScheme.onPrimary,
                     ),
                   ),
           ),
@@ -139,46 +174,63 @@ class ProfileCompletionView extends StatelessWidget {
   }
 
   Widget _buildPersonalInfoStep(ProfileCompletionController controller) {
+    final theme = Get.context!.theme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'personal_information'.tr,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         // Full Name
-        TextFormField(
+        AppTextField(
           controller: controller.fullNameController,
-          decoration: InputDecoration(
-            labelText: 'full_name'.tr,
-            prefixIcon: const Icon(Icons.person_outline),
-            border: const OutlineInputBorder(),
-          ),
+          labelText: 'full_name'.tr,
+          prefixIcon: const Icon(Icons.person_outline),
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.next,
+          validator: (value) {
+            if ((value ?? '').trim().isEmpty) {
+              return 'full_name_required'.tr;
+            }
+            return null;
+          },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         // Email (for profile, not for auth)
-        TextFormField(
+        AppTextField(
           controller: controller.emailController,
-          decoration: InputDecoration(
-            labelText: 'email_address'.tr,
-            prefixIcon: const Icon(Icons.email_outlined),
-            border: const OutlineInputBorder(),
-          ),
+          labelText: 'email_address'.tr,
+          prefixIcon: const Icon(Icons.email_outlined),
           keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
+          validator: (value) {
+            final email = (value ?? '').trim();
+            if (email.isEmpty) {
+              return 'email_required'.tr;
+            }
+            if (!GetUtils.isEmail(email)) {
+              return 'email_invalid'.tr;
+            }
+            return null;
+          },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         // Date of Birth
-        TextFormField(
+        AppTextField(
           controller: controller.dateOfBirthController,
-          decoration: InputDecoration(
-            labelText: 'date_of_birth'.tr,
-            prefixIcon: const Icon(Icons.cake_outlined),
-            border: const OutlineInputBorder(),
-            hintText: 'dob_format_hint'.tr,
-          ),
+          labelText: 'date_of_birth'.tr,
+          prefixIcon: const Icon(Icons.cake_outlined),
+          hintText: 'dob_format_hint'.tr,
           readOnly: true,
           onTap: () => controller.selectDateOfBirth(),
+          validator: (_) {
+            if (controller.selectedDateOfBirth == null) {
+              return 'dob_required'.tr;
+            }
+            return null;
+          },
         ),
       ],
     );
@@ -188,8 +240,8 @@ class ProfileCompletionView extends StatelessWidget {
     final theme = Get.context!.theme;
     final isDark = theme.brightness == Brightness.dark;
     final onSurface = theme.colorScheme.onSurface;
-    final selectedBg = AppTheme.primaryColor;
-    final selectedFg = AppTheme.textDark;
+    final selectedBg = theme.colorScheme.primary;
+    final selectedFg = theme.colorScheme.onPrimary;
 
     Widget buildOption({required String purpose, required IconData icon, required String label}) {
       final isSelected = controller.selectedPropertyPurpose.value == purpose;
@@ -202,7 +254,7 @@ class ProfileCompletionView extends StatelessWidget {
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg, horizontal: AppSpacing.md),
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             height: 110,
             decoration: BoxDecoration(
@@ -211,17 +263,11 @@ class ProfileCompletionView extends StatelessWidget {
                   : (isDark ? AppTheme.darkCard : AppTheme.backgroundWhite),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected
-                    ? AppTheme.primaryYellowDark
-                    : (isDark ? AppTheme.darkBorder : AppTheme.cardShadow),
+                color: isSelected ? AppTheme.primaryYellowDark : AppColors.border,
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: [
-                BoxShadow(
-                  color: isDark ? AppTheme.darkShadow : AppTheme.cardShadow,
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
+                BoxShadow(color: AppColors.shadowColor, blurRadius: 8, offset: const Offset(0, 4)),
               ],
             ),
             child: Row(

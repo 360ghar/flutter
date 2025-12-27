@@ -335,6 +335,7 @@ class ErrorStates {
         final theme = Theme.of(context);
         final textTheme = theme.textTheme;
         final onSurface = theme.colorScheme.onSurface;
+        final primary = theme.colorScheme.primary;
 
         return Center(
           child: Padding(
@@ -342,11 +343,27 @@ class ErrorStates {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '🏠',
-                  style:
-                      textTheme.displayMedium?.copyWith(color: onSurface) ??
-                      TextStyle(fontSize: 56, color: onSurface),
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.9, end: 1.0),
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutBack,
+                  builder: (context, value, child) {
+                    return Transform.scale(scale: value, child: child);
+                  },
+                  child: Container(
+                    width: 92,
+                    height: 92,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [primary.withValues(alpha: 0.18), primary.withValues(alpha: 0.06)],
+                      ),
+                      border: Border.all(color: primary.withValues(alpha: 0.18)),
+                    ),
+                    child: Icon(Icons.home_outlined, size: 44, color: primary),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(

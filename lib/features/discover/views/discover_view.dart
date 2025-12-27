@@ -146,6 +146,9 @@ class DiscoverView extends GetView<DiscoverController> {
                 onSwipeLeft: controller.swipeLeft,
                 onSwipeRight: controller.swipeRight,
                 onSwipeUp: (property) => controller.viewPropertyDetails(property),
+                onRefresh: controller.refreshDeck,
+                onChangeFilters: () =>
+                    showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'discover'),
                 showSwipeInstructions: controller.totalSwipesInSession.value < 3,
               ),
             ),

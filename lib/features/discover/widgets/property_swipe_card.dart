@@ -11,6 +11,7 @@ import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/share_utils.dart';
 import 'package:ghar360/core/utils/theme.dart';
 import 'package:ghar360/core/utils/webview_helper.dart';
+import 'package:ghar360/core/widgets/common/error_states.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -65,14 +66,11 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                 // Hero Image with overlay info (Use available height properly)
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    // Use available parent height instead of full screen height
-                    // This ensures we don't overlap with app bar or other UI elements
-                    final availableHeight = constraints.maxHeight > 0
-                        ? constraints.maxHeight
-                        : MediaQuery.of(context).size.height - 200; // Fallback with safe margins
+                    final screenHeight = MediaQuery.sizeOf(context).height;
+                    final heroHeight = math.min(screenHeight * 0.78, 680.0);
 
                     return SizedBox(
-                      height: math.min(availableHeight * 0.8, 600), // Cap at reasonable max height
+                      height: heroHeight,
                       child: Stack(
                         children: [
                           // Main property image
@@ -102,10 +100,9 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     AppColors.transparent,
-                                    AppColors.transparent,
-                                    AppColors.shadowColor.withValues(alpha: 0.7),
+                                    AppColors.shadowColor.withValues(alpha: 0.85),
                                   ],
-                                  stops: const [0.0, 0.5, 1.0],
+                                  stops: const [0.55, 1.0],
                                 ),
                               ),
                             ),
@@ -168,7 +165,16 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                             child: Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: AppColors.shadowColor.withValues(alpha: 0.35),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    AppColors.shadowColor.withValues(alpha: 0.0),
+                                    AppColors.shadowColor.withValues(alpha: 0.65),
+                                    AppColors.shadowColor.withValues(alpha: 0.88),
+                                  ],
+                                  stops: const [0.0, 0.45, 1.0],
+                                ),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,117 +273,67 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
                                   ),
                                   const SizedBox(height: 8),
 
-                                  // Property specs with enhanced info
+                                  // Property specs (icons for critical info)
                                   Wrap(
                                     spacing: 8,
-                                    runSpacing: 4,
+                                    runSpacing: 6,
                                     children: [
-                                      // Basic specs
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
+                                      if (widget.property.bedrooms != null)
+                                        _buildSpecPill(
+                                          context,
+                                          icon: Icons.bed_outlined,
+                                          label: '${widget.property.bedrooms} BHK',
                                         ),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.darkTextPrimary.withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(12),
+                                      if (widget.property.bathrooms != null)
+                                        _buildSpecPill(
+                                          context,
+                                          icon: Icons.bathtub_outlined,
+                                          label: '${widget.property.bathrooms} Bath',
                                         ),
-                                        child: Text(
-                                          widget.property.bedroomBathroomText.isNotEmpty
-                                              ? widget.property.bedroomBathroomText
-                                              : 'property_label'.tr,
-                                          style: theme.textTheme.labelMedium?.copyWith(
-                                            color: AppTheme.darkTextPrimary,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-
-                                      // Area if available
                                       if (widget.property.areaText.isNotEmpty)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.darkTextPrimary.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            widget.property.areaText,
-                                            style: theme.textTheme.labelMedium?.copyWith(
-                                              color: AppTheme.darkTextPrimary,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
+                                        _buildSpecPill(
+                                          context,
+                                          icon: Icons.square_foot,
+                                          label: widget.property.areaText,
                                         ),
-
-                                      // Floor info if available
                                       if (widget.property.floorText.isNotEmpty)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.darkTextPrimary.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            widget.property.floorText,
-                                            style: theme.textTheme.labelMedium?.copyWith(
-                                              color: AppTheme.darkTextPrimary,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
+                                        _buildSpecPill(
+                                          context,
+                                          icon: Icons.layers_outlined,
+                                          label: widget.property.floorText,
                                         ),
-                                      // Price per sqft if available
                                       if (widget.property.pricePerSqft != null)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.darkTextPrimary.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            'price_per_sq_ft_amount'.trParams({
-                                              'price': widget.property.pricePerSqft!
-                                                  .toStringAsFixed(0),
-                                            }),
-                                            style: theme.textTheme.labelMedium?.copyWith(
-                                              color: AppTheme.darkTextPrimary,
-                                              fontWeight: FontWeight.w500,
+                                        _buildSpecPill(
+                                          context,
+                                          icon: Icons.trending_up,
+                                          label: 'price_per_sq_ft_amount'.trParams({
+                                            'price': widget.property.pricePerSqft!.toStringAsFixed(
+                                              0,
                                             ),
-                                          ),
+                                          }),
                                         ),
-                                      // Parking if available
                                       if (widget.property.parkingSpaces != null)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.darkTextPrimary.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            'parking_spaces'.trParams({
-                                              'count': '${widget.property.parkingSpaces}',
-                                            }),
-                                            style: theme.textTheme.labelMedium?.copyWith(
-                                              color: AppTheme.darkTextPrimary,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
+                                        _buildSpecPill(
+                                          context,
+                                          icon: Icons.local_parking,
+                                          label: 'parking_spaces'.trParams({
+                                            'count': '${widget.property.parkingSpaces}',
+                                          }),
+                                        ),
+                                      if (widget.property.bedrooms == null &&
+                                          widget.property.bathrooms == null &&
+                                          widget.property.areaText.isEmpty &&
+                                          widget.property.floorText.isEmpty &&
+                                          widget.property.pricePerSqft == null &&
+                                          widget.property.parkingSpaces == null)
+                                        _buildSpecPill(
+                                          context,
+                                          icon: Icons.info_outline,
+                                          label: 'property_label'.tr,
                                         ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 10),
                                   // Lightweight metrics
                                   Row(
                                     children: [
@@ -910,6 +866,31 @@ class _PropertySwipeCardState extends State<PropertySwipeCard> {
       ),
     );
   }
+
+  Widget _buildSpecPill(BuildContext context, {required IconData icon, required String label}) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.darkTextPrimary.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppTheme.darkTextPrimary.withValues(alpha: 0.9)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: AppTheme.darkTextPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // Opens Google Maps with directions to the given coordinates
@@ -936,6 +917,8 @@ class PropertySwipeStack extends StatefulWidget {
   final Function(PropertyModel) onSwipeRight;
   final Function(PropertyModel) onSwipeUp;
   final bool showSwipeInstructions;
+  final VoidCallback? onChangeFilters;
+  final VoidCallback? onRefresh;
 
   const PropertySwipeStack({
     super.key,
@@ -944,6 +927,8 @@ class PropertySwipeStack extends StatefulWidget {
     required this.onSwipeRight,
     required this.onSwipeUp,
     this.showSwipeInstructions = false,
+    this.onChangeFilters,
+    this.onRefresh,
   });
 
   @override
@@ -1093,37 +1078,14 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
 
     if (_properties.isEmpty) {
       DebugLogger.warning('PropertySwipeStack: No properties to display');
-      final theme = Theme.of(context);
-      final colorScheme = theme.colorScheme;
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.home_outlined,
-              size: 64,
-              color: colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'no_more_properties'.tr,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.8),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'no_more_properties_message'.tr,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
+      return ErrorStates.swipeDeckEmpty(
+        onRefresh: widget.onRefresh,
+        onChangeFilters: widget.onChangeFilters,
       );
     }
 
     final screenSize = MediaQuery.of(context).size;
+    final dragThreshold = screenSize.width * 0.25;
     DebugLogger.debug('PropertySwipeStack: Rendering ${_properties.length} properties');
 
     return GestureDetector(
@@ -1191,6 +1153,10 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
                     ? _rotation
                     : _rotation * (1 + _swipeAnimation.value * 2);
 
+                final likeProgress = (_dragPosition.dx / dragThreshold).clamp(0.0, 1.0);
+                final passProgress = (-_dragPosition.dx / dragThreshold).clamp(0.0, 1.0);
+                final showFeedback = _isDragging && (likeProgress > 0 || passProgress > 0);
+
                 return Transform.translate(
                   offset: swipeOffset,
                   child: Transform(
@@ -1202,11 +1168,21 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
                       opacity: _swipeAnimationController.isAnimating
                           ? (1 - _swipeAnimation.value)
                           : 1.0,
-                      child: PropertySwipeCard(
-                        property: _properties[0],
-                        showSwipeInstructions: widget.showSwipeInstructions,
-                        onInteractionStart: () => setState(() => _blockGestures = true),
-                        onInteractionEnd: () => setState(() => _blockGestures = false),
+                      child: Stack(
+                        children: [
+                          PropertySwipeCard(
+                            property: _properties[0],
+                            showSwipeInstructions: widget.showSwipeInstructions,
+                            onInteractionStart: () => setState(() => _blockGestures = true),
+                            onInteractionEnd: () => setState(() => _blockGestures = false),
+                          ),
+                          if (showFeedback)
+                            _buildSwipeFeedbackOverlay(
+                              context,
+                              likeProgress: likeProgress,
+                              passProgress: passProgress,
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -1226,6 +1202,121 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSwipeFeedbackOverlay(
+    BuildContext context, {
+    required double likeProgress,
+    required double passProgress,
+  }) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Stack(
+          children: [
+            if (likeProgress > 0)
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.transparent,
+                      AppColors.successGreen.withValues(alpha: 0.18 * likeProgress),
+                    ],
+                  ),
+                ),
+              ),
+            if (passProgress > 0)
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [
+                      AppColors.transparent,
+                      AppColors.errorRed.withValues(alpha: 0.18 * passProgress),
+                    ],
+                  ),
+                ),
+              ),
+            Positioned(
+              top: 24,
+              left: 24,
+              child: Opacity(
+                opacity: likeProgress,
+                child: Transform.rotate(
+                  angle: -0.18,
+                  child: _buildSwipeDecisionBadge(
+                    context,
+                    color: AppColors.successGreen,
+                    icon: Icons.favorite_rounded,
+                    label: 'liked'.tr.toUpperCase(),
+                    progress: likeProgress,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 24,
+              right: 24,
+              child: Opacity(
+                opacity: passProgress,
+                child: Transform.rotate(
+                  angle: 0.18,
+                  child: _buildSwipeDecisionBadge(
+                    context,
+                    color: AppColors.errorRed,
+                    icon: Icons.close_rounded,
+                    label: 'passed'.tr.toUpperCase(),
+                    progress: passProgress,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSwipeDecisionBadge(
+    BuildContext context, {
+    required Color color,
+    required IconData icon,
+    required String label,
+    required double progress,
+  }) {
+    final theme = Theme.of(context);
+    final scale = 0.92 + 0.08 * progress;
+
+    return Transform.scale(
+      scale: scale,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.darkTextPrimary.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.95), width: 2),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
