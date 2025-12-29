@@ -6,10 +6,15 @@ plugins {
     id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    // Enable Google Services (parses google-services.json if present)
-    id("com.google.gms.google-services")
-    id("com.google.firebase.firebase-perf")
-    id("com.google.firebase.crashlytics")
+    id("com.google.gms.google-services") apply false
+    id("com.google.firebase.firebase-perf") apply false
+    id("com.google.firebase.crashlytics") apply false
+}
+
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.firebase-perf")
+    apply(plugin = "com.google.firebase.crashlytics")
 }
 
 val keystoreProperties = Properties()
@@ -73,6 +78,13 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+        }
+    }
+
+    // Disable Crashlytics mapping file upload during build to avoid network issues
+    tasks.whenTaskAdded {
+        if (name == "uploadCrashlyticsMappingFileRelease") {
+            enabled = false
         }
     }
 }

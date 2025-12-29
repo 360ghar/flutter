@@ -61,10 +61,16 @@ jobs:
         echo "Environment files created successfully"
         # Don't print the file contents to avoid exposing secrets in logs
 
-    - name: Set up JDK 17
+    - name: Configure Firebase (optional)
+      if: secrets.ANDROID_GOOGLE_SERVICES_JSON_BASE64 != ''
+      run: |
+        set -euo pipefail
+        printf '%s' "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > android/app/google-services.json
+
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
 
     - name: Set up Flutter
@@ -72,18 +78,47 @@ jobs:
       with:
         flutter-version: '3.35.2'
         channel: 'stable'
+        cache: true
+
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Ensure Android SDK packages
+      run: |
+        set -euxo pipefail
+
+        ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+        if [ -z "${ANDROID_SDK_ROOT}" ]; then
+          echo "ANDROID_SDK_ROOT/ANDROID_HOME is not set" >&2
+          exit 1
+        fi
+
+        SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+        if [ ! -x "${SDKMANAGER}" ]; then
+          SDKMANAGER="$(command -v sdkmanager || true)"
+        fi
+        if [ -z "${SDKMANAGER}" ] || [ ! -x "${SDKMANAGER}" ]; then
+          echo "sdkmanager not found" >&2
+          exit 1
+        fi
+
+        yes | "${SDKMANAGER}" --licenses >/dev/null
+
+        if [ ! -d "${ANDROID_SDK_ROOT}/platforms/android-36" ]; then
+          "${SDKMANAGER}" "platforms;android-36"
+        fi
 
     - name: Capture Flutter/Dart versions
       id: versions
       run: |
-        echo "flutter_version=$(flutter --version | head -n1 | sed 's/Flutter /Flutter /')" >> $GITHUB_OUTPUT
-        echo "dart_version=$(dart --version | sed 's/Dart /Dart /')" >> $GITHUB_OUTPUT
+        echo "flutter_version=$(flutter --version | head -n1)" >> $GITHUB_OUTPUT
+        echo "dart_version=$(dart --version 2>&1)" >> $GITHUB_OUTPUT
 
     - name: Verify Flutter and Dart versions
       run: |
         echo "Flutter version: $(flutter --version)"
         echo "Dart version: $(dart --version)"
-        dart_version=$(dart --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        dart_version=$(dart --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
         echo "Dart version extracted: $dart_version"
 
         # Check if Dart version is >= 3.8.0
@@ -93,42 +128,6 @@ jobs:
           echo "❌ Dart version $dart_version is incompatible (<3.8.0)"
           exit 1
         fi
-
-    - name: Cache Flutter dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.pub-cache
-          .flutter/plugins
-          .flutter/config
-          ~/.dart-tool
-          .dart_tool
-        key: flutter-dart-${{ runner.os }}-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
-        restore-keys: |
-          flutter-dart-${{ runner.os }}-
-
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-          android/.gradle
-        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          gradle-${{ runner.os }}-
-
-    - name: Cache Android SDK
-      uses: actions/cache@v4
-      with:
-        path: |
-          ${{ env.ANDROID_SDK_ROOT }}/platforms
-          ${{ env.ANDROID_SDK_ROOT }}/platform-tools
-          ${{ env.ANDROID_SDK_ROOT }}/build-tools
-          ${{ env.ANDROID_SDK_ROOT }}/ndk
-        key: android-sdk-${{ runner.os }}-${{ hashFiles('android/app/build.gradle') }}
-        restore-keys: |
-          android-sdk-${{ runner.os }}-
 
     - name: Get Flutter dependencies
       run: flutter pub get

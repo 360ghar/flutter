@@ -32,6 +32,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+coverage/
 
 # FVM (Flutter Version Manager) related
 .fvm/
@@ -67,7 +68,7 @@ digest.txt
 
 venv/
 android/key.properties
-\n# Firebase configuration files
+# Firebase configuration files
 ios/Runner/GoogleService-Info.plist
 
 # Android local & build outputs
