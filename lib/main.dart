@@ -20,6 +20,7 @@ import 'package:ghar360/core/utils/null_check_trap.dart';
 import 'package:ghar360/core/utils/theme.dart';
 import 'package:ghar360/core/utils/webview_helper.dart';
 import 'package:ghar360/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:ghar360/features/notifications/data/datasources/notifications_remote_datasource.dart';
 import 'package:ghar360/root.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -108,11 +109,51 @@ void main() async {
       try {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
           try {
+            DebugLogger.info('🔔 Starting deferred notifications setup...');
+
+            // Configure token registration callback to send token to backend
+            PushNotificationsService.onTokenRegistration = (token) async {
+              try {
+                // Get user ID if authenticated
+                String? userId;
+                try {
+                  userId = Supabase.instance.client.auth.currentUser?.id;
+                } catch (_) {}
+
+                // Register token with backend
+                if (Get.isRegistered<NotificationsRemoteDatasource>()) {
+                  final datasource = Get.find<NotificationsRemoteDatasource>();
+                  await datasource.registerDeviceToken(
+                    token: token,
+                    userId: userId,
+                  );
+                } else {
+                  DebugLogger.warning('🔔 NotificationsRemoteDatasource not registered yet');
+                }
+              } catch (e, st) {
+                DebugLogger.warning('🔔 Failed to register token with backend', e, st);
+              }
+            };
+
+            // Initialize FCM handling (foreground, background, terminated states)
             await PushNotificationsService.initializeForegroundHandling();
-            await PushNotificationsService.requestUserPermission(provisional: false);
-            await PushNotificationsService.getToken();
+
+            // Request notification permissions
+            final settings = await PushNotificationsService.requestUserPermission(provisional: false);
+            DebugLogger.info('🔔 Permission status: ${settings.authorizationStatus}');
+
+            // Get and log FCM token (this will also trigger registration with backend)
+            final token = await PushNotificationsService.getToken();
+            if (token != null) {
+              DebugLogger.success('🔔 Notifications setup complete. Token available.');
+              // Check if notifications are actually enabled on the device
+              final enabled = await PushNotificationsService.areNotificationsEnabled();
+              DebugLogger.info('🔔 Notifications enabled on device: $enabled');
+            } else {
+              DebugLogger.warning('🔔 Notifications setup incomplete - no FCM token!');
+            }
           } catch (e, st) {
-            DebugLogger.warning('Deferred notifications setup failed', e, st);
+            DebugLogger.error('🔔 Deferred notifications setup failed', e, st);
           }
         });
       } catch (_) {}
