@@ -6,6 +6,7 @@ import 'package:ghar360/core/network/auth_header_provider.dart';
 import 'package:ghar360/core/network/etag_cache.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/features/auth/data/datasources/auth_remote_datasource.dart';
+import 'package:ghar360/features/notifications/data/datasources/notifications_remote_datasource.dart';
 import 'package:ghar360/features/properties/data/datasources/properties_remote_datasource.dart';
 import 'package:ghar360/features/properties/data/repositories/properties_repository_impl.dart';
 import 'package:ghar360/features/properties/domain/usecases/get_properties_usecase.dart';
@@ -42,6 +43,10 @@ class ServiceLocator {
     Get.put<AuthRemoteDatasource>(AuthRemoteDatasource(Get.find<ApiClient>()), permanent: true);
     Get.put<VisitsRemoteDatasource>(VisitsRemoteDatasource(Get.find<ApiClient>()), permanent: true);
     Get.put<SwipesRemoteDatasource>(SwipesRemoteDatasource(Get.find<ApiClient>()), permanent: true);
+    Get.put<NotificationsRemoteDatasource>(
+      NotificationsRemoteDatasource(Get.find<ApiClient>()),
+      permanent: true,
+    );
 
     // Repositories
     Get.put<PropertiesRepositoryImpl>(
