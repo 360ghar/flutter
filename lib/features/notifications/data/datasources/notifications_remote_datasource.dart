@@ -16,10 +16,7 @@ class NotificationsRemoteDatasource {
   ///
   /// Endpoint: POST /api/v1/notifications/devices/register
   /// If the caller is authenticated, the token will be associated with the user.
-  Future<bool> registerDeviceToken({
-    required String token,
-    String? userId,
-  }) async {
+  Future<bool> registerDeviceToken({required String token, String? userId}) async {
     try {
       // Get app version and locale
       String appVersion = 'unknown';
@@ -64,10 +61,7 @@ class NotificationsRemoteDatasource {
       DebugLogger.info('🔑 Registering device token with backend...');
       DebugLogger.debug('🔑 Platform: $platform, Version: $appVersion, Locale: $locale');
 
-      final response = await _apiClient.post(
-        '/api/v1/notifications/devices/register',
-        body: body,
-      );
+      final response = await _apiClient.post('/api/v1/notifications/devices/register', body: body);
 
       if (response.isSuccess) {
         DebugLogger.success('🔑 Device token registered successfully');

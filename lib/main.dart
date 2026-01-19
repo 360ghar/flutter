@@ -123,10 +123,7 @@ void main() async {
                 // Register token with backend
                 if (Get.isRegistered<NotificationsRemoteDatasource>()) {
                   final datasource = Get.find<NotificationsRemoteDatasource>();
-                  await datasource.registerDeviceToken(
-                    token: token,
-                    userId: userId,
-                  );
+                  await datasource.registerDeviceToken(token: token, userId: userId);
                 } else {
                   DebugLogger.warning('🔔 NotificationsRemoteDatasource not registered yet');
                 }
@@ -139,7 +136,9 @@ void main() async {
             await PushNotificationsService.initializeForegroundHandling();
 
             // Request notification permissions
-            final settings = await PushNotificationsService.requestUserPermission(provisional: false);
+            final settings = await PushNotificationsService.requestUserPermission(
+              provisional: false,
+            );
             DebugLogger.info('🔔 Permission status: ${settings.authorizationStatus}');
 
             // Get and log FCM token (this will also trigger registration with backend)

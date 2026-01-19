@@ -147,7 +147,9 @@ class PushNotificationsService {
     // Handle notification tap that launched the app from terminated state
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      DebugLogger.info('📩 [FCM][INITIAL] App launched via notification: ${initialMessage.messageId}');
+      DebugLogger.info(
+        '📩 [FCM][INITIAL] App launched via notification: ${initialMessage.messageId}',
+      );
       // Delay navigation slightly to ensure app is fully loaded
       Future.delayed(const Duration(milliseconds: 500), () {
         _handleRemoteMessage(initialMessage);
@@ -284,11 +286,7 @@ class PushNotificationsService {
         playSound: true,
         icon: '@mipmap/ic_launcher',
       ),
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
+      iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
     );
 
     final id = (DateTime.now().millisecondsSinceEpoch & 0x7fffffff);

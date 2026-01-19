@@ -65,8 +65,8 @@ Future<void> _showBackgroundNotification(
       importance: Importance.max,
     );
 
-    final androidPlugin = fln.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = fln
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(channel);
 
     // Show the notification
