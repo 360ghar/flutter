@@ -5,52 +5,52 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/middlewares/auth_middleware.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_spacing.dart';
-import 'package:ghar360/features/auth/bindings/auth_binding.dart';
-import 'package:ghar360/features/auth/bindings/forgot_password_binding.dart';
-import 'package:ghar360/features/auth/bindings/phone_entry_binding.dart';
-import 'package:ghar360/features/auth/bindings/profile_completion_binding.dart';
-import 'package:ghar360/features/auth/bindings/signup_binding.dart';
-import 'package:ghar360/features/auth/views/forgot_password_view.dart';
-import 'package:ghar360/features/auth/views/login_view.dart';
-import 'package:ghar360/features/auth/views/phone_entry_view.dart';
-import 'package:ghar360/features/auth/views/profile_completion_view.dart';
-import 'package:ghar360/features/auth/views/signup_view.dart';
-import 'package:ghar360/features/dashboard/bindings/dashboard_binding.dart';
-import 'package:ghar360/features/dashboard/views/dashboard_view.dart';
-import 'package:ghar360/features/discover/bindings/discover_binding.dart';
-import 'package:ghar360/features/discover/views/discover_view.dart';
-import 'package:ghar360/features/explore/bindings/explore_binding.dart';
-import 'package:ghar360/features/explore/views/explore_view.dart';
-import 'package:ghar360/features/likes/bindings/likes_binding.dart';
-import 'package:ghar360/features/likes/views/likes_view.dart';
-import 'package:ghar360/features/location_search/bindings/location_search_binding.dart';
-import 'package:ghar360/features/location_search/views/location_search_view.dart';
-import 'package:ghar360/features/profile/bindings/feedback_binding.dart';
-import 'package:ghar360/features/profile/bindings/profile_binding.dart';
-import 'package:ghar360/features/profile/controllers/preferences_controller.dart';
-import 'package:ghar360/features/profile/views/about_view.dart';
-import 'package:ghar360/features/profile/views/edit_profile_view.dart';
-import 'package:ghar360/features/profile/views/feedback_view.dart';
-import 'package:ghar360/features/profile/views/help_view.dart';
-import 'package:ghar360/features/profile/views/preferences_view.dart';
-import 'package:ghar360/features/profile/views/privacy_view.dart';
-import 'package:ghar360/features/profile/views/profile_view.dart';
-import 'package:ghar360/features/property_details/bindings/property_details_binding.dart';
-import 'package:ghar360/features/property_details/views/property_details_view.dart';
-import 'package:ghar360/features/splash/bindings/splash_binding.dart';
-import 'package:ghar360/features/splash/views/splash_view.dart';
-import 'package:ghar360/features/tools/bindings/tools_binding.dart';
-import 'package:ghar360/features/tools/views/area_converter_view.dart';
-import 'package:ghar360/features/tools/views/capital_gains_view.dart';
-import 'package:ghar360/features/tools/views/carpet_area_view.dart';
-import 'package:ghar360/features/tools/views/document_checklist_view.dart';
-import 'package:ghar360/features/tools/views/emi_calculator_view.dart';
-import 'package:ghar360/features/tools/views/loan_eligibility_view.dart';
-import 'package:ghar360/features/tools/views/tools_view.dart';
-import 'package:ghar360/features/tour/bindings/tour_binding.dart';
-import 'package:ghar360/features/tour/views/tour_view.dart';
-import 'package:ghar360/features/visits/bindings/visits_binding.dart';
-import 'package:ghar360/features/visits/views/visits_view.dart';
+import 'package:ghar360/features/auth/presentation/bindings/auth_binding.dart';
+import 'package:ghar360/features/auth/presentation/bindings/forgot_password_binding.dart';
+import 'package:ghar360/features/auth/presentation/bindings/phone_entry_binding.dart';
+import 'package:ghar360/features/auth/presentation/bindings/profile_completion_binding.dart';
+import 'package:ghar360/features/auth/presentation/bindings/signup_binding.dart';
+import 'package:ghar360/features/auth/presentation/views/forgot_password_view.dart';
+import 'package:ghar360/features/auth/presentation/views/login_view.dart';
+import 'package:ghar360/features/auth/presentation/views/phone_entry_view.dart';
+import 'package:ghar360/features/auth/presentation/views/profile_completion_view.dart';
+import 'package:ghar360/features/auth/presentation/views/signup_view.dart';
+import 'package:ghar360/features/dashboard/presentation/bindings/dashboard_binding.dart';
+import 'package:ghar360/features/dashboard/presentation/views/dashboard_view.dart';
+import 'package:ghar360/features/discover/presentation/bindings/discover_binding.dart';
+import 'package:ghar360/features/discover/presentation/views/discover_view.dart';
+import 'package:ghar360/features/explore/presentation/bindings/explore_binding.dart';
+import 'package:ghar360/features/explore/presentation/views/explore_view.dart';
+import 'package:ghar360/features/likes/presentation/bindings/likes_binding.dart';
+import 'package:ghar360/features/likes/presentation/views/likes_view.dart';
+import 'package:ghar360/features/location_search/presentation/bindings/location_search_binding.dart';
+import 'package:ghar360/features/location_search/presentation/views/location_search_view.dart';
+import 'package:ghar360/features/profile/presentation/bindings/feedback_binding.dart';
+import 'package:ghar360/features/profile/presentation/bindings/profile_binding.dart';
+import 'package:ghar360/features/profile/presentation/controllers/preferences_controller.dart';
+import 'package:ghar360/features/profile/presentation/views/about_view.dart';
+import 'package:ghar360/features/profile/presentation/views/edit_profile_view.dart';
+import 'package:ghar360/features/profile/presentation/views/feedback_view.dart';
+import 'package:ghar360/features/profile/presentation/views/help_view.dart';
+import 'package:ghar360/features/profile/presentation/views/preferences_view.dart';
+import 'package:ghar360/features/profile/presentation/views/privacy_view.dart';
+import 'package:ghar360/features/profile/presentation/views/profile_view.dart';
+import 'package:ghar360/features/property_details/presentation/bindings/property_details_binding.dart';
+import 'package:ghar360/features/property_details/presentation/views/property_details_view.dart';
+import 'package:ghar360/features/splash/presentation/bindings/splash_binding.dart';
+import 'package:ghar360/features/splash/presentation/views/splash_view.dart';
+import 'package:ghar360/features/tools/presentation/bindings/tools_binding.dart';
+import 'package:ghar360/features/tools/presentation/views/area_converter_view.dart';
+import 'package:ghar360/features/tools/presentation/views/capital_gains_view.dart';
+import 'package:ghar360/features/tools/presentation/views/carpet_area_view.dart';
+import 'package:ghar360/features/tools/presentation/views/document_checklist_view.dart';
+import 'package:ghar360/features/tools/presentation/views/emi_calculator_view.dart';
+import 'package:ghar360/features/tools/presentation/views/loan_eligibility_view.dart';
+import 'package:ghar360/features/tools/presentation/views/tools_view.dart';
+import 'package:ghar360/features/tour/presentation/bindings/tour_binding.dart';
+import 'package:ghar360/features/tour/presentation/views/tour_view.dart';
+import 'package:ghar360/features/visits/presentation/bindings/visits_binding.dart';
+import 'package:ghar360/features/visits/presentation/views/visits_view.dart';
 
 // Use package import to ensure middleware classes are resolved correctly
 
@@ -140,7 +140,6 @@ class AppPages {
         ),
       ],
     ),
-    // Legacy /home retained only if needed. Prefer /discover
     GetPage(
       name: AppRoutes.propertyDetails,
       page: () => const PropertyDetailsView(),

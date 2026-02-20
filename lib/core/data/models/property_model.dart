@@ -17,6 +17,14 @@ enum PropertyType {
   villa,
   @JsonValue('plot')
   plot,
+  @JsonValue('condo')
+  condo,
+  @JsonValue('penthouse')
+  penthouse,
+  @JsonValue('studio')
+  studio,
+  @JsonValue('loft')
+  loft,
 }
 
 enum PropertyPurpose {
@@ -26,6 +34,46 @@ enum PropertyPurpose {
   rent,
   @JsonValue('short_stay')
   shortStay,
+}
+
+extension PropertyTypeWireValue on PropertyType {
+  String get wireValue {
+    switch (this) {
+      case PropertyType.house:
+        return 'house';
+      case PropertyType.apartment:
+        return 'apartment';
+      case PropertyType.builderFloor:
+        return 'builder_floor';
+      case PropertyType.room:
+        return 'room';
+      case PropertyType.villa:
+        return 'villa';
+      case PropertyType.plot:
+        return 'plot';
+      case PropertyType.condo:
+        return 'condo';
+      case PropertyType.penthouse:
+        return 'penthouse';
+      case PropertyType.studio:
+        return 'studio';
+      case PropertyType.loft:
+        return 'loft';
+    }
+  }
+}
+
+extension PropertyPurposeWireValue on PropertyPurpose {
+  String get wireValue {
+    switch (this) {
+      case PropertyPurpose.buy:
+        return 'buy';
+      case PropertyPurpose.rent:
+        return 'rent';
+      case PropertyPurpose.shortStay:
+        return 'short_stay';
+    }
+  }
 }
 
 enum PropertyStatus {
@@ -307,6 +355,14 @@ class PropertyModel {
         return 'Villa';
       case PropertyType.plot:
         return 'Plot';
+      case PropertyType.condo:
+        return 'Condo';
+      case PropertyType.penthouse:
+        return 'Penthouse';
+      case PropertyType.studio:
+        return 'Studio';
+      case PropertyType.loft:
+        return 'Loft';
       default:
         return 'Property';
     }

@@ -108,6 +108,100 @@ class UnifiedFilterModel {
   factory UnifiedFilterModel.fromJson(Map<String, dynamic> json) =>
       _$UnifiedFilterModelFromJson(json);
 
+  static const Set<String> _canonicalPropertyTypes = <String>{
+    'house',
+    'apartment',
+    'builder_floor',
+    'room',
+    'villa',
+    'plot',
+    'condo',
+    'penthouse',
+    'studio',
+    'loft',
+  };
+
+  static String? normalizePropertyTypeToken(String? rawValue) {
+    if (rawValue == null) return null;
+    final normalized = rawValue.trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+    if (normalized.isEmpty || normalized == 'all') return null;
+
+    const aliases = <String, String>{
+      'builderfloor': 'builder_floor',
+      'builder_floor': 'builder_floor',
+    };
+
+    final mapped = aliases[normalized] ?? normalized;
+    return _canonicalPropertyTypes.contains(mapped) ? mapped : null;
+  }
+
+  static String? normalizePurposeToken(String? rawValue) {
+    if (rawValue == null) return null;
+    final normalized = rawValue.trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+    if (normalized.isEmpty) return null;
+
+    switch (normalized) {
+      case 'buy':
+      case 'rent':
+      case 'short_stay':
+      case 'shortstay':
+        return normalized == 'shortstay' ? 'short_stay' : normalized;
+      case 'investment':
+        // Legacy UI option: closest supported backend value.
+        return 'buy';
+      default:
+        return null;
+    }
+  }
+
+  Map<String, dynamic> toApiQueryParams() {
+    final json = toJson();
+    final mapped = <String, dynamic>{};
+
+    json.forEach((key, value) {
+      if (value == null) return;
+
+      switch (key) {
+        case 'property_type':
+          if (value is List) {
+            final normalized = value
+                .map((item) => normalizePropertyTypeToken(item?.toString()))
+                .whereType<String>()
+                .toSet()
+                .toList();
+            if (normalized.isNotEmpty) {
+              mapped[key] = normalized;
+            }
+          }
+          return;
+        case 'purpose':
+          final normalizedPurpose = normalizePurposeToken(value.toString());
+          if (normalizedPurpose != null) {
+            mapped['purpose'] = normalizedPurpose;
+          }
+          return;
+        case 'check_in_date':
+          mapped['check_in'] = value;
+          return;
+        case 'check_out_date':
+          mapped['check_out'] = value;
+          return;
+        case 'search_query':
+          mapped['q'] = value;
+          return;
+        case 'property_ids':
+          if (value is List && value.isNotEmpty) {
+            mapped['ids'] = value;
+          }
+          return;
+        default:
+          mapped[key] = value;
+      }
+    });
+
+    return mapped;
+  }
+
   Map<String, dynamic> toJson() {
     final json = _$UnifiedFilterModelToJson(this);
 

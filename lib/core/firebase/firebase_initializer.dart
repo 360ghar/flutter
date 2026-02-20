@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:ghar360/core/firebase/firebase_runtime_state.dart';
 import 'package:ghar360/core/firebase/remote_config_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/firebase_options.dart';
@@ -94,6 +95,9 @@ Future<void> _showBackgroundNotification(
 class FirebaseInitializer {
   static bool _initialized = false;
 
+  static bool get isFirebaseEnabled => FirebaseRuntimeState.isEnabled;
+  static bool get isFirebaseReady => FirebaseRuntimeState.isReady;
+
   static bool _envFlag(String key, {bool fallback = false}) {
     try {
       final v = dotenv.env[key]?.toLowerCase();
@@ -108,12 +112,17 @@ class FirebaseInitializer {
     if (_initialized) return;
 
     final shouldInit = _envFlag('FIREBASE_ENABLED', fallback: true);
+    FirebaseRuntimeState.isEnabled = shouldInit;
     if (!shouldInit) {
+      FirebaseRuntimeState.isReady = false;
+      _initialized = true;
       DebugLogger.startup('Firebase initialization skipped (FIREBASE_ENABLED=false)');
       return;
     }
 
+    FirebaseRuntimeState.isReady = false;
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    FirebaseRuntimeState.isReady = true;
     DebugLogger.startup('Firebase initialized');
 
     // App Check (Play Integrity / DeviceCheck). Web uses reCAPTCHA v3 if provided.

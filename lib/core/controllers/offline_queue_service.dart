@@ -4,9 +4,20 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-import 'package:ghar360/core/data/providers/api_service.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/features/swipes/data/datasources/swipes_remote_datasource.dart';
+import 'package:ghar360/features/visits/data/datasources/visits_remote_datasource.dart';
+
+/// Maximum number of actions the queue will hold. Oldest actions are
+/// dropped when the limit is exceeded during enqueue.
+const _maxQueueSize = 100;
+
+/// Maximum number of retry attempts per action before it is dropped.
+const _maxRetries = 5;
+
+/// Actions older than this duration are considered stale and dropped.
+const _maxAge = Duration(hours: 24);
 
 /// OfflineQueueService
 ///
@@ -15,8 +26,16 @@ import 'package:ghar360/core/utils/debug_logger.dart';
 class OfflineQueueService extends GetxService {
   static const _storageKey = 'offline_action_queue';
 
+  static const _connectedResults = {
+    ConnectivityResult.mobile,
+    ConnectivityResult.wifi,
+    ConnectivityResult.ethernet,
+    ConnectivityResult.vpn,
+  };
+
   final GetStorage _storage = GetStorage();
-  final ApiService _apiService = Get.find<ApiService>();
+  final SwipesRemoteDatasource _swipesRemoteDatasource = Get.find<SwipesRemoteDatasource>();
+  final VisitsRemoteDatasource _visitsRemoteDatasource = Get.find<VisitsRemoteDatasource>();
 
   StreamSubscription? _connectivitySub;
   bool _processing = false;
@@ -51,6 +70,7 @@ class OfflineQueueService extends GetxService {
       'propertyId': propertyId,
       'isLiked': isLiked,
       'ts': DateTime.now().toIso8601String(),
+      'retries': 0,
     });
     DebugLogger.info('🕓 Queued swipe action for property $propertyId');
   }
@@ -66,6 +86,7 @@ class OfflineQueueService extends GetxService {
       'scheduledDate': scheduledDate,
       if (specialRequirements != null) 'specialRequirements': specialRequirements,
       'ts': DateTime.now().toIso8601String(),
+      'retries': 0,
     });
     DebugLogger.info('🕓 Queued visit booking for property $propertyId');
   }
@@ -77,65 +98,77 @@ class OfflineQueueService extends GetxService {
       final queue = _getQueue();
       if (queue.isEmpty) return;
 
-      // Ensure backend is reachable before attempting
-      final ok = await _apiService.testConnection();
-      if (!ok) {
-        DebugLogger.warning('🌐 Backend not reachable yet, deferring queue');
-        return;
-      }
+      // Purge stale actions before processing
+      final now = DateTime.now();
+      queue.removeWhere((action) {
+        final ts = DateTime.tryParse(action['ts']?.toString() ?? '');
+        if (ts != null && now.difference(ts) > _maxAge) {
+          DebugLogger.warning(
+            '🗑️ Dropping stale offline action '
+            '(type=${action['type']}, age=${now.difference(ts).inHours}h)',
+          );
+          return true;
+        }
+        return false;
+      });
 
       DebugLogger.info('🔁 Processing ${queue.length} offline actions...');
       final remaining = <Map<String, dynamic>>[];
 
       for (final action in queue) {
         final type = action['type'] as String?;
+        final retries = (action['retries'] as num?)?.toInt() ?? 0;
+
+        // Drop actions that have exceeded max retries
+        if (retries >= _maxRetries) {
+          DebugLogger.warning(
+            '🗑️ Dropping offline action after $_maxRetries retries '
+            '(type=$type, propertyId=${action['propertyId']})',
+          );
+          continue;
+        }
+
         try {
           if (type == 'swipe') {
-            final propertyId =
-                action['propertyId'] as int? ?? int.tryParse(action['propertyId'].toString()) ?? 0;
-            final isLiked = action['isLiked'] as bool? ?? (action['isLiked'].toString() == 'true');
-            await _apiService.swipeProperty(propertyId, isLiked);
-            DebugLogger.success('✅ Replayed swipe for property $propertyId');
+            await _processSwipe(action);
           } else if (type == 'visit') {
-            final propertyId =
-                action['propertyId'] as int? ?? int.tryParse(action['propertyId'].toString()) ?? 0;
-            final scheduledDate = action['scheduledDate']?.toString();
-            final specialRequirements = action['specialRequirements']?.toString();
-            if (scheduledDate == null) {
-              throw ValidationException('Missing scheduledDate');
-            }
-            await _apiService.scheduleVisit(
-              propertyId: propertyId,
-              scheduledDate: scheduledDate,
-              specialRequirements: specialRequirements,
-            );
-            DebugLogger.success('✅ Replayed visit booking for $propertyId');
+            await _processVisit(action);
           } else {
-            DebugLogger.warning('Unknown offline action type: $type');
+            DebugLogger.warning('Unknown offline action type: $type — dropping');
           }
-        } on AppException catch (e, st) {
-          // Keep network-related failures in queue; drop invalid actions
-          if (e is NetworkException) {
-            DebugLogger.warning(
-              '🌐 Network error while replaying "$type" — keeping in queue',
-              e,
-              st,
-            );
-            remaining.add(action);
-            // Stop early to avoid hammering
-            break;
-          } else {
-            DebugLogger.error(
-              '❌ Non-network error on queued "$type" — dropping action: ${e.message}',
-              e,
-              st,
-            );
-          }
-        } catch (e, st) {
-          DebugLogger.error('❌ Error processing offline action: $e', e, st);
-          // Keep action to retry later
+        } on NetworkException catch (e, st) {
+          // Network error — keep in queue with incremented retry count,
+          // then stop processing to avoid hammering.
+          DebugLogger.warning(
+            '🌐 Network error while replaying "$type" — '
+            'keeping in queue (retry ${retries + 1}/$_maxRetries)',
+            e,
+            st,
+          );
+          action['retries'] = retries + 1;
           remaining.add(action);
+          // Add remaining unprocessed actions back as-is
+          remaining.addAll(queue.sublist(queue.indexOf(action) + 1));
           break;
+        } on AppException catch (e, st) {
+          // Non-network app errors (validation, auth, etc.) — drop action
+          DebugLogger.error(
+            '❌ Non-network error on queued "$type" — '
+            'dropping action: ${e.message}',
+            e,
+            st,
+          );
+        } catch (e, st) {
+          // Unexpected error — increment retry and continue to next item
+          // (don't break the loop so other actions can still process)
+          DebugLogger.error(
+            '❌ Unexpected error processing offline "$type" '
+            '(retry ${retries + 1}/$_maxRetries): $e',
+            e,
+            st,
+          );
+          action['retries'] = retries + 1;
+          remaining.add(action);
         }
       }
 
@@ -149,11 +182,69 @@ class OfflineQueueService extends GetxService {
     }
   }
 
+  // Action processors
+
+  Future<void> _processSwipe(Map<String, dynamic> action) async {
+    final propertyId = _parsePropertyId(action);
+    if (propertyId == null) {
+      DebugLogger.error(
+        '❌ Invalid propertyId in queued swipe — dropping: '
+        '${action['propertyId']}',
+      );
+      return; // Drop the action
+    }
+    final isLiked = action['isLiked'] == true || action['isLiked'].toString() == 'true';
+    await _swipesRemoteDatasource.swipeProperty(propertyId: propertyId, isLiked: isLiked);
+    DebugLogger.success('✅ Replayed swipe for property $propertyId');
+  }
+
+  Future<void> _processVisit(Map<String, dynamic> action) async {
+    final propertyId = _parsePropertyId(action);
+    if (propertyId == null) {
+      DebugLogger.error(
+        '❌ Invalid propertyId in queued visit — dropping: '
+        '${action['propertyId']}',
+      );
+      return;
+    }
+    final scheduledDate = action['scheduledDate']?.toString();
+    if (scheduledDate == null) {
+      DebugLogger.error('❌ Missing scheduledDate in queued visit — dropping');
+      return;
+    }
+    final specialRequirements = action['specialRequirements']?.toString();
+    await _visitsRemoteDatasource.scheduleVisit(
+      propertyId: propertyId,
+      scheduledDate: scheduledDate,
+      specialRequirements: specialRequirements,
+    );
+    DebugLogger.success('✅ Replayed visit booking for $propertyId');
+  }
+
+  /// Parses propertyId from the queued action map.
+  /// Returns null instead of falling back to 0.
+  static int? _parsePropertyId(Map<String, dynamic> action) {
+    final raw = action['propertyId'];
+    if (raw is int) return raw;
+    if (raw != null) return int.tryParse(raw.toString());
+    return null;
+  }
+
   // Internals
 
   Future<void> _enqueue(Map<String, dynamic> action) async {
     final list = _getQueue();
     list.add(action);
+
+    // Enforce queue size limit — drop oldest actions
+    while (list.length > _maxQueueSize) {
+      final dropped = list.removeAt(0);
+      DebugLogger.warning(
+        '🗑️ Queue full ($_maxQueueSize) — dropping oldest action '
+        '(type=${dropped['type']})',
+      );
+    }
+
     _saveQueue(list);
   }
 
@@ -173,22 +264,10 @@ class OfflineQueueService extends GetxService {
   }
 
   Future<void> _handleConnectivityEvent(dynamic event) async {
-    bool hasConnection = false;
-    if (event is ConnectivityResult) {
-      hasConnection =
-          event == ConnectivityResult.mobile ||
-          event == ConnectivityResult.wifi ||
-          event == ConnectivityResult.ethernet ||
-          event == ConnectivityResult.vpn;
-    } else if (event is List<ConnectivityResult>) {
-      hasConnection = event.any(
-        (r) =>
-            r == ConnectivityResult.mobile ||
-            r == ConnectivityResult.wifi ||
-            r == ConnectivityResult.ethernet ||
-            r == ConnectivityResult.vpn,
-      );
-    }
+    final results = event is List<ConnectivityResult>
+        ? event
+        : (event is ConnectivityResult ? [event] : <ConnectivityResult>[]);
+    final hasConnection = results.any(_connectedResults.contains);
     if (hasConnection) {
       DebugLogger.info('📶 Connectivity restored — attempting to flush queue');
       await processQueue();

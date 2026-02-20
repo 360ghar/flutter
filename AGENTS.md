@@ -39,4 +39,4 @@
 ## Security & Configuration
 - Never hardcode secrets; load via `.env.*` or secure stores.
 - When adding assets, update `pubspec.yaml` and verify both dev/prod configs.
-
+- Mobile auth/session handling should remain Supabase-native using `SUPABASE_URL` + `SUPABASE_PUBLISHABLE_KEY`.

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
 
@@ -108,7 +108,7 @@ class ErrorStates {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.wifi_off, size: 64, color: AppColors.placeholderText),
+                Icon(Icons.wifi_off, size: 64, color: AppDesign.placeholderText),
                 const SizedBox(height: 16),
                 Text(
                   'connection_error_title'.tr,
@@ -173,9 +173,9 @@ class ErrorStates {
                         TextStyle(fontSize: 56, color: onSurface),
                   )
                 else if (icon != null)
-                  Icon(icon, size: 64, color: AppColors.placeholderText)
+                  Icon(icon, size: 64, color: AppDesign.placeholderText)
                 else
-                  Icon(Icons.inbox_outlined, size: 64, color: AppColors.placeholderText),
+                  Icon(Icons.inbox_outlined, size: 64, color: AppDesign.placeholderText),
                 const SizedBox(height: 16),
                 Text(
                   title,
@@ -225,7 +225,7 @@ class ErrorStates {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.search_off, size: 64, color: AppColors.placeholderText),
+                Icon(Icons.search_off, size: 64, color: AppDesign.placeholderText),
                 const SizedBox(height: 16),
                 Text(
                   'no_results_found'.tr,
@@ -285,7 +285,7 @@ class ErrorStates {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.location_off, size: 64, color: AppColors.placeholderText),
+                Icon(Icons.location_off, size: 64, color: AppDesign.placeholderText),
                 const SizedBox(height: 16),
                 Text(
                   'location_access_needed'.tr,
@@ -528,7 +528,7 @@ class ErrorStates {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.account_circle_outlined, size: 64, color: AppColors.placeholderText),
+                Icon(Icons.account_circle_outlined, size: 64, color: AppDesign.placeholderText),
                 const SizedBox(height: 16),
                 Text(
                   'profile_load_error'.tr,

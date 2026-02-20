@@ -1,13 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ErrorHandler {
-  /// Safely gets a context for UI operations, preferring overlay context for reliability
+  /// Safely gets a context for snackbars, requiring a mounted overlay.
   static BuildContext? _getSafeContext() {
-    return Get.overlayContext ?? Get.context;
+    final context = Get.overlayContext;
+    if (context == null) {
+      return null;
+    }
+
+    if (Overlay.maybeOf(context) == null) {
+      return null;
+    }
+
+    return context;
+  }
+
+  static void _showSnackbarSafely({
+    required String title,
+    required String message,
+    required Color backgroundColor,
+    required Duration duration,
+    TextButton? mainButton,
+  }) {
+    final context = _getSafeContext();
+    if (context == null) {
+      DebugLogger.warning('No overlay context available for snackbar: $title');
+      return;
+    }
+
+    try {
+      Get.snackbar(
+        title,
+        message,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: backgroundColor,
+        colorText: Theme.of(context).colorScheme.onError,
+        duration: duration,
+        mainButton: mainButton,
+      );
+    } catch (error, stackTrace) {
+      DebugLogger.warning('Failed to show snackbar safely: $title', error, stackTrace);
+    }
   }
 
   static void handleAuthError(dynamic error, {VoidCallback? onRetry, StackTrace? stackTrace}) {
@@ -21,7 +58,7 @@ class ErrorHandler {
 
     String message;
     String title = 'Error';
-    Color backgroundColor = AppColors.errorRed;
+    Color backgroundColor = AppDesign.errorRed;
 
     if (error is AuthException) {
       title = 'Authentication Error';
@@ -40,7 +77,7 @@ class ErrorHandler {
         case 'Phone not confirmed':
         case 'User not confirmed':
           message = 'Please verify your phone number before signing in.';
-          backgroundColor = AppColors.warningAmber;
+          backgroundColor = AppDesign.warningAmber;
           break;
         case 'User already registered':
           message = 'An account with this phone already exists. Please sign in instead.';
@@ -68,11 +105,11 @@ class ErrorHandler {
         case 'Email rate limit exceeded':
         case 'SMS rate limit exceeded':
           message = 'Too many attempts. Please wait before trying again.';
-          backgroundColor = AppColors.warningAmber;
+          backgroundColor = AppDesign.warningAmber;
           break;
         case 'Token has expired or is invalid':
           message = 'OTP has expired or is invalid. Please request a new code.';
-          backgroundColor = AppColors.warningAmber;
+          backgroundColor = AppDesign.warningAmber;
           break;
         case 'Session not found':
           message = 'Your session has expired. Please sign in again.';
@@ -81,7 +118,7 @@ class ErrorHandler {
           // Map by code if available
           if (code == 'otp_expired') {
             message = 'OTP has expired. Please request a new code.';
-            backgroundColor = AppColors.warningAmber;
+            backgroundColor = AppDesign.warningAmber;
           } else {
             message = msg;
           }
@@ -92,26 +129,15 @@ class ErrorHandler {
       message = 'An unexpected error occurred. Please try again.';
     }
 
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing auth error snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.TOP,
+    _showSnackbarSafely(
+      title: title,
+      message: message,
       backgroundColor: backgroundColor,
-      colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 4),
       mainButton: onRetry != null
           ? TextButton(
               onPressed: onRetry,
-              child: Text(
-                'retry'.tr,
-                style: TextStyle(color: Theme.of(context).colorScheme.onError),
-              ),
+              child: Text('retry'.tr, style: const TextStyle(color: AppDesign.darkTextPrimary)),
             )
           : null,
     );
@@ -145,78 +171,43 @@ class ErrorHandler {
       message = 'Network error occurred. Please try again.';
     }
 
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing network error snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      'network_error'.tr,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.warningAmber,
-      colorText: Theme.of(context).colorScheme.onError,
+    _showSnackbarSafely(
+      title: 'network_error'.tr,
+      message: message,
+      backgroundColor: AppDesign.warningAmber,
       duration: const Duration(seconds: 4),
       mainButton: onRetry != null
           ? TextButton(
               onPressed: onRetry,
-              child: Text(
-                'retry'.tr,
-                style: TextStyle(color: Theme.of(context).colorScheme.onError),
-              ),
+              child: Text('retry'.tr, style: const TextStyle(color: AppDesign.darkTextPrimary)),
             )
           : null,
     );
   }
 
   static void handleValidationError(String field, String message) {
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing validation error snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      'validation_error'.tr,
-      '$field: $message',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.warningAmber,
-      colorText: Theme.of(context).colorScheme.onError,
+    _showSnackbarSafely(
+      title: 'validation_error'.tr,
+      message: '$field: $message',
+      backgroundColor: AppDesign.warningAmber,
       duration: const Duration(seconds: 3),
     );
   }
 
   static void showSuccess(String message) {
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing success snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      'success'.tr,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.successGreen,
-      colorText: Theme.of(context).colorScheme.onError,
+    _showSnackbarSafely(
+      title: 'success'.tr,
+      message: message,
+      backgroundColor: AppDesign.successGreen,
       duration: const Duration(seconds: 3),
     );
   }
 
   static void showInfo(String message) {
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing info snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      'info'.tr,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.accentBlue,
-      colorText: Theme.of(context).colorScheme.onError,
+    _showSnackbarSafely(
+      title: 'info'.tr,
+      message: message,
+      backgroundColor: AppDesign.accentBlue,
       duration: const Duration(seconds: 3),
     );
   }

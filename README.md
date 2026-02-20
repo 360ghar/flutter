@@ -86,7 +86,7 @@ Follow these instructions to get a copy of the project up and running on your lo
     ```env
     # Supabase Credentials
     SUPABASE_URL=https://your-project-ref.supabase.co
-    SUPABASE_ANON_KEY=your-supabase-anon-key
+    SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
 
     # API Base URL (if different from Supabase)
     API_BASE_URL=http://your-backend-api.com/api/v1
@@ -132,6 +132,12 @@ The app features a 5-tab bottom navigation bar for easy access to key features:
 -   **Discover (Home):** The main swipe interface for liking or passing on properties.
 -   **Likes:** A gallery of your favorited and passed properties.
 -   **Visits:** Manage agent appointments and scheduled property tours.
+
+## 🔔 iOS Push Troubleshooting
+
+If iOS logs show APNS/FCM token issues (for example `apns-token-not-set`), follow:
+
+- `docs/ios_push_debug.md`
 
 ## 🤝 Contributing
 

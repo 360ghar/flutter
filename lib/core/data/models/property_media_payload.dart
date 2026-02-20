@@ -35,6 +35,16 @@ class PropertyMediaPayload {
 
   Map<String, dynamic> toJson() => _$PropertyMediaPayloadToJson(this);
 
+  /// Contract-safe payload for property update endpoint.
+  ///
+  /// Backend `PropertyUpdate` intentionally does not mutate related `images`
+  /// in this route, so keep relation fields out of update requests.
+  Map<String, dynamic> toPropertyUpdateJson() {
+    final payload = Map<String, dynamic>.from(toJson());
+    payload.remove('images');
+    return payload;
+  }
+
   PropertyMediaPayload copyWith({
     String? mainImageUrl,
     List<PropertyImageModel>? images,

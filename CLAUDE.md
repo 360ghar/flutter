@@ -344,7 +344,7 @@ API_TIMEOUT_SECONDS=15  # Optional: override HTTP client timeout
 
 # Supabase Configuration
 SUPABASE_URL=your_supabase_project_url_here
-SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key_here
 
 # Google Places API Key
 GOOGLE_PLACES_API_KEY=your_google_places_api_key_here

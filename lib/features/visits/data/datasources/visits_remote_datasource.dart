@@ -1,6 +1,16 @@
+import 'package:ghar360/core/data/models/agent_model.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
 import 'package:ghar360/core/network/api_client.dart';
+import 'package:ghar360/core/network/api_paths.dart';
+import 'package:ghar360/core/network/response_parser.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
+
+class VisitsPayload {
+  final int total;
+  final List<VisitModel> visits;
+
+  const VisitsPayload({required this.total, required this.visits});
+}
 
 /// Remote datasource for visit operations.
 class VisitsRemoteDatasource {
@@ -12,12 +22,34 @@ class VisitsRemoteDatasource {
   Future<List<VisitModel>> fetchVisits({int page = 1, int limit = 50}) async {
     DebugLogger.debug('📅 Fetching visits: page=$page');
     final response = await _apiClient.get(
-      '/visits',
+      ApiPaths.visits,
       queryParams: {'page': page.toString(), 'limit': limit.toString()},
       useCache: false,
     );
 
     return _parseVisitsResponse(response.body);
+  }
+
+  /// Fetches visits summary payload.
+  Future<VisitsPayload> fetchVisitsSummary({int page = 1, int limit = 50}) async {
+    final response = await _apiClient.get(
+      ApiPaths.visits,
+      queryParams: {'page': page.toString(), 'limit': limit.toString()},
+      useCache: false,
+    );
+    return _parseVisitsPayload(response.body);
+  }
+
+  /// Fetches upcoming visits list.
+  Future<VisitsPayload> fetchUpcomingVisits() async {
+    final response = await _apiClient.get(ApiPaths.visitsUpcoming, useCache: false);
+    return _parseVisitsPayload(response.body);
+  }
+
+  /// Fetches past visits list.
+  Future<VisitsPayload> fetchPastVisits() async {
+    final response = await _apiClient.get(ApiPaths.visitsPast, useCache: false);
+    return _parseVisitsPayload(response.body);
   }
 
   /// Schedules a new visit.
@@ -28,47 +60,74 @@ class VisitsRemoteDatasource {
   }) async {
     DebugLogger.debug('📅 Scheduling visit for property $propertyId');
     final response = await _apiClient.post(
-      '/visits',
+      ApiPaths.visits,
       body: {
         'property_id': propertyId,
         'scheduled_date': scheduledDate,
         'special_requirements': specialRequirements ?? '',
       },
+      idempotent: true,
     );
-    return VisitModel.fromJson(response.body as Map<String, dynamic>);
+    return _parseVisit(response.body);
   }
 
   /// Cancels a visit.
   Future<bool> cancelVisit(int visitId, {required String reason}) async {
     DebugLogger.debug('❌ Cancelling visit $visitId');
-    final response = await _apiClient.delete('/visits/$visitId', queryParams: {'reason': reason});
+    final response = await _apiClient.post(
+      ApiPaths.visitCancel(visitId),
+      body: {'reason': reason},
+      idempotent: true,
+    );
+    final body = response.body;
+    if (body is Map<String, dynamic>) {
+      return body['success'] == true || response.statusCode == 200;
+    }
     return response.statusCode == 200;
   }
 
   /// Reschedules a visit.
   Future<bool> rescheduleVisit(int visitId, {required String newDate, String? reason}) async {
     DebugLogger.debug('📅 Rescheduling visit $visitId');
-    final response = await _apiClient.put(
-      '/visits/$visitId',
-      body: {'scheduled_date': newDate, 'reason': reason ?? ''},
+    final response = await _apiClient.post(
+      ApiPaths.visitReschedule(visitId),
+      body: {'new_date': newDate, 'reason': reason ?? ''},
+      idempotent: true,
     );
+    final body = response.body;
+    if (body is Map<String, dynamic>) {
+      return body['success'] == true || response.statusCode == 200;
+    }
     return response.statusCode == 200;
+  }
+
+  Future<AgentModel> fetchRelationshipManager() async {
+    final response = await _apiClient.get(ApiPaths.agentsAssigned, useCache: false);
+    final payload = ResponseParser.unwrapObject(response.body);
+    return AgentModel.fromJson(Map<String, dynamic>.from(payload));
   }
 
   List<VisitModel> _parseVisitsResponse(dynamic body) {
     try {
-      if (body is Map<String, dynamic>) {
-        final data = body['data'] ?? body['visits'] ?? [];
-        if (data is List) {
-          return data.map((json) => VisitModel.fromJson(json as Map<String, dynamic>)).toList();
-        }
-      } else if (body is List) {
-        return body.map((json) => VisitModel.fromJson(json as Map<String, dynamic>)).toList();
-      }
-      return [];
+      final list = ResponseParser.unwrapList(body, fallbackKeys: ['visits']);
+      return list.map((json) => VisitModel.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e, stackTrace) {
       DebugLogger.error('Failed to parse visits response: $e', e, stackTrace);
       rethrow;
     }
+  }
+
+  VisitModel _parseVisit(dynamic body) {
+    final payload = ResponseParser.unwrapObject(body);
+    if (payload.isEmpty) {
+      throw const FormatException('Unexpected visit response');
+    }
+    return VisitModel.fromJson(Map<String, dynamic>.from(payload));
+  }
+
+  VisitsPayload _parseVisitsPayload(dynamic body) {
+    final visits = _parseVisitsResponse(body);
+    final total = ResponseParser.extractTotal(body, listLength: visits.length);
+    return VisitsPayload(total: total, visits: visits);
   }
 }

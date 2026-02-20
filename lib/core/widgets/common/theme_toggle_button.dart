@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:ghar360/core/controllers/theme_controller.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 
 class ThemeToggleButton extends StatelessWidget {
   final bool showLabel;
@@ -83,7 +83,7 @@ class ThemeToggleButton extends StatelessWidget {
                   getThemeLabel(),
                   style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: theme.textTheme.labelLarge?.color ?? AppColors.textPrimary,
+                    color: theme.textTheme.labelLarge?.color ?? AppDesign.textPrimary,
                   ),
                 ),
               ],
@@ -171,7 +171,7 @@ class AnimatedThemeToggle extends StatelessWidget {
                 color: theme.colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.shadowColor,
+                    color: AppDesign.shadowColor,
                     spreadRadius: 1,
                     blurRadius: 3,
                     offset: const Offset(0, 1),

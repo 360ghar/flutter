@@ -1,37 +1,51 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 
+import 'package:ghar360/core/firebase/firebase_initializer.dart';
 import 'package:ghar360/core/firebase/remote_config_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
 class AnalyticsService {
-  static final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
   static final Set<String> _seenProperties = <String>{};
   static const int _maxSeenProperties = 1000;
 
-  static bool get _enabled => RemoteConfigService.analyticsEnabled;
+  static bool get _enabled =>
+      FirebaseInitializer.isFirebaseReady && RemoteConfigService.analyticsEnabled;
+
+  static FirebaseAnalytics? get _analytics {
+    if (!FirebaseInitializer.isFirebaseReady) return null;
+    try {
+      return FirebaseAnalytics.instance;
+    } catch (e, st) {
+      DebugLogger.warning('Analytics instance unavailable', e, st);
+      return null;
+    }
+  }
 
   static Future<void> setUserId(String? userId) async {
-    if (!_enabled) return;
+    final analytics = _analytics;
+    if (!_enabled || analytics == null) return;
     try {
-      await _analytics.setUserId(id: userId);
+      await analytics.setUserId(id: userId);
     } catch (e, st) {
       DebugLogger.warning('Analytics setUserId failed', e, st);
     }
   }
 
   static Future<void> setUserProperty(String name, String value) async {
-    if (!_enabled) return;
+    final analytics = _analytics;
+    if (!_enabled || analytics == null) return;
     try {
-      await _analytics.setUserProperty(name: name, value: value);
+      await analytics.setUserProperty(name: name, value: value);
     } catch (e, st) {
       DebugLogger.warning('Analytics setUserProperty failed', e, st);
     }
   }
 
   static Future<void> logVital(String name, {Map<String, Object>? params}) async {
-    if (!_enabled) return;
+    final analytics = _analytics;
+    if (!_enabled || analytics == null) return;
     try {
-      await _analytics.logEvent(name: name, parameters: params);
+      await analytics.logEvent(name: name, parameters: params);
       DebugLogger.debug('📊 Analytics event: $name ${params ?? {}}');
     } catch (e, st) {
       DebugLogger.warning('Analytics logEvent failed', e, st);
@@ -61,6 +75,32 @@ class AnalyticsService {
       logVital('visit_schedule', params: {'id': propertyId});
   static Future<void> applyFilter(Map<String, Object> snapshot) =>
       logVital('filters_apply', params: snapshot);
+
+  // App lifecycle events
+  static Future<void> appLaunchComplete({required int durationMs}) =>
+      logVital('app_launch_complete', params: {'duration_ms': durationMs});
+
+  static Future<void> firstPropertyLoaded({required int latencyMs}) =>
+      logVital('first_property_loaded', params: {'latency_ms': latencyMs});
+
+  // Discover deck events
+  static Future<void> deckExhausted({int totalSwiped = 0}) =>
+      logVital('deck_exhausted', params: {'total_swiped': totalSwiped});
+
+  // Filter events
+  static Future<void> filterApplied({required int activeCount, required String pageType}) =>
+      logVital('filter_applied', params: {'active_count': activeCount, 'page_type': pageType});
+
+  // Location events
+  static Future<void> locationChanged({required String source}) =>
+      logVital('location_changed', params: {'source': source});
+
+  // Auth funnel events
+  static Future<void> authPhoneEntered() => logVital('auth_phone_entered');
+
+  static Future<void> authOtpVerified() => logVital('auth_otp_verified');
+
+  static Future<void> authProfileCompleted() => logVital('auth_profile_completed');
 
   // Deep link analytics
   static Future<void> deepLinkOpenProperty(String propertyId) =>

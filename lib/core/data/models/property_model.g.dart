@@ -239,6 +239,10 @@ const _$PropertyTypeEnumMap = {
   PropertyType.room: 'room',
   PropertyType.villa: 'villa',
   PropertyType.plot: 'plot',
+  PropertyType.condo: 'condo',
+  PropertyType.penthouse: 'penthouse',
+  PropertyType.studio: 'studio',
+  PropertyType.loft: 'loft',
 };
 
 const _$PropertyPurposeEnumMap = {

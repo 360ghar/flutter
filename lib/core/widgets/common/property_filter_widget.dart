@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:ghar360/core/controllers/page_state_service.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'
@@ -14,7 +15,7 @@ class PropertyFilterWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.tune, color: AppColors.iconColor),
+      icon: Icon(Icons.tune, color: AppDesign.iconColor),
       onPressed: () => _showFilterBottomSheet(context),
     );
   }
@@ -23,7 +24,7 @@ class PropertyFilterWidget extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppDesign.transparent,
       builder: (context) =>
           _FilterBottomSheet(pageType: pageType, onFiltersApplied: onFiltersApplied),
     );
@@ -54,14 +55,17 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   final List<String> purposes = ['buy', 'rent'];
 
   final List<String> propertyTypes = [
-    'All',
-    'Apartment',
-    'House',
-    'Condo',
-    'Penthouse',
-    'Villa',
-    'Studio',
-    'Loft',
+    'all',
+    'apartment',
+    'house',
+    'builder_floor',
+    'room',
+    'villa',
+    'plot',
+    'condo',
+    'penthouse',
+    'studio',
+    'loft',
   ];
 
   // Short-stay specific types removed
@@ -109,9 +113,11 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     );
     _minBedrooms = (currentFilter.bedroomsMin ?? 0).clamp(0, 10);
     _maxBedrooms = (currentFilter.bedroomsMax ?? 10).clamp(0, 10);
-    _propertyType = (currentFilter.propertyType?.isNotEmpty == true)
-        ? currentFilter.propertyType!.first
-        : 'All';
+    _propertyType =
+        UnifiedFilterModel.normalizePropertyTypeToken(
+          currentFilter.propertyType?.isNotEmpty == true ? currentFilter.propertyType!.first : null,
+        ) ??
+        'all';
     _selectedAmenities = List<String>.from(currentFilter.amenities ?? []);
   }
 
@@ -122,7 +128,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     _maxPrice = _getPriceMax('buy');
     _minBedrooms = 0;
     _maxBedrooms = 10;
-    _propertyType = 'All';
+    _propertyType = 'all';
     _selectedAmenities = <String>[];
   }
 
@@ -185,7 +191,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.2)),
+        border: Border(bottom: BorderSide(color: AppDesign.border, width: 0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -195,7 +201,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppDesign.textPrimary,
             ),
           ),
           IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
@@ -210,7 +216,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           'purpose'.tr,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppDesign.textPrimary),
         ),
         const SizedBox(height: 15),
         Wrap(
@@ -226,16 +232,16 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   _minPrice = _getPriceMin(_mapPurposeToApi(purpose));
                   _maxPrice = _getPriceMax(_mapPurposeToApi(purpose));
                   // Reset property type
-                  _propertyType = 'All';
+                  _propertyType = 'all';
                 });
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
+                  color: isSelected ? AppDesign.primaryYellow : AppDesign.inputBackground,
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
+                    color: isSelected ? AppDesign.primaryYellow : AppDesign.border,
                     width: 2,
                   ),
                 ),
@@ -243,7 +249,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   purpose.tr,
                   style: TextStyle(
                     fontSize: 16,
-                    color: isSelected ? AppColors.surface : AppColors.textPrimary,
+                    color: isSelected ? AppDesign.surface : AppDesign.textPrimary,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
@@ -265,7 +271,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           priceLabel,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppDesign.textPrimary),
         ),
         const SizedBox(height: 15),
         RangeSlider(
@@ -276,8 +282,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
           min: minRange,
           max: maxRange,
           divisions: 100,
-          activeColor: AppColors.primaryYellow,
-          inactiveColor: AppColors.primaryYellow.withValues(alpha: 0.2),
+          activeColor: AppDesign.primaryYellow,
+          inactiveColor: AppDesign.primaryYellow.withValues(alpha: 0.2),
           labels: RangeLabels('₹${_formatPrice(_minPrice)}', '₹${_formatPrice(_maxPrice)}'),
           onChanged: (RangeValues values) {
             setState(() {
@@ -294,7 +300,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: AppDesign.textPrimary,
               ),
             ),
             Text(
@@ -302,7 +308,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: AppDesign.textPrimary,
               ),
             ),
           ],
@@ -317,7 +323,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           'bedrooms'.tr,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppDesign.textPrimary),
         ),
         const SizedBox(height: 15),
         Row(
@@ -331,7 +337,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.normal,
-                      color: AppColors.textSecondary,
+                      color: AppDesign.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -340,7 +346,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.border),
+                        borderSide: BorderSide(color: AppDesign.border),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
@@ -374,7 +380,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.normal,
-                      color: AppColors.textSecondary,
+                      color: AppDesign.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -383,7 +389,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.border),
+                        borderSide: BorderSide(color: AppDesign.border),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
@@ -420,7 +426,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           'property_type'.tr,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppDesign.textPrimary),
         ),
         const SizedBox(height: 15),
         Wrap(
@@ -437,17 +443,17 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryYellow : AppColors.inputBackground,
+                  color: isSelected ? AppDesign.primaryYellow : AppDesign.inputBackground,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
+                    color: isSelected ? AppDesign.primaryYellow : AppDesign.border,
                   ),
                 ),
                 child: Text(
                   _displayPropertyType(type),
                   style: TextStyle(
                     fontSize: 14,
-                    color: isSelected ? AppColors.surface : AppColors.textPrimary,
+                    color: isSelected ? AppDesign.surface : AppDesign.textPrimary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -465,7 +471,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       children: [
         Text(
           'amenities'.tr,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppDesign.textPrimary),
         ),
         const SizedBox(height: 15),
         Wrap(
@@ -487,24 +493,24 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primaryYellow.withValues(alpha: 0.1)
-                      : AppColors.inputBackground,
+                      ? AppDesign.primaryYellow.withValues(alpha: 0.1)
+                      : AppDesign.inputBackground,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryYellow : AppColors.border,
+                    color: isSelected ? AppDesign.primaryYellow : AppDesign.border,
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isSelected)
-                      const Icon(Icons.check_circle, size: 16, color: AppColors.primaryYellow),
+                      const Icon(Icons.check_circle, size: 16, color: AppDesign.primaryYellow),
                     if (isSelected) const SizedBox(width: 6),
                     Text(
                       _displayAmenity(amenity),
                       style: TextStyle(
                         fontSize: 14,
-                        color: isSelected ? AppColors.primaryYellow : AppColors.textPrimary,
+                        color: isSelected ? AppDesign.primaryYellow : AppDesign.textPrimary,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
@@ -522,7 +528,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.border, width: 0.2)),
+        border: Border(top: BorderSide(color: AppDesign.border, width: 0.2)),
       ),
       child: Row(
         children: [
@@ -531,14 +537,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               onPressed: _clearFilters,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: AppColors.primaryYellow),
+                side: const BorderSide(color: AppDesign.primaryYellow),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
                 'clear_filters'.tr,
                 style: const TextStyle(
                   fontSize: 16,
-                  color: AppColors.primaryYellow,
+                  color: AppDesign.primaryYellow,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -550,7 +556,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
             child: ElevatedButton(
               onPressed: _applyFilters,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryYellow,
+                backgroundColor: AppDesign.primaryYellow,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -558,7 +564,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 'apply_filters'.tr,
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppColors.surface,
+                  color: AppDesign.surface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -579,7 +585,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       _maxPrice = _getPriceMax(p);
       _minBedrooms = 0;
       _maxBedrooms = 10;
-      _propertyType = 'All';
+      _propertyType = 'all';
       _selectedAmenities.clear();
     });
   }
@@ -596,7 +602,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         priceMax: _maxPrice,
         bedroomsMin: _minBedrooms,
         bedroomsMax: _maxBedrooms,
-        propertyType: _propertyType != 'All' ? [_propertyType] : [],
+        propertyType: _propertyType != 'all' ? [_propertyType] : [],
         amenities: _selectedAmenities,
       );
 
@@ -614,15 +620,14 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       'filters_applied'.tr,
       'filters_applied_message'.tr,
       snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.primaryYellow,
-      colorText: AppColors.surface,
+      backgroundColor: AppDesign.primaryYellow,
+      colorText: AppDesign.surface,
       duration: const Duration(seconds: 2),
     );
   }
 
   String _displayPropertyType(String type) {
-    final key = type.toLowerCase();
-    switch (key) {
+    switch (type) {
       case 'all':
         return 'all'.tr;
       case 'apartment':
@@ -632,9 +637,18 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       case 'villa':
       case 'studio':
       case 'loft':
-        return key.tr;
+      case 'room':
+      case 'plot':
+        return type.tr;
+      case 'builder_floor':
+        return 'Builder Floor';
       default:
-        return type;
+        return type
+            .replaceAll('_', ' ')
+            .split(' ')
+            .where((part) => part.isNotEmpty)
+            .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+            .join(' ');
     }
   }
 
@@ -700,7 +714,7 @@ void showPropertyFilterBottomSheet(
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+    backgroundColor: AppDesign.transparent,
     builder: (ctx) => _FilterBottomSheet(pageType: pageType, onFiltersApplied: onFiltersApplied),
   );
 }

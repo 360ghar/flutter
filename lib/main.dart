@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,15 +12,16 @@ import 'package:get_storage/get_storage.dart';
 import 'package:ghar360/core/bindings/initial_binding.dart';
 import 'package:ghar360/core/controllers/localization_controller.dart';
 import 'package:ghar360/core/controllers/theme_controller.dart';
+import 'package:ghar360/core/design/app_design_theme.dart';
+import 'package:ghar360/core/firebase/analytics_service.dart';
 import 'package:ghar360/core/firebase/firebase_initializer.dart';
 import 'package:ghar360/core/firebase/push_notifications_service.dart';
 import 'package:ghar360/core/routes/app_pages.dart';
 import 'package:ghar360/core/translations/app_translations.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/null_check_trap.dart';
-import 'package:ghar360/core/utils/theme.dart';
 import 'package:ghar360/core/utils/webview_helper.dart';
-import 'package:ghar360/features/dashboard/controllers/dashboard_controller.dart';
+import 'package:ghar360/features/dashboard/presentation/controllers/dashboard_controller.dart';
 import 'package:ghar360/features/notifications/data/datasources/notifications_remote_datasource.dart';
 import 'package:ghar360/root.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -27,6 +29,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() async {
   runZonedGuarded(
     () async {
+      final launchStart = DateTime.now();
       // Ensure Flutter bindings are initialized in the same zone as runApp
       WidgetsFlutterBinding.ensureInitialized();
       // Initialize GetStorage before any controllers that depend on it
@@ -63,21 +66,25 @@ void main() async {
         DebugLogger.info('Using default configuration');
       }
 
-      // Initialize Supabase with error handling
-      try {
-        await Supabase.initialize(
-          url: dotenv.env['SUPABASE_URL'] ?? '',
-          anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
-          authOptions: const FlutterAuthClientOptions(
-            detectSessionInUri: false,
-            autoRefreshToken: true,
-          ),
+      // Initialize Supabase (required for app authentication/session handling).
+      final supabaseUrl = (dotenv.env['SUPABASE_URL'] ?? '').trim();
+      final supabaseClientKey =
+          (dotenv.env['SUPABASE_PUBLISHABLE_KEY'] ?? dotenv.env['SUPABASE_ANON_KEY'] ?? '').trim();
+      if (supabaseUrl.isEmpty || supabaseClientKey.isEmpty) {
+        throw StateError(
+          'Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY. '
+          'Set these values in your environment before launching the app.',
         );
-        DebugLogger.success('Supabase initialized successfully');
-      } catch (e) {
-        DebugLogger.warning('Failed to initialize Supabase', e);
-        DebugLogger.info('Continuing without Supabase');
       }
+      await Supabase.initialize(
+        url: supabaseUrl,
+        anonKey: supabaseClientKey,
+        authOptions: const FlutterAuthClientOptions(
+          detectSessionInUri: false,
+          autoRefreshToken: true,
+        ),
+      );
+      DebugLogger.success('Supabase initialized successfully');
 
       // Set up global error handlers
       FlutterError.onError = (FlutterErrorDetails details) {
@@ -87,9 +94,13 @@ void main() async {
         // One-time first null-check trap capture
         NullCheckTrap.captureFlutterError(details);
         // Report to Crashlytics if available
-        try {
-          FirebaseCrashlytics.instance.recordFlutterFatalError(details);
-        } catch (_) {}
+        if (FirebaseInitializer.isFirebaseReady) {
+          try {
+            FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+          } catch (_) {
+            // Crashlytics may not be initialized yet
+          }
+        }
         // Still show the error in debug mode
         FlutterError.presentError(details);
       };
@@ -105,22 +116,42 @@ void main() async {
 
       runApp(const MyApp());
 
+      // Track app launch duration
+      final launchDuration = DateTime.now().difference(launchStart);
+      AnalyticsService.appLaunchComplete(durationMs: launchDuration.inMilliseconds);
+
       // Defer notifications setup and prompts until after first frame
       try {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
           try {
+            if (!FirebaseInitializer.isFirebaseReady) {
+              DebugLogger.info('🔔 Skipping deferred notifications setup (Firebase disabled)');
+              return;
+            }
+
             DebugLogger.info('🔔 Starting deferred notifications setup...');
 
             // Configure token registration callback to send token to backend
             PushNotificationsService.onTokenRegistration = (token) async {
               try {
-                // Get user ID if authenticated
-                String? userId;
-                try {
-                  userId = Supabase.instance.client.auth.currentUser?.id;
-                } catch (_) {}
+                final auth = Supabase.instance.client.auth;
+                final session = auth.currentSession;
 
-                // Register token with backend
+                if (session == null || session.accessToken.isEmpty) {
+                  DebugLogger.info(
+                    '🔔 Skipping token registration until authenticated session exists',
+                  );
+                  return;
+                }
+
+                final userId = auth.currentUser?.id;
+                if (userId == null || userId.isEmpty) {
+                  DebugLogger.info(
+                    '🔔 Skipping token registration until authenticated user exists',
+                  );
+                  return;
+                }
+
                 if (Get.isRegistered<NotificationsRemoteDatasource>()) {
                   final datasource = Get.find<NotificationsRemoteDatasource>();
                   await datasource.registerDeviceToken(token: token, userId: userId);
@@ -139,15 +170,45 @@ void main() async {
             final settings = await PushNotificationsService.requestUserPermission(
               provisional: false,
             );
-            DebugLogger.info('🔔 Permission status: ${settings.authorizationStatus}');
+            if (settings == null) {
+              DebugLogger.info('🔔 Notification permission flow skipped');
+              return;
+            }
+            final authorizationStatus = settings.authorizationStatus;
+            DebugLogger.info('🔔 Permission status: $authorizationStatus');
+
+            final canRequestToken =
+                authorizationStatus == AuthorizationStatus.authorized ||
+                authorizationStatus == AuthorizationStatus.provisional;
+            if (!canRequestToken) {
+              DebugLogger.warning(
+                '🔔 Notifications permission not granted yet; skipping token retrieval.',
+              );
+              return;
+            }
+
+            final isApplePlatform =
+                !kIsWeb &&
+                (defaultTargetPlatform == TargetPlatform.iOS ||
+                    defaultTargetPlatform == TargetPlatform.macOS);
 
             // Get and log FCM token (this will also trigger registration with backend)
-            final token = await PushNotificationsService.getToken();
+            String? token = await PushNotificationsService.getToken();
+            if (token == null && !isApplePlatform) {
+              DebugLogger.info('🔔 FCM token not available yet; retrying once shortly...');
+              await Future<void>.delayed(const Duration(seconds: 2));
+              token = await PushNotificationsService.getToken();
+            }
+
             if (token != null) {
               DebugLogger.success('🔔 Notifications setup complete. Token available.');
               // Check if notifications are actually enabled on the device
               final enabled = await PushNotificationsService.areNotificationsEnabled();
               DebugLogger.info('🔔 Notifications enabled on device: $enabled');
+            } else if (isApplePlatform) {
+              DebugLogger.warning(
+                '🔔 Notifications setup incomplete - no FCM token. On iOS simulator this can be expected; on a real device verify APNS entitlements/provisioning.',
+              );
             } else {
               DebugLogger.warning('🔔 Notifications setup incomplete - no FCM token!');
             }
@@ -155,7 +216,9 @@ void main() async {
             DebugLogger.error('🔔 Deferred notifications setup failed', e, st);
           }
         });
-      } catch (_) {}
+      } catch (e) {
+        DebugLogger.warning('Failed to schedule notifications setup: $e');
+      }
     },
     (error, stack) {
       // One-time first null-check trap capture for unhandled async errors
@@ -164,9 +227,13 @@ void main() async {
       }
       DebugLogger.error('🚨 [GLOBAL_ERROR] Unhandled zone error', error, stack);
       // Report to Crashlytics if available
-      try {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      } catch (_) {}
+      if (FirebaseInitializer.isFirebaseReady) {
+        try {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        } catch (_) {
+          // Crashlytics may not be initialized yet
+        }
+      }
     },
   );
 }
@@ -182,11 +249,11 @@ class MyApp extends StatelessWidget {
     return Obx(
       () => GetMaterialApp(
         title: '360 Ghar',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
+        theme: AppDesignTheme.light(),
+        darkTheme: AppDesignTheme.dark(),
         themeMode: themeController.themeMode,
         defaultTransition: Transition.native,
-        transitionDuration: AppTheme.defaultTransitionDuration,
+        transitionDuration: AppDesignTheme.defaultTransitionDuration,
         popGesture: true,
         supportedLocales: LocalizationController.supportedLocales,
         translations: AppTranslations(),

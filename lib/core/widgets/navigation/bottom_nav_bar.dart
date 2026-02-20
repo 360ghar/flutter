@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/utils/app_spacing.dart';
 
 class CustomBottomNavigationBar extends StatefulWidget {
@@ -80,10 +80,10 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.navigationBackground,
+        color: AppDesign.navigationBackground,
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowColor.withValues(alpha: 0.1),
+            color: AppDesign.shadowColor.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -117,8 +117,8 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                                 isSelected ? item.activeIcon : item.inactiveIcon,
                                 key: ValueKey(isSelected),
                                 color: isSelected
-                                    ? AppColors.primaryYellow
-                                    : AppColors.navigationUnselected,
+                                    ? AppDesign.primaryYellow
+                                    : AppDesign.navigationUnselected,
                                 size: 24,
                               ),
                             ),
@@ -130,8 +130,8 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                               fontSize: isSelected ? 11 : 10,
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                               color: isSelected
-                                  ? AppColors.primaryYellow
-                                  : AppColors.navigationUnselected,
+                                  ? AppDesign.primaryYellow
+                                  : AppDesign.navigationUnselected,
                             ),
                             child: Text(item.label.tr),
                           ),

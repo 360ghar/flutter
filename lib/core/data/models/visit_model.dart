@@ -1,4 +1,5 @@
 import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'visit_model.g.dart';
@@ -118,18 +119,29 @@ class VisitModel {
         try {
           scheduledDateTime = DateTime.parse(dateStr);
         } catch (e2) {
-          // If all parsing fails, use current time as fallback
+          DebugLogger.error(
+            '⚠️ VisitModel: Failed to parse date+time. '
+            'Raw: date="$dateStr" time="$timeStr" visitId=${json['id']}',
+          );
           scheduledDateTime = DateTime.now();
         }
       }
     } else if (json['scheduled_date'] != null) {
-      // Fall back to the standard scheduled_date field if available
       try {
         scheduledDateTime = DateTime.parse(json['scheduled_date']);
       } catch (e) {
+        DebugLogger.error(
+          '⚠️ VisitModel: Failed to parse scheduled_date. '
+          'Raw: "${json['scheduled_date']}" visitId=${json['id']}',
+        );
         scheduledDateTime = DateTime.now();
       }
     } else {
+      DebugLogger.error(
+        '⚠️ VisitModel: No date fields found. '
+        'Keys: ${json.keys.where((k) => k.contains('date') || k.contains('time')).toList()} '
+        'visitId=${json['id']}',
+      );
       scheduledDateTime = DateTime.now();
     }
 

@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/widgets/common/location_selector.dart';
 import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
 
@@ -44,9 +44,9 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
           : bottom; // fallback to injected bottom
 
       return AppBar(
-        backgroundColor: AppColors.appBarBackground,
+        backgroundColor: AppDesign.appBarBackground,
         elevation: 8,
-        shadowColor: AppColors.shadowColor,
+        shadowColor: AppDesign.shadowColor,
         automaticallyImplyLeading: false,
         toolbarHeight: kToolbarHeight,
         titleSpacing: 16,
@@ -90,36 +90,36 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
       child: Obx(() {
         final currentState = _getCurrentPageState(pageStateService);
         final searchQuery = currentState.searchQuery ?? '';
+        final searchController = pageStateService.getOrCreateSearchController(
+          pageType,
+          seedText: searchQuery,
+        );
         return Container(
           alignment: Alignment.center,
           padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-          color: AppColors.appBarBackground,
+          color: AppDesign.appBarBackground,
           child: Container(
             height: 38,
             decoration: BoxDecoration(
-              color: AppColors.inputBackground,
+              color: AppDesign.inputBackground,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.divider, width: 0.5),
+              border: Border.all(color: AppDesign.divider, width: 0.5),
             ),
             child: TextField(
               onChanged: (value) {
-                pageStateService.updatePageSearch(pageType, value);
                 onSearchChanged?.call(value);
               },
-              controller: pageStateService.getOrCreateSearchController(
-                pageType,
-                seedText: searchQuery,
-              ),
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              controller: searchController,
+              style: TextStyle(color: AppDesign.textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 hintText: _getSearchHint(),
-                hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: AppColors.iconColor, size: 18),
+                hintStyle: TextStyle(color: AppDesign.textSecondary, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: AppDesign.iconColor, size: 18),
                 suffixIcon: searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: Icon(Icons.clear, color: AppColors.iconColor, size: 18),
+                        icon: Icon(Icons.clear, color: AppDesign.iconColor, size: 18),
                         onPressed: () {
-                          pageStateService.clearPageSearch(pageType);
+                          searchController.clear();
                           onSearchClear?.call();
                         },
                       )
@@ -143,7 +143,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
       return IconButton(
         icon: Stack(
           children: [
-            Icon(Icons.tune, color: AppColors.iconColor, size: 24),
+            Icon(Icons.tune, color: AppDesign.iconColor, size: 24),
             if (activeFiltersCount > 0)
               Positioned(
                 right: 0,
@@ -151,7 +151,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryYellow,
+                    color: AppDesign.primaryYellow,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
@@ -178,7 +178,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
     return Obx(() {
       final visible = pageStateService.isSearchVisible(pageType);
       return IconButton(
-        icon: Icon(visible ? Icons.search_off : Icons.search, color: AppColors.iconColor, size: 22),
+        icon: Icon(visible ? Icons.search_off : Icons.search, color: AppDesign.iconColor, size: 22),
         onPressed: () => pageStateService.toggleSearch(pageType),
       );
     });
@@ -195,7 +195,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
           height: 18,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+            valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
           ),
         ),
       );

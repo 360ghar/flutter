@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Standardized spacing constants for consistent UI
 class AppSpacing {
   AppSpacing._();
@@ -58,10 +60,5 @@ class AppDurations {
 class AppCurves {
   AppCurves._();
 
-  // ignore: library_private_types_in_public_api
-  static const _CurvesClass curves = _CurvesClass();
-}
-
-class _CurvesClass {
-  const _CurvesClass();
+  static const Curve standard = Curves.easeOutCubic;
 }

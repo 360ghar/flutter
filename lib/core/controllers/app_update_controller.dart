@@ -7,9 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/app_update_models.dart';
-import 'package:ghar360/core/data/repositories/app_update_repository.dart';
+import 'package:ghar360/core/design/app_design_tokens.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/widgets/common/app_update_dialog.dart';
+import 'package:ghar360/features/splash/data/app_update_repository.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -202,7 +203,7 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
       final action = await Get.dialog<AppUpdateAction?>(
         AppUpdateDialog(response: response, currentVersion: versionInfo.version),
         barrierDismissible: !response.isMandatory,
-        barrierColor: Colors.black54,
+        barrierColor: AppDesignTokens.neutral900.withValues(alpha: 0.54),
       );
 
       if (response.isMandatory) {

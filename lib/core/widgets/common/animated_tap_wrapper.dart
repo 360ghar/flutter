@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/utils/app_spacing.dart';
 
 /// A wrapper widget that adds tap feedback animation (scale down on press)
@@ -166,8 +167,8 @@ class AnimatedFavoriteIcon extends StatefulWidget {
     required this.isFavorite,
     required this.onToggle,
     this.size = 24.0,
-    this.activeColor = const Color(0xFFDC3545),
-    this.inactiveColor = const Color(0xFF999999),
+    this.activeColor = AppDesign.errorRed,
+    this.inactiveColor = AppDesign.textGray,
   });
 
   @override

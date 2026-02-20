@@ -143,7 +143,7 @@ class UserModel {
 
   bool get hasLocation => currentLatitude != null && currentLongitude != null;
 
-  // Convenience getters for backward compatibility
+  // Convenience getters for UI consumption.
   String get name => fullName ?? 'Unknown User';
   String? get profileImage => profileImageUrl;
   DateTime get lastLogin => updatedAt ?? createdAt;

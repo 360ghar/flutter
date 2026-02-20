@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:ghar360/core/firebase/firebase_initializer.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
 /// Callback type for when a notification is tapped
@@ -14,10 +16,13 @@ typedef NotificationTapCallback = void Function(Map<String, dynamic> data);
 typedef TokenRegistrationCallback = Future<void> Function(String token);
 
 class PushNotificationsService {
-  static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _fln = FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
   static String? _currentToken;
+  static Future<String?>? _tokenRequestInFlight;
+
+  static const int _maxApnsReadyChecks = 5;
+  static const Duration _apnsReadyCheckDelay = Duration(milliseconds: 600);
 
   /// Callback to handle notification taps
   static NotificationTapCallback? onNotificationTap;
@@ -27,6 +32,16 @@ class PushNotificationsService {
 
   /// Get the current FCM token (may be null if not yet retrieved)
   static String? get currentToken => _currentToken;
+
+  static FirebaseMessaging? get _messaging {
+    if (!FirebaseInitializer.isFirebaseReady) return null;
+    try {
+      return FirebaseMessaging.instance;
+    } catch (e, st) {
+      DebugLogger.warning('🔔 FirebaseMessaging instance unavailable', e, st);
+      return null;
+    }
+  }
 
   /// Initialize local notifications with proper channel setup
   static Future<void> initLocalNotifications() async {
@@ -115,11 +130,24 @@ class PushNotificationsService {
       return;
     }
 
+    if (!FirebaseInitializer.isFirebaseReady) {
+      DebugLogger.info('🔔 FCM initialization skipped: Firebase is not ready');
+      _initialized = true;
+      return;
+    }
+
+    final messaging = _messaging;
+    if (messaging == null) {
+      DebugLogger.warning('🔔 FCM initialization skipped: messaging client unavailable');
+      _initialized = true;
+      return;
+    }
+
     DebugLogger.info('🔔 Initializing FCM handling...');
     await initLocalNotifications();
 
     // Configure foreground notification presentation options (iOS)
-    await _messaging.setForegroundNotificationPresentationOptions(
+    await messaging.setForegroundNotificationPresentationOptions(
       alert: true,
       badge: true,
       sound: true,
@@ -145,7 +173,7 @@ class PushNotificationsService {
     });
 
     // Handle notification tap that launched the app from terminated state
-    final initialMessage = await _messaging.getInitialMessage();
+    final initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) {
       DebugLogger.info(
         '📩 [FCM][INITIAL] App launched via notification: ${initialMessage.messageId}',
@@ -157,7 +185,7 @@ class PushNotificationsService {
     }
 
     // Listen for token refresh
-    _messaging.onTokenRefresh.listen((newToken) async {
+    messaging.onTokenRefresh.listen((newToken) async {
       DebugLogger.info('🔑 FCM token refreshed: ${_truncateToken(newToken)}');
       _currentToken = newToken;
       await _registerToken(newToken);
@@ -174,11 +202,21 @@ class PushNotificationsService {
   }
 
   /// Request notification permissions from the user
-  static Future<NotificationSettings> requestUserPermission({bool provisional = false}) async {
+  static Future<NotificationSettings?> requestUserPermission({bool provisional = false}) async {
+    if (!FirebaseInitializer.isFirebaseReady) {
+      DebugLogger.info('🔔 Permission request skipped: Firebase is not ready');
+      return null;
+    }
+    final messaging = _messaging;
+    if (messaging == null) {
+      DebugLogger.warning('🔔 Permission request skipped: messaging client unavailable');
+      return null;
+    }
+
     DebugLogger.info('🔔 Requesting FCM permission...');
 
     // iOS/Apple platforms - request permission via FCM
-    final settings = await _messaging.requestPermission(
+    final settings = await messaging.requestPermission(
       alert: true,
       announcement: false,
       badge: true,
@@ -224,19 +262,44 @@ class PushNotificationsService {
   }
 
   /// Get the FCM token and optionally register it with the backend
-  static Future<String?> getToken() async {
+  static Future<String?> getToken() {
+    final inFlight = _tokenRequestInFlight;
+    if (inFlight != null) {
+      return inFlight;
+    }
+
+    final request = _getTokenInternal();
+    _tokenRequestInFlight = request;
+
+    request.whenComplete(() {
+      if (identical(_tokenRequestInFlight, request)) {
+        _tokenRequestInFlight = null;
+      }
+    });
+
+    return request;
+  }
+
+  static Future<String?> _getTokenInternal() async {
     try {
+      if (!FirebaseInitializer.isFirebaseReady) {
+        DebugLogger.info('🔑 FCM token request skipped: Firebase is not ready');
+        return null;
+      }
+      final messaging = _messaging;
+      if (messaging == null) {
+        DebugLogger.warning('🔑 FCM token request skipped: messaging client unavailable');
+        return null;
+      }
+
       String? token;
       if (kIsWeb) {
         // For web, you may need a VAPID key
-        token = await _messaging.getToken(vapidKey: null);
+        token = await messaging.getToken(vapidKey: null);
       } else if (Platform.isIOS || Platform.isMacOS) {
-        // Wait for APNS token first on iOS
-        final apnsToken = await _messaging.getAPNSToken();
-        DebugLogger.info('🍎 APNS token: ${apnsToken != null ? "received" : "null"}');
-        token = await _messaging.getToken();
+        token = await _getAppleTokenWithRetry(messaging);
       } else {
-        token = await _messaging.getToken();
+        token = await messaging.getToken();
       }
 
       if (token != null) {
@@ -252,6 +315,47 @@ class PushNotificationsService {
       DebugLogger.error('FCM getToken failed', e, st);
       return null;
     }
+  }
+
+  static Future<String?> _getAppleTokenWithRetry(FirebaseMessaging messaging) async {
+    final apnsReady = await _waitForApnsToken(messaging);
+    if (!apnsReady) {
+      DebugLogger.warning('🍎 APNS token not ready yet. Skipping FCM token request for now.');
+      return null;
+    }
+
+    try {
+      final token = await messaging.getToken();
+      if (token == null) {
+        DebugLogger.warning('🍎 FCM token is null even though APNS token is ready.');
+      }
+      return token;
+    } on FirebaseException catch (e, st) {
+      if (e.code != 'apns-token-not-set') {
+        rethrow;
+      }
+
+      DebugLogger.warning('🍎 APNS token still not set while requesting FCM token.', e, st);
+      return null;
+    }
+  }
+
+  static Future<bool> _waitForApnsToken(FirebaseMessaging messaging) async {
+    for (var attempt = 1; attempt <= _maxApnsReadyChecks; attempt++) {
+      final apnsToken = await messaging.getAPNSToken();
+      if (apnsToken != null && apnsToken.isNotEmpty) {
+        DebugLogger.info('🍎 APNS token ready on check $attempt/$_maxApnsReadyChecks');
+        return true;
+      }
+
+      DebugLogger.debug('🍎 APNS token not ready on check $attempt/$_maxApnsReadyChecks');
+      if (attempt < _maxApnsReadyChecks) {
+        await Future<void>.delayed(_apnsReadyCheckDelay);
+      }
+    }
+
+    DebugLogger.warning('🍎 APNS token not ready after $_maxApnsReadyChecks checks.');
+    return false;
   }
 
   /// Register the FCM token with the backend
@@ -324,7 +428,17 @@ class PushNotificationsService {
   /// Delete the FCM token (useful for logout)
   static Future<void> deleteToken() async {
     try {
-      await _messaging.deleteToken();
+      if (!FirebaseInitializer.isFirebaseReady) {
+        _currentToken = null;
+        return;
+      }
+      final messaging = _messaging;
+      if (messaging == null) {
+        _currentToken = null;
+        return;
+      }
+
+      await messaging.deleteToken();
       _currentToken = null;
       DebugLogger.info('🔑 FCM token deleted');
     } catch (e, st) {

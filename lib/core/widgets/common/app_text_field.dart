@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/utils/app_spacing.dart';
-import 'package:ghar360/core/utils/theme.dart';
 
 /// Standardized text field with consistent styling across the app
 class AppTextField extends StatefulWidget {
@@ -131,7 +130,7 @@ class _AppTextFieldState extends State<AppTextField> with SingleTickerProviderSt
             boxShadow: _isFocused
                 ? [
                     BoxShadow(
-                      color: AppTheme.primaryYellow.withValues(alpha: 0.2 * _focusAnimation.value),
+                      color: AppDesign.primaryYellow.withValues(alpha: 0.2 * _focusAnimation.value),
                       blurRadius: 8 * _focusAnimation.value,
                       offset: const Offset(0, 2),
                     ),
@@ -158,7 +157,7 @@ class _AppTextFieldState extends State<AppTextField> with SingleTickerProviderSt
         maxLines: widget.maxLines,
         maxLength: widget.maxLength,
         textCapitalization: widget.textCapitalization,
-        style: theme.textTheme.bodyLarge?.copyWith(color: AppColors.textPrimary),
+        style: theme.textTheme.bodyLarge?.copyWith(color: AppDesign.textPrimary),
         decoration: InputDecoration(
           labelText: widget.labelText,
           hintText: widget.hintText,
@@ -167,32 +166,32 @@ class _AppTextFieldState extends State<AppTextField> with SingleTickerProviderSt
           prefixIcon: widget.prefixIcon,
           suffixIcon: widget.suffixIcon,
           filled: true,
-          fillColor: isDark ? AppTheme.darkCard : AppTheme.backgroundGray,
+          fillColor: isDark ? AppDesign.darkCard : AppDesign.backgroundGray,
           labelStyle: TextStyle(
-            color: _isFocused ? AppTheme.primaryYellow : AppColors.textSecondary,
+            color: _isFocused ? AppDesign.primaryYellow : AppDesign.textSecondary,
           ),
-          hintStyle: TextStyle(color: AppColors.placeholderText),
-          helperStyle: TextStyle(color: AppColors.textTertiary, fontSize: 12),
-          errorStyle: const TextStyle(color: AppTheme.errorRed, fontSize: 12),
+          hintStyle: TextStyle(color: AppDesign.placeholderText),
+          helperStyle: TextStyle(color: AppDesign.textTertiary, fontSize: 12),
+          errorStyle: const TextStyle(color: AppDesign.errorRed, fontSize: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppBorderRadius.input),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppBorderRadius.input),
-            borderSide: BorderSide(color: AppColors.border, width: 1),
+            borderSide: BorderSide(color: AppDesign.border, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppBorderRadius.input),
-            borderSide: const BorderSide(color: AppTheme.primaryYellow, width: 2),
+            borderSide: const BorderSide(color: AppDesign.primaryYellow, width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppBorderRadius.input),
-            borderSide: const BorderSide(color: AppTheme.errorRed, width: 1),
+            borderSide: const BorderSide(color: AppDesign.errorRed, width: 1),
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppBorderRadius.input),
-            borderSide: const BorderSide(color: AppTheme.errorRed, width: 2),
+            borderSide: const BorderSide(color: AppDesign.errorRed, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -263,7 +262,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
         onPressed: _toggleVisibility,
         icon: Icon(
           _obscureText ? Icons.visibility_off : Icons.visibility,
-          color: AppColors.textSecondary,
+          color: AppDesign.textSecondary,
         ),
       ),
     );

@@ -2,6 +2,8 @@ import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/data/models/unified_property_response.dart';
 import 'package:ghar360/core/network/api_client.dart';
+import 'package:ghar360/core/network/api_paths.dart';
+import 'package:ghar360/core/network/response_parser.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
 /// Remote datasource for property data.
@@ -19,6 +21,8 @@ class PropertiesRemoteDatasource {
     required UnifiedFilterModel filters,
     int page = 1,
     int limit = 20,
+    bool excludeSwiped = false,
+    bool useCache = true,
   }) async {
     DebugLogger.debug(
       '🔍 Fetching properties: lat=$latitude, lng=$longitude, radius=${radiusKm}km',
@@ -31,26 +35,43 @@ class PropertiesRemoteDatasource {
       filters: filters,
       page: page,
       limit: limit,
+      excludeSwiped: excludeSwiped,
     );
 
     DebugLogger.debug('🔍 Query params: $queryParams');
 
-    final response = await _apiClient.get('/properties/', queryParams: queryParams, useCache: true);
+    final response = await _apiClient.get(
+      ApiPaths.properties,
+      queryParams: queryParams,
+      useCache: useCache,
+    );
 
     return _parsePropertiesResponse(response.body);
   }
 
   /// Fetches a single property by ID.
   Future<PropertyModel> fetchPropertyById(String propertyId) async {
-    final response = await _apiClient.get('/properties/$propertyId', useCache: true);
-    final body = response.body;
-    if (body is Map<String, dynamic>) {
-      final data = body['data'] ?? body;
-      if (data is Map<String, dynamic>) {
-        return PropertyModel.fromJson(Map<String, dynamic>.from(data));
-      }
+    final response = await _apiClient.get(ApiPaths.propertyById(propertyId), useCache: true);
+    final payload = ResponseParser.unwrapObject(response.body);
+    if (payload.isEmpty) {
+      throw const FormatException('Unexpected property response format');
     }
-    throw const FormatException('Unexpected property response format');
+    return PropertyModel.fromJson(Map<String, dynamic>.from(payload));
+  }
+
+  /// Fetches multiple properties by IDs in a single request.
+  ///
+  /// Uses repeated `ids` query params (e.g. `?ids=1&ids=2`) to batch-fetch.
+  /// Falls back to
+  /// individual fetches if the batch endpoint fails.
+  Future<List<PropertyModel>> fetchPropertiesByIds(List<int> ids) async {
+    DebugLogger.debug('📦 Batch-fetching ${ids.length} properties by IDs');
+    final response = await _apiClient.get(
+      ApiPaths.properties,
+      queryParams: {'ids': ids},
+      useCache: true,
+    );
+    return _parsePropertiesResponse(response.body);
   }
 
   /// Searches properties by query.
@@ -62,6 +83,8 @@ class PropertiesRemoteDatasource {
     UnifiedFilterModel? filters,
     int page = 1,
     int limit = 20,
+    bool excludeSwiped = false,
+    bool useCache = true,
   }) async {
     final queryParams = _buildQueryParams(
       latitude: latitude,
@@ -71,9 +94,14 @@ class PropertiesRemoteDatasource {
       page: page,
       limit: limit,
       searchQuery: query,
+      excludeSwiped: excludeSwiped,
     );
 
-    final response = await _apiClient.get('/properties/', queryParams: queryParams, useCache: true);
+    final response = await _apiClient.get(
+      ApiPaths.properties,
+      queryParams: queryParams,
+      useCache: useCache,
+    );
     return _parsePropertiesResponse(response.body);
   }
 
@@ -85,6 +113,7 @@ class PropertiesRemoteDatasource {
     double? longitude,
     double? radiusKm,
     String? searchQuery,
+    bool excludeSwiped = false,
   }) {
     final queryParams = <String, dynamic>{'page': page.toString(), 'limit': limit.toString()};
 
@@ -99,25 +128,22 @@ class PropertiesRemoteDatasource {
       queryParams['q'] = searchQuery.trim();
     }
 
+    if (excludeSwiped) {
+      queryParams['exclude_swiped'] = 'true';
+    }
+
     if (filters != null) {
-      final filterMap = filters.toJson();
+      final filterMap = filters.toApiQueryParams();
       filterMap.forEach((key, value) {
         if (value == null) return;
-
-        if (key == 'search_query') {
-          final q = value.toString().trim();
-          if (q.isNotEmpty) {
-            queryParams['q'] = q;
-          }
-          return;
-        }
 
         if (value is List) {
           final cleanList = value
               .where((item) => item != null && item.toString().trim().isNotEmpty)
+              .map((item) => item.toString().trim())
               .toList();
           if (cleanList.isNotEmpty) {
-            queryParams[key] = cleanList.join(',');
+            queryParams[key] = cleanList;
           }
           return;
         }

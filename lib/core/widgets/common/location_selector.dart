@@ -5,7 +5,8 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/controllers/location_controller.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
+import 'package:ghar360/core/services/google_places_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
 class LocationSelector extends GetView<LocationController> {
@@ -26,14 +27,14 @@ class LocationSelector extends GetView<LocationController> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: AppDesign.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.divider, width: 0.5),
+            border: Border.all(color: AppDesign.divider, width: 0.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.location_on, size: 16, color: AppColors.primaryYellow),
+              const Icon(Icons.location_on, size: 16, color: AppDesign.primaryYellow),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
@@ -41,14 +42,14 @@ class LocationSelector extends GetView<LocationController> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    color: AppDesign.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
+              Icon(Icons.keyboard_arrow_down, size: 16, color: AppDesign.textSecondary),
             ],
           ),
         ),
@@ -71,7 +72,7 @@ class LocationSelector extends GetView<LocationController> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppDesign.transparent,
       builder: (context) => LocationPickerModal(pageType: pageType),
     );
   }
@@ -158,7 +159,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: BoxDecoration(
-        color: AppColors.scaffoldBackground,
+        color: AppDesign.scaffoldBackground,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -169,7 +170,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.divider,
+              color: AppDesign.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -179,7 +180,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Icon(Icons.location_on, color: AppColors.primaryYellow),
+                const Icon(Icons.location_on, color: AppDesign.primaryYellow),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -187,12 +188,12 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppDesign.textPrimary,
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.close, color: AppColors.textSecondary),
+                  icon: Icon(Icons.close, color: AppDesign.textSecondary),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -203,13 +204,13 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: AppColors.inputBackground,
+              color: AppDesign.inputBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.divider, width: 0.5),
+              border: Border.all(color: AppDesign.divider, width: 0.5),
             ),
             child: TextField(
               controller: _searchController,
-              style: TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: AppDesign.textPrimary),
               onChanged: (query) {
                 if (query.isNotEmpty) {
                   locationController.getPlaceSuggestions(query);
@@ -219,8 +220,8 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
               },
               decoration: InputDecoration(
                 hintText: 'search_location_hint'.tr,
-                hintStyle: TextStyle(color: AppColors.textSecondary),
-                prefixIcon: Icon(Icons.search, color: AppColors.iconColor),
+                hintStyle: TextStyle(color: AppDesign.textSecondary),
+                prefixIcon: Icon(Icons.search, color: AppDesign.iconColor),
                 suffixIcon: Obx(() {
                   if (locationController.isSearchingPlaces.value) {
                     return Container(
@@ -229,12 +230,12 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                       margin: const EdgeInsets.all(12),
                       child: const CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
                       ),
                     );
                   } else if (_searchController.text.isNotEmpty) {
                     return IconButton(
-                      icon: Icon(Icons.clear, color: AppColors.iconColor),
+                      icon: Icon(Icons.clear, color: AppDesign.iconColor),
                       onPressed: () {
                         _searchController.clear();
                         locationController.clearPlaceSuggestions();
@@ -263,7 +264,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                   icon: Icons.my_location,
                   title: 'use_current_location'.tr,
                   subtitle: 'get_location_from_gps'.tr,
-                  iconColor: AppColors.primaryYellow,
+                  iconColor: AppDesign.primaryYellow,
                   onTap: () => _useCurrentLocation(),
                 ),
               ],
@@ -282,11 +283,11 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.location_off, size: 48, color: AppColors.textSecondary),
+                      Icon(Icons.location_off, size: 48, color: AppDesign.textSecondary),
                       const SizedBox(height: 16),
                       Text(
                         'no_locations_found'.tr,
-                        style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                        style: TextStyle(fontSize: 16, color: AppDesign.textSecondary),
                       ),
                     ],
                   ),
@@ -318,9 +319,9 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppDesign.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider, width: 0.5),
+        border: Border.all(color: AppDesign.divider, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,12 +334,12 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: AppDesign.textPrimary,
                 ),
               ),
               Text(
                 '${radiusValue.toInt()} km',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 12, color: AppDesign.textSecondary),
               ),
             ],
           ),
@@ -348,7 +349,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
             max: 50,
             divisions: 9, // 5,10,15,...,50
             label: '${radiusValue.toInt()} km',
-            activeColor: AppColors.primaryYellow,
+            activeColor: AppDesign.primaryYellow,
             onChanged: (val) {
               setState(() => _radiusKm = val);
               final state = _getPageState(pageStateService);
@@ -381,13 +382,13 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         ),
         title: Text(
           title,
-          style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+          style: TextStyle(fontWeight: FontWeight.w500, color: AppDesign.textPrimary),
         ),
-        subtitle: Text(subtitle, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSecondary),
+        subtitle: Text(subtitle, style: TextStyle(color: AppDesign.textSecondary, fontSize: 12)),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppDesign.textSecondary),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        tileColor: AppColors.surface,
+        tileColor: AppDesign.surface,
       ),
     );
   }
@@ -401,17 +402,17 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.accentBlue.withValues(alpha: 0.1),
+          color: AppDesign.accentBlue.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.location_on, color: AppColors.accentBlue, size: 20),
+        child: const Icon(Icons.location_on, color: AppDesign.accentBlue, size: 20),
       ),
       title: Text(
         title,
-        style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+        style: TextStyle(fontWeight: FontWeight.w500, color: AppDesign.textPrimary),
       ),
       subtitle: subtitle.isNotEmpty
-          ? Text(subtitle, style: TextStyle(color: AppColors.textSecondary, fontSize: 12))
+          ? Text(subtitle, style: TextStyle(color: AppDesign.textSecondary, fontSize: 12))
           : null,
       onTap: onTap,
     );
@@ -433,7 +434,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       _showSnackbarSafe(
         title: 'error'.tr,
         message: 'unable_to_get_current_location'.tr,
-        backgroundColor: AppColors.errorRed,
+        backgroundColor: AppDesign.errorRed,
         colorText: onErrorColor,
       );
     }
@@ -467,7 +468,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
       _showSnackbarSafe(
         title: 'error'.tr,
         message: 'unable_to_select_location'.tr,
-        backgroundColor: AppColors.errorRed,
+        backgroundColor: AppDesign.errorRed,
         colorText: onErrorColor,
       );
     }
