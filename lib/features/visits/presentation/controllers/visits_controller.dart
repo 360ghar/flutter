@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
+
 import 'package:get/get.dart';
+
 import 'package:ghar360/core/controllers/auth_controller.dart';
 import 'package:ghar360/core/controllers/offline_queue_service.dart';
 import 'package:ghar360/core/data/models/agent_model.dart';
@@ -7,7 +9,8 @@ import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
 import 'package:ghar360/core/firebase/analytics_service.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
-import 'package:ghar360/core/utils/debug_logger.dart'; // Added missing import
+import 'package:ghar360/core/utils/app_toast.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/features/dashboard/presentation/controllers/dashboard_controller.dart';
 import 'package:ghar360/features/visits/data/datasources/visits_remote_datasource.dart';
 
@@ -90,9 +93,9 @@ class VisitsController extends GetxController {
   }
 
   Future<void> _initializeController() async {
-    // Don't eagerly load data - let views request it when needed
-    // await loadVisits();
-    // await loadRelationshipManager();
+    // Load visits and agent data lazily (guards prevent duplicate requests)
+    await loadVisitsLazy();
+    await loadRelationshipManagerLazy();
   }
 
   void _clearAllData() {
@@ -176,9 +179,21 @@ class VisitsController extends GetxController {
 
       final now = DateTime.now();
       final upcomingVisits = allVisits
-          .where((v) => now.isBefore(v.scheduledDate) && v.status != VisitStatus.completed)
+          .where(
+            (v) =>
+                now.isBefore(v.scheduledDate) &&
+                v.status != VisitStatus.completed &&
+                v.status != VisitStatus.cancelled,
+          )
           .toList();
-      final pastVisits = allVisits.where((v) => !now.isBefore(v.scheduledDate)).toList();
+      final pastVisits = allVisits
+          .where(
+            (v) =>
+                !now.isBefore(v.scheduledDate) ||
+                v.status == VisitStatus.completed ||
+                v.status == VisitStatus.cancelled,
+          )
+          .toList();
 
       // Sort per spec
       upcomingVisits.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
@@ -283,7 +298,7 @@ class VisitsController extends GetxController {
     int guestsCount = 1,
   }) async {
     if (!_authController.isAuthenticated) {
-      Get.snackbar('auth_required'.tr, 'login_to_book_visit'.tr, snackPosition: SnackPosition.TOP);
+      AppToast.warning('auth_required'.tr, 'login_to_book_visit'.tr);
       return false;
     }
 
@@ -297,7 +312,7 @@ class VisitsController extends GetxController {
           : property.id as int;
       final String propertyTitle = property is PropertyModel
           ? property.title
-          : property.title as String;
+          : property.title?.toString() ?? 'Property';
 
       final visitModel = await _visitsRemoteDatasource.scheduleVisit(
         propertyId: propertyId,
@@ -311,11 +326,9 @@ class VisitsController extends GetxController {
       // Just reload visits to get the updated list
       await loadVisits(isRefresh: true, silent: true);
 
-      Get.snackbar(
+      AppToast.success(
         'visit_scheduled'.tr,
         '${'visit_scheduled_message_prefix'.tr} $propertyTitle ${'visit_scheduled_message_infix'.tr} ${formatVisitDate(visitDateTime)} at ${formatVisitTime(visitDateTime)}',
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 4),
       );
       await _safeAnalytics(
         'visit_schedule',
@@ -341,22 +354,16 @@ class VisitsController extends GetxController {
             scheduledDate: visitDateTime.toUtc().toIso8601String(),
             specialRequirements: notes ?? 'Property visit scheduled through 360ghar app',
           );
-          Get.snackbar(
-            'queued_offline'.tr,
-            'queued_offline_message'.tr,
-            snackPosition: SnackPosition.TOP,
-            duration: const Duration(seconds: 4),
-          );
+          AppToast.info('queued_offline'.tr, 'queued_offline_message'.tr);
           return false;
         } catch (qErr) {
           DebugLogger.error('Failed to enqueue visit booking: $qErr');
         }
       }
 
-      Get.snackbar(
+      AppToast.error(
         'booking_failed'.tr,
         'booking_failed_message'.trParams({'error': e.toString()}),
-        snackPosition: SnackPosition.TOP,
       );
 
       return false;
@@ -372,7 +379,7 @@ class VisitsController extends GetxController {
         : property.id as int;
     final String propertyTitle = property is PropertyModel
         ? property.title
-        : property.title as String;
+        : property.title?.toString() ?? 'Property';
 
     final visit = VisitModel(
       id: DateTime.now().millisecondsSinceEpoch,
@@ -388,11 +395,9 @@ class VisitsController extends GetxController {
     upcomingVisitsList.insert(0, visit);
     _sortVisits();
 
-    Get.snackbar(
+    AppToast.success(
       'visit_scheduled'.tr,
       '${'visit_scheduled_message_prefix'.tr} $propertyTitle ${'visit_scheduled_message_infix'.tr} ${formatVisitDate(visitDateTime)} at ${formatVisitTime(visitDateTime)}',
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 4),
     );
   }
 
@@ -402,14 +407,10 @@ class VisitsController extends GetxController {
     if (visitIndex == -1) return false;
 
     final visit = visits[visitIndex];
-    if (!visit.isUpcoming) return false;
+    if (!visit.canCancel) return false;
 
     if (reason.trim().isEmpty) {
-      Get.snackbar(
-        'reason_required_label'.tr,
-        'reason_required_hint'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
+      AppToast.warning('reason_required_label'.tr, 'reason_required_hint'.tr);
       return false;
     }
 
@@ -424,11 +425,7 @@ class VisitsController extends GetxController {
       // Reload visits to get updated state from server
       await loadVisits(isRefresh: true, silent: true);
 
-      Get.snackbar(
-        'visit_cancelled'.tr,
-        'your_visit_has_been_cancelled'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
+      AppToast.success('visit_cancelled'.tr, 'your_visit_has_been_cancelled'.tr);
       await _safeAnalytics(
         'visit_cancel',
         () => AnalyticsService.logVital('visit_cancel', params: {'id': visitIdInt.toString()}),
@@ -437,7 +434,7 @@ class VisitsController extends GetxController {
       return true;
     } catch (e) {
       DebugLogger.error('Error cancelling visit: $e');
-      Get.snackbar('error'.tr, 'could_not_cancel_visit'.tr, snackPosition: SnackPosition.TOP);
+      AppToast.error('error'.tr, 'could_not_cancel_visit'.tr);
       return false;
     }
   }
@@ -448,7 +445,7 @@ class VisitsController extends GetxController {
     if (visitIndex == -1) return false;
 
     final visit = visits[visitIndex];
-    if (!visit.isUpcoming) return false;
+    if (!visit.canReschedule) return false;
 
     try {
       if (_authController.isAuthenticated) {
@@ -465,11 +462,9 @@ class VisitsController extends GetxController {
       // Reload visits to get updated state from server
       await loadVisits(isRefresh: true, silent: true);
 
-      Get.snackbar(
+      AppToast.success(
         'visit_rescheduled'.tr,
         '${'visit_rescheduled_to'.tr} ${formatVisitDate(newDateTime)} ${'at'.tr} ${formatVisitTime(newDateTime)}',
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 4),
       );
       await _safeAnalytics(
         'visit_reschedule',
@@ -479,7 +474,7 @@ class VisitsController extends GetxController {
       return true;
     } catch (e) {
       DebugLogger.error('Error rescheduling visit: $e');
-      Get.snackbar('error'.tr, 'could_not_reschedule_visit'.tr, snackPosition: SnackPosition.TOP);
+      AppToast.error('error'.tr, 'could_not_reschedule_visit'.tr);
       return false;
     }
   }
@@ -516,9 +511,6 @@ class VisitsController extends GetxController {
   }
 
   List<VisitModel> get upcomingVisits {
-    DebugLogger.info(
-      '📊 Getter upcomingVisits called | rxLen=${upcomingVisitsList.length} loaded=${hasLoadedVisits.value} isLoading=${isLoading.value}',
-    );
     if (upcomingVisitsList.isNotEmpty || hasLoadedVisits.value) {
       return upcomingVisitsList;
     }
@@ -526,25 +518,33 @@ class VisitsController extends GetxController {
     final now = DateTime.now();
     final list =
         visits
-            .where((v) => now.isBefore(v.scheduledDate) && v.status != VisitStatus.completed)
+            .where(
+              (v) =>
+                  now.isBefore(v.scheduledDate) &&
+                  v.status != VisitStatus.completed &&
+                  v.status != VisitStatus.cancelled,
+            )
             .toList()
           ..sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
-    DebugLogger.info('📊 Getter upcomingVisits fallback computed=${list.length}');
     return list;
   }
 
   List<VisitModel> get pastVisits {
-    DebugLogger.info(
-      '📊 Getter pastVisits called | rxLen=${pastVisitsList.length} loaded=${hasLoadedVisits.value} isLoading=${isLoading.value}',
-    );
     if (pastVisitsList.isNotEmpty || hasLoadedVisits.value) {
       return pastVisitsList;
     }
     // Fallback compute: all dates in the past, any status
     final now = DateTime.now();
-    final list = visits.where((v) => !now.isBefore(v.scheduledDate)).toList()
-      ..sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
-    DebugLogger.info('📊 Getter pastVisits fallback computed=${list.length}');
+    final list =
+        visits
+            .where(
+              (v) =>
+                  !now.isBefore(v.scheduledDate) ||
+                  v.status == VisitStatus.completed ||
+                  v.status == VisitStatus.cancelled,
+            )
+            .toList()
+          ..sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
     return list;
   }
 
@@ -553,15 +553,15 @@ class VisitsController extends GetxController {
     final difference = dateTime.difference(now).inDays;
 
     if (difference == 0) {
-      return 'Today';
+      return 'today'.tr;
     } else if (difference == 1) {
-      return 'Tomorrow';
+      return 'tomorrow'.tr;
     } else if (difference == -1) {
-      return 'Yesterday';
+      return 'yesterday'.tr;
     } else if (difference > 1) {
-      return 'In $difference days';
+      return 'in_n_days'.trParams({'days': '$difference'});
     } else {
-      return '${difference.abs()} days ago';
+      return 'n_days_ago'.trParams({'days': '${difference.abs()}'});
     }
   }
 

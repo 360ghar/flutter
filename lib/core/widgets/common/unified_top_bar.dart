@@ -33,50 +33,50 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final theme = Theme.of(context);
-      // Determine bottom search row visibility
-      final bool supportsSearch = showSearch && _shouldShowSearch();
-      final bool searchVisible = supportsSearch && controller.isSearchVisible(pageType);
+    final theme = Theme.of(context);
+    final bool supportsSearch = showSearch && _shouldShowSearch();
 
-      final PreferredSizeWidget? bottomWidget = searchVisible
-          ? _buildBottomSearchBar(controller)
-          : bottom; // fallback to injected bottom
+    if (supportsSearch) {
+      // Reactive: toggle bottom search bar based on isSearchVisible
+      return Obx(() {
+        final bool searchVisible = controller.isSearchVisible(pageType);
+        return _buildAppBar(context, theme, supportsSearch, searchVisible);
+      });
+    }
 
-      return AppBar(
-        backgroundColor: AppDesign.appBarBackground,
-        elevation: 8,
-        shadowColor: AppDesign.shadowColor,
-        automaticallyImplyLeading: false,
-        toolbarHeight: kToolbarHeight,
-        titleSpacing: 16,
-        // Avoid setting statusBarColor to prevent deprecated Android 15 APIs.
-        systemOverlayStyle: theme.brightness == Brightness.dark
-            ? const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.light)
-            : const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark),
-        title: Row(
-          children: [
-            // Location selector
-            LocationSelector(pageType: pageType),
+    // Non-reactive: no search support, no reactive state needed at this level
+    return _buildAppBar(context, theme, false, false);
+  }
 
-            const Spacer(),
+  AppBar _buildAppBar(
+    BuildContext context,
+    ThemeData theme,
+    bool supportsSearch,
+    bool searchVisible,
+  ) {
+    final PreferredSizeWidget? bottomWidget = searchVisible
+        ? _buildBottomSearchBar(controller)
+        : bottom;
 
-            // Search toggle (only for Explore and Likes)
-            if (supportsSearch) _buildSearchToggle(controller),
-
-            // Refreshing spinner (small)
-            _buildRefreshIndicator(controller),
-
-            // Filter button
-            _buildFilterButton(context, controller),
-
-            // Additional actions
-            if (additionalActions != null) ...additionalActions!,
-          ],
-        ),
-        bottom: bottomWidget,
-      );
-    });
+    return AppBar(
+      automaticallyImplyLeading: false,
+      toolbarHeight: kToolbarHeight,
+      titleSpacing: 16,
+      systemOverlayStyle: theme.brightness == Brightness.dark
+          ? const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.light)
+          : const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark),
+      title: Row(
+        children: [
+          LocationSelector(pageType: pageType),
+          const Spacer(),
+          if (supportsSearch) _buildSearchToggle(controller),
+          _buildRefreshIndicator(controller),
+          _buildFilterButton(context, controller),
+          if (additionalActions != null) ...additionalActions!,
+        ],
+      ),
+      bottom: bottomWidget,
+    );
   }
 
   bool _shouldShowSearch() {
@@ -106,6 +106,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
               border: Border.all(color: AppDesign.divider, width: 0.5),
             ),
             child: TextField(
+              key: ValueKey('qa.topbar.search_input.${pageType.name}'),
               onChanged: (value) {
                 onSearchChanged?.call(value);
               },
@@ -141,6 +142,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
       final activeFiltersCount = currentState.activeFiltersCount;
 
       return IconButton(
+        key: ValueKey('qa.topbar.filter.${pageType.name}'),
         icon: Stack(
           children: [
             Icon(Icons.tune, color: AppDesign.iconColor, size: 24),
@@ -178,6 +180,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
     return Obx(() {
       final visible = pageStateService.isSearchVisible(pageType);
       return IconButton(
+        key: ValueKey('qa.topbar.search_toggle.${pageType.name}'),
         icon: Icon(visible ? Icons.search_off : Icons.search, color: AppDesign.iconColor, size: 22),
         onPressed: () => pageStateService.toggleSearch(pageType),
       );

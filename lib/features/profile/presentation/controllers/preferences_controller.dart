@@ -3,6 +3,7 @@ import 'package:get_storage/get_storage.dart';
 
 import 'package:ghar360/core/controllers/localization_controller.dart';
 import 'package:ghar360/core/controllers/theme_controller.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 
 class PreferencesController extends GetxController {
   final GetStorage _storage = GetStorage();
@@ -55,21 +56,9 @@ class PreferencesController extends GetxController {
 
       _themeController.setThemeMode(themeMode.value);
 
-      Get.snackbar(
-        'success'.tr,
-        'preferences_saved'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.primaryColor,
-        colorText: Get.theme.colorScheme.onPrimary,
-      );
+      AppToast.success('success'.tr, 'preferences_saved'.tr);
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'preferences_save_error'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error,
-        colorText: Get.theme.colorScheme.onError,
-      );
+      AppToast.error('error'.tr, 'preferences_save_error'.tr);
     }
   }
 
@@ -78,14 +67,18 @@ class PreferencesController extends GetxController {
   bool get isSimilarPropertiesEnabled => similarProperties.value;
   AppThemeMode get currentThemeMode => themeMode.value;
 
-  String get currentThemeName {
+  /// Returns translation key for current theme name
+  String get currentThemeNameKey {
     switch (themeMode.value) {
       case AppThemeMode.light:
-        return 'Light';
+        return 'light_mode';
       case AppThemeMode.dark:
-        return 'Dark';
+        return 'dark_mode';
       case AppThemeMode.system:
-        return 'System';
+        return 'system_mode';
     }
   }
+
+  @Deprecated('Use currentThemeNameKey with .tr for localized text')
+  String get currentThemeName => currentThemeNameKey;
 }

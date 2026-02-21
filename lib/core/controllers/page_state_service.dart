@@ -12,6 +12,7 @@ import 'package:ghar360/core/controllers/page_location_manager.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/features/properties/data/properties_repository.dart';
 import 'package:ghar360/features/swipes/data/swipes_repository.dart';
@@ -481,12 +482,7 @@ class PageStateService extends GetxController {
       DebugLogger.success('✅ Successfully bootstrapped initial location for all pages.');
     } catch (e, st) {
       DebugLogger.error('❌ Failed to bootstrap initial location', e, st);
-      Get.snackbar(
-        'location_error'.tr,
-        'failed_to_get_location_message'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 5),
-      );
+      AppToast.error('location_error'.tr, 'failed_to_get_location_message'.tr);
     }
   }
 
@@ -621,7 +617,7 @@ class PageStateService extends GetxController {
 
       final preferences = <String, dynamic>{
         if (normalizedPropertyTypes.isNotEmpty) 'property_type': normalizedPropertyTypes,
-        if (normalizedPurpose != null) 'purpose': normalizedPurpose,
+        'purpose': ?normalizedPurpose,
         if (filters.priceMin != null) 'budget_min': filters.priceMin,
         if (filters.priceMax != null) 'budget_max': filters.priceMax,
         if (filters.bedroomsMin != null) 'bedrooms_min': filters.bedroomsMin,

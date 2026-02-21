@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/webview_helper.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -69,13 +70,7 @@ class _TourViewState extends State<TourView> {
             setState(() {
               isLoading = false;
             });
-            Get.snackbar(
-              'error_loading_tour'.tr,
-              'check_internet_connection'.tr,
-              snackPosition: SnackPosition.TOP,
-              backgroundColor: AppDesign.errorRed,
-              colorText: AppDesign.snackbarText,
-            );
+            AppToast.error('error_loading_tour'.tr, 'check_internet_connection'.tr);
           },
         ),
       );
@@ -163,6 +158,7 @@ class _TourViewState extends State<TourView> {
   Widget build(BuildContext context) {
     if (_tourUrl == null) {
       return Scaffold(
+        key: const ValueKey('qa.tour.screen'),
         backgroundColor: AppDesign.scaffoldBackground,
         appBar: AppBar(
           backgroundColor: AppDesign.appBarBackground,
@@ -176,11 +172,12 @@ class _TourViewState extends State<TourView> {
             style: TextStyle(color: AppDesign.appBarText, fontWeight: FontWeight.bold),
           ),
         ),
-        body: _buildInvalidTourContent(),
+        body: Semantics(label: 'qa.tour.invalid_state', child: _buildInvalidTourContent()),
       );
     }
 
     return Scaffold(
+      key: const ValueKey('qa.tour.screen'),
       backgroundColor: AppDesign.scaffoldBackground,
       appBar: AppBar(
         backgroundColor: AppDesign.appBarBackground,
@@ -197,25 +194,13 @@ class _TourViewState extends State<TourView> {
           IconButton(
             icon: Icon(Icons.fullscreen, color: AppDesign.appBarIcon),
             onPressed: () {
-              Get.snackbar(
-                'fullscreen_mode'.tr,
-                'rotate_device_better_experience'.tr,
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: AppDesign.snackbarBackground,
-                colorText: AppDesign.snackbarText,
-              );
+              AppToast.info('fullscreen_mode'.tr, 'rotate_device_better_experience'.tr);
             },
           ),
           IconButton(
             icon: Icon(Icons.share, color: AppDesign.appBarIcon),
             onPressed: () {
-              Get.snackbar(
-                'share_tour'.tr,
-                'tour_link_copied'.tr,
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: AppDesign.snackbarBackground,
-                colorText: AppDesign.snackbarText,
-              );
+              AppToast.info('share_tour'.tr, 'tour_link_copied'.tr);
             },
           ),
         ],
@@ -233,9 +218,13 @@ class _TourViewState extends State<TourView> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: WebViewWidget(
-                  controller: controller!,
-                  gestureRecognizers: WebViewHelper.createInteractiveGestureRecognizers(),
+                child: Semantics(
+                  label: 'qa.tour.webview',
+                  identifier: 'qa.tour.webview',
+                  child: WebViewWidget(
+                    controller: controller!,
+                    gestureRecognizers: WebViewHelper.createInteractiveGestureRecognizers(),
+                  ),
                 ),
               ),
             ),

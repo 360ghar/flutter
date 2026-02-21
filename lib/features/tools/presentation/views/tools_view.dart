@@ -12,75 +12,126 @@ class ToolsView extends GetView<ToolsController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppDesign.background,
-      appBar: AppBar(
-        backgroundColor: AppDesign.appBarBackground,
-        elevation: 0,
-        title: Text(
-          'tools_calculators'.tr,
-          style: TextStyle(color: AppDesign.appBarText, fontSize: 20, fontWeight: FontWeight.w600),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
-          onPressed: () => Get.back(),
-        ),
+    final tools = [
+      ToolItem(
+        icon: Icons.square_foot_outlined,
+        title: 'area_converter'.tr,
+        description: 'area_converter_desc'.tr,
+        qaKey: 'qa.tools.menu.area_converter',
+        route: AppRoutes.areaConverter,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'tools_subtitle'.tr,
-              style: TextStyle(fontSize: 14, color: AppDesign.textSecondary),
+      ToolItem(
+        icon: Icons.account_balance_outlined,
+        title: 'loan_eligibility'.tr,
+        description: 'loan_eligibility_desc'.tr,
+        qaKey: 'qa.tools.menu.loan_eligibility',
+        route: AppRoutes.loanEligibility,
+      ),
+      ToolItem(
+        icon: Icons.calculate_outlined,
+        title: 'emi_calculator'.tr,
+        description: 'emi_calculator_desc'.tr,
+        qaKey: 'qa.tools.menu.emi_calculator',
+        route: AppRoutes.emiCalculator,
+      ),
+      ToolItem(
+        icon: Icons.home_work_outlined,
+        title: 'carpet_area_calculator'.tr,
+        description: 'carpet_area_desc'.tr,
+        qaKey: 'qa.tools.menu.carpet_area',
+        route: AppRoutes.carpetArea,
+      ),
+      ToolItem(
+        icon: Icons.checklist_outlined,
+        title: 'document_checklist'.tr,
+        description: 'document_checklist_desc'.tr,
+        qaKey: 'qa.tools.menu.document_checklist',
+        route: AppRoutes.documentChecklist,
+      ),
+      ToolItem(
+        icon: Icons.receipt_long_outlined,
+        title: 'capital_gains'.tr,
+        description: 'capital_gains_desc'.tr,
+        qaKey: 'qa.tools.menu.capital_gains',
+        route: AppRoutes.capitalGains,
+      ),
+    ];
+
+    return Semantics(
+      label: 'qa.tools.screen',
+      identifier: 'qa.tools.screen',
+      child: Scaffold(
+        key: const ValueKey('qa.tools.screen'),
+        backgroundColor: AppDesign.background,
+        appBar: AppBar(
+          backgroundColor: AppDesign.appBarBackground,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
+            onPressed: () => Get.back(),
+          ),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'tools_calculators'.tr,
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    color: AppDesign.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'tools_subtitle'.tr,
+                  style: TextStyle(fontSize: 14, color: AppDesign.textSecondary),
+                ),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.0,
+                    ),
+                    itemCount: tools.length,
+                    itemBuilder: (context, index) {
+                      final tool = tools[index];
+                      return ToolCard(
+                        icon: tool.icon,
+                        title: tool.title,
+                        description: tool.description,
+                        qaKey: tool.qaKey,
+                        onTap: () => Get.toNamed(tool.route),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            ToolCard(
-              icon: Icons.square_foot,
-              title: 'area_converter'.tr,
-              description: 'area_converter_desc'.tr,
-              onTap: () => Get.toNamed(AppRoutes.areaConverter),
-            ),
-            const SizedBox(height: 12),
-            ToolCard(
-              icon: Icons.account_balance,
-              title: 'loan_eligibility'.tr,
-              description: 'loan_eligibility_desc'.tr,
-              onTap: () => Get.toNamed(AppRoutes.loanEligibility),
-            ),
-            const SizedBox(height: 12),
-            ToolCard(
-              icon: Icons.calculate,
-              title: 'emi_calculator'.tr,
-              description: 'emi_calculator_desc'.tr,
-              onTap: () => Get.toNamed(AppRoutes.emiCalculator),
-            ),
-            const SizedBox(height: 12),
-            ToolCard(
-              icon: Icons.home_work,
-              title: 'carpet_area_calculator'.tr,
-              description: 'carpet_area_desc'.tr,
-              onTap: () => Get.toNamed(AppRoutes.carpetArea),
-            ),
-            const SizedBox(height: 12),
-            ToolCard(
-              icon: Icons.checklist,
-              title: 'document_checklist'.tr,
-              description: 'document_checklist_desc'.tr,
-              onTap: () => Get.toNamed(AppRoutes.documentChecklist),
-            ),
-            const SizedBox(height: 12),
-            ToolCard(
-              icon: Icons.receipt_long,
-              title: 'capital_gains'.tr,
-              description: 'capital_gains_desc'.tr,
-              onTap: () => Get.toNamed(AppRoutes.capitalGains),
-            ),
-            const SizedBox(height: 24),
-          ],
+          ),
         ),
       ),
     );
   }
+}
+
+class ToolItem {
+  final IconData icon;
+  final String title;
+  final String description;
+  final String? qaKey;
+  final String route;
+
+  const ToolItem({
+    required this.icon,
+    required this.title,
+    required this.description,
+    this.qaKey,
+    required this.route,
+  });
 }

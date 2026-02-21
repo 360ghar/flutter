@@ -4,7 +4,10 @@ import 'package:get/get.dart';
 
 import 'package:ghar360/core/middlewares/auth_middleware.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/core/routes/editorial_reveal_transition.dart';
 import 'package:ghar360/core/utils/app_spacing.dart';
+import 'package:ghar360/features/assistant/presentation/bindings/assistant_binding.dart';
+import 'package:ghar360/features/assistant/presentation/views/assistant_view.dart';
 import 'package:ghar360/features/auth/presentation/bindings/auth_binding.dart';
 import 'package:ghar360/features/auth/presentation/bindings/forgot_password_binding.dart';
 import 'package:ghar360/features/auth/presentation/bindings/phone_entry_binding.dart';
@@ -56,25 +59,29 @@ import 'package:ghar360/features/visits/presentation/views/visits_view.dart';
 
 class AppPages {
   // Default page transition settings for consistent animations
-  static const Transition _defaultTransition = Transition.fadeIn;
   static const Duration _defaultTransitionDuration = AppDurations.pageTransition;
   static const Curve _defaultCurve = Curves.easeOutCubic;
+
+  // Editorial reveal: fade + subtle upward slide
+  static final CustomTransition _editorialReveal = EditorialRevealTransition();
+  static const Duration _editorialDuration = AppDurations.editorialReveal;
 
   static final routes = [
     GetPage(
       name: AppRoutes.splash,
       page: () => const SplashView(),
       binding: SplashBinding(),
-      transition: Transition.fade,
-      transitionDuration: _defaultTransitionDuration,
+      customTransition: _editorialReveal,
+      transitionDuration: _editorialDuration,
+      curve: _defaultCurve,
     ),
     GetPage(
       name: AppRoutes.phoneEntry,
       page: () => const PhoneEntryView(),
       binding: PhoneEntryBinding(),
       middlewares: [GuestMiddleware()],
-      transition: _defaultTransition,
-      transitionDuration: _defaultTransitionDuration,
+      customTransition: _editorialReveal,
+      transitionDuration: _editorialDuration,
       curve: _defaultCurve,
     ),
     GetPage(
@@ -108,8 +115,8 @@ class AppPages {
       name: AppRoutes.profileCompletion,
       page: () => const ProfileCompletionView(),
       binding: ProfileCompletionBinding(),
-      transition: _defaultTransition,
-      transitionDuration: _defaultTransitionDuration,
+      customTransition: _editorialReveal,
+      transitionDuration: _editorialDuration,
       curve: _defaultCurve,
     ),
     GetPage(
@@ -117,8 +124,8 @@ class AppPages {
       page: () => const DashboardView(),
       binding: DashboardBinding(),
       middlewares: [AuthMiddleware()],
-      transition: _defaultTransition,
-      transitionDuration: _defaultTransitionDuration,
+      customTransition: _editorialReveal,
+      transitionDuration: _editorialDuration,
       curve: _defaultCurve,
       children: [
         GetPage(
@@ -137,6 +144,11 @@ class AppPages {
           name: AppRoutes.profile,
           page: () => const ProfileView(),
           binding: ProfileBinding(),
+        ),
+        GetPage(
+          name: AppRoutes.assistant,
+          page: () => const AssistantView(),
+          binding: AssistantBinding(),
         ),
       ],
     ),

@@ -10,6 +10,7 @@ import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
 import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
@@ -54,6 +55,9 @@ class ExploreController extends GetxController {
 
   // Selected property for bottom sheet
   final Rx<PropertyModel?> selectedProperty = Rx<PropertyModel?>(null);
+
+  // Whether the bottom property list is collapsed
+  final RxBool isListCollapsed = false.obs;
 
   final List<Worker> _workers = <Worker>[];
   StreamSubscription<dynamic>? _locationSubscription;
@@ -611,18 +615,16 @@ class ExploreController extends GetxController {
       DebugLogger.error('❌ Failed to toggle like: $e');
       // Revert on failure
       likedOverrides[property.id] = current;
-      Get.snackbar(
-        'action_failed'.tr,
-        'like_update_failed'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 2),
-      );
+      AppToast.error('action_failed'.tr, 'like_update_failed'.tr);
     }
   }
 
   // Property selection
   void selectProperty(PropertyModel property) {
-    // Selection now only highlights marker/card; does not move camera
+    // Auto-expand list when a marker is tapped while collapsed
+    if (isListCollapsed.value) {
+      isListCollapsed.value = false;
+    }
     selectedProperty.value = property;
     DebugLogger.api('🏠 Selected property (highlight only): ${property.title}');
   }
@@ -635,6 +637,19 @@ class ExploreController extends GetxController {
 
   void clearSelection() {
     selectedProperty.value = null;
+  }
+
+  // List collapse/expand
+  void toggleListCollapsed() {
+    isListCollapsed.value = !isListCollapsed.value;
+  }
+
+  void expandList() {
+    isListCollapsed.value = false;
+  }
+
+  void collapseList() {
+    isListCollapsed.value = true;
   }
 
   // Navigation to property details
@@ -760,16 +775,16 @@ class ExploreController extends GetxController {
   String get locationDisplayText => _pageStateService.getCurrentPageState().locationDisplayText;
 
   String get propertiesCountText {
-    if (properties.isEmpty) return 'No properties found';
-    if (properties.length == 1) return '1 property';
-    return '${properties.length} properties';
+    if (properties.isEmpty) return 'no_properties_found'.tr;
+    if (properties.length == 1) return 'one_property'.tr;
+    return 'n_properties'.trParams({'count': '${properties.length}'});
   }
 
   String get currentAreaText {
     if (currentRadius.value < 1) {
-      return '${(currentRadius.value * 1000).round()}m radius';
+      return 'radius_meters'.trParams({'meters': '${(currentRadius.value * 1000).round()}'});
     }
-    return '${currentRadius.value.toStringAsFixed(1)}km radius';
+    return 'radius_km'.trParams({'km': currentRadius.value.toStringAsFixed(1)});
   }
 
   // Get properties for clustering (if implemented)
@@ -879,11 +894,19 @@ class ExploreController extends GetxController {
     }
   }
 
+  bool _markerInvalidationScheduled = false;
+
   void _invalidateMarkers(String reason) {
     _markersDirty = true;
     DebugLogger.debug('🧠 propertyMarkers cache invalidated: $reason');
-    // Bump revision so Obx builders reliably consume a reactive
-    markersRevision.value++;
+    // Coalesce rapid invalidations into a single reactive update
+    if (!_markerInvalidationScheduled) {
+      _markerInvalidationScheduled = true;
+      Future.microtask(() {
+        _markerInvalidationScheduled = false;
+        markersRevision.value++;
+      });
+    }
   }
 
   // Helper getters

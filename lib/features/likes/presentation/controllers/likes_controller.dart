@@ -7,6 +7,7 @@ import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
 enum LikesSegment { liked, passed }
@@ -75,22 +76,16 @@ class LikesController extends GetxController {
     try {
       DebugLogger.debug('💖 [LIKES_CONTROLLER] activatePage() called');
       final ps = _pageStateService.likesState.value;
-      final hasStaleLoadingWithoutData = ps.properties.isEmpty && ps.isLoading && !ps.isRefreshing;
-      final shouldRequestWhenEmpty =
-          ps.properties.isEmpty &&
-          (ps.isDataStale || ps.error != null || hasStaleLoadingWithoutData);
       DebugLogger.debug(
         '💖 [LIKES_CONTROLLER] Page state: hasLocation=${ps.hasLocation}, isLoading=${ps.isLoading}, propertiesCount=${ps.properties.length}',
       );
 
-      // Keep controller's segment in sync with PageStateService
       final segStr = _pageStateService.currentLikesSegment;
       DebugLogger.debug('💖 [LIKES_CONTROLLER] Current segment string: $segStr');
 
       currentSegment.value = segStr == 'liked' ? LikesSegment.liked : LikesSegment.passed;
       DebugLogger.debug('💖 [LIKES_CONTROLLER] Segment updated to: ${currentSegment.value}');
 
-      // Ensure we have a location, then load current segment via PageStateService
       if (!ps.hasLocation) {
         DebugLogger.debug('💖 [LIKES_CONTROLLER] No location available, requesting location');
         _pageStateService.useCurrentLocationForPage(PageType.likes).whenComplete(() {
@@ -100,17 +95,14 @@ class LikesController extends GetxController {
         return;
       }
 
-      if (shouldRequestWhenEmpty) {
-        if (hasStaleLoadingWithoutData) {
-          DebugLogger.warning(
-            '🩹 [LIKES_CONTROLLER] Detected stale loading flag with empty data. Forcing reload.',
-          );
-        } else {
-          DebugLogger.debug('💖 [LIKES_CONTROLLER] No properties and not loading, requesting data');
-        }
+      if (ps.isLoading || ps.isRefreshing) {
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] Already loading, skipping');
+        return;
+      }
+
+      if (ps.properties.isEmpty) {
+        DebugLogger.debug('💖 [LIKES_CONTROLLER] No properties, loading data');
         _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
-      } else if (ps.properties.isEmpty) {
-        DebugLogger.debug('💖 [LIKES_CONTROLLER] Empty state is fresh; no reload needed');
       } else if (ps.isDataStale) {
         DebugLogger.debug('💖 [LIKES_CONTROLLER] Data is stale, refreshing in background');
         _pageStateService.loadPageData(PageType.likes, backgroundRefresh: true);
@@ -248,21 +240,37 @@ class LikesController extends GetxController {
 
       DebugLogger.success('✅ Property successfully removed from likes');
 
-      Get.snackbar(
-        'Removed',
-        '${property.title} removed from liked properties',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
+      AppToast.success(
+        'removed_title'.tr,
+        'removed_from_liked'.trParams({'property': property.title}),
       );
     } catch (e) {
       DebugLogger.error('❌ Failed to remove from likes: $e');
 
       // Revert optimistic update
-      Get.snackbar(
-        'Error',
-        'Failed to remove property. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppToast.error('error'.tr, 'remove_failed'.tr);
+
+      // Refresh to restore correct state
+      await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);
+    }
+  }
+
+  // Move property from passed to liked by recording a "like" swipe
+  Future<void> moveToLikes(PropertyModel property) async {
+    try {
+      DebugLogger.api('➕ Moving property to likes: ${property.title}');
+      // Optimistically remove from passed list
+      _pageStateService.removePropertyFromLikes(property.id);
+      // Record a "like" swipe to add it to liked properties
+      await _pageStateService.recordSwipe(propertyId: property.id, isLiked: true);
+
+      DebugLogger.success('✅ Property successfully moved to likes');
+
+      AppToast.success('added_title'.tr, 'moved_to_liked'.trParams({'property': property.title}));
+    } catch (e) {
+      DebugLogger.error('❌ Failed to move to likes: $e');
+
+      AppToast.error('error'.tr, 'move_failed'.tr);
 
       // Refresh to restore correct state
       await _pageStateService.loadPageData(PageType.likes, forceRefresh: true);

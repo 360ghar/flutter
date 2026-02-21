@@ -1,0 +1,13 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- tapOn:
+    id: qa.profile.menu.edit_profile
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.edit.screen
+    timeout: 15000
+- assertVisible:
+    id: qa.profile.edit.save

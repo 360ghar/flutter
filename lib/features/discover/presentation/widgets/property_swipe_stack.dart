@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -9,10 +8,29 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/design/app_design_tokens.dart';
-import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/app_spacing.dart';
 import 'package:ghar360/core/widgets/common/error_states.dart';
 import 'package:ghar360/core/widgets/common/robust_network_image.dart';
 import 'package:ghar360/features/discover/presentation/widgets/property_swipe_card.dart';
+
+/// Immutable drag state for the swipe gesture, driven by a [ValueNotifier]
+/// so only the transform wrapper rebuilds during drag — not the card content.
+@immutable
+class _SwipeDragState {
+  final Offset position;
+  final double rotation;
+  final bool isDragging;
+
+  const _SwipeDragState({this.position = Offset.zero, this.rotation = 0, this.isDragging = false});
+
+  _SwipeDragState copyWith({Offset? position, double? rotation, bool? isDragging}) {
+    return _SwipeDragState(
+      position: position ?? this.position,
+      rotation: rotation ?? this.rotation,
+      isDragging: isDragging ?? this.isDragging,
+    );
+  }
+}
 
 /// The swipe stack containing multiple property cards with gesture
 /// handling, animations, background preview cards, and sparkle effects.
@@ -45,12 +63,20 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
   List<PropertyModel>? _pendingProperties;
   late AnimationController _swipeAnimationController;
   late AnimationController _sparklesAnimationController;
+  late AnimationController _entranceController;
   late Animation<double> _swipeAnimation;
   late Animation<double> _sparklesAnimation;
+  late Animation<double> _entranceScale;
 
-  Offset _dragPosition = Offset.zero;
-  bool _isDragging = false;
-  double _rotation = 0;
+  /// Drag state driven by ValueNotifier — only the transform wrapper
+  /// listens to this, so the heavy PropertySwipeCard is never rebuilt
+  /// during drag or snap-back.
+  final ValueNotifier<_SwipeDragState> _dragNotifier = ValueNotifier(const _SwipeDragState());
+
+  /// Tracks the current snap-back controller so it can be disposed
+  /// if the widget is disposed mid-animation.
+  AnimationController? _snapController;
+
   bool _showSparkles = false;
   bool _isSwipingRight = false;
   bool _blockGestures = false;
@@ -59,7 +85,6 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
   void initState() {
     super.initState();
     _properties = List.from(widget.properties);
-    DebugLogger.debug('PropertySwipeStack initialized with ${_properties.length} properties');
 
     _swipeAnimationController = AnimationController(
       vsync: this,
@@ -76,6 +101,12 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
       curve: Curves.easeOut,
     );
 
+    _entranceController = AnimationController(vsync: this, duration: AppDurations.cardEntrance);
+    _entranceScale = Tween<double>(
+      begin: 0.93,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _entranceController, curve: AppCurves.cardEntrance));
+
     _swipeAnimationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (_pendingProperties != null) {
@@ -86,13 +117,18 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
         }
         _swipeAnimationController.reset();
         _sparklesAnimationController.reset();
-        _dragPosition = Offset.zero;
-        _rotation = 0;
+        _dragNotifier.value = const _SwipeDragState();
         _showSparkles = false;
         _isSwipingRight = false;
+        // setState to rebuild the card deck (next card becomes top card)
         setState(() {});
+        // Animate new top card entrance
+        _entranceController.forward(from: 0);
       }
     });
+
+    // Animate first card entrance on initial build
+    _entranceController.forward(from: 0);
   }
 
   @override
@@ -101,12 +137,11 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
 
     if (!_arePropertyListsEqual(widget.properties, oldWidget.properties)) {
       final nextProperties = List<PropertyModel>.from(widget.properties);
-      if (_swipeAnimationController.isAnimating || _isDragging) {
+      if (_swipeAnimationController.isAnimating || _dragNotifier.value.isDragging) {
         _pendingProperties = nextProperties;
       } else {
         _properties = nextProperties;
         _pendingProperties = null;
-        DebugLogger.debug('PropertySwipeStack updated with ${_properties.length} properties');
         setState(() {});
       }
     }
@@ -114,17 +149,21 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
 
   @override
   void dispose() {
+    _snapController?.dispose();
+    _dragNotifier.dispose();
     _swipeAnimationController.dispose();
     _sparklesAnimationController.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
   bool _arePropertyListsEqual(List<PropertyModel> a, List<PropertyModel> b) {
     if (identical(a, b)) return true;
     if (a.length != b.length) return false;
-    final aIds = a.map((p) => p.id).toList(growable: false);
-    final bIds = b.map((p) => p.id).toList(growable: false);
-    return listEquals(aIds, bIds);
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
   }
 
   double _calculateRotation(Offset dragPosition, Size screenSize) {
@@ -134,14 +173,15 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
   }
 
   void _handlePanEnd(DragEndDetails details, Size screenSize) {
-    setState(() => _isDragging = false);
+    final drag = _dragNotifier.value;
+    _dragNotifier.value = drag.copyWith(isDragging: false);
 
-    final dragDistance = _dragPosition.dx;
+    final dragDistance = drag.position.dx;
     final dragThreshold = screenSize.width * 0.25;
     final rotationThreshold = 0.3;
 
-    if (dragDistance.abs() > dragThreshold || _rotation.abs() > rotationThreshold) {
-      if (dragDistance > 0 || _rotation > 0) {
+    if (dragDistance.abs() > dragThreshold || drag.rotation.abs() > rotationThreshold) {
+      if (dragDistance > 0 || drag.rotation > 0) {
         _isSwipingRight = true;
         _showSparkles = true;
         _sparklesAnimationController.forward();
@@ -149,6 +189,8 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
       } else {
         widget.onSwipeLeft(_properties[0]);
       }
+      // setState once to add sparkles to the widget tree
+      setState(() {});
       _swipeAnimationController.forward();
     } else {
       _snapBack();
@@ -156,57 +198,63 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
   }
 
   void _snapBack() {
-    final snapController = AnimationController(
+    _snapController?.dispose();
+    final controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    _snapController = controller;
 
-    final positionTween = Tween<Offset>(begin: _dragPosition, end: Offset.zero);
-    final rotationTween = Tween<double>(begin: _rotation, end: 0);
-    final snapAnimation = CurvedAnimation(parent: snapController, curve: Curves.elasticOut);
+    final startDrag = _dragNotifier.value;
+    final positionTween = Tween<Offset>(begin: startDrag.position, end: Offset.zero);
+    final rotationTween = Tween<double>(begin: startDrag.rotation, end: 0);
+    final snapAnimation = CurvedAnimation(parent: controller, curve: Curves.elasticOut);
 
-    snapController.addListener(() {
-      setState(() {
-        _dragPosition = positionTween.evaluate(snapAnimation);
-        _rotation = rotationTween.evaluate(snapAnimation);
-      });
+    controller.addListener(() {
+      _dragNotifier.value = _SwipeDragState(
+        position: positionTween.evaluate(snapAnimation),
+        rotation: rotationTween.evaluate(snapAnimation),
+      );
     });
 
-    snapController.addStatusListener((status) {
+    controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        snapController.dispose();
+        controller.dispose();
+        if (_snapController == controller) {
+          _snapController = null;
+        }
       }
     });
 
-    snapController.forward();
+    controller.forward();
   }
 
   @override
   Widget build(BuildContext context) {
     if (_properties.isEmpty) {
-      DebugLogger.warning('PropertySwipeStack: No properties to display');
       return ErrorStates.swipeDeckEmpty(
         onRefresh: widget.onRefresh,
         onChangeFilters: widget.onChangeFilters,
       );
     }
 
-    final screenSize = MediaQuery.of(context).size;
+    final screenSize = MediaQuery.sizeOf(context);
     final dragThreshold = screenSize.width * 0.25;
-    DebugLogger.debug('PropertySwipeStack: Rendering ${_properties.length} properties');
 
     return GestureDetector(
       onHorizontalDragStart: (details) {
         if (_blockGestures) return;
-        setState(() => _isDragging = true);
+        _dragNotifier.value = _dragNotifier.value.copyWith(isDragging: true);
       },
       onHorizontalDragUpdate: (details) {
         if (_blockGestures) return;
-        setState(() {
-          final dx = details.primaryDelta ?? 0;
-          _dragPosition = Offset(_dragPosition.dx + dx, 0);
-          _rotation = _calculateRotation(_dragPosition, screenSize);
-        });
+        final dx = details.primaryDelta ?? 0;
+        final newPos = Offset(_dragNotifier.value.position.dx + dx, 0);
+        _dragNotifier.value = _SwipeDragState(
+          position: newPos,
+          rotation: _calculateRotation(newPos, screenSize),
+          isDragging: true,
+        );
       },
       onHorizontalDragEnd: (details) {
         if (_blockGestures) return;
@@ -215,7 +263,7 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
-          // Background cards
+          // Background cards (static during drag — no rebuild needed)
           if (_properties.length > 1)
             Positioned.fill(
               child: Transform.scale(
@@ -231,49 +279,76 @@ class _PropertySwipeStackState extends State<PropertySwipeStack> with TickerProv
               ),
             ),
 
-          // Top card with rotation
+          // Top card with drag/swipe transform.
+          // Uses Listenable.merge so both drag updates AND swipe
+          // animation ticks rebuild only the transform wrapper.
+          // The PropertySwipeCard is passed as `child` and never rebuilt.
           Positioned.fill(
             child: AnimatedBuilder(
-              animation: _swipeAnimation,
-              builder: (context, child) {
-                final swipeOffset = _isDragging
-                    ? Offset(_dragPosition.dx, 0)
-                    : Offset(_dragPosition.dx * (1 + _swipeAnimation.value * 2), 0);
+              animation: Listenable.merge([
+                _dragNotifier,
+                _swipeAnimationController,
+                _entranceController,
+              ]),
+              child: PropertySwipeCard(
+                property: _properties[0],
+                showSwipeInstructions: widget.showSwipeInstructions,
+                onInteractionStart: () => _blockGestures = true,
+                onInteractionEnd: () => _blockGestures = false,
+              ),
+              builder: (context, cachedCard) {
+                final drag = _dragNotifier.value;
 
-                final swipeRotation = _isDragging
-                    ? _rotation
-                    : _rotation * (1 + _swipeAnimation.value * 2);
+                final swipeOffset = drag.isDragging
+                    ? Offset(drag.position.dx, 0)
+                    : Offset(drag.position.dx * (1 + _swipeAnimation.value * 2), 0);
 
-                final likeProgress = (_dragPosition.dx / dragThreshold).clamp(0.0, 1.0);
-                final passProgress = (-_dragPosition.dx / dragThreshold).clamp(0.0, 1.0);
-                final showFeedback = _isDragging && (likeProgress > 0 || passProgress > 0);
+                // Rotation "flick" — extra rotation burst in last 20% of exit
+                final double flickMultiplier;
+                if (!drag.isDragging && _swipeAnimation.value > 0.8) {
+                  final flickProgress = (_swipeAnimation.value - 0.8) / 0.2;
+                  flickMultiplier = 1.0 + flickProgress * 0.3;
+                } else {
+                  flickMultiplier = 1.0;
+                }
 
-                return Transform.translate(
-                  offset: swipeOffset,
-                  child: Transform(
-                    alignment: Alignment.bottomCenter,
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateZ(swipeRotation),
-                    child: Opacity(
-                      opacity: _swipeAnimationController.isAnimating
-                          ? (1 - _swipeAnimation.value)
-                          : 1.0,
-                      child: Stack(
-                        children: [
-                          PropertySwipeCard(
-                            property: _properties[0],
-                            showSwipeInstructions: widget.showSwipeInstructions,
-                            onInteractionStart: () => setState(() => _blockGestures = true),
-                            onInteractionEnd: () => setState(() => _blockGestures = false),
-                          ),
-                          if (showFeedback)
-                            _buildSwipeFeedbackOverlay(
-                              context,
-                              likeProgress: likeProgress,
-                              passProgress: passProgress,
-                            ),
-                        ],
+                final swipeRotation = drag.isDragging
+                    ? drag.rotation
+                    : drag.rotation * (1 + _swipeAnimation.value * 2) * flickMultiplier;
+
+                final likeProgress = (drag.position.dx / dragThreshold).clamp(0.0, 1.0);
+                final passProgress = (-drag.position.dx / dragThreshold).clamp(0.0, 1.0);
+                final showFeedback = drag.isDragging && (likeProgress > 0 || passProgress > 0);
+
+                // Card entrance scale (0.93→1.0) when becoming top card
+                final entranceScale = _swipeAnimationController.isAnimating
+                    ? 1.0
+                    : _entranceScale.value;
+
+                return Transform.scale(
+                  scale: entranceScale,
+                  child: Transform.translate(
+                    offset: swipeOffset,
+                    child: Transform(
+                      alignment: Alignment.bottomCenter,
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.001)
+                        ..rotateZ(swipeRotation),
+                      child: Opacity(
+                        opacity: _swipeAnimationController.isAnimating
+                            ? (1 - _swipeAnimation.value)
+                            : 1.0,
+                        child: Stack(
+                          children: [
+                            cachedCard!,
+                            if (showFeedback)
+                              _buildSwipeFeedbackOverlay(
+                                context,
+                                likeProgress: likeProgress,
+                                passProgress: passProgress,
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

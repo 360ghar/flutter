@@ -5,6 +5,7 @@ import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_spacing.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/features/discover/presentation/widgets/embedded_swipe_360_tour.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -443,12 +444,6 @@ Future<void> _openGoogleMaps(double latitude, double longitude, String label) as
   if (await canLaunchUrl(url)) {
     await launchUrl(url, mode: LaunchMode.externalApplication);
   } else {
-    Get.snackbar(
-      'unable_to_open_maps'.tr,
-      'check_device_settings'.tr,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppDesign.snackbarBackground,
-      colorText: AppDesign.snackbarText,
-    );
+    AppToast.warning('unable_to_open_maps'.tr, 'check_device_settings'.tr);
   }
 }

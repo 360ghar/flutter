@@ -113,9 +113,9 @@ class AppDesignComponents {
         backgroundColor: AppDesignTokens.brandGold,
         foregroundColor: textColor,
         disabledBackgroundColor: AppDesignTokens.brandGold.withValues(alpha: 0.55),
-        minimumSize: const Size(0, 52),
+        minimumSize: const Size(0, 56),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppBorderRadius.button)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppBorderRadius.lg)),
       ),
     );
   }
@@ -127,9 +127,9 @@ class AppDesignComponents {
         elevation: 0,
         backgroundColor: AppDesignTokens.brandGold,
         foregroundColor: textColor,
-        minimumSize: const Size(0, 52),
+        minimumSize: const Size(0, 56),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppBorderRadius.button)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppBorderRadius.lg)),
       ),
     );
   }
@@ -170,8 +170,8 @@ class AppDesignComponents {
 
   static InputDecorationTheme inputDecorationTheme(Brightness brightness) {
     final bool isDark = brightness == Brightness.dark;
-    final Color fill = isDark ? AppDesignTokens.darkSurfaceAlt : AppDesignTokens.neutral50;
-    final Color border = isDark ? AppDesignTokens.darkBorder : AppDesignTokens.neutral300;
+    final Color fill = isDark ? AppDesignTokens.darkSurfaceAlt : AppDesignTokens.neutralWhite;
+    final Color border = AppDesignTokens.neutral300;
     final Color hint = isDark ? AppDesignTokens.darkTextTertiary : AppDesignTokens.neutral500;
 
     return InputDecorationTheme(
@@ -180,23 +180,23 @@ class AppDesignComponents {
       hintStyle: TextStyle(color: hint),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppBorderRadius.input),
-        borderSide: BorderSide(color: border),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        borderSide: BorderSide(color: border, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppBorderRadius.input),
-        borderSide: BorderSide(color: border),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        borderSide: BorderSide(color: border, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppBorderRadius.input),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         borderSide: const BorderSide(color: AppDesignTokens.brandGold, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppBorderRadius.input),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         borderSide: const BorderSide(color: AppDesignTokens.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppBorderRadius.input),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
         borderSide: const BorderSide(color: AppDesignTokens.error, width: 2),
       ),
     );

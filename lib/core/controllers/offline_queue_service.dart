@@ -84,7 +84,7 @@ class OfflineQueueService extends GetxService {
       'type': 'visit',
       'propertyId': propertyId,
       'scheduledDate': scheduledDate,
-      if (specialRequirements != null) 'specialRequirements': specialRequirements,
+      'specialRequirements': ?specialRequirements,
       'ts': DateTime.now().toIso8601String(),
       'retries': 0,
     });

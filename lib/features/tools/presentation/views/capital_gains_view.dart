@@ -10,128 +10,145 @@ class CapitalGainsView extends GetView<CapitalGainsController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppDesign.background,
-      appBar: AppBar(
-        backgroundColor: AppDesign.appBarBackground,
-        elevation: 0,
-        title: Text(
-          'capital_gains'.tr,
-          style: TextStyle(color: AppDesign.appBarText, fontSize: 20, fontWeight: FontWeight.w600),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
-          onPressed: () => Get.back(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: AppDesign.iconColor),
-            onPressed: controller.clear,
+    return Semantics(
+      label: 'qa.tools.capital_gains.screen',
+      identifier: 'qa.tools.capital_gains.screen',
+      child: Scaffold(
+        key: const ValueKey('qa.tools.capital_gains.screen'),
+        backgroundColor: AppDesign.background,
+        appBar: AppBar(
+          backgroundColor: AppDesign.appBarBackground,
+          elevation: 0,
+          title: Text(
+            'capital_gains'.tr,
+            style: TextStyle(
+              color: AppDesign.appBarText,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppDesign.warningAmber.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline, color: AppDesign.warningAmber, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'capital_gains_disclaimer'.tr,
-                      style: TextStyle(fontSize: 12, color: AppDesign.textSecondary),
-                    ),
-                  ),
-                ],
-              ),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
+            onPressed: () => Get.back(),
+          ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.refresh, color: AppDesign.iconColor),
+              onPressed: controller.clear,
             ),
-            const SizedBox(height: 20),
-            Card(
-              color: AppDesign.cardBackground,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'purchase_details'.tr,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppDesign.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      label: 'purchase_price'.tr,
-                      controller: controller.purchasePriceController,
-                      prefix: '₹',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildYearDropdown(label: 'purchase_year'.tr, value: controller.purchaseYear),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      label: 'improvement_cost'.tr,
-                      controller: controller.improvementCostController,
-                      prefix: '₹',
-                      hint: 'optional'.tr,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              color: AppDesign.cardBackground,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'sale_details'.tr,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppDesign.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      label: 'sale_price'.tr,
-                      controller: controller.salePriceController,
-                      prefix: '₹',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildYearDropdown(label: 'sale_year'.tr, value: controller.saleYear),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(onPressed: controller.calculate, child: Text('calculate_tax'.tr)),
-            ),
-            const SizedBox(height: 20),
-            Obx(() {
-              if (!controller.hasCalculated.value) {
-                return const SizedBox.shrink();
-              }
-              return _buildResults();
-            }),
           ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppDesign.warningAmber.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: AppDesign.warningAmber, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'capital_gains_disclaimer'.tr,
+                        style: TextStyle(fontSize: 12, color: AppDesign.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Card(
+                color: AppDesign.cardBackground,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'purchase_details'.tr,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppDesign.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        label: 'purchase_price'.tr,
+                        controller: controller.purchasePriceController,
+                        prefix: '₹',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildYearDropdown(label: 'purchase_year'.tr, value: controller.purchaseYear),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        label: 'improvement_cost'.tr,
+                        controller: controller.improvementCostController,
+                        prefix: '₹',
+                        hint: 'optional'.tr,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                color: AppDesign.cardBackground,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'sale_details'.tr,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppDesign.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        label: 'sale_price'.tr,
+                        controller: controller.salePriceController,
+                        prefix: '₹',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildYearDropdown(label: 'sale_year'.tr, value: controller.saleYear),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: Semantics(
+                  label: 'qa.tools.capital_gains.calculate',
+                  identifier: 'qa.tools.capital_gains.calculate',
+                  child: FilledButton(
+                    key: const ValueKey('qa.tools.capital_gains.calculate'),
+                    onPressed: controller.calculate,
+                    child: Text('calculate_tax'.tr),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Obx(() {
+                if (!controller.hasCalculated.value) {
+                  return const SizedBox.shrink();
+                }
+                return _buildResults();
+              }),
+            ],
+          ),
         ),
       ),
     );

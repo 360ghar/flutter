@@ -64,6 +64,9 @@ class AppDesign {
   static const Color accentOrange = AppDesignTokens.accentOrange;
   static const Color accentBlue = AppDesignTokens.accentBlue;
   static const Color accentGreen = AppDesignTokens.accentGreen;
+  static const Color editorialWarm = AppDesignTokens.editorialWarm;
+  static const Color editorialInk = AppDesignTokens.editorialInk;
+  static const Color warmCream = AppDesignTokens.warmCream;
 
   // Light aliases
   static const Color backgroundWhite = AppDesignTokens.neutralWhite;

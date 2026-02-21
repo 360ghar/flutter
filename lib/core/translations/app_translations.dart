@@ -53,6 +53,7 @@ class AppTranslations extends Translations {
       'discover': 'Discover',
       'liked': 'Liked',
       'visits': 'Visits',
+      'assistant': 'Assistant',
       'home': 'Home',
 
       // Property Related
@@ -146,6 +147,15 @@ class AppTranslations extends Translations {
       'privacy': 'Privacy',
       'terms': 'Terms & Conditions',
       'profile_updated_successfully': 'Profile updated successfully!',
+      'account_section': 'ACCOUNT',
+      'support_section': 'SUPPORT',
+      'user_initial': 'U',
+      'i_agree_to_the': 'I agree to the ',
+      'india_flag': '🇮🇳',
+      'india_code': '+91',
+      'filtered': 'Filtered',
+      'km_unit': 'km',
+      'bullet_separator': ' · ',
 
       // Preferences
       'property_preferences': 'Property Preferences',
@@ -361,6 +371,7 @@ class AppTranslations extends Translations {
       'otp_resent_message': 'A new OTP has been sent to your phone',
       'resend_code': 'Resend Code',
       'resend_in': 'Resend in',
+      'otp_hint': '000000',
 
       // Password Reset
       'reset_password': 'Reset Password',
@@ -509,6 +520,14 @@ class AppTranslations extends Translations {
       'at': 'at',
       'could_not_cancel_visit': 'Could not cancel visit',
       'could_not_reschedule_visit': 'Could not reschedule visit',
+      'visit_status_scheduled': 'Scheduled',
+      'visit_status_confirmed': 'Confirmed',
+      'visit_status_completed': 'Completed',
+      'visit_status_cancelled': 'Cancelled',
+      'visit_status_rescheduled': 'Rescheduled',
+      'invalid_time': 'Invalid Time',
+      'select_future_datetime': 'Please select a date and time in the future',
+      'time': 'Time',
       'failed_to_load_visits': 'Failed to load visits',
 
       // Filter widget
@@ -846,6 +865,170 @@ class AppTranslations extends Translations {
       'exemptions_available': 'Exemptions Available',
       'section_54_info':
           'Section 54: Reinvest in residential property within 2 years. Section 54F: Invest in residential property if selling non-residential asset.',
+
+      // Auth controller messages
+      'session_expired_message': 'Your session has expired. Please sign in again.',
+      'profile_load_timeout': 'Could not retrieve your profile in time. Please try again.',
+      'profile_load_error_user': 'Could not retrieve your profile. Please try again.',
+      'profile_refresh_failed': 'Could not refresh profile. Will retry later.',
+
+      // Explore controller - property count & radius
+      'one_property': '1 property',
+      'n_properties': '@count properties',
+      'radius_meters': '@metersm radius',
+      'radius_km': '@kmkm radius',
+      'collapse_property_list': 'Collapse property list',
+      'expand_property_list': 'Expand property list',
+
+      // Discover controller - session stats
+      'start_swiping_stats': 'Start swiping to see stats',
+      'session_stats': '@swipes swipes \u2022 @likes likes \u2022 @rate% like rate',
+
+      // Feedback view
+      'feedback_subtitle': 'Help our team fix issues faster by sharing a few details.',
+      'issue_type': 'Issue type',
+      'severity_label': 'Severity',
+      'title_label': 'Title',
+      'title_hint': 'Give a short summary (e.g. Search filters not working)',
+      'title_validation': 'Please describe the issue in a short title',
+      'what_happened': 'What happened?',
+      'description_hint': 'Share what you expected and what you saw',
+      'description_validation': 'Please provide a short description of the problem',
+      'steps_to_reproduce': 'Steps to reproduce (optional)',
+      'steps_hint': '1. Open the app\n2. Tap on ...',
+      'expected_behaviour': 'Expected behaviour (optional)',
+      'expected_hint': 'Tell us what you expected to happen',
+      'actual_behaviour': 'Actual behaviour (optional)',
+      'actual_hint': 'Tell us what actually happened',
+      'tags_optional': 'Tags (optional)',
+      'tags_hint': 'login, search, ios',
+      'tags_helper': 'Separate tags using commas or new lines',
+      'bug_type_ui': 'UI bug',
+      'bug_type_functionality': 'Functionality bug',
+      'bug_type_performance': 'Performance issue',
+      'bug_type_crash': 'App crash',
+      'bug_type_feature': 'Feature request',
+      'bug_type_other': 'Other',
+      'severity_low': 'Low - minor inconvenience',
+      'severity_medium': 'Medium - impacts experience',
+      'severity_high': 'High - major issue',
+      'severity_critical': 'Critical - blocking issue',
+
+      // Visits controller - date formatting
+      'today': 'Today',
+      'tomorrow': 'Tomorrow',
+      'yesterday': 'Yesterday',
+      'in_n_days': 'In @days days',
+      'n_days_ago': '@days days ago',
+
+      // Visits view - empty states
+      'no_upcoming_visits_subtitle': 'Book a property visit to see it here',
+      'no_past_visits_subtitle': 'Your completed visits will appear here',
+
+      // Assistant
+      'assistant_greeting': 'Hi! I\'m your 360Ghar assistant',
+      'assistant_subtitle': 'Ask me anything about your properties, visits, or bookings',
+      'assistant_input_hint': 'Ask me anything...',
+      'assistant_new_chat': 'New Chat',
+      'assistant_no_conversations': 'No conversations yet',
+      'assistant_error': 'Something went wrong. Please try again.',
+      'assistant_tool_executing': 'Working on it...',
+      'assistant_tool_searching_properties': 'Searching properties...',
+      'assistant_tool_fetching_property': 'Fetching property details...',
+      'assistant_tool_creating_property': 'Creating property...',
+      'assistant_tool_checking_availability': 'Checking availability...',
+      'assistant_tool_scheduling_visit': 'Scheduling visit...',
+      'assistant_tool_loading_bookings': 'Loading bookings...',
+      'assistant_tool_loading_lease': 'Loading lease info...',
+      'assistant_tool_loading_rent': 'Loading rent history...',
+      'assistant_tool_creating_request': 'Creating request...',
+      'assistant_tool_loading_dashboard': 'Loading dashboard...',
+      'assistant_loading_widget': 'Loading widget...',
+      'assistant_widget_unavailable': 'Widget unavailable',
+      'assistant_prompt_show_properties': 'Show my properties',
+      'assistant_prompt_schedule_visit': 'Schedule a visit',
+      'assistant_prompt_check_rent': 'Check rent status',
+      'assistant_prompt_maintenance': 'Report maintenance issue',
+
+      // Feedback Controller
+      'feedback_sent': 'Feedback sent',
+      'thanks_for_feedback': 'Thanks for helping us improve 360Ghar.',
+      'feedback_send_error': 'Something went wrong while sending your feedback. Please try again.',
+      'feedback_failed': 'Feedback failed',
+
+      // Edit Profile Controller
+      'user_data_not_found': 'User data not found',
+      'profile_update_success': 'Profile updated successfully',
+      'profile_update_failed': 'Failed to update profile',
+
+      // Location Search Controller
+      'location_selected_title': 'Location Selected',
+      'location_details_failed': 'Failed to get location details',
+      'location_set_title': 'Location Set',
+      'location_set_message': 'Using @location',
+      'location_error_title': 'Location Error',
+      'unable_get_location': 'Unable to get your current location',
+
+      // Likes Controller
+      'removed_title': 'Removed',
+      'removed_from_liked': '@property removed from liked properties',
+      'remove_failed': 'Failed to remove property. Please try again.',
+      'added_title': 'Added',
+      'moved_to_liked': '@property moved to liked properties',
+      'move_failed': 'Failed to move property. Please try again.',
+
+      // Property Filter
+      'builder_floor': 'Builder Floor',
+
+      // Dashboard Priority
+      'priority_high': 'High',
+      'priority_medium': 'Medium',
+      'priority_low': 'Low',
+      'priority_very_low': 'Very Low',
+
+      // Location Controller
+      'location_coordinates': 'Location Coordinates',
+      'location_fallback': 'Location',
+      'location_with_coords': 'Location (@lat, @long)',
+
+      // Error Handler - Auth Errors
+      'auth_error_title': 'Authentication Error',
+      'invalid_phone_password': 'Invalid phone or password',
+      'verify_phone_first': 'Please verify your phone first',
+      'account_exists_signin': 'Account exists. Please sign in',
+      'password_min_chars': 'Password must be 6+ characters',
+      'enter_valid_email_error': 'Enter a valid email',
+      'enter_valid_phone_error': 'Enter a valid phone number',
+      'registration_disabled': 'Registration disabled',
+      'no_account_found_error': 'No account found',
+      'incorrect_password': 'Incorrect password',
+      'too_many_attempts': 'Too many attempts. Wait & retry',
+      'otp_expired_request_new': 'OTP expired. Request new code',
+      'session_expired_signin': 'Session expired. Sign in again',
+
+      // Error Handler - Network Errors
+      'no_internet_connection': 'No internet. Check connection',
+      'server_unavailable': 'Server unavailable',
+      'auth_failed_signin': 'Auth failed. Sign in again',
+      'access_denied': 'Access denied',
+      'resource_not_found': 'Resource not found',
+      'server_error_generic': 'Server error',
+      'network_error_generic': 'Network error',
+
+      // Error Handler - Data Errors
+      'data_format_mismatch': 'Data format mismatch - contact support',
+      'data_structure_mismatch': 'Data structure mismatch - please try again',
+      'numeric_format_issue': 'Numeric data format issue - please try again',
+      'data_format_error': 'Data format error - please try again',
+      'unable_connect_server': 'Unable to connect to server - please try again later',
+      'please_login_again': 'Please log in again',
+      'insufficient_permissions': 'Access denied - insufficient permissions',
+      'requested_data_not_found': 'Requested data not found',
+      'server_error_later': 'Server error - please try again later',
+      'server_responded_error': 'Server responded with error @statusCode',
+      'invalid_data_format': 'Invalid data format received - please try again',
+      'auth_failed_credentials': 'Authentication failed - please check credentials',
+      'unexpected_error_later': 'Unexpected error occurred - please try again later',
     },
     'hi_IN': {
       // General
@@ -894,6 +1077,7 @@ class AppTranslations extends Translations {
       'discover': 'खोजें',
       'liked': 'पसंदीदा',
       'visits': 'दौरे',
+      'assistant': 'सहायक',
       'home': 'होम',
 
       // Property Related
@@ -987,6 +1171,15 @@ class AppTranslations extends Translations {
       'privacy': 'गोपनीयता',
       'terms': 'नियम और शर्तें',
       'profile_updated_successfully': 'प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई!',
+      'account_section': 'खाता',
+      'support_section': 'सहायता',
+      'user_initial': 'य',
+      'i_agree_to_the': 'मैं सहमत हूँ ',
+      'india_flag': '🇮🇳',
+      'india_code': '+91',
+      'filtered': 'फ़िल्टर किया गया',
+      'km_unit': 'किमी',
+      'bullet_separator': ' · ',
 
       // Preferences
       'property_preferences': 'संपत्ति प्राथमिकताएं',
@@ -1164,6 +1357,7 @@ class AppTranslations extends Translations {
       'otp_resent_message': 'आपके फोन पर एक नया OTP भेजा गया है',
       'resend_code': 'कोड फिर से भेजें',
       'resend_in': 'फिर से भेजें',
+      'otp_hint': '000000',
 
       // Password Reset
       'reset_password': 'पासवर्ड रीसेट करें',
@@ -1322,6 +1516,14 @@ class AppTranslations extends Translations {
       'at': 'को',
       'could_not_cancel_visit': 'दौरा रद्द नहीं कर सके',
       'could_not_reschedule_visit': 'दौरा पुनर्निर्धारित नहीं कर सके',
+      'visit_status_scheduled': 'निर्धारित',
+      'visit_status_confirmed': 'पुष्टि हुई',
+      'visit_status_completed': 'पूर्ण',
+      'visit_status_cancelled': 'रद्द',
+      'visit_status_rescheduled': 'पुनर्निर्धारित',
+      'invalid_time': 'अमान्य समय',
+      'select_future_datetime': 'कृपया भविष्य की तारीख और समय चुनें',
+      'time': 'समय',
       'failed_to_load_visits': 'दौरे लोड करने में विफल',
 
       // Profile completion
@@ -1671,6 +1873,171 @@ class AppTranslations extends Translations {
       'exemptions_available': 'उपलब्ध छूट',
       'section_54_info':
           'धारा 54: 2 साल के भीतर आवासीय संपत्ति में पुनर्निवेश करें। धारा 54F: गैर-आवासीय संपत्ति बेचने पर आवासीय संपत्ति में निवेश करें।',
+
+      // Auth controller messages
+      'session_expired_message': 'आपका सत्र समाप्त हो गया है। कृपया फिर से साइन इन करें।',
+      'profile_load_timeout': 'आपकी प्रोफ़ाइल समय पर प्राप्त नहीं हो सकी। कृपया पुनः प्रयास करें।',
+      'profile_load_error_user': 'आपकी प्रोफ़ाइल प्राप्त नहीं हो सकी। कृपया पुनः प्रयास करें।',
+      'profile_refresh_failed': 'प्रोफ़ाइल रीफ़्रेश नहीं हो सकी। बाद में पुनः प्रयास किया जाएगा।',
+
+      // Explore controller - property count & radius
+      'one_property': '1 संपत्ति',
+      'n_properties': '@count संपत्तियाँ',
+      'radius_meters': '@metersमीटर दायरा',
+      'radius_km': '@kmकि.मी. दायरा',
+      'collapse_property_list': 'संपत्ति सूची छिपाएं',
+      'expand_property_list': 'संपत्ति सूची दिखाएं',
+
+      // Discover controller - session stats
+      'start_swiping_stats': 'आँकड़े देखने के लिए स्वाइप करना शुरू करें',
+      'session_stats': '@swipes स्वाइप \u2022 @likes लाइक \u2022 @rate% लाइक दर',
+
+      // Feedback view
+      'feedback_subtitle':
+          'कुछ विवरण साझा करके हमारी टीम को समस्याओं को तेज़ी से ठीक करने में मदद करें।',
+      'issue_type': 'समस्या का प्रकार',
+      'severity_label': 'गंभीरता',
+      'title_label': 'शीर्षक',
+      'title_hint': 'एक संक्षिप्त सारांश दें (जैसे सर्च फ़िल्टर काम नहीं कर रहे)',
+      'title_validation': 'कृपया समस्या का संक्षिप्त शीर्षक में वर्णन करें',
+      'what_happened': 'क्या हुआ?',
+      'description_hint': 'बताएं कि आपने क्या अपेक्षा की थी और क्या देखा',
+      'description_validation': 'कृपया समस्या का संक्षिप्त विवरण प्रदान करें',
+      'steps_to_reproduce': 'पुनः उत्पन्न करने के चरण (वैकल्पिक)',
+      'steps_hint': '1. ऐप खोलें\n2. ... पर टैप करें',
+      'expected_behaviour': 'अपेक्षित व्यवहार (वैकल्पिक)',
+      'expected_hint': 'बताएं कि आपने क्या होने की उम्मीद की थी',
+      'actual_behaviour': 'वास्तविक व्यवहार (वैकल्पिक)',
+      'actual_hint': 'बताएं कि वास्तव में क्या हुआ',
+      'tags_optional': 'टैग (वैकल्पिक)',
+      'tags_hint': 'लॉगिन, सर्च, ios',
+      'tags_helper': 'कॉमा या नई लाइन से टैग अलग करें',
+      'bug_type_ui': 'UI बग',
+      'bug_type_functionality': 'कार्यक्षमता बग',
+      'bug_type_performance': 'प्रदर्शन समस्या',
+      'bug_type_crash': 'ऐप क्रैश',
+      'bug_type_feature': 'सुविधा अनुरोध',
+      'bug_type_other': 'अन्य',
+      'severity_low': 'कम - मामूली असुविधा',
+      'severity_medium': 'मध्यम - अनुभव प्रभावित',
+      'severity_high': 'उच्च - बड़ी समस्या',
+      'severity_critical': 'गंभीर - अवरोधक समस्या',
+
+      // Visits controller - date formatting
+      'today': 'आज',
+      'tomorrow': 'कल',
+      'yesterday': 'कल (बीता)',
+      'in_n_days': '@days दिनों में',
+      'n_days_ago': '@days दिन पहले',
+
+      // Visits view - empty states
+      'no_upcoming_visits_subtitle': 'यहाँ देखने के लिए एक प्रॉपर्टी विज़िट बुक करें',
+      'no_past_visits_subtitle': 'आपकी पूर्ण विज़िट यहाँ दिखाई देंगी',
+
+      // Assistant
+      'assistant_greeting': 'नमस्ते! मैं आपका 360Ghar सहायक हूँ',
+      'assistant_subtitle': 'अपनी संपत्तियों, दौरों या बुकिंग के बारे में कुछ भी पूछें',
+      'assistant_input_hint': 'कुछ भी पूछें...',
+      'assistant_new_chat': 'नई बातचीत',
+      'assistant_no_conversations': 'अभी कोई बातचीत नहीं',
+      'assistant_error': 'कुछ गलत हो गया। कृपया पुनः प्रयास करें।',
+      'assistant_tool_executing': 'काम चल रहा है...',
+      'assistant_tool_searching_properties': 'संपत्तियाँ खोज रहे हैं...',
+      'assistant_tool_fetching_property': 'संपत्ति विवरण ला रहे हैं...',
+      'assistant_tool_creating_property': 'संपत्ति बना रहे हैं...',
+      'assistant_tool_checking_availability': 'उपलब्धता जाँच रहे हैं...',
+      'assistant_tool_scheduling_visit': 'दौरा शेड्यूल कर रहे हैं...',
+      'assistant_tool_loading_bookings': 'बुकिंग लोड हो रही हैं...',
+      'assistant_tool_loading_lease': 'लीज़ जानकारी लोड हो रही है...',
+      'assistant_tool_loading_rent': 'किराया इतिहास लोड हो रहा है...',
+      'assistant_tool_creating_request': 'अनुरोध बना रहे हैं...',
+      'assistant_tool_loading_dashboard': 'डैशबोर्ड लोड हो रहा है...',
+      'assistant_loading_widget': 'विजेट लोड हो रहा है...',
+      'assistant_widget_unavailable': 'विजेट उपलब्ध नहीं',
+      'assistant_prompt_show_properties': 'मेरी संपत्तियाँ दिखाओ',
+      'assistant_prompt_schedule_visit': 'दौरा शेड्यूल करो',
+      'assistant_prompt_check_rent': 'किराया स्थिति देखो',
+      'assistant_prompt_maintenance': 'रखरखाव समस्या बताओ',
+
+      // Feedback Controller
+      'feedback_sent': 'प्रतिक्रिया भेजी गई',
+      'thanks_for_feedback': '360Ghar को बेहतर बनाने में मदद के लिए धन्यवाद।',
+      'feedback_send_error': 'प्रतिक्रिया भेजते समय कुछ गलत हो गया। कृपया पुनः प्रयास करें।',
+      'feedback_failed': 'प्रतिक्रिया विफल',
+
+      // Edit Profile Controller
+      'user_data_not_found': 'उपयोगकर्ता डेटा नहीं मिला',
+      'profile_update_success': 'प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई',
+      'profile_update_failed': 'प्रोफ़ाइल अपडेट करने में विफल',
+
+      // Location Search Controller
+      'location_selected_title': 'स्थान चुना गया',
+      'location_details_failed': 'स्थान विवरण प्राप्त करने में विफल',
+      'location_set_title': 'स्थान सेट किया गया',
+      'location_set_message': '@location उपयोग कर रहे हैं',
+      'location_error_title': 'स्थान त्रुटि',
+      'unable_get_location': 'आपका वर्तमान स्थान प्राप्त नहीं किया जा सका',
+
+      // Likes Controller
+      'removed_title': 'हटाया गया',
+      'removed_from_liked': '@property पसंदीदा संपत्तियों से हटाया गया',
+      'remove_failed': 'संपत्ति हटाने में विफल। कृपया पुनः प्रयास करें।',
+      'added_title': 'जोड़ा गया',
+      'moved_to_liked': '@property पसंदीदा संपत्तियों में ले जाया गया',
+      'move_failed': 'संपत्ति ले जाने में विफल। कृपया पुनः प्रयास करें।',
+
+      // Property Filter
+      'builder_floor': 'बिल्डर फ्लोर',
+
+      // Dashboard Priority
+      'priority_high': 'उच्च',
+      'priority_medium': 'मध्यम',
+      'priority_low': 'निम्न',
+      'priority_very_low': 'बहुत निम्न',
+
+      // Location Controller
+      'location_coordinates': 'स्थान निर्देशांक',
+      'location_fallback': 'स्थान',
+      'location_with_coords': 'स्थान (@lat, @long)',
+
+      // Error Handler - Auth Errors
+      'auth_error_title': 'प्रमाणीकरण त्रुटि',
+      'invalid_phone_password': 'अमान्य फोन या पासवर्ड',
+      'verify_phone_first': 'कृपया पहले अपना फोन सत्यापित करें',
+      'account_exists_signin': 'खाता मौजूद है। कृपया साइन इन करें',
+      'password_min_chars': 'पासवर्ड 6+ अक्षर का होना चाहिए',
+      'enter_valid_email_error': 'वैध ईमेल दर्ज करें',
+      'enter_valid_phone_error': 'वैध फोन नंबर दर्ज करें',
+      'registration_disabled': 'पंजीकरण अक्षम',
+      'no_account_found_error': 'कोई खाता नहीं मिला',
+      'incorrect_password': 'गलत पासवर्ड',
+      'too_many_attempts': 'बहुत अधिक प्रयास। प्रतीक्षा करें और पुनः प्रयास करें',
+      'otp_expired_request_new': 'OTP समाप्त। नया कोड अनुरोध करें',
+      'session_expired_signin': 'सत्र समाप्त। पुनः साइन इन करें',
+
+      // Error Handler - Network Errors
+      'no_internet_connection': 'इंटरनेट नहीं। कनेक्शन जांचें',
+      'server_unavailable': 'सर्वर अनुपलब्ध',
+      'auth_failed_signin': 'प्रमाणीकरण विफल। पुनः साइन इन करें',
+      'access_denied': 'पहुंच अस्वीकृत',
+      'resource_not_found': 'संसाधन नहीं मिला',
+      'server_error_generic': 'सर्वर त्रुटि',
+      'network_error_generic': 'नेटवर्क त्रुटि',
+
+      // Error Handler - Data Errors
+      'data_format_mismatch': 'डेटा प्रारूप मेल नहीं - सहायता से संपर्क करें',
+      'data_structure_mismatch': 'डेटा संरचना मेल नहीं - कृपया पुनः प्रयास करें',
+      'numeric_format_issue': 'संख्यात्मक डेटा प्रारूप समस्या - कृपया पुनः प्रयास करें',
+      'data_format_error': 'डेटा प्रारूप त्रुटि - कृपया पुनः प्रयास करें',
+      'unable_connect_server': 'सर्वर से कनेक्ट नहीं हो सका - कृपया बाद में पुनः प्रयास करें',
+      'please_login_again': 'कृपया पुनः लॉग इन करें',
+      'insufficient_permissions': 'पहुंच अस्वीकृत - अपर्याप्त अनुमतियां',
+      'requested_data_not_found': 'अनुरोधित डेटा नहीं मिला',
+      'server_error_later': 'सर्वर त्रुटि - कृपया बाद में पुनः प्रयास करें',
+      'server_responded_error': 'सर्वर ने त्रुटि @statusCode के साथ जवाब दिया',
+      'invalid_data_format': 'अमान्य डेटा प्रारूप प्राप्त - कृपया पुनः प्रयास करें',
+      'auth_failed_credentials': 'प्रमाणीकरण विफल - कृपया क्रेडेंशियल जांचें',
+      'unexpected_error_later': 'अप्रत्याशित त्रुटि हुई - कृपया बाद में पुनः प्रयास करें',
     },
   };
 }

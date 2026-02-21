@@ -7,10 +7,14 @@ class AppDesignTokens {
   static const Color brandGold = Color(0xFFF5B400);
   static const Color brandGoldDark = Color(0xFFE29E00);
   static const Color brandGoldLight = Color(0xFFFFCC3D);
+  static const Color brandGoldSubtle = Color(0xFFFBF3D0);
 
   static const Color accentOrange = Color(0xFFFF7A28);
   static const Color accentBlue = Color(0xFF1E88E5);
   static const Color accentGreen = Color(0xFF2BB673);
+  static const Color editorialWarm = Color(0xFF8C6B52);
+  static const Color editorialInk = Color(0xFF8C6B52);
+  static const Color warmCream = Color(0xFFF8F5F0);
 
   static const Color neutralWhite = Color(0xFFFFFFFF);
   static const Color neutral50 = Color(0xFFF9FAFB);

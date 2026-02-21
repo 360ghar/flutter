@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/bug_report_model.dart';
-import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/features/profile/data/support_repository.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -70,13 +70,7 @@ class FeedbackController extends GetxController {
       DebugLogger.success('Feedback submitted with id=${response.id}');
       Get.back(result: response);
       Future.delayed(Duration.zero, () {
-        Get.snackbar(
-          'Feedback sent',
-          'Thanks for helping us improve 360Ghar.',
-          backgroundColor: AppDesign.snackbarBackground,
-          colorText: AppDesign.snackbarText,
-          duration: const Duration(seconds: 3),
-        );
+        AppToast.success('feedback_sent'.tr, 'thanks_for_feedback'.tr);
       });
     } on ValidationException catch (e) {
       final message =
@@ -89,7 +83,7 @@ class FeedbackController extends GetxController {
       _showError(e.message);
     } catch (e, stackTrace) {
       DebugLogger.error('Unexpected error while submitting feedback', e, stackTrace);
-      _showError('Something went wrong while sending your feedback. Please try again.');
+      _showError('feedback_send_error'.tr);
     } finally {
       isSubmitting.value = false;
     }
@@ -111,8 +105,8 @@ class FeedbackController extends GetxController {
     final deviceLabel = _deviceLabel();
 
     final Map<String, dynamic> data = {
-      if (os != null) 'os': os,
-      if (deviceLabel != null) 'model': deviceLabel,
+      'os': ?os,
+      'model': ?deviceLabel,
       if (info != null && info.version.isNotEmpty) 'app_version': _formatAppVersion(info),
     };
 
@@ -145,13 +139,7 @@ class FeedbackController extends GetxController {
   }
 
   void _showError(String message) {
-    Get.snackbar(
-      'Feedback failed',
-      message,
-      backgroundColor: AppDesign.errorRed,
-      colorText: AppDesign.snackbarText,
-      duration: const Duration(seconds: 4),
-    );
+    AppToast.error('feedback_failed'.tr, message);
   }
 
   String? _platformLabel() {

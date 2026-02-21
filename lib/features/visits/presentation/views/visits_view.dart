@@ -3,56 +3,51 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
-import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/core/utils/app_spacing.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
+import 'package:ghar360/core/widgets/common/segmented_control.dart';
 import 'package:ghar360/features/visits/presentation/controllers/visits_controller.dart';
 import 'package:ghar360/features/visits/presentation/widgets/agent_card.dart';
 import 'package:ghar360/features/visits/presentation/widgets/visit_card.dart';
 import 'package:ghar360/features/visits/presentation/widgets/visits_skeleton_loaders.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// Helpers for launching dialer/WhatsApp with Indian numbers
 String _formatIndianNumber(String? raw) {
   if (raw == null || raw.trim().isEmpty) return '';
   final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
   if (digits.isEmpty) return '';
-  // Remove leading zeroes
   String d = digits.replaceFirst(RegExp(r'^0+'), '');
   if (d.startsWith('91') && d.length == 12) {
-    return d; // already with country code
+    return d;
   }
   if (d.length == 10) {
     return '91$d';
   }
-  // Fallback: if longer than 12, take last 10 as local and prefix 91
   if (d.length > 10) {
     final last10 = d.substring(d.length - 10);
     return '91$last10';
   }
-  return d; // may be incomplete; handled by callers
+  return d;
 }
 
 Future<void> _launchDialer(String? rawNumber) async {
   final formatted = _formatIndianNumber(rawNumber);
   if (formatted.isEmpty) {
-    Get.snackbar('unavailable'.tr, 'agent_contact_unavailable'.tr);
+    AppToast.warning('unavailable'.tr, 'agent_contact_unavailable'.tr);
     return;
   }
-  // Prefer constructing Uri via scheme/path to ensure proper encoding
   final telUri = Uri(scheme: 'tel', path: '+$formatted');
 
-  // Try external application first (best UX on Android)
   try {
     final launched = await launchUrl(telUri, mode: LaunchMode.externalApplication);
     if (launched) return;
   } catch (_) {}
 
-  // Fallback to platform default
   try {
     final launched = await launchUrl(telUri, mode: LaunchMode.platformDefault);
     if (launched) return;
   } catch (_) {}
 
-  // iOS-specific fallback using telprompt (older behavior)
   if (GetPlatform.isIOS) {
     final telPromptUri = Uri(scheme: 'telprompt', path: '+$formatted');
     try {
@@ -61,27 +56,25 @@ Future<void> _launchDialer(String? rawNumber) async {
     } catch (_) {}
   }
 
-  // Final fallback: try without '+' (some OEM dialers handle E.164 poorly)
   final plainTelUri = Uri(scheme: 'tel', path: formatted);
   try {
     final launched = await launchUrl(plainTelUri, mode: LaunchMode.platformDefault);
     if (launched) return;
   } catch (_) {}
 
-  Get.snackbar('action_failed'.tr, 'could_not_open_phone_dialer'.tr);
+  AppToast.error('action_failed'.tr, 'could_not_open_phone_dialer'.tr);
 }
 
 Future<void> _launchWhatsApp(String? rawNumber) async {
   final formatted = _formatIndianNumber(rawNumber);
   if (formatted.isEmpty) {
-    Get.snackbar('unavailable'.tr, 'agent_contact_unavailable'.tr);
+    AppToast.warning('unavailable'.tr, 'agent_contact_unavailable'.tr);
     return;
   }
-  // Use wa.me to reliably open WhatsApp if installed, else browser
   final uri = Uri.parse('https://wa.me/$formatted');
   final ok = await canLaunchUrl(uri);
   if (!ok) {
-    Get.snackbar('action_failed'.tr, 'could_not_open_whatsapp'.tr);
+    AppToast.error('action_failed'.tr, 'could_not_open_whatsapp'.tr);
     return;
   }
   await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -92,140 +85,35 @@ class VisitsView extends GetView<VisitsController> {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize data loading once on widget build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!controller.hasLoadedVisits.value && !controller.isLoading.value) {
-        controller.loadVisitsLazy();
-      }
-    });
-
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
-        backgroundColor: AppDesign.scaffoldBackground,
-        body: SafeArea(
-          child: Obx(() {
-            if (controller.isLoading.value) {
-              return _buildLoadingState();
-            }
+      child: Semantics(
+        label: 'qa.visits.screen',
+        identifier: 'qa.visits.screen',
+        child: Scaffold(
+          key: const ValueKey('qa.visits.screen'),
+          backgroundColor: AppDesign.scaffoldBackground,
+          body: SafeArea(
+            child: Obx(() {
+              final Widget child;
+              final Key key;
 
-            return Column(
-              children: [
-                // TabBar at the top
-                Container(
-                  color: AppDesign.scaffoldBackground,
-                  child: TabBar(
-                    indicatorColor: AppDesign.primaryYellow,
-                    indicatorWeight: 3,
-                    labelColor: AppDesign.primaryYellow,
-                    unselectedLabelColor: AppDesign.tabUnselected,
-                    labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    unselectedLabelStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                    ),
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('scheduled_visits'.tr),
-                            const SizedBox(width: 8),
-                            Obx(
-                              () => controller.upcomingVisits.isNotEmpty
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppDesign.primaryYellow,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        '${controller.upcomingVisits.length}',
-                                        style: TextStyle(
-                                          color: AppDesign.buttonText,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('past_visits'.tr),
-                            const SizedBox(width: 8),
-                            Obx(
-                              () => controller.pastVisits.isNotEmpty
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppDesign.inputBackground,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text(
-                                        '${controller.pastVisits.length}',
-                                        style: TextStyle(
-                                          color: AppDesign.textPrimary,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              if (controller.isLoading.value) {
+                key = const ValueKey('loading');
+                child = _buildLoadingState();
+              } else {
+                key = const ValueKey('content');
+                child = _VisitsContent(controller: controller);
+              }
 
-                // Subtle background refresh indicator (like other pages)
-                Obx(
-                  () => controller.isBackgroundRefreshing.value
-                      ? const LinearProgressIndicator(
-                          minHeight: 2,
-                          backgroundColor: AppDesign.transparent,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-
-                // Relationship Manager Section - Always visible
-                Container(
-                  color: AppDesign.scaffoldBackground,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: _buildRelationshipManagerCard(),
-                  ),
-                ),
-
-                // Tab Views
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      // Upcoming Visits Tab
-                      _buildUpcomingVisitsTab(),
-
-                      // Past Visits Tab
-                      _buildPastVisitsTab(),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }),
+              return AnimatedSwitcher(
+                duration: AppDurations.contentFade,
+                transitionBuilder: (child, animation) =>
+                    FadeTransition(opacity: animation, child: child),
+                child: KeyedSubtree(key: key, child: child),
+              );
+            }),
+          ),
         ),
       ),
     );
@@ -234,26 +122,12 @@ class VisitsView extends GetView<VisitsController> {
   Widget _buildLoadingState() {
     return Column(
       children: [
-        // TabBar skeleton
         Container(height: 48, color: AppDesign.scaffoldBackground),
-
-        // Agent skeleton loader
         Container(
           color: AppDesign.scaffoldBackground,
           child: const Padding(padding: EdgeInsets.all(20), child: RelationshipManagerSkeleton()),
         ),
-
-        // Tab content skeleton loaders
-        Expanded(
-          child: TabBarView(
-            children: [
-              // Upcoming visits skeleton
-              _buildSkeletonList(),
-              // Past visits skeleton
-              _buildSkeletonList(),
-            ],
-          ),
-        ),
+        Expanded(child: TabBarView(children: [_buildSkeletonList(), _buildSkeletonList()])),
       ],
     );
   }
@@ -264,37 +138,121 @@ class VisitsView extends GetView<VisitsController> {
       child: Column(children: List.generate(3, (index) => const VisitCardSkeleton())),
     );
   }
+}
+
+class _VisitsContent extends StatefulWidget {
+  final VisitsController controller;
+
+  const _VisitsContent({required this.controller});
+
+  @override
+  State<_VisitsContent> createState() => _VisitsContentState();
+}
+
+class _VisitsContentState extends State<_VisitsContent> {
+  TabController? _tabController;
+
+  void _onTabChanged() {
+    if (_tabController != null && !_tabController!.indexIsChanging) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final inherited = DefaultTabController.of(context);
+    if (inherited != _tabController) {
+      _tabController?.removeListener(_onTabChanged);
+      _tabController = inherited;
+      _tabController!.addListener(_onTabChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController?.removeListener(_onTabChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedIndex = _tabController?.index ?? 0;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenPadding,
+            AppSpacing.sm,
+            AppSpacing.screenPadding,
+            0,
+          ),
+          child: SegmentedControl(
+            selectedIndex: selectedIndex,
+            segments: [
+              SegmentItem(
+                label: 'scheduled_visits'.tr,
+                badge: widget.controller.upcomingVisits.length,
+                semanticsLabel: 'qa.visits.tab.scheduled',
+                semanticsIdentifier: 'qa.visits.tab.scheduled',
+              ),
+              SegmentItem(
+                label: 'past_visits'.tr,
+                badge: widget.controller.pastVisits.length,
+                semanticsLabel: 'qa.visits.tab.past',
+                semanticsIdentifier: 'qa.visits.tab.past',
+              ),
+            ],
+            onSegmentChanged: (index) => _tabController?.animateTo(index),
+          ),
+        ),
+        Obx(
+          () => widget.controller.isBackgroundRefreshing.value
+              ? const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: AppDesign.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
+                )
+              : const SizedBox.shrink(),
+        ),
+        Container(
+          color: AppDesign.scaffoldBackground,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.screenPadding),
+            child: _buildRelationshipManagerCard(),
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController!,
+            children: [_buildUpcomingVisitsTab(), _buildPastVisitsTab()],
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildUpcomingVisitsTab() {
     return RefreshIndicator(
-      onRefresh: controller.refreshVisits,
+      onRefresh: widget.controller.refreshVisits,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(() {
-              DebugLogger.info(
-                '🖼️ Building Upcoming tab | count=${controller.upcomingVisits.length}',
-              );
-              if (controller.upcomingVisits.isEmpty) {
-                return _buildEmptyState(
-                  'no_visits'.tr,
-                  'Book a property visit to see it here',
-                  Icons.calendar_today_outlined,
-                  AppDesign.primaryYellow,
-                );
+              if (widget.controller.upcomingVisits.isEmpty) {
+                return _buildEmptyState('no_visits'.tr, 'no_upcoming_visits_subtitle'.tr);
               }
 
               return Column(
-                children: controller.upcomingVisits
+                children: widget.controller.upcomingVisits
                     .map(
                       (visit) => VisitCard(
                         visit: visit,
                         isUpcoming: true,
-                        dateText: controller.formatVisitDate(visit.scheduledDate),
-                        timeText: controller.formatVisitTime(visit.scheduledDate),
                         onTap: () {
                           if (visit.property != null) {
                             Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
@@ -315,39 +273,31 @@ class VisitsView extends GetView<VisitsController> {
 
   Widget _buildPastVisitsTab() {
     return RefreshIndicator(
-      onRefresh: controller.refreshVisits,
+      onRefresh: widget.controller.refreshVisits,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.screenPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Obx(() {
-              DebugLogger.info('🖼️ Building Past tab | count=${controller.pastVisits.length}');
-              if (controller.pastVisits.isEmpty) {
-                return _buildEmptyState(
-                  'no_visits'.tr,
-                  'Your completed visits will appear here',
-                  Icons.history,
-                  AppDesign.iconColor,
-                );
+              if (widget.controller.pastVisits.isEmpty) {
+                return _buildEmptyState('no_visits'.tr, 'no_past_visits_subtitle'.tr);
               }
 
               return Column(
-                children: controller.pastVisits
+                children: widget.controller.pastVisits
                     .map(
                       (visit) => VisitCard(
                         visit: visit,
                         isUpcoming: false,
-                        dateText: controller.formatVisitDate(visit.scheduledDate),
-                        timeText: controller.formatVisitTime(visit.scheduledDate),
                         onTap: () {
                           if (visit.property != null) {
                             Get.toNamed(AppRoutes.propertyDetails, arguments: visit.property);
                           }
                         },
-                        onReschedule: () => _showRescheduleDialog(visit),
-                        onCancel: () => _showCancelDialog(visit),
+                        onReschedule: () {},
+                        onCancel: () {},
                       ),
                     )
                     .toList(),
@@ -360,19 +310,12 @@ class VisitsView extends GetView<VisitsController> {
   }
 
   Widget _buildRelationshipManagerCard() {
-    // Initialize agent data loading once on card build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!controller.hasLoadedAgent.value && !controller.isLoadingAgent.value) {
-        controller.loadRelationshipManagerLazy();
-      }
-    });
-
     return Obx(() {
-      if (controller.isLoadingAgent.value) {
+      if (widget.controller.isLoadingAgent.value) {
         return const RelationshipManagerSkeleton();
       }
 
-      final agent = controller.relationshipManager.value;
+      final agent = widget.controller.relationshipManager.value;
       if (agent == null) {
         return const RelationshipManagerSkeleton();
       }
@@ -389,25 +332,25 @@ class VisitsView extends GetView<VisitsController> {
     });
   }
 
-  Widget _buildEmptyState(String title, String subtitle, IconData icon, Color color) {
+  Widget _buildEmptyState(String title, String subtitle) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
+      width: double.infinity,
       child: Column(
         children: [
-          Icon(icon, size: 64, color: color),
-          const SizedBox(height: 16),
           Text(
             title,
             style: TextStyle(
+              fontStyle: FontStyle.italic,
               fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppDesign.textPrimary,
+              color: AppDesign.textSecondary,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: TextStyle(fontSize: 14, color: AppDesign.textSecondary),
+            style: TextStyle(fontSize: 14, color: AppDesign.textTertiary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -416,16 +359,19 @@ class VisitsView extends GetView<VisitsController> {
   }
 
   void _showRescheduleDialog(VisitModel visit) {
-    DateTime selectedDate = visit.scheduledDate;
-    const defaultHour = 10; // Use default time (10:00 AM)
-    const defaultMinute = 0;
+    final now = DateTime.now();
+    DateTime selectedDate = visit.scheduledDate.isBefore(now) ? now : visit.scheduledDate;
+    TimeOfDay selectedTime = visit.scheduledDate.isBefore(now)
+        ? TimeOfDay.fromDateTime(now.add(const Duration(hours: 1)))
+        : TimeOfDay.fromDateTime(visit.scheduledDate);
+    bool isLoading = false;
 
     Get.dialog(
-      AlertDialog(
-        title: Text('reschedule_visit'.tr),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
+      StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text('reschedule_visit'.tr),
+            content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
@@ -433,64 +379,112 @@ class VisitsView extends GetView<VisitsController> {
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(height: 20),
-
-                // Date Selection
                 ListTile(
                   leading: const Icon(Icons.calendar_today, color: AppDesign.primaryYellow),
                   title: Text('date'.tr),
                   subtitle: Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
-                  onTap: () async {
-                    final DateTime? picked = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 30)),
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        selectedDate = picked;
-                      });
-                    }
-                  },
+                  onTap: isLoading
+                      ? null
+                      : () async {
+                          final DateTime? picked = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 30)),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              selectedDate = picked;
+                            });
+                          }
+                        },
                 ),
-
-                // Time selection removed; default time will be applied
+                ListTile(
+                  leading: const Icon(Icons.access_time, color: AppDesign.primaryYellow),
+                  title: Text('time'.tr),
+                  subtitle: Text(selectedTime.format(context)),
+                  onTap: isLoading
+                      ? null
+                      : () async {
+                          final TimeOfDay? picked = await showTimePicker(
+                            context: context,
+                            initialTime: selectedTime,
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              selectedTime = picked;
+                            });
+                          }
+                        },
+                ),
               ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-          ElevatedButton(
-            onPressed: () {
-              final newDateTime = DateTime(
-                selectedDate.year,
-                selectedDate.month,
-                selectedDate.day,
-                defaultHour,
-                defaultMinute,
-              );
-
-              controller.rescheduleVisit(visit.id.toString(), newDateTime);
-              Get.back();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppDesign.primaryYellow,
-              foregroundColor: AppDesign.buttonText,
             ),
-            child: Text('reschedule'.tr),
-          ),
-        ],
+            actions: [
+              TextButton(onPressed: isLoading ? null : () => Get.back(), child: Text('cancel'.tr)),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        final newDateTime = DateTime(
+                          selectedDate.year,
+                          selectedDate.month,
+                          selectedDate.day,
+                          selectedTime.hour,
+                          selectedTime.minute,
+                        );
+
+                        if (newDateTime.isBefore(DateTime.now())) {
+                          AppToast.warning('invalid_time'.tr, 'select_future_datetime'.tr);
+                          return;
+                        }
+
+                        setState(() {
+                          isLoading = true;
+                        });
+
+                        final success = await widget.controller.rescheduleVisit(
+                          visit.id.toString(),
+                          newDateTime,
+                        );
+
+                        if (success) {
+                          Get.back();
+                        } else {
+                          setState(() {
+                            isLoading = false;
+                          });
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppDesign.primaryYellow,
+                  foregroundColor: AppDesign.buttonText,
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text('reschedule'.tr),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   void _showCancelDialog(VisitModel visit) {
     final TextEditingController reasonController = TextEditingController();
+    bool isLoading = false;
+
     Get.dialog(
       StatefulBuilder(
         builder: (context, setState) {
-          final canSubmit = reasonController.text.trim().isNotEmpty;
+          final canSubmit = reasonController.text.trim().isNotEmpty && !isLoading;
           return AlertDialog(
             title: Text('cancel_visit'.tr),
             content: Column(
@@ -500,6 +494,7 @@ class VisitsView extends GetView<VisitsController> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: reasonController,
+                  enabled: !isLoading,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: 'reason_required_label'.tr,
@@ -515,25 +510,51 @@ class VisitsView extends GetView<VisitsController> {
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Get.back(), child: Text('no'.tr)),
+              TextButton(onPressed: isLoading ? null : () => Get.back(), child: Text('no'.tr)),
               ElevatedButton(
                 onPressed: canSubmit
-                    ? () {
+                    ? () async {
                         final reason = reasonController.text.trim();
-                        controller.cancelVisit(visit.id.toString(), reason: reason);
-                        Get.back();
+
+                        setState(() {
+                          isLoading = true;
+                        });
+
+                        final success = await widget.controller.cancelVisit(
+                          visit.id.toString(),
+                          reason: reason,
+                        );
+
+                        if (success) {
+                          Get.back();
+                        } else {
+                          setState(() {
+                            isLoading = false;
+                          });
+                        }
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppDesign.errorRed,
                   foregroundColor: Theme.of(context).colorScheme.onError,
                 ),
-                child: Text('yes_cancel'.tr),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text('yes_cancel'.tr),
               ),
             ],
           );
         },
       ),
-    );
+    ).then((_) {
+      reasonController.dispose();
+    });
   }
 }

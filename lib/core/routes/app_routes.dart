@@ -31,4 +31,5 @@ abstract class AppRoutes {
   static const carpetArea = '/tools/carpet-area';
   static const documentChecklist = '/tools/document-checklist';
   static const capitalGains = '/tools/capital-gains';
+  static const assistant = '/assistant';
 }

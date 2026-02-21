@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:ghar360/core/controllers/auth_controller.dart';
-import 'package:ghar360/core/design/app_design_extensions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 
 class EditProfileController extends GetxController {
   final AuthController _authController = Get.find<AuthController>();
@@ -108,7 +108,7 @@ class EditProfileController extends GetxController {
 
       final currentUser = _authController.currentUser.value;
       if (currentUser == null) {
-        Get.snackbar('Error', 'User data not found');
+        AppToast.error('error'.tr, 'user_data_not_found'.tr);
         return;
       }
 
@@ -136,23 +136,9 @@ class EditProfileController extends GetxController {
       await _authController.updateUserProfile(profileData);
 
       Get.back();
-      Get.snackbar(
-        'Success',
-        'Profile updated successfully',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: const Color(0xFF50C878), // accentGreen
-        colorText: AppDesign.snackbarText,
-        duration: const Duration(seconds: 2),
-      );
+      AppToast.success('success'.tr, 'profile_update_success'.tr);
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to update profile: $e',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppDesign.errorRed,
-        colorText: AppDesign.snackbarText,
-        duration: const Duration(seconds: 3),
-      );
+      AppToast.error('error'.tr, 'profile_update_failed'.trParams({'error': e.toString()}));
     } finally {
       isLoading.value = false;
     }

@@ -5,8 +5,11 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/data/models/visit_model.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
+import 'package:ghar360/core/utils/app_spacing.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/share_utils.dart';
 import 'package:ghar360/core/widgets/common/loading_states.dart';
+import 'package:ghar360/core/widgets/common/scroll_reveal_widget.dart';
 import 'package:ghar360/core/widgets/property/property_details_features.dart';
 import 'package:ghar360/features/likes/presentation/controllers/likes_controller.dart';
 import 'package:ghar360/features/property_details/presentation/controllers/property_details_controller.dart';
@@ -24,21 +27,34 @@ class PropertyDetailsView extends GetView<PropertyDetailsController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      final Widget child;
+      final Key key;
+
       if (controller.isLoading.value) {
-        return const _PropertyLoadingScaffold();
+        key = const ValueKey('loading');
+        child = const _PropertyLoadingScaffold();
+      } else {
+        final errorMessage = controller.errorMessage;
+        if (errorMessage != null) {
+          key = const ValueKey('error');
+          child = _PropertyErrorScaffold(message: errorMessage);
+        } else {
+          final property = controller.property.value;
+          if (property == null) {
+            key = const ValueKey('not_found');
+            child = _PropertyErrorScaffold(message: 'property_not_found'.tr);
+          } else {
+            key = const ValueKey('content');
+            child = _PropertyContentView(property: property);
+          }
+        }
       }
 
-      final errorMessage = controller.errorMessage;
-      if (errorMessage != null) {
-        return _PropertyErrorScaffold(message: errorMessage);
-      }
-
-      final property = controller.property.value;
-      if (property == null) {
-        return _PropertyErrorScaffold(message: 'property_not_found'.tr);
-      }
-
-      return _PropertyContentView(property: property);
+      return AnimatedSwitcher(
+        duration: AppDurations.contentFade,
+        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+        child: KeyedSubtree(key: key, child: child),
+      );
     });
   }
 }
@@ -55,138 +71,164 @@ class _PropertyContentView extends StatelessWidget {
     final visitsController = Get.find<VisitsController>();
     final PropertyModel safeProperty = property;
 
-    return Scaffold(
-      backgroundColor: AppDesign.scaffoldBackground,
-      body: CustomScrollView(
-        slivers: [
-          // App Bar with Image
-          SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
-            backgroundColor: AppDesign.appBarBackground,
-            leading: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppDesign.shadowColor.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
-                onPressed: () => Get.back(),
-              ),
-            ),
-            actions: [
-              Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppDesign.shadowColor.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: Obx(
-                  () => IconButton(
-                    icon: Icon(
-                      controller.isFavourite(safeProperty.id)
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color: controller.isFavourite(safeProperty.id)
-                          ? AppDesign.favoriteActive
-                          : Theme.of(context).colorScheme.onPrimary,
-                    ),
-                    onPressed: () {
-                      if (controller.isFavourite(safeProperty.id)) {
-                        controller.removeFromFavourites(safeProperty.id);
-                      } else {
-                        controller.addToFavourites(safeProperty.id);
-                      }
-                    },
-                  ),
-                ),
-              ),
-              Container(
+    return Semantics(
+      label: 'qa.property_details.screen',
+      identifier: 'qa.property_details.screen',
+      child: Scaffold(
+        key: const ValueKey('qa.property_details.screen'),
+        backgroundColor: AppDesign.scaffoldBackground,
+        body: CustomScrollView(
+          slivers: [
+            // App Bar with Image
+            SliverAppBar(
+              expandedHeight: 300,
+              pinned: true,
+              backgroundColor: AppDesign.appBarBackground,
+              leading: Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppDesign.shadowColor.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  icon: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimary),
-                  onPressed: () => ShareUtils.shareProperty(safeProperty, context: context),
+                  icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
+                  onPressed: () => Get.back(),
                 ),
               ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: PropertyDetailsImageGallery(property: safeProperty),
+              actions: [
+                Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppDesign.shadowColor.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Obx(
+                    () => IconButton(
+                      icon: Icon(
+                        controller.isFavourite(safeProperty.id)
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: controller.isFavourite(safeProperty.id)
+                            ? AppDesign.favoriteActive
+                            : Theme.of(context).colorScheme.onPrimary,
+                      ),
+                      onPressed: () {
+                        if (controller.isFavourite(safeProperty.id)) {
+                          controller.removeFromFavourites(safeProperty.id);
+                        } else {
+                          controller.addToFavourites(safeProperty.id);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppDesign.shadowColor.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimary),
+                    onPressed: () => ShareUtils.shareProperty(safeProperty, context: context),
+                  ),
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: PropertyDetailsImageGallery(property: safeProperty),
+              ),
             ),
-          ),
 
-          // Property Details Content
-          SliverToBoxAdapter(
-            child: Container(
-              color: AppDesign.scaffoldBackground,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Price and Title
-                    _buildPriceTitleCard(context, safeProperty),
-                    const SizedBox(height: 20),
+            // Property Details Content
+            SliverToBoxAdapter(
+              child: Container(
+                color: AppDesign.scaffoldBackground,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Price and Title
+                      ScrollRevealWidget(
+                        index: 0,
+                        child: _buildPriceTitleCard(context, safeProperty),
+                      ),
+                      const SizedBox(height: 20),
 
-                    if (safeProperty.hasAnyMedia) ...[
-                      PropertyMediaBadges(property: safeProperty),
-                      const SizedBox(height: 12),
-                      PropertyMediaHub(
-                        property: safeProperty,
-                        googleMapsApiKey: dotenv.env['GOOGLE_PLACES_API_KEY'],
+                      if (safeProperty.hasAnyMedia) ...[
+                        ScrollRevealWidget(
+                          index: 1,
+                          child: PropertyMediaBadges(property: safeProperty),
+                        ),
+                        const SizedBox(height: 12),
+                        ScrollRevealWidget(
+                          index: 2,
+                          child: PropertyMediaHub(
+                            property: safeProperty,
+                            googleMapsApiKey: dotenv.env['GOOGLE_PLACES_API_KEY'],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Property Features
+                      ScrollRevealWidget(
+                        index: 3,
+                        child: PropertyDetailsFeatures(property: safeProperty),
                       ),
                       const SizedBox(height: 24),
-                    ],
 
-                    // Property Features
-                    PropertyDetailsFeatures(property: safeProperty),
-                    const SizedBox(height: 24),
+                      // Description
+                      ScrollRevealWidget(index: 4, child: _buildDescriptionSection(safeProperty)),
+                      const SizedBox(height: 16),
 
-                    // Description
-                    _buildDescriptionSection(safeProperty),
-                    const SizedBox(height: 16),
-
-                    // Highlights
-                    if ((safeProperty.features?.isNotEmpty ?? false))
-                      ..._buildHighlightsSection(safeProperty),
-                    const SizedBox(height: 24),
-
-                    // Property Information
-                    PropertyDetailsInfoSection(property: safeProperty),
-                    const SizedBox(height: 24),
-
-                    // Pricing Details
-                    PropertyDetailsPricingSection(property: safeProperty),
-                    const SizedBox(height: 24),
-
-                    // Builder Information
-                    if (safeProperty.builderName?.isNotEmpty == true) ...[
-                      PropertyDetailsContactSection(property: safeProperty),
+                      // Highlights
+                      if ((safeProperty.features?.isNotEmpty ?? false))
+                        ..._buildHighlightsSection(safeProperty),
                       const SizedBox(height: 24),
+
+                      // Property Information
+                      ScrollRevealWidget(
+                        index: 5,
+                        child: PropertyDetailsInfoSection(property: safeProperty),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Pricing Details
+                      ScrollRevealWidget(
+                        index: 6,
+                        child: PropertyDetailsPricingSection(property: safeProperty),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Builder Information
+                      if (safeProperty.builderName?.isNotEmpty == true) ...[
+                        ScrollRevealWidget(
+                          index: 7,
+                          child: PropertyDetailsContactSection(property: safeProperty),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Amenities
+                      ScrollRevealWidget(index: 8, child: _buildAmenitiesSection(safeProperty)),
+                      const SizedBox(height: 24),
+
+                      // Location + Directions
+                      if (safeProperty.hasLocation) ..._buildLocationSection(safeProperty),
+
+                      const SizedBox(height: 100),
                     ],
-
-                    // Amenities
-                    _buildAmenitiesSection(safeProperty),
-                    const SizedBox(height: 24),
-
-                    // Location + Directions
-                    if (safeProperty.hasLocation) ..._buildLocationSection(safeProperty),
-
-                    const SizedBox(height: 100),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
 
-      // Bottom Action Buttons
-      bottomNavigationBar: _buildBottomBar(context, safeProperty, visitsController),
+        // Bottom Action Buttons
+        bottomNavigationBar: _buildBottomBar(context, safeProperty, visitsController),
+      ),
     );
   }
 
@@ -403,6 +445,10 @@ class _PropertyContentView extends StatelessWidget {
   }
 
   List<Widget> _buildLocationSection(PropertyModel property) {
+    final lat = property.latitude;
+    final lng = property.longitude;
+    if (lat == null || lng == null) return const [SizedBox.shrink()];
+
     return [
       const SizedBox(height: 8),
       Text(
@@ -442,7 +488,7 @@ class _PropertyContentView extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: FlutterMap(
           options: MapOptions(
-            initialCenter: LatLng(property.latitude!, property.longitude!),
+            initialCenter: LatLng(lat, lng),
             initialZoom: 15,
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
@@ -456,7 +502,7 @@ class _PropertyContentView extends StatelessWidget {
             MarkerLayer(
               markers: [
                 Marker(
-                  point: LatLng(property.latitude!, property.longitude!),
+                  point: LatLng(lat, lng),
                   width: 40,
                   height: 40,
                   child: const Icon(Icons.location_on, size: 36, color: AppDesign.primaryYellow),
@@ -470,7 +516,8 @@ class _PropertyContentView extends StatelessWidget {
       Align(
         alignment: Alignment.centerLeft,
         child: OutlinedButton.icon(
-          onPressed: () => _openGoogleMaps(property.latitude!, property.longitude!, property.title),
+          key: const ValueKey('qa.property_details.get_directions'),
+          onPressed: () => _openGoogleMaps(lat, lng, property.title),
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: AppDesign.primaryYellow),
             foregroundColor: AppDesign.textPrimary,
@@ -560,6 +607,7 @@ class _PropertyContentView extends StatelessWidget {
     VisitsController visitsController,
   ) {
     return ElevatedButton.icon(
+      key: const ValueKey('qa.property_details.schedule_visit'),
       onPressed: () => showBookVisitDialog(context, property, visitsController),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppDesign.primaryYellow,
@@ -651,12 +699,6 @@ Future<void> _openGoogleMaps(double latitude, double longitude, String label) as
   if (await canLaunchUrl(url)) {
     await launchUrl(url, mode: LaunchMode.externalApplication);
   } else {
-    Get.snackbar(
-      'unable_to_open_maps'.tr,
-      'check_device_settings'.tr,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppDesign.snackbarBackground,
-      colorText: AppDesign.snackbarText,
-    );
+    AppToast.warning('unable_to_open_maps'.tr, 'check_device_settings'.tr);
   }
 }

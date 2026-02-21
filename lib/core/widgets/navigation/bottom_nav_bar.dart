@@ -26,6 +26,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
     const _NavItem(Icons.home_outlined, Icons.home, 'discover'),
     const _NavItem(Icons.favorite_border, Icons.favorite, 'liked'),
     const _NavItem(Icons.calendar_today_outlined, Icons.calendar_today, 'visits'),
+    const _NavItem(Icons.smart_toy_outlined, Icons.smart_toy, 'assistant'),
   ];
 
   @override
@@ -93,55 +94,90 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
         top: false,
         child: SizedBox(
           height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(_items.length, (index) {
-              final item = _items[index];
-              final isSelected = widget.currentIndex == index;
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final tabWidth = constraints.maxWidth / _items.length;
+              const pillWidth = 48.0;
+              final pillLeft = tabWidth * widget.currentIndex + (tabWidth - pillWidth) / 2;
 
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => _handleTap(index),
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedBuilder(
-                    animation: _scaleAnimations[index],
-                    builder: (context, child) {
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Transform.scale(
-                            scale: _scaleAnimations[index].value,
-                            child: AnimatedSwitcher(
-                              duration: AppDurations.fast,
-                              child: Icon(
-                                isSelected ? item.activeIcon : item.inactiveIcon,
-                                key: ValueKey(isSelected),
-                                color: isSelected
-                                    ? AppDesign.primaryYellow
-                                    : AppDesign.navigationUnselected,
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          AnimatedDefaultTextStyle(
-                            duration: AppDurations.fast,
-                            style: TextStyle(
-                              fontSize: isSelected ? 11 : 10,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                              color: isSelected
-                                  ? AppDesign.primaryYellow
-                                  : AppDesign.navigationUnselected,
-                            ),
-                            child: Text(item.label.tr),
-                          ),
-                        ],
-                      );
-                    },
+              return Stack(
+                children: [
+                  // Sliding pill indicator
+                  AnimatedPositioned(
+                    duration: AppDurations.tabPill,
+                    curve: AppCurves.tabPill,
+                    left: pillLeft,
+                    top: 6,
+                    child: Container(
+                      width: pillWidth,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppDesign.primaryYellow.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
                   ),
-                ),
+                  // Tab row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(_items.length, (index) {
+                      final item = _items[index];
+                      final isSelected = widget.currentIndex == index;
+
+                      return Expanded(
+                        child: Semantics(
+                          label: 'qa.dashboard.nav.${item.label}',
+                          identifier: 'qa.dashboard.nav.${item.label}',
+                          child: GestureDetector(
+                            key: ValueKey('qa.dashboard.nav.${item.label}'),
+                            onTap: () => _handleTap(index),
+                            behavior: HitTestBehavior.opaque,
+                            child: AnimatedBuilder(
+                              animation: _scaleAnimations[index],
+                              builder: (context, child) {
+                                return Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Transform.scale(
+                                      scale: _scaleAnimations[index].value,
+                                      child: AnimatedSwitcher(
+                                        duration: AppDurations.fast,
+                                        child: Icon(
+                                          isSelected ? item.activeIcon : item.inactiveIcon,
+                                          key: ValueKey(isSelected),
+                                          color: isSelected
+                                              ? AppDesign.primaryYellow
+                                              : AppDesign.navigationUnselected,
+                                          size: 24,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    AnimatedDefaultTextStyle(
+                                      duration: AppDurations.fast,
+                                      style: TextStyle(
+                                        fontSize: isSelected ? 11 : 10,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.normal,
+                                        color: isSelected
+                                            ? AppDesign.primaryYellow
+                                            : AppDesign.navigationUnselected,
+                                      ),
+                                      child: Text(item.label.tr),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
               );
-            }),
+            },
           ),
         ),
       ),

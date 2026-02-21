@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 
 class PropertyFilterWidget extends StatelessWidget {
   final String pageType; // 'home', 'explore', 'favourites'
@@ -615,15 +616,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       widget.onFiltersApplied!();
     }
 
-    // Show confirmation
-    Get.snackbar(
-      'filters_applied'.tr,
-      'filters_applied_message'.tr,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppDesign.primaryYellow,
-      colorText: AppDesign.surface,
-      duration: const Duration(seconds: 2),
-    );
+    AppToast.success('filters_applied'.tr, 'filters_applied_message'.tr);
   }
 
   String _displayPropertyType(String type) {
@@ -641,7 +634,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       case 'plot':
         return type.tr;
       case 'builder_floor':
-        return 'Builder Floor';
+        return 'builder_floor'.tr;
       default:
         return type
             .replaceAll('_', ' ')

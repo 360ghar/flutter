@@ -1,0 +1,11 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.visits
+- assertVisible:
+    id: qa.visits.tab.scheduled
+- tapOn:
+    id: qa.visits.tab.past
+- assertVisible:
+    id: qa.visits.tab.past

@@ -154,7 +154,7 @@ class _AnimatedIconButtonState extends State<AnimatedIconButton>
   }
 }
 
-/// Animated heart/favorite icon with bounce effect
+/// Animated heart/favorite icon with bounce effect and gold circle burst
 class AnimatedFavoriteIcon extends StatefulWidget {
   final bool isFavorite;
   final VoidCallback onToggle;
@@ -175,9 +175,9 @@ class AnimatedFavoriteIcon extends StatefulWidget {
   State<AnimatedFavoriteIcon> createState() => _AnimatedFavoriteIconState();
 }
 
-class _AnimatedFavoriteIconState extends State<AnimatedFavoriteIcon>
-    with SingleTickerProviderStateMixin {
+class _AnimatedFavoriteIconState extends State<AnimatedFavoriteIcon> with TickerProviderStateMixin {
   late AnimationController _controller;
+  late AnimationController _burstController;
   late Animation<double> _scaleAnimation;
 
   @override
@@ -198,6 +198,8 @@ class _AnimatedFavoriteIconState extends State<AnimatedFavoriteIcon>
         weight: 30,
       ),
     ]).animate(_controller);
+
+    _burstController = AnimationController(vsync: this, duration: AppDurations.favoriteBurst);
   }
 
   @override
@@ -205,12 +207,14 @@ class _AnimatedFavoriteIconState extends State<AnimatedFavoriteIcon>
     super.didUpdateWidget(oldWidget);
     if (widget.isFavorite != oldWidget.isFavorite && widget.isFavorite) {
       _controller.forward(from: 0);
+      _burstController.forward(from: 0);
     }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _burstController.dispose();
     super.dispose();
   }
 
@@ -218,6 +222,7 @@ class _AnimatedFavoriteIconState extends State<AnimatedFavoriteIcon>
     HapticFeedback.mediumImpact();
     if (!widget.isFavorite) {
       _controller.forward(from: 0);
+      _burstController.forward(from: 0);
     }
     widget.onToggle();
   }
@@ -226,19 +231,81 @@ class _AnimatedFavoriteIconState extends State<AnimatedFavoriteIcon>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _handleTap,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Icon(
-              widget.isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: widget.isFavorite ? widget.activeColor : widget.inactiveColor,
-              size: widget.size,
+      child: SizedBox(
+        width: widget.size + 16,
+        height: widget.size + 16,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Gold circle burst behind the icon
+            AnimatedBuilder(
+              animation: _burstController,
+              builder: (context, _) {
+                if (!_burstController.isAnimating && _burstController.value == 0) {
+                  return const SizedBox.shrink();
+                }
+                return CustomPaint(
+                  size: Size(widget.size + 16, widget.size + 16),
+                  painter: _FavoriteBurstPainter(
+                    progress: _burstController.value,
+                    color: AppDesign.primaryYellow,
+                  ),
+                );
+              },
             ),
-          );
-        },
+            // Bouncing heart icon
+            AnimatedBuilder(
+              animation: _scaleAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: Icon(
+                    widget.isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: widget.isFavorite ? widget.activeColor : widget.inactiveColor,
+                    size: widget.size,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
+  }
+}
+
+/// Paints 4 expanding/fading gold circles for the favorite burst effect.
+class _FavoriteBurstPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _FavoriteBurstPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxRadius = size.width / 2;
+
+    for (int i = 0; i < 4; i++) {
+      final delay = i * 0.1;
+      final circleProgress = ((progress - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+
+      if (circleProgress > 0) {
+        final radius = maxRadius * 0.3 + (maxRadius * 0.7 * circleProgress);
+        final opacity = (1.0 - circleProgress) * 0.7;
+
+        final paint = Paint()
+          ..color = color.withValues(alpha: opacity)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0 * (1.0 - circleProgress);
+
+        canvas.drawCircle(center, radius, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_FavoriteBurstPainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }

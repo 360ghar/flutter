@@ -27,13 +27,15 @@ class LikesPropertyCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return AnimatedTapWrapper(
+      key: ValueKey('qa.likes.card.${property.id}'),
       onTap: () => Get.toNamed(AppRoutes.propertyDetails, arguments: property),
-      child: Card(
-        margin: const EdgeInsets.all(0),
-        elevation: 2,
-        color: AppDesign.propertyCardBackground,
-        shadowColor: AppDesign.shadowColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppBorderRadius.card)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppDesign.propertyCardBackground,
+          borderRadius: BorderRadius.circular(AppBorderRadius.card),
+          border: Border.all(color: AppDesign.border.withValues(alpha: 0.3), width: 1),
+          boxShadow: AppDesign.getCardShadow(),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,7 +134,7 @@ class LikesPropertyCard extends StatelessWidget {
                       child: AnimatedFavoriteIcon(
                         isFavorite: isFavourite,
                         onToggle: onFavouriteToggle,
-                        size: 20,
+                        size: 18,
                         activeColor: AppDesign.favoriteActive,
                         inactiveColor: colorScheme.onPrimary,
                       ),
@@ -144,43 +146,37 @@ class LikesPropertyCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.sm,
-                AppSpacing.xs + 2,
                 AppSpacing.sm,
-                AppSpacing.xs + 2,
+                AppSpacing.sm,
+                AppSpacing.sm,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          property.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppDesign.propertyCardText,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Text(
-                        property.formattedPrice,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppDesign.propertyCardPrice,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    property.title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppDesign.propertyCardText,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 1),
+                  const SizedBox(height: 2),
+                  Text(
+                    property.formattedPrice,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppDesign.propertyCardPrice,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
                   Text(
                     property.addressDisplay,
-                    style: TextStyle(fontSize: 12, color: AppDesign.propertyCardSubtext),
+                    style: TextStyle(fontSize: 11, color: AppDesign.propertyCardSubtext),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -188,13 +184,13 @@ class LikesPropertyCard extends StatelessWidget {
                   Row(
                     children: [
                       if (property.bedroomBathroomText.isNotEmpty) ...[
-                        Icon(Icons.bed_outlined, size: 14, color: AppDesign.propertyFeatureText),
-                        const SizedBox(width: AppSpacing.xs),
+                        Icon(Icons.bed_outlined, size: 12, color: AppDesign.propertyFeatureText),
+                        const SizedBox(width: 2),
                         Flexible(
                           child: Text(
                             property.bedroomBathroomText,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: AppDesign.propertyFeatureText,
                               fontWeight: FontWeight.w500,
                             ),
@@ -204,14 +200,14 @@ class LikesPropertyCard extends StatelessWidget {
                         ),
                       ],
                       if (property.areaText.isNotEmpty) ...[
-                        const SizedBox(width: AppSpacing.listItemSpacing),
-                        Icon(Icons.square_foot, size: 14, color: AppDesign.propertyFeatureText),
-                        const SizedBox(width: AppSpacing.xs),
+                        const SizedBox(width: AppSpacing.sm),
+                        Icon(Icons.square_foot, size: 12, color: AppDesign.propertyFeatureText),
+                        const SizedBox(width: 2),
                         Flexible(
                           child: Text(
                             property.areaText,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: AppDesign.propertyFeatureText,
                               fontWeight: FontWeight.w500,
                             ),

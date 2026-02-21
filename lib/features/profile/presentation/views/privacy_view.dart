@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/mixins/theme_mixin.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/features/profile/presentation/views/policy_page_view.dart';
 
 class PrivacyView extends StatelessWidget with ThemeMixin {
@@ -46,105 +47,118 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
       title: 'privacy_security'.tr,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            buildThemeAwareCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSectionTitle('account_security'.tr),
-                  const SizedBox(height: 16),
-                  _buildSecurityItem(
-                    icon: Icons.lock_outline,
-                    title: 'change_password'.tr,
-                    subtitle: 'update_account_password'.tr,
-                    onTap: _changePassword,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            buildThemeAwareCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSectionTitle('policies_legal'.tr),
-                  const SizedBox(height: 16),
-                  ..._policyItems.map(
-                    (item) => _buildPolicyItem(
-                      icon: item.icon,
-                      title: item.titleKey.tr,
-                      subtitle: item.subtitleKey.tr,
-                      uniqueName: item.uniqueName,
+      body: Semantics(
+        label: 'qa.profile.privacy.screen',
+        identifier: 'qa.profile.privacy.screen',
+        child: SingleChildScrollView(
+          key: const ValueKey('qa.profile.privacy.screen'),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              buildThemeAwareCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSectionTitle('account_security'.tr),
+                    const SizedBox(height: 16),
+                    _buildSecurityItem(
+                      qaKey: 'qa.profile.privacy.change_password',
+                      icon: Icons.lock_outline,
+                      title: 'change_password'.tr,
+                      subtitle: 'update_account_password'.tr,
+                      onTap: _changePassword,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            buildThemeAwareCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSectionTitle('account_management'.tr),
-                  const SizedBox(height: 12),
-                  Text(
-                    'delete_account_description'.tr,
-                    style: TextStyle(fontSize: 14, color: AppDesign.textSecondary, height: 1.4),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _showDeleteAccountDialog,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppDesign.errorRed,
-                        foregroundColor: Theme.of(context).colorScheme.onError,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text(
-                        'delete_account'.tr,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              const SizedBox(height: 20),
+              buildThemeAwareCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSectionTitle('policies_legal'.tr),
+                    const SizedBox(height: 16),
+                    ..._policyItems.map(
+                      (item) => _buildPolicyItem(
+                        icon: item.icon,
+                        title: item.titleKey.tr,
+                        subtitle: item.subtitleKey.tr,
+                        uniqueName: item.uniqueName,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              buildThemeAwareCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSectionTitle('account_management'.tr),
+                    const SizedBox(height: 12),
+                    Text(
+                      'delete_account_description'.tr,
+                      style: TextStyle(fontSize: 14, color: AppDesign.textSecondary, height: 1.4),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        key: const ValueKey('qa.profile.privacy.delete_account'),
+                        onPressed: _showDeleteAccountDialog,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppDesign.errorRed,
+                          foregroundColor: Theme.of(context).colorScheme.onError,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(
+                          'delete_account'.tr,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSecurityItem({
+    String? qaKey,
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppDesign.primaryYellow.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+    return Semantics(
+      label: qaKey,
+      identifier: qaKey,
+      child: ListTile(
+        key: qaKey != null ? ValueKey(qaKey) : null,
+        contentPadding: EdgeInsets.zero,
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppDesign.primaryYellow.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: AppDesign.primaryYellow, size: 20),
         ),
-        child: Icon(icon, color: AppDesign.primaryYellow, size: 20),
+        title: Text(
+          title,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppDesign.textPrimary),
+        ),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 14, color: AppDesign.textSecondary)),
+        trailing: Icon(Icons.chevron_right, color: AppDesign.iconColor),
+        onTap: onTap,
       ),
-      title: Text(
-        title,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppDesign.textPrimary),
-      ),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 14, color: AppDesign.textSecondary)),
-      trailing: Icon(Icons.chevron_right, color: AppDesign.iconColor),
-      onTap: onTap,
     );
   }
 
@@ -176,12 +190,7 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
   }
 
   void _changePassword() {
-    Get.snackbar(
-      'change_password_snackbar_title'.tr,
-      'change_password_snackbar_message'.tr,
-      backgroundColor: AppDesign.snackbarBackground,
-      colorText: AppDesign.snackbarText,
-    );
+    AppToast.info('change_password_snackbar_title'.tr, 'change_password_snackbar_message'.tr);
   }
 
   void _showDeleteAccountDialog() {
@@ -204,11 +213,9 @@ class PrivacyView extends StatelessWidget with ThemeMixin {
           TextButton(
             onPressed: () {
               Get.back();
-              Get.snackbar(
+              AppToast.info(
                 'account_deletion_snackbar_title'.tr,
                 'account_deletion_snackbar_message'.tr,
-                backgroundColor: AppDesign.snackbarBackground,
-                colorText: AppDesign.snackbarText,
               );
             },
             child: Text('delete'.tr, style: const TextStyle(color: AppDesign.errorRed)),

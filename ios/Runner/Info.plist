@@ -89,5 +89,7 @@
 	</array>
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
+	<key>FLTEnableImpeller</key>
+	<true/>
 </dict>
 </plist>

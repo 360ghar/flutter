@@ -116,7 +116,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 5.  **Run the application:**
     ```bash
-    flutter run
+    flutter run --dart-define=DEBUG=false
     ```
 
 Notes:

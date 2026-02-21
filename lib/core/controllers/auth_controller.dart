@@ -10,6 +10,7 @@ import 'package:ghar360/core/data/models/user_model.dart';
 import 'package:ghar360/core/firebase/analytics_service.dart';
 import 'package:ghar360/core/firebase/push_notifications_service.dart';
 import 'package:ghar360/core/network/api_client.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_handler.dart';
 import 'package:ghar360/features/auth/data/auth_repository.dart';
@@ -117,7 +118,7 @@ class AuthController extends GetxController {
         '🔐 [AUTH] Critical unauthorized response detected from ${event.endpoint}.',
       );
 
-      ErrorHandler.showInfo('Your session has expired. Please sign in again.');
+      ErrorHandler.showInfo('session_expired_message'.tr);
       await _authRepository.signOut();
     } catch (e, st) {
       DebugLogger.error('🔐 [AUTH] Failed to resolve critical unauthorized response', e, st);
@@ -266,12 +267,10 @@ class AuthController extends GetxController {
       }
     } on TimeoutException catch (e, stackTrace) {
       DebugLogger.error('👤 [AUTH_BOOT] Timed out while loading user profile.', e, stackTrace);
-      _handleProfileLoadFailure(
-        userMessage: 'Could not retrieve your profile in time. Please try again.',
-      );
+      _handleProfileLoadFailure(userMessage: 'profile_load_timeout'.tr);
     } catch (e, stackTrace) {
       DebugLogger.error('Failed to load user profile after sign-in.', e, stackTrace);
-      _handleProfileLoadFailure(userMessage: 'Could not retrieve your profile. Please try again.');
+      _handleProfileLoadFailure(userMessage: 'profile_load_error_user'.tr);
     }
   }
 
@@ -317,7 +316,7 @@ class AuthController extends GetxController {
       DebugLogger.warning('Transient profile refresh failure; preserving authenticated state.');
       try {
         if (Get.context != null) {
-          ErrorHandler.showInfo('Could not refresh profile. Will retry later.');
+          ErrorHandler.showInfo('profile_refresh_failed'.tr);
         }
       } catch (_) {}
       return;
@@ -397,11 +396,7 @@ class AuthController extends GetxController {
         authStatus.value = AuthStatus.authenticated;
       }
 
-      Get.snackbar(
-        'success'.tr,
-        'profile_updated_successfully'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
+      AppToast.success('success'.tr, 'profile_updated_successfully'.tr);
       return true;
     } catch (e) {
       ErrorHandler.handleNetworkError(e);
@@ -414,8 +409,7 @@ class AuthController extends GetxController {
   /// Updates the user's location using ProfileRepository
   Future<bool> updateUserLocation(Map<String, dynamic> locationData) async {
     try {
-      final updatedUser = await _profileRepository.updateUserLocation(locationData);
-      currentUser.value = updatedUser;
+      await _profileRepository.updateUserLocation(locationData);
       return true;
     } catch (e) {
       DebugLogger.error('Failed to update user location', e);

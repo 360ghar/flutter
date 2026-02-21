@@ -1,0 +1,31 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- scrollUntilVisible:
+    element:
+      id: qa.profile.menu.help
+- tapOn:
+    id: qa.profile.menu.help
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.help.screen
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: "Send Feedback"
+- tapOn:
+    text: "Send Feedback"
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.feedback.screen
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: "Send Feedback"
+- tapOn:
+    text: "Send Feedback"
+- assertVisible:
+    text: "Please describe the issue in a short title"
+    optional: true

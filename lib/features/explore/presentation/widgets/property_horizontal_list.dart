@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
 
 import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
+import 'package:ghar360/core/design/app_design_tokens.dart';
+import 'package:ghar360/core/utils/app_spacing.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/features/explore/presentation/controllers/explore_controller.dart';
 import 'package:ghar360/features/explore/presentation/widgets/explore_property_card.dart';
@@ -35,6 +38,7 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
       if (p == null) return;
       if (_lastSelectedId == p.id) return;
       _lastSelectedId = p.id;
+      HapticFeedback.selectionClick();
       _scrollToProperty(p.id);
     });
 
@@ -54,14 +58,15 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
       final index = widget.controller.properties.indexWhere((e) => e.id == propertyId);
       if (index == -1) return;
 
-      // Calculate target offset roughly based on item width and spacing
-      final target = index * (_itemWidth + _spacing);
+      // Center the selected card in the viewport
+      final viewportWidth = _scrollController.position.viewportDimension;
+      final target = index * (_itemWidth + _spacing) - (viewportWidth / 2) + (_itemWidth / 2);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _scrollController.animateTo(
           target.clamp(0, _scrollController.position.maxScrollExtent),
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+          duration: AppDurations.normal,
+          curve: AppCurves.standard,
         );
       });
     } catch (e) {
@@ -91,6 +96,8 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
   Widget build(BuildContext context) {
     return Obx(() {
       final properties = widget.controller.properties;
+      // Force Obx to subscribe to like state changes
+      final _ = widget.controller.likedOverrides.entries.toList();
       if (properties.isEmpty) {
         return Container(
           height: 10, // keep minimal footprint when empty
@@ -113,13 +120,14 @@ class _PropertyHorizontalListState extends State<PropertyHorizontalList> {
             return AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 260,
+              clipBehavior: Clip.hardEdge,
               padding: const EdgeInsets.symmetric(vertical: 2),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
-                boxShadow: isSelected ? AppDesign.getCardShadow() : null,
+                color: isSelected ? AppDesignTokens.brandGoldSubtle.withValues(alpha: 0.5) : null,
                 border: Border.all(
-                  color: isSelected ? AppDesign.primaryYellow : AppDesign.transparent,
-                  width: 2,
+                  color: isSelected ? AppDesignTokens.brandGold : AppDesign.transparent,
+                  width: isSelected ? 1.5 : 0,
                 ),
               ),
               child: ExplorePropertyCard(

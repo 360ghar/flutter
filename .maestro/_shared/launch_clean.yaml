@@ -1,0 +1,5 @@
+appId: com.the360ghar.ghar360
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true

@@ -11,9 +11,9 @@ void main() {
         'user_id': 50,
         'status': 'scheduled',
         'created_at': '2025-01-15T10:00:00.000Z',
-        if (visitDate != null) 'visit_date': visitDate,
-        if (visitTime != null) 'visit_time': visitTime,
-        if (scheduledDate != null) 'scheduled_date': scheduledDate,
+        'visit_date': ?visitDate,
+        'visit_time': ?visitTime,
+        'scheduled_date': ?scheduledDate,
       };
     }
 

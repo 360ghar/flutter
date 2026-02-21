@@ -81,8 +81,6 @@ dev_dependencies:
 dependency_overrides:
   # Keep the Firebase core pinned to the current major to align with other Firebase SDKs.
   firebase_core: ^4.1.1
-  uni_links:
-    path: plugins/uni_links
 
 flutter:
   uses-material-design: true

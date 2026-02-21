@@ -11,6 +11,7 @@ import 'package:ghar360/core/controllers/theme_controller.dart';
 import 'package:ghar360/core/network/api_client.dart';
 import 'package:ghar360/core/network/auth_header_provider.dart';
 import 'package:ghar360/core/network/etag_cache.dart';
+import 'package:ghar360/core/network/sse_client.dart';
 import 'package:ghar360/core/services/auth_navigation_service.dart';
 import 'package:ghar360/core/services/deep_link_service.dart';
 import 'package:ghar360/core/services/google_places_service.dart';
@@ -27,9 +28,7 @@ import 'package:ghar360/features/visits/data/datasources/visits_remote_datasourc
 class InitialBinding extends Bindings {
   @override
   void dependencies() {
-    DebugLogger.info('🔧 InitialBinding: Starting dependency injection...');
-
-    // ── Network layer ──
+    // ── CRITICAL: Network layer (needed immediately for auth) ──
     Get.put<AuthHeaderProvider>(AuthHeaderProvider(), permanent: true);
     Get.put<ETagCache>(ETagCache(), permanent: true);
     Get.put<ApiClient>(
@@ -37,33 +36,67 @@ class InitialBinding extends Bindings {
       permanent: true,
     );
 
-    // ── Datasources ──
+    // ── SSE client (uses same auth provider) ──
+    Get.put<SseClient>(SseClient(authProvider: Get.find<AuthHeaderProvider>()), permanent: true);
+
+    // ── CRITICAL: Auth repository (needed for login) ──
+    Get.put<AuthRepository>(AuthRepository(), permanent: true);
+
+    // ── CRITICAL: Core controllers only ──
+    _initializeCoreControllers();
+
+    // ── DEFER NON-CRITICAL INIT TO POST-FRAME ──
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeDeferredServices();
+    });
+  }
+
+  void _initializeCoreControllers() {
+    // ── CRITICAL: These must be registered BEFORE AuthController ──
+    // AuthController has field initializers that synchronously access these
+    Get.put<ProfileRepository>(ProfileRepository(), permanent: true);
     final apiClient = Get.find<ApiClient>();
-    Get.put<PropertiesRemoteDatasource>(PropertiesRemoteDatasource(apiClient), permanent: true);
-    Get.put<VisitsRemoteDatasource>(VisitsRemoteDatasource(apiClient), permanent: true);
-    Get.put<SwipesRemoteDatasource>(SwipesRemoteDatasource(apiClient), permanent: true);
     Get.put<NotificationsRemoteDatasource>(
       NotificationsRemoteDatasource(apiClient),
       permanent: true,
     );
 
-    // ── Repositories ──
-    // All repositories marked as permanent to prevent garbage collection
-    Get.put<AuthRepository>(AuthRepository(), permanent: true);
-    Get.put<AppUpdateRepository>(AppUpdateRepository(), permanent: true);
-    Get.put<ProfileRepository>(ProfileRepository(), permanent: true);
-    Get.put<StaticPageRepository>(StaticPageRepository(), permanent: true);
-
-    // Test API connection
-    _initializeApiClient();
-
-    // ── Services ──
+    // ── CRITICAL: GooglePlacesService must be registered BEFORE LocationController ──
+    // LocationController accesses it in onInit()
     Get.put<GooglePlacesService>(GooglePlacesService(), permanent: true);
 
-    // ── Core controllers ──
-    _initializeCoreControllers();
+    // ── CRITICAL: AppUpdateRepository must be registered BEFORE AppUpdateController ──
+    // AppUpdateController has a field initializer that synchronously accesses it
+    Get.put<AppUpdateRepository>(AppUpdateRepository(), permanent: true);
 
-    // Initialize offline queue early (connectivity listener + storage)
+    // Register only essential controllers that don't make API calls on init
+    Get.put<AuthController>(AuthController(), permanent: true);
+    Get.put<AuthNavigationService>(AuthNavigationService(), permanent: true);
+    Get.put<LocationController>(LocationController(), permanent: true);
+    Get.put<LocalizationController>(LocalizationController(), permanent: true);
+    Get.put<ThemeController>(ThemeController(), permanent: true);
+    Get.put<AppUpdateController>(AppUpdateController(), permanent: true);
+  }
+
+  void _initializeDeferredServices() {
+    DebugLogger.info('🔧 InitialBinding: Initializing deferred services...');
+
+    // ── Datasources (only needed after auth) ──
+    final apiClient = Get.find<ApiClient>();
+    Get.put<PropertiesRemoteDatasource>(PropertiesRemoteDatasource(apiClient), permanent: true);
+    Get.put<VisitsRemoteDatasource>(VisitsRemoteDatasource(apiClient), permanent: true);
+    Get.put<SwipesRemoteDatasource>(SwipesRemoteDatasource(apiClient), permanent: true);
+    // NotificationsRemoteDatasource is registered in _initializeCoreControllers (before AuthController)
+
+    // ── Other repositories ──
+    // AppUpdateRepository is registered in _initializeCoreControllers (before AppUpdateController)
+    // ProfileRepository is registered in _initializeCoreControllers (before AuthController)
+    Get.put<StaticPageRepository>(StaticPageRepository(), permanent: true);
+
+    // ── Services ──
+    // GooglePlacesService is registered in _initializeCoreControllers (before LocationController)
+
+    // ── Offline queue ──
     try {
       Get.put<OfflineQueueService>(OfflineQueueService(), permanent: true).init();
       DebugLogger.success('✅ OfflineQueueService registered');
@@ -71,42 +104,13 @@ class InitialBinding extends Bindings {
       DebugLogger.error('💥 Failed to initialize OfflineQueueService: $e');
     }
 
-    // ── Services (registered last — may depend on controllers) ──
+    // ── Deep link service ──
     Get.put<DeepLinkService>(DeepLinkService());
 
-    DebugLogger.success('✅ InitialBinding: All dependencies registered successfully');
-  }
+    DebugLogger.success('✅ InitialBinding: Deferred services registered');
 
-  void _initializeApiClient() {
-    try {
-      // Defer backend connection test until after first frame
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _testBackendConnection();
-      });
-    } catch (e) {
-      DebugLogger.error('💥 Failed to initialize ApiClient: $e');
-      throw Exception('Critical error: Cannot initialize API client');
-    }
-  }
-
-  void _initializeCoreControllers() {
-    // Register only essential controllers that don't make API calls on init
-    try {
-      Get.put<AuthController>(AuthController(), permanent: true);
-      Get.put<AuthNavigationService>(AuthNavigationService(), permanent: true);
-      Get.put<LocationController>(LocationController(), permanent: true);
-      Get.put<LocalizationController>(LocalizationController(), permanent: true);
-      Get.put<ThemeController>(ThemeController(), permanent: true);
-      Get.put<AppUpdateController>(AppUpdateController(), permanent: true);
-      DebugLogger.success('Core controllers registered');
-
-      // Note: PageStateService and repositories (PropertiesRepository, SwipesRepository)
-      // are now registered in DashboardBinding to prevent unauthorized API calls
-      // and ensure proper lifecycle management
-    } catch (e) {
-      DebugLogger.error('💥 Error initializing core controllers: $e');
-      rethrow;
-    }
+    // Backend health check (lowest priority - delayed)
+    Future.delayed(const Duration(seconds: 2), _testBackendConnection);
   }
 
   void _testBackendConnection() async {
@@ -114,25 +118,15 @@ class InitialBinding extends Bindings {
       if (!Get.isRegistered<ApiClient>()) return;
 
       final apiClient = Get.find<ApiClient>();
-      try {
-        await apiClient.get(
-          '${apiClient.baseUrl}/health',
-          useCache: false,
-          requireAuth: false,
-          notifyUnauthorized: false,
-        );
-        DebugLogger.success('🎉 Backend connection test successful!');
-      } catch (_) {
-        await apiClient.get(
-          '${apiClient.baseUrl}/',
-          useCache: false,
-          requireAuth: false,
-          notifyUnauthorized: false,
-        );
-        DebugLogger.success('🎉 Backend reachable via root endpoint');
-      }
+      await apiClient.get(
+        '${apiClient.baseUrl}/health',
+        useCache: false,
+        requireAuth: false,
+        notifyUnauthorized: false,
+      );
+      DebugLogger.success('🎉 Backend connection test successful!');
     } catch (e) {
-      DebugLogger.error('💥 Backend connection test error: $e');
+      DebugLogger.warning('💥 Backend connection test failed: $e');
     }
   }
 }

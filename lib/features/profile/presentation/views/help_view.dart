@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/mixins/theme_mixin.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 
 class HelpView extends StatelessWidget with ThemeMixin {
   const HelpView({super.key});
@@ -13,197 +14,207 @@ class HelpView extends StatelessWidget with ThemeMixin {
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
       title: 'help'.tr,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Quick Actions
-            buildThemeAwareCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSectionTitle('help_quick_actions'.tr),
-                  const SizedBox(height: 16),
-                  _buildQuickAction(
-                    icon: Icons.chat_bubble_outline,
-                    title: 'help_chat_with_support_title'.tr,
-                    description: 'help_chat_with_support_desc'.tr,
-                    onTap: () => _startLiveChat(),
-                  ),
-                  _buildQuickAction(
-                    icon: Icons.call,
-                    title: 'help_request_callback_title'.tr,
-                    description: 'help_request_callback_desc'.tr,
-                    onTap: () => _requestCallback(),
-                  ),
-                  _buildQuickAction(
-                    icon: Icons.email_outlined,
-                    title: 'help_email_support_title'.tr,
-                    description: 'help_email_support_desc'.tr,
-                    onTap: () => _emailSupport(),
-                  ),
-                ],
+      body: Semantics(
+        label: 'qa.profile.help.screen',
+        identifier: 'qa.profile.help.screen',
+        child: SingleChildScrollView(
+          key: const ValueKey('qa.profile.help.screen'),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Quick Actions
+              buildThemeAwareCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSectionTitle('help_quick_actions'.tr),
+                    const SizedBox(height: 16),
+                    _buildQuickAction(
+                      icon: Icons.chat_bubble_outline,
+                      title: 'help_chat_with_support_title'.tr,
+                      description: 'help_chat_with_support_desc'.tr,
+                      onTap: () => _startLiveChat(),
+                    ),
+                    _buildQuickAction(
+                      icon: Icons.call,
+                      title: 'help_request_callback_title'.tr,
+                      description: 'help_request_callback_desc'.tr,
+                      onTap: () => _requestCallback(),
+                    ),
+                    _buildQuickAction(
+                      icon: Icons.email_outlined,
+                      title: 'help_email_support_title'.tr,
+                      description: 'help_email_support_desc'.tr,
+                      onTap: () => _emailSupport(),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Frequently Asked Questions
-            buildThemeAwareCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSectionTitle('help_faq_title'.tr),
-                  const SizedBox(height: 16),
-                  _buildFAQItem(question: 'help_faq_q1'.tr, answer: 'help_faq_a1'.tr),
-                  _buildFAQItem(question: 'help_faq_q2'.tr, answer: 'help_faq_a2'.tr),
-                  _buildFAQItem(question: 'help_faq_q3'.tr, answer: 'help_faq_a3'.tr),
-                  _buildFAQItem(question: 'help_faq_q4'.tr, answer: 'help_faq_a4'.tr),
-                  _buildFAQItem(question: 'help_faq_q5'.tr, answer: 'help_faq_a5'.tr),
-                ],
+              // Frequently Asked Questions
+              buildThemeAwareCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSectionTitle('help_faq_title'.tr),
+                    const SizedBox(height: 16),
+                    _buildFAQItem(question: 'help_faq_q1'.tr, answer: 'help_faq_a1'.tr),
+                    _buildFAQItem(question: 'help_faq_q2'.tr, answer: 'help_faq_a2'.tr),
+                    _buildFAQItem(question: 'help_faq_q3'.tr, answer: 'help_faq_a3'.tr),
+                    _buildFAQItem(question: 'help_faq_q4'.tr, answer: 'help_faq_a4'.tr),
+                    _buildFAQItem(question: 'help_faq_q5'.tr, answer: 'help_faq_a5'.tr),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Troubleshooting
-            buildThemeAwareCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSectionTitle('help_troubleshooting_title'.tr),
-                  const SizedBox(height: 16),
-                  _buildTroubleshootItem(
-                    title: 'help_troubleshoot_slow_title'.tr,
-                    solutions: [
-                      'help_troubleshoot_slow_s1'.tr,
-                      'help_troubleshoot_slow_s2'.tr,
-                      'help_troubleshoot_slow_s3'.tr,
-                      'help_troubleshoot_slow_s4'.tr,
-                    ],
-                  ),
-                  _buildTroubleshootItem(
-                    title: 'help_troubleshoot_cards_title'.tr,
-                    solutions: [
-                      'help_troubleshoot_cards_s1'.tr,
-                      'help_troubleshoot_cards_s2'.tr,
-                      'help_troubleshoot_cards_s3'.tr,
-                      'help_troubleshoot_cards_s4'.tr,
-                    ],
-                  ),
-                  _buildTroubleshootItem(
-                    title: 'help_troubleshoot_notifications_title'.tr,
-                    solutions: [
-                      'help_troubleshoot_notifications_s1'.tr,
-                      'help_troubleshoot_notifications_s2'.tr,
-                      'help_troubleshoot_notifications_s3'.tr,
-                      'help_troubleshoot_notifications_s4'.tr,
-                    ],
-                  ),
-                ],
+              // Troubleshooting
+              buildThemeAwareCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSectionTitle('help_troubleshooting_title'.tr),
+                    const SizedBox(height: 16),
+                    _buildTroubleshootItem(
+                      title: 'help_troubleshoot_slow_title'.tr,
+                      solutions: [
+                        'help_troubleshoot_slow_s1'.tr,
+                        'help_troubleshoot_slow_s2'.tr,
+                        'help_troubleshoot_slow_s3'.tr,
+                        'help_troubleshoot_slow_s4'.tr,
+                      ],
+                    ),
+                    _buildTroubleshootItem(
+                      title: 'help_troubleshoot_cards_title'.tr,
+                      solutions: [
+                        'help_troubleshoot_cards_s1'.tr,
+                        'help_troubleshoot_cards_s2'.tr,
+                        'help_troubleshoot_cards_s3'.tr,
+                        'help_troubleshoot_cards_s4'.tr,
+                      ],
+                    ),
+                    _buildTroubleshootItem(
+                      title: 'help_troubleshoot_notifications_title'.tr,
+                      solutions: [
+                        'help_troubleshoot_notifications_s1'.tr,
+                        'help_troubleshoot_notifications_s2'.tr,
+                        'help_troubleshoot_notifications_s3'.tr,
+                        'help_troubleshoot_notifications_s4'.tr,
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Guides & Tutorials
-            buildThemeAwareCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSectionTitle('help_guides_title'.tr),
-                  const SizedBox(height: 16),
-                  _buildGuideItem(
-                    icon: Icons.play_circle_outline,
-                    title: 'help_guide_get_started_title'.tr,
-                    description: 'help_guide_get_started_desc'.tr,
-                    onTap: () => _openGuide('getting-started'),
-                  ),
-                  _buildGuideItem(
-                    icon: Icons.map_outlined,
-                    title: 'help_guide_search_title'.tr,
-                    description: 'help_guide_search_desc'.tr,
-                    onTap: () => _openGuide('advanced-search'),
-                  ),
-                  _buildGuideItem(
-                    icon: Icons.tune,
-                    title: 'help_guide_preferences_title'.tr,
-                    description: 'help_guide_preferences_desc'.tr,
-                    onTap: () => _openGuide('preferences'),
-                  ),
-                  _buildGuideItem(
-                    icon: Icons.event_available,
-                    title: 'help_guide_visits_title'.tr,
-                    description: 'help_guide_visits_desc'.tr,
-                    onTap: () => _openGuide('scheduling-visits'),
-                  ),
-                ],
+              // Guides & Tutorials
+              buildThemeAwareCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSectionTitle('help_guides_title'.tr),
+                    const SizedBox(height: 16),
+                    _buildGuideItem(
+                      icon: Icons.play_circle_outline,
+                      title: 'help_guide_get_started_title'.tr,
+                      description: 'help_guide_get_started_desc'.tr,
+                      onTap: () => _openGuide('getting-started'),
+                    ),
+                    _buildGuideItem(
+                      icon: Icons.map_outlined,
+                      title: 'help_guide_search_title'.tr,
+                      description: 'help_guide_search_desc'.tr,
+                      onTap: () => _openGuide('advanced-search'),
+                    ),
+                    _buildGuideItem(
+                      icon: Icons.tune,
+                      title: 'help_guide_preferences_title'.tr,
+                      description: 'help_guide_preferences_desc'.tr,
+                      onTap: () => _openGuide('preferences'),
+                    ),
+                    _buildGuideItem(
+                      icon: Icons.event_available,
+                      title: 'help_guide_visits_title'.tr,
+                      description: 'help_guide_visits_desc'.tr,
+                      onTap: () => _openGuide('scheduling-visits'),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Contact Information
-            buildThemeAwareCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSectionTitle('help_contact_info_title'.tr),
-                  const SizedBox(height: 16),
-                  _buildContactInfo(
-                    icon: Icons.access_time,
-                    title: 'help_contact_support_hours_title'.tr,
-                    details: 'help_contact_support_hours_details'.tr,
-                  ),
-                  _buildContactInfo(
-                    icon: Icons.location_on,
-                    title: 'help_contact_office_title'.tr,
-                    details: 'help_contact_office_details'.tr,
-                  ),
-                  _buildContactInfo(
-                    icon: Icons.language,
-                    title: 'help_contact_languages_title'.tr,
-                    details: 'help_contact_languages_details'.tr,
-                  ),
-                ],
+              // Contact Information
+              buildThemeAwareCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSectionTitle('help_contact_info_title'.tr),
+                    const SizedBox(height: 16),
+                    _buildContactInfo(
+                      icon: Icons.access_time,
+                      title: 'help_contact_support_hours_title'.tr,
+                      details: 'help_contact_support_hours_details'.tr,
+                    ),
+                    _buildContactInfo(
+                      icon: Icons.location_on,
+                      title: 'help_contact_office_title'.tr,
+                      details: 'help_contact_office_details'.tr,
+                    ),
+                    _buildContactInfo(
+                      icon: Icons.language,
+                      title: 'help_contact_languages_title'.tr,
+                      details: 'help_contact_languages_details'.tr,
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Feedback
-            buildThemeAwareCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSectionTitle('help_feedback_title'.tr),
-                  const SizedBox(height: 16),
-                  Text(
-                    'help_feedback_body'.tr,
-                    style: TextStyle(fontSize: 16, color: AppDesign.textSecondary, height: 1.5),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => _sendFeedback(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppDesign.buttonBackground,
-                        foregroundColor: AppDesign.buttonText,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text(
-                        'send_feedback'.tr,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              // Feedback
+              buildThemeAwareCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildSectionTitle('help_feedback_title'.tr),
+                    const SizedBox(height: 16),
+                    Text(
+                      'help_feedback_body'.tr,
+                      style: TextStyle(fontSize: 16, color: AppDesign.textSecondary, height: 1.5),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: Semantics(
+                        label: 'qa.profile.help.send_feedback',
+                        identifier: 'qa.profile.help.send_feedback',
+                        child: ElevatedButton(
+                          key: const ValueKey('qa.profile.help.send_feedback'),
+                          onPressed: () => _sendFeedback(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppDesign.buttonBackground,
+                            foregroundColor: AppDesign.buttonText,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(
+                            'send_feedback'.tr,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -358,21 +369,11 @@ class HelpView extends StatelessWidget with ThemeMixin {
   }
 
   void _startLiveChat() {
-    Get.snackbar(
-      'help_live_chat_title'.tr,
-      'help_live_chat_message'.tr,
-      backgroundColor: AppDesign.snackbarBackground,
-      colorText: AppDesign.snackbarText,
-    );
+    AppToast.info('help_live_chat_title'.tr, 'help_live_chat_message'.tr);
   }
 
   void _requestCallback() {
-    Get.snackbar(
-      'help_callback_title'.tr,
-      'help_callback_message'.tr,
-      backgroundColor: AppDesign.snackbarBackground,
-      colorText: AppDesign.snackbarText,
-    );
+    AppToast.info('help_callback_title'.tr, 'help_callback_message'.tr);
   }
 
   // void _callSupport() {
@@ -385,21 +386,11 @@ class HelpView extends StatelessWidget with ThemeMixin {
   // }
 
   void _emailSupport() {
-    Get.snackbar(
-      'help_email_title'.tr,
-      'help_email_message'.tr,
-      backgroundColor: AppDesign.snackbarBackground,
-      colorText: AppDesign.snackbarText,
-    );
+    AppToast.info('help_email_title'.tr, 'help_email_message'.tr);
   }
 
   void _openGuide(String guideId) {
-    Get.snackbar(
-      'help_guide_title'.tr,
-      'help_guide_message'.trParams({'guideId': guideId}),
-      backgroundColor: AppDesign.snackbarBackground,
-      colorText: AppDesign.snackbarText,
-    );
+    AppToast.info('help_guide_title'.tr, 'help_guide_message'.trParams({'guideId': guideId}));
   }
 
   Future<void> _sendFeedback() async {

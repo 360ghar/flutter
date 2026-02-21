@@ -16,36 +16,44 @@ class AgentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppDesign.primaryYellow.withValues(alpha: 0.08),
-            AppDesign.primaryYellow.withValues(alpha: 0.04),
+            AppDesign.editorialWarm.withValues(alpha: 0.08),
+            AppDesign.editorialWarm.withValues(alpha: 0.03),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppDesign.primaryYellow.withValues(alpha: 0.18), width: 1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppDesign.editorialWarm.withValues(alpha: 0.15), width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          RobustNetworkImageExtension.avatar(
-            imageUrl: agent.avatarUrl ?? '',
-            size: 44,
-            placeholder: Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(shape: BoxShape.circle),
-              child: Icon(Icons.person, size: 22, color: AppDesign.iconColor),
+          // Gold ring avatar
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppDesign.primaryYellow, width: 2),
             ),
-            errorWidget: Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(shape: BoxShape.circle),
-              child: Icon(Icons.person, size: 22, color: AppDesign.iconColor),
+            child: RobustNetworkImageExtension.avatar(
+              imageUrl: agent.avatarUrl ?? '',
+              size: 44,
+              placeholder: Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(shape: BoxShape.circle),
+                child: Icon(Icons.person, size: 22, color: AppDesign.iconColor),
+              ),
+              errorWidget: Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(shape: BoxShape.circle),
+                child: Icon(Icons.person, size: 22, color: AppDesign.iconColor),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -54,36 +62,27 @@ class AgentCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.support_agent, color: AppDesign.primaryYellow, size: 16),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Your Relationship Manager'.tr,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppDesign.textSecondary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                Text(
+                  'Your Relationship Manager'.tr,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppDesign.primaryYellowDark,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   agent.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                     color: AppDesign.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Row(
                   children: [
                     const Icon(Icons.star, size: 14, color: AppDesign.primaryYellow),

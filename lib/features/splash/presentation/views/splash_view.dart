@@ -1,10 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
-import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/design/app_design_tokens.dart';
 import 'package:ghar360/core/utils/app_spacing.dart';
+import 'package:ghar360/core/widgets/frosted_glass_container.dart';
 import 'package:ghar360/features/splash/presentation/controllers/splash_controller.dart';
 
 class SplashView extends GetView<SplashController> {
@@ -15,133 +17,55 @@ class SplashView extends GetView<SplashController> {
     final slides = _onboardingSlides;
 
     return Scaffold(
-      backgroundColor: AppDesign.background,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppDesign.primaryYellow.withValues(alpha: 0.12),
-                      AppDesign.background,
-                      AppDesign.accentBlue.withValues(alpha: 0.08),
-                    ],
-                  ),
-                ),
-              ),
+      key: const ValueKey('qa.splash.screen'),
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: controller.pageController,
+            itemCount: slides.length,
+            onPageChanged: (index) => controller.currentStep.value = index,
+            itemBuilder: (context, index) => _OnboardingSlideCard(
+              slide: slides[index],
+              fadeAnimation: controller.fadeAnimation,
+              slideAnimation: controller.slideAnimation,
             ),
-            PageView.builder(
-              controller: controller.pageController,
-              itemCount: slides.length,
-              onPageChanged: (index) => controller.currentStep.value = index,
-              itemBuilder: (context, index) => _OnboardingSlideCard(
-                slide: slides[index],
-                fadeAnimation: controller.fadeAnimation,
-                slideAnimation: controller.slideAnimation,
-                scaleAnimation: controller.scaleAnimation,
-              ),
-            ),
-            Positioned(
-              top: 16,
-              right: 12,
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            right: 20,
+            child: Semantics(
+              label: 'qa.splash.skip',
+              identifier: 'qa.splash.skip',
               child: TextButton(
+                key: const ValueKey('qa.splash.skip'),
                 onPressed: controller.skipToHome,
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.black.withValues(alpha: 0.3),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
                 child: Text(
                   'skip'.tr,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelLarge?.copyWith(color: AppDesign.textSecondary),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
                 ),
               ),
             ),
-            Positioned(
-              bottom: 22,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: AppDesign.surface.withValues(alpha: 0.95),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppDesign.border),
-                    boxShadow: AppDesign.getCardShadow(),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                    child: Obx(() {
-                      final currentStep = controller.currentStep.value;
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(slides.length, (index) {
-                              final selected = index == currentStep;
-                              return AnimatedContainer(
-                                duration: AppDurations.fast,
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                height: 8,
-                                width: selected ? 30 : 8,
-                                decoration: BoxDecoration(
-                                  color: selected
-                                      ? AppDesign.primaryYellow
-                                      : AppDesign.border.withValues(alpha: 0.8),
-                                  borderRadius: BorderRadius.circular(99),
-                                ),
-                              );
-                            }),
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              if (currentStep > 0)
-                                Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: controller.previousStep,
-                                    icon: const Icon(Icons.arrow_back, size: 18),
-                                    label: Text('back'.tr),
-                                  ),
-                                )
-                              else
-                                const Spacer(),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 2,
-                                child: FilledButton.icon(
-                                  onPressed: controller.nextStep,
-                                  icon: Icon(
-                                    currentStep < slides.length - 1
-                                        ? Icons.arrow_forward
-                                        : Icons.check_circle_outline,
-                                  ),
-                                  label: Text(
-                                    currentStep < slides.length - 1 ? 'next'.tr : 'get_started'.tr,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 20,
+            left: 20,
+            right: 20,
+            child: _FrostedBottomDock(slides: slides, controller: controller),
+          ),
+        ],
       ),
     );
   }
 
   List<_OnboardingSlideModel> get _onboardingSlides => const [
     _OnboardingSlideModel(
-      icon: Icons.threesixty,
+      backgroundImagePath: 'assets/images/onboarding_slide_1.jpg',
       titleKey: 'onboarding_slide_1_title',
       descriptionKey: 'onboarding_slide_1_desc',
       points: [
@@ -153,7 +77,7 @@ class SplashView extends GetView<SplashController> {
       chipLabelKey: 'onboarding_chip_live_tours',
     ),
     _OnboardingSlideModel(
-      icon: Icons.verified_user_outlined,
+      backgroundImagePath: 'assets/images/onboarding_slide_2.jpg',
       titleKey: 'onboarding_slide_2_title',
       descriptionKey: 'onboarding_slide_2_desc',
       points: [
@@ -165,7 +89,7 @@ class SplashView extends GetView<SplashController> {
       chipLabelKey: 'onboarding_chip_verified',
     ),
     _OnboardingSlideModel(
-      icon: Icons.handshake_outlined,
+      backgroundImagePath: 'assets/images/onboarding_slide_3.jpg',
       titleKey: 'onboarding_slide_3_title',
       descriptionKey: 'onboarding_slide_3_desc',
       points: [
@@ -184,154 +108,182 @@ class _OnboardingSlideCard extends StatelessWidget {
     required this.slide,
     required this.fadeAnimation,
     required this.slideAnimation,
-    required this.scaleAnimation,
   });
 
   final _OnboardingSlideModel slide;
   final Animation<double> fadeAnimation;
   final Animation<Offset> slideAnimation;
-  final Animation<double> scaleAnimation;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final bottomPadding = MediaQuery.of(context).padding.bottom + 180;
 
     return FadeTransition(
       opacity: fadeAnimation,
       child: SlideTransition(
         position: slideAnimation,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 56, 24, 150),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ScaleTransition(
-                scale: scaleAnimation,
-                child: _HeroOrb(
-                  icon: slide.icon,
-                  accentColor: slide.accentColor,
-                  chipLabel: slide.chipLabelKey.tr,
-                ),
-              ),
-              const SizedBox(height: 34),
-              Text(
-                slide.titleKey.tr,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
-                  color: AppDesign.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                slide.descriptionKey.tr,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(color: AppDesign.textSecondary),
-              ),
-              const SizedBox(height: 26),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppDesign.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppDesign.border),
-                  boxShadow: AppDesign.getCardShadow(),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: slide.points
-                        .map(
-                          (point) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: slide.accentColor.withValues(alpha: 0.18),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.check, size: 14, color: slide.accentColor),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    point.tr,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: AppDesign.textPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildBackgroundImage(),
+            _buildGradientScrim(),
+            _buildContent(context, bottomPadding),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackgroundImage() {
+    return Positioned.fill(
+      child: Image.asset(
+        slide.backgroundImagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                slide.accentColor.withValues(alpha: 0.3),
+                Colors.black.withValues(alpha: 0.6),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGradientScrim() {
+    return Positioned.fill(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: const [0.0, 0.35, 0.65, 1.0],
+            colors: [
+              Colors.black.withValues(alpha: 0.15),
+              Colors.transparent,
+              Colors.black.withValues(alpha: 0.4),
+              Colors.black.withValues(alpha: 0.7),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-class _HeroOrb extends StatelessWidget {
-  const _HeroOrb({required this.icon, required this.accentColor, required this.chipLabel});
+  Widget _buildContent(BuildContext context, double bottomPadding) {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(24, 0, 24, bottomPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildChip(context),
+              const SizedBox(height: 16),
+              _buildTitle(context),
+              const SizedBox(height: 12),
+              _buildDescription(context),
+              const SizedBox(height: 24),
+              _buildBulletPoints(context),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-  final IconData icon;
-  final Color accentColor;
-  final String chipLabel;
+  Widget _buildChip(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: slide.accentColor.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        slide.chipLabelKey.tr,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 250,
-      child: Stack(
-        alignment: Alignment.center,
+  Widget _buildTitle(BuildContext context) {
+    return Text(
+      slide.titleKey.tr,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
+        height: 1.15,
+        letterSpacing: -0.5,
+      ),
+    );
+  }
+
+  Widget _buildDescription(BuildContext context) {
+    return Text(
+      slide.descriptionKey.tr,
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: 0.85),
+        fontSize: 15,
+        fontWeight: FontWeight.w400,
+        height: 1.5,
+      ),
+    );
+  }
+
+  Widget _buildBulletPoints(BuildContext context) {
+    return FrostedGlassContainer(
+      opacity: 0.08,
+      blur: 12,
+      borderRadius: 16,
+      borderOpacity: 0.25,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: slide.points.map((point) => _buildBulletItem(point)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildBulletItem(String pointKey) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
         children: [
           Container(
-            width: 220,
-            height: 220,
+            width: 18,
+            height: 18,
             decoration: BoxDecoration(
+              color: slide.accentColor.withValues(alpha: 0.25),
               shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [accentColor.withValues(alpha: 0.35), accentColor.withValues(alpha: 0.05)],
-              ),
+              border: Border.all(color: slide.accentColor, width: 1.5),
             ),
+            child: Icon(Icons.check, size: 12, color: slide.accentColor),
           ),
-          Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(
-              color: AppDesign.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: accentColor.withValues(alpha: 0.5), width: 2),
-              boxShadow: AppDesign.getCardShadow(),
-            ),
-            child: Icon(icon, size: 62, color: accentColor),
-          ),
-          Positioned(top: 24, right: 40, child: _GlintDot(color: accentColor)),
-          const Positioned(bottom: 30, left: 40, child: _GlintDot(color: AppDesign.primaryYellow)),
-          Positioned(
-            bottom: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppDesign.surface,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: AppDesign.border),
-              ),
-              child: Text(
-                chipLabel,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(color: AppDesign.textPrimary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              pointKey.tr,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.95),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
               ),
             ),
           ),
@@ -341,30 +293,147 @@ class _HeroOrb extends StatelessWidget {
   }
 }
 
-class _GlintDot extends StatelessWidget {
-  const _GlintDot({required this.color});
+class _FrostedBottomDock extends StatelessWidget {
+  const _FrostedBottomDock({required this.slides, required this.controller});
 
-  final Color color;
+  final List<_OnboardingSlideModel> slides;
+  final SplashController controller;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 12,
-      height: 12,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 12, spreadRadius: 2),
-        ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+          ),
+          child: Obx(() {
+            final currentStep = controller.currentStep.value;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildLineIndicators(currentStep),
+                const SizedBox(height: 14),
+                _buildNavigationButtons(currentStep),
+              ],
+            );
+          }),
+        ),
       ),
+    );
+  }
+
+  Widget _buildLineIndicators(int currentStep) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(slides.length, (index) {
+        final selected = index == currentStep;
+        return AnimatedContainer(
+          duration: AppDurations.fast,
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          height: 2,
+          width: selected ? 40 : 24,
+          decoration: BoxDecoration(
+            color: selected ? AppDesignTokens.brandGold : Colors.white.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(1),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildNavigationButtons(int currentStep) {
+    return Row(
+      children: [
+        if (currentStep > 0)
+          Expanded(
+            child: Semantics(
+              label: 'qa.splash.back',
+              identifier: 'qa.splash.back',
+              child: _FrostedOutlinedButton(
+                key: const ValueKey('qa.splash.back'),
+                onPressed: controller.previousStep,
+                icon: Icons.arrow_back,
+                label: 'back'.tr,
+              ),
+            ),
+          )
+        else
+          const Spacer(),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: Semantics(
+            label: currentStep < slides.length - 1 ? 'qa.splash.next' : 'qa.splash.get_started',
+            identifier: currentStep < slides.length - 1
+                ? 'qa.splash.next'
+                : 'qa.splash.get_started',
+            child: FilledButton.icon(
+              key: ValueKey(
+                currentStep < slides.length - 1 ? 'qa.splash.next' : 'qa.splash.get_started',
+              ),
+              onPressed: controller.nextStep,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppDesignTokens.brandGold,
+                foregroundColor: Colors.black,
+                minimumSize: const Size(0, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: Icon(
+                currentStep < slides.length - 1 ? Icons.arrow_forward : Icons.check_circle_outline,
+                size: 18,
+              ),
+              label: Text(
+                currentStep < slides.length - 1 ? 'next'.tr : 'get_started'.tr,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FrostedOutlinedButton extends StatelessWidget {
+  const _FrostedOutlinedButton({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      key: key,
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
+        backgroundColor: Colors.white.withValues(alpha: 0.1),
+        minimumSize: const Size(0, 48),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      icon: Icon(icon, size: 18),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
     );
   }
 }
 
 class _OnboardingSlideModel {
   const _OnboardingSlideModel({
-    required this.icon,
+    required this.backgroundImagePath,
     required this.titleKey,
     required this.descriptionKey,
     required this.points,
@@ -372,7 +441,7 @@ class _OnboardingSlideModel {
     required this.chipLabelKey,
   });
 
-  final IconData icon;
+  final String backgroundImagePath;
   final String titleKey;
   final String descriptionKey;
   final List<String> points;

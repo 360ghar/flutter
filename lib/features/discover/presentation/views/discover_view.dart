@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
+import 'package:ghar360/core/utils/app_spacing.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
 import 'package:ghar360/core/widgets/common/error_states.dart';
 import 'package:ghar360/core/widgets/common/loading_states.dart';
@@ -19,42 +20,60 @@ class DiscoverView extends GetView<DiscoverController> {
   Widget build(BuildContext context) {
     final pageStateService = Get.find<PageStateService>();
 
-    return Scaffold(
-      backgroundColor: AppDesign.scaffoldBackground,
-      appBar: DiscoverTopBar(
-        onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'discover'),
-      ),
-      body: Column(
-        children: [
-          // Subtle refresh indicator (reactive only)
-          Obx(() {
-            final isRefreshing = pageStateService.discoverState.value.isRefreshing;
-            if (!isRefreshing) return const SizedBox.shrink();
-            return const LinearProgressIndicator(
-              minHeight: 2,
-              backgroundColor: AppDesign.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
-            );
-          }),
-          // Main content (reacts only to state)
-          Expanded(
-            child: Obx(() {
-              switch (controller.state.value) {
-                case DiscoverState.loading:
-                  return _buildLoadingState();
-                case DiscoverState.error:
-                  return _buildErrorState();
-                case DiscoverState.empty:
-                  return _buildEmptyState(context);
-                case DiscoverState.loaded:
-                case DiscoverState.prefetching:
-                  return _buildSwipeInterface(context);
-                default:
-                  return _buildLoadingState();
-              }
+    return Semantics(
+      label: 'qa.discover.screen',
+      identifier: 'qa.discover.screen',
+      child: Scaffold(
+        key: const ValueKey('qa.discover.screen'),
+        backgroundColor: AppDesign.scaffoldBackground,
+        appBar: DiscoverTopBar(
+          onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'discover'),
+        ),
+        body: Column(
+          children: [
+            // Subtle refresh indicator (reactive only)
+            Obx(() {
+              final isRefreshing = pageStateService.discoverState.value.isRefreshing;
+              if (!isRefreshing) return const SizedBox.shrink();
+              return const LinearProgressIndicator(
+                minHeight: 2,
+                backgroundColor: AppDesign.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
+              );
             }),
-          ),
-        ],
+            // Main content (reacts only to state)
+            Expanded(
+              child: Obx(() {
+                final Widget child;
+                final Key key;
+                switch (controller.state.value) {
+                  case DiscoverState.loading:
+                    key = const ValueKey('loading');
+                    child = _buildLoadingState();
+                  case DiscoverState.error:
+                    key = const ValueKey('error');
+                    child = _buildErrorState();
+                  case DiscoverState.empty:
+                    key = const ValueKey('empty');
+                    child = _buildEmptyState(context);
+                  case DiscoverState.loaded:
+                  case DiscoverState.prefetching:
+                    key = const ValueKey('loaded');
+                    child = _buildSwipeInterface(context);
+                  default:
+                    key = const ValueKey('loading');
+                    child = _buildLoadingState();
+                }
+                return AnimatedSwitcher(
+                  duration: AppDurations.contentFade,
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: KeyedSubtree(key: key, child: child),
+                );
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -129,15 +148,20 @@ class DiscoverView extends GetView<DiscoverController> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Obx(
-              () => PropertySwipeStack(
-                properties: controller.deck.skip(controller.currentIndex.value).take(3).toList(),
-                onSwipeLeft: controller.swipeLeft,
-                onSwipeRight: controller.swipeRight,
-                onSwipeUp: (property) => controller.viewPropertyDetails(property),
-                onRefresh: controller.refreshDeck,
-                onChangeFilters: () =>
-                    showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'discover'),
-                showSwipeInstructions: controller.totalSwipesInSession.value < 3,
+              () => Semantics(
+                label: 'qa.discover.swipe_stack',
+                identifier: 'qa.discover.swipe_stack',
+                child: PropertySwipeStack(
+                  key: const ValueKey('qa.discover.swipe_stack'),
+                  properties: controller.deck.skip(controller.currentIndex.value).take(3).toList(),
+                  onSwipeLeft: controller.swipeLeft,
+                  onSwipeRight: controller.swipeRight,
+                  onSwipeUp: (property) => controller.viewPropertyDetails(property),
+                  onRefresh: controller.refreshDeck,
+                  onChangeFilters: () =>
+                      showPropertyFilterBottomSheet(Get.context ?? context, pageType: 'discover'),
+                  showSwipeInstructions: controller.totalSwipesInSession.value < 3,
+                ),
               ),
             ),
           ),

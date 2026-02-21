@@ -169,21 +169,24 @@ class VisitModel {
   bool get isCompleted => status == VisitStatus.completed;
   bool get isCancelled => status == VisitStatus.cancelled;
 
-  // Helper methods for status
-  String get statusString {
+  // Helper methods for status - returns translation keys
+  String get statusStringKey {
     switch (status) {
       case VisitStatus.scheduled:
-        return 'Scheduled';
+        return 'visit_status_scheduled';
       case VisitStatus.confirmed:
-        return 'Confirmed';
+        return 'visit_status_confirmed';
       case VisitStatus.completed:
-        return 'Completed';
+        return 'visit_status_completed';
       case VisitStatus.cancelled:
-        return 'Cancelled';
+        return 'visit_status_cancelled';
       case VisitStatus.rescheduled:
-        return 'Rescheduled';
+        return 'visit_status_rescheduled';
     }
   }
+
+  @Deprecated('Use statusStringKey with .tr for localized text')
+  String get statusString => statusStringKey;
 
   bool get canReschedule =>
       status == VisitStatus.scheduled ||

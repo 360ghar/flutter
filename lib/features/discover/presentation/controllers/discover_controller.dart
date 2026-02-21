@@ -8,6 +8,7 @@ import 'package:ghar360/core/data/models/property_model.dart';
 import 'package:ghar360/core/firebase/analytics_service.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
 
@@ -139,23 +140,20 @@ class DiscoverController extends GetxController {
           '🩹 [DISCOVER] Detected stale loading flag with empty data. Forcing reload.',
         );
       }
-      _pageStateService
-          .useCurrentLocationForPage(PageType.discover)
-          .whenComplete(() => _loadInitialDeck(ignoreLoadingGuard: hasStaleLoadingWithoutData));
+      // useCurrentLocationForPage triggers debounceRefresh internally,
+      // which calls loadPageData. No need for a separate _loadInitialDeck.
+      state.value = DiscoverState.loading;
+      _pageStateService.useCurrentLocationForPage(PageType.discover);
       return;
     }
 
     if (ps.properties.isEmpty) {
-      // Instead of just showing empty, trigger a reload. The previous code
-      // set empty state without loading, creating a dead-end when the
-      // controller was no longer in 'initial' state but had no data.
       DebugLogger.warning(
         '🩹 [DISCOVER] activatePage: Empty properties with state=${state.value}, '
         'isDataStale=${ps.isDataStale}, lastFetched=${ps.lastFetched}. Forcing reload.',
       );
-      _pageStateService
-          .useCurrentLocationForPage(PageType.discover)
-          .whenComplete(() => _loadInitialDeck());
+      state.value = DiscoverState.loading;
+      _pageStateService.useCurrentLocationForPage(PageType.discover);
     }
   }
 
@@ -289,12 +287,7 @@ class DiscoverController extends GetxController {
     // Undo requires API support and tracking of last swiped property.
     // Currently a placeholder.
     DebugLogger.api('⏪ Undo not yet implemented');
-    Get.snackbar(
-      'undo_success'.tr,
-      'undo_previous_property'.tr,
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
-    );
+    AppToast.info('undo_success'.tr, 'undo_previous_property'.tr);
   }
 
   // ── Computed getters ──
@@ -319,12 +312,15 @@ class DiscoverController extends GetxController {
 
   String get sessionStats {
     if (totalSwipesInSession.value == 0) {
-      return 'Start swiping to see stats';
+      return 'start_swiping_stats'.tr;
     }
 
     final likeRate = (likesInSession.value / totalSwipesInSession.value * 100).round();
-    return '${totalSwipesInSession.value} swipes • '
-        '${likesInSession.value} likes • $likeRate% like rate';
+    return 'session_stats'.trParams({
+      'swipes': '${totalSwipesInSession.value}',
+      'likes': '${likesInSession.value}',
+      'rate': '$likeRate',
+    });
   }
 
   // ── Navigation ──

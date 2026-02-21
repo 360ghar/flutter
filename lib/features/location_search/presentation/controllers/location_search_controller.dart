@@ -6,6 +6,7 @@ import 'package:ghar360/core/controllers/location_controller.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/services/google_places_service.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 
 class LocationSearchController extends GetxController {
   late final LocationController locationController;
@@ -66,14 +67,12 @@ class LocationSearchController extends GetxController {
         await pageStateService.updateLocation(locationData, source: 'search');
 
         Get.back();
-        Get.snackbar(
-          'Location Selected',
-          'Selected: ${locationData.name}',
-          snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 2),
+        AppToast.success(
+          'location_selected_title'.tr,
+          'location_selected_message'.trParams({'name': locationData.name}),
         );
       } else {
-        Get.snackbar('Error', 'Failed to get location details', snackPosition: SnackPosition.TOP);
+        AppToast.error('error'.tr, 'location_details_failed'.tr);
       }
     } finally {
       isLoading.value = false;
@@ -105,18 +104,12 @@ class LocationSearchController extends GetxController {
         await pageStateService.updateLocation(locationData, source: 'search');
 
         Get.back();
-        Get.snackbar(
-          'Location Set',
-          'Using $locationName',
-          snackPosition: SnackPosition.TOP,
-          duration: const Duration(seconds: 2),
+        AppToast.success(
+          'location_set_title'.tr,
+          'location_set_message'.trParams({'location': locationName}),
         );
       } else {
-        Get.snackbar(
-          'Location Error',
-          'Unable to get your current location',
-          snackPosition: SnackPosition.TOP,
-        );
+        AppToast.error('location_error_title'.tr, 'unable_get_location'.tr);
       }
     } finally {
       isLoading.value = false;

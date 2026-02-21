@@ -54,6 +54,12 @@ class AppDurations {
   static const Duration slow = Duration(milliseconds: 400);
   static const Duration slower = Duration(milliseconds: 500);
   static const Duration pageTransition = Duration(milliseconds: 300);
+  static const Duration editorialReveal = Duration(milliseconds: 350);
+  static const Duration tabPill = Duration(milliseconds: 250);
+  static const Duration markerPulse = Duration(milliseconds: 1400);
+  static const Duration contentFade = Duration(milliseconds: 400);
+  static const Duration cardEntrance = Duration(milliseconds: 350);
+  static const Duration favoriteBurst = Duration(milliseconds: 500);
 }
 
 /// Standard curves for animations
@@ -61,4 +67,6 @@ class AppCurves {
   AppCurves._();
 
   static const Curve standard = Curves.easeOutCubic;
+  static const Curve cardEntrance = Curves.easeOutBack;
+  static const Curve tabPill = Curves.easeInOut;
 }

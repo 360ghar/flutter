@@ -7,6 +7,7 @@ import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/services/google_places_service.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
 class LocationSelector extends GetView<LocationController> {
@@ -21,36 +22,42 @@ class LocationSelector extends GetView<LocationController> {
     return Obx(() {
       final currentPageState = _getPageState(pageStateService);
       final locationText = currentPageState.locationDisplayText;
+      final selectorId = 'qa.location.selector.trigger.${pageType.name}';
 
-      return GestureDetector(
-        onTap: () => _showLocationPicker(context),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppDesign.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppDesign.divider, width: 0.5),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.location_on, size: 16, color: AppDesign.primaryYellow),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  locationText,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppDesign.textPrimary,
+      return Semantics(
+        label: selectorId,
+        identifier: selectorId,
+        child: GestureDetector(
+          key: ValueKey(selectorId),
+          onTap: () => _showLocationPicker(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppDesign.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppDesign.divider, width: 0.5),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.location_on, size: 16, color: AppDesign.primaryYellow),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    locationText,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppDesign.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(width: 4),
-              Icon(Icons.keyboard_arrow_down, size: 16, color: AppDesign.textSecondary),
-            ],
+                const SizedBox(width: 4),
+                Icon(Icons.keyboard_arrow_down, size: 16, color: AppDesign.textSecondary),
+              ],
+            ),
           ),
         ),
       );
@@ -102,10 +109,9 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   void _showSnackbarSafe({
     required String title,
     required String message,
-    SnackPosition snackPosition = SnackPosition.BOTTOM,
     Duration? duration,
     Color? backgroundColor,
-    Color? colorText,
+    Color? textColor,
   }) {
     if (!_hasOverlay()) {
       DebugLogger.warning('Skipped snackbar (no overlay): $title');
@@ -113,13 +119,12 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
     }
 
     try {
-      Get.snackbar(
-        title,
-        message,
-        snackPosition: snackPosition,
-        duration: duration,
-        backgroundColor: backgroundColor,
-        colorText: colorText,
+      AppToast.custom(
+        title: title,
+        message: message,
+        backgroundColor: backgroundColor ?? AppDesign.snackbarBackground,
+        textColor: textColor,
+        duration: duration ?? const Duration(seconds: 3),
       );
     } catch (e, stackTrace) {
       DebugLogger.error('Failed to show snackbar: $title', e, stackTrace);
@@ -156,158 +161,170 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: BoxDecoration(
-        color: AppDesign.scaffoldBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppDesign.divider,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Icon(Icons.location_on, color: AppDesign.primaryYellow),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'select_location'.tr,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppDesign.textPrimary,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close, color: AppDesign.textSecondary),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-
-          // Search bar
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: AppDesign.inputBackground,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppDesign.divider, width: 0.5),
-            ),
-            child: TextField(
-              controller: _searchController,
-              style: TextStyle(color: AppDesign.textPrimary),
-              onChanged: (query) {
-                if (query.isNotEmpty) {
-                  locationController.getPlaceSuggestions(query);
-                } else {
-                  locationController.clearPlaceSuggestions();
-                }
-              },
-              decoration: InputDecoration(
-                hintText: 'search_location_hint'.tr,
-                hintStyle: TextStyle(color: AppDesign.textSecondary),
-                prefixIcon: Icon(Icons.search, color: AppDesign.iconColor),
-                suffixIcon: Obx(() {
-                  if (locationController.isSearchingPlaces.value) {
-                    return Container(
-                      width: 20,
-                      height: 20,
-                      margin: const EdgeInsets.all(12),
-                      child: const CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
-                      ),
-                    );
-                  } else if (_searchController.text.isNotEmpty) {
-                    return IconButton(
-                      icon: Icon(Icons.clear, color: AppDesign.iconColor),
-                      onPressed: () {
-                        _searchController.clear();
-                        locationController.clearPlaceSuggestions();
-                      },
-                    );
-                  }
-                  return const SizedBox.shrink();
-                }),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    final modalId = 'qa.location.selector.modal.${widget.pageType.name}';
+    return Semantics(
+      label: modalId,
+      identifier: modalId,
+      child: Container(
+        key: ValueKey(modalId),
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: AppDesign.scaffoldBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppDesign.divider,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
 
-          const SizedBox(height: 16),
-
-          // Radius selector
-          _buildRadiusSelector(),
-
-          // Quick actions
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                _buildQuickActionTile(
-                  icon: Icons.my_location,
-                  title: 'use_current_location'.tr,
-                  subtitle: 'get_location_from_gps'.tr,
-                  iconColor: AppDesign.primaryYellow,
-                  onTap: () => _useCurrentLocation(),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Search results
-          Expanded(
-            child: Obx(() {
-              final suggestions = locationController.placeSuggestions;
-
-              if (suggestions.isEmpty && _searchController.text.isNotEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.location_off, size: 48, color: AppDesign.textSecondary),
-                      const SizedBox(height: 16),
-                      Text(
-                        'no_locations_found'.tr,
-                        style: TextStyle(fontSize: 16, color: AppDesign.textSecondary),
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on, color: AppDesign.primaryYellow),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'select_location'.tr,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppDesign.textPrimary,
                       ),
-                    ],
+                    ),
                   ),
-                );
-              }
+                  IconButton(
+                    icon: Icon(Icons.close, color: AppDesign.textSecondary),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
 
-              return ListView.builder(
-                itemCount: suggestions.length,
-                itemBuilder: (context, index) {
-                  final suggestion = suggestions[index];
-                  return _buildLocationTile(
-                    title: suggestion.mainText,
-                    subtitle: suggestion.secondaryText,
-                    onTap: () => _selectPlaceSuggestion(suggestion),
+            // Search bar
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppDesign.inputBackground,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppDesign.divider, width: 0.5),
+              ),
+              child: Semantics(
+                label: 'qa.location.selector.search_input.${widget.pageType.name}',
+                identifier: 'qa.location.selector.search_input.${widget.pageType.name}',
+                child: TextField(
+                  key: ValueKey('qa.location.selector.search_input.${widget.pageType.name}'),
+                  controller: _searchController,
+                  style: TextStyle(color: AppDesign.textPrimary),
+                  onChanged: (query) {
+                    if (query.isNotEmpty) {
+                      locationController.getPlaceSuggestions(query);
+                    } else {
+                      locationController.clearPlaceSuggestions();
+                    }
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'search_location_hint'.tr,
+                    hintStyle: TextStyle(color: AppDesign.textSecondary),
+                    prefixIcon: Icon(Icons.search, color: AppDesign.iconColor),
+                    suffixIcon: Obx(() {
+                      if (locationController.isSearchingPlaces.value) {
+                        return Container(
+                          width: 20,
+                          height: 20,
+                          margin: const EdgeInsets.all(12),
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
+                          ),
+                        );
+                      } else if (_searchController.text.isNotEmpty) {
+                        return IconButton(
+                          icon: Icon(Icons.clear, color: AppDesign.iconColor),
+                          onPressed: () {
+                            _searchController.clear();
+                            locationController.clearPlaceSuggestions();
+                          },
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Radius selector
+            _buildRadiusSelector(),
+
+            // Quick actions
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  _buildQuickActionTile(
+                    qaKey: 'qa.location.selector.use_current_location.${widget.pageType.name}',
+                    icon: Icons.my_location,
+                    title: 'use_current_location'.tr,
+                    subtitle: 'get_location_from_gps'.tr,
+                    iconColor: AppDesign.primaryYellow,
+                    onTap: () => _useCurrentLocation(),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Search results
+            Expanded(
+              child: Obx(() {
+                final suggestions = locationController.placeSuggestions;
+
+                if (suggestions.isEmpty && _searchController.text.isNotEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.location_off, size: 48, color: AppDesign.textSecondary),
+                        const SizedBox(height: 16),
+                        Text(
+                          'no_locations_found'.tr,
+                          style: TextStyle(fontSize: 16, color: AppDesign.textSecondary),
+                        ),
+                      ],
+                    ),
                   );
-                },
-              );
-            }),
-          ),
-        ],
+                }
+
+                return ListView.builder(
+                  itemCount: suggestions.length,
+                  itemBuilder: (context, index) {
+                    final suggestion = suggestions[index];
+                    return _buildLocationTile(
+                      title: suggestion.mainText,
+                      subtitle: suggestion.secondaryText,
+                      onTap: () => _selectPlaceSuggestion(suggestion),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -338,7 +355,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
                 ),
               ),
               Text(
-                '${radiusValue.toInt()} km',
+                '${radiusValue.toInt()} ${'km_unit'.tr}',
                 style: TextStyle(fontSize: 12, color: AppDesign.textSecondary),
               ),
             ],
@@ -363,32 +380,38 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
   }
 
   Widget _buildQuickActionTile({
+    String? qaKey,
     required IconData icon,
     required String title,
     required String subtitle,
     required Color iconColor,
     required VoidCallback onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+    return Semantics(
+      label: qaKey,
+      identifier: qaKey,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: ListTile(
+          key: qaKey != null ? ValueKey(qaKey) : null,
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          child: Icon(icon, color: iconColor, size: 20),
+          title: Text(
+            title,
+            style: TextStyle(fontWeight: FontWeight.w500, color: AppDesign.textPrimary),
+          ),
+          subtitle: Text(subtitle, style: TextStyle(color: AppDesign.textSecondary, fontSize: 12)),
+          trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppDesign.textSecondary),
+          onTap: onTap,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          tileColor: AppDesign.surface,
         ),
-        title: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.w500, color: AppDesign.textPrimary),
-        ),
-        subtitle: Text(subtitle, style: TextStyle(color: AppDesign.textSecondary, fontSize: 12)),
-        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppDesign.textSecondary),
-        onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        tileColor: AppDesign.surface,
       ),
     );
   }
@@ -435,7 +458,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         title: 'error'.tr,
         message: 'unable_to_get_current_location'.tr,
         backgroundColor: AppDesign.errorRed,
-        colorText: onErrorColor,
+        textColor: onErrorColor,
       );
     }
   }
@@ -469,7 +492,7 @@ class _LocationPickerModalState extends State<LocationPickerModal> {
         title: 'error'.tr,
         message: 'unable_to_select_location'.tr,
         backgroundColor: AppDesign.errorRed,
-        colorText: onErrorColor,
+        textColor: onErrorColor,
       );
     }
   }

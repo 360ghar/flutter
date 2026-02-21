@@ -1,0 +1,149 @@
+name: Maestro E2E
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  maestro-android:
+    name: Maestro Android E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.35.2'
+          cache: true
+
+      - name: Create environment files
+        run: |
+          cat > .env.development << ENV
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
+          ENV
+
+          cat > .env.production << ENV
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
+          ENV
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | MAESTRO_VERSION=1.39.0 bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+          $HOME/.maestro/bin/maestro --version
+
+      - name: Run Android emulator + Maestro tests
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          TEST_PHONE: ${{ secrets.TEST_PHONE }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_6
+          target: google_apis
+          script: |
+            ./scripts/run_maestro_ci.sh android full
+
+      - name: Upload Android Maestro artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android-artifacts
+          path: |
+            build/maestro
+            ~/.maestro/tests
+          if-no-files-found: warn
+
+  maestro-ios:
+    name: Maestro iOS E2E
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.35.2'
+          cache: true
+
+      - name: Create environment files
+        run: |
+          cat > .env.development << ENV
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
+          ENV
+
+          cat > .env.production << ENV
+          API_BASE_URL=${{ secrets.API_BASE_URL }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
+          ENV
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | MAESTRO_VERSION=1.39.0 bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+          $HOME/.maestro/bin/maestro --version
+
+      - name: Boot iOS simulator
+        run: |
+          UDID=$(xcrun simctl list devices available | grep -m1 "iPhone" | sed -E 's/.*\(([0-9A-F-]+)\) \(.*\)$/\1/')
+          if [ -z "$UDID" ]; then
+            echo "No available iOS simulator found" >&2
+            exit 1
+          fi
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          echo "Booted simulator: $UDID"
+
+      - name: Run Maestro iOS full suite
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          TEST_PHONE: ${{ secrets.TEST_PHONE }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+        run: ./scripts/run_maestro_ci.sh ios full
+
+      - name: Upload iOS Maestro artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-ios-artifacts
+          path: |
+            build/maestro
+            ~/.maestro/tests
+          if-no-files-found: warn

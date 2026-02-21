@@ -10,6 +10,7 @@ import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/firebase/analytics_service.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
 /// Handles location updates, GPS position tracking, geocoding, and
@@ -189,11 +190,7 @@ class PageLocationManager {
       }
     } catch (e) {
       DebugLogger.error('Failed to get current location: $e');
-      Get.snackbar(
-        'location_error'.tr,
-        'unable_to_get_current_location'.tr,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppToast.error('location_error'.tr, 'unable_to_get_current_location'.tr);
     }
   }
 

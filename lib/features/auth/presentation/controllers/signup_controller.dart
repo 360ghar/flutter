@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/firebase/analytics_service.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_handler.dart';
 import 'package:ghar360/core/utils/formatters.dart';
@@ -161,7 +162,7 @@ class SignUpController extends GetxController {
       currentStep.value = 2; // Move to OTP step
       _startOtpCountdown();
 
-      Get.snackbar('verify_phone'.tr, 'otp_sent_message'.tr, snackPosition: SnackPosition.TOP);
+      AppToast.success('verify_phone'.tr, 'otp_sent_message'.tr);
 
       DebugLogger.success('Sign up initiated for $phone');
     } on AuthException catch (e) {
@@ -215,7 +216,7 @@ class SignUpController extends GetxController {
         await _authRepository.signUpWithPhonePassword(phone, passwordController.text);
 
         _startOtpCountdown();
-        Get.snackbar('otp_sent'.tr, 'otp_resent_message'.tr);
+        AppToast.success('otp_sent'.tr, 'otp_resent_message'.tr);
 
         DebugLogger.info('OTP resent for signup to $phone');
       } catch (e) {

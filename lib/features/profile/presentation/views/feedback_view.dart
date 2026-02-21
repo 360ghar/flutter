@@ -14,137 +14,156 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
       title: 'send_feedback'.tr,
-      body: Form(
-        key: controller.formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Help our team fix issues faster by sharing a few details.',
-                style: TextStyle(fontSize: 16, height: 1.5, color: AppDesign.textSecondary),
-              ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('Issue type'),
-              const SizedBox(height: 8),
-              Obx(
-                () => _buildDropdownField<BugType>(
-                  value: controller.selectedBugType.value,
-                  items: BugType.values,
-                  onChanged: controller.setBugType,
-                  itemLabel: _bugTypeLabel,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildSectionTitle('Severity'),
-              const SizedBox(height: 8),
-              Obx(
-                () => _buildDropdownField<BugSeverity>(
-                  value: controller.selectedSeverity.value,
-                  items: BugSeverity.values,
-                  onChanged: controller.setSeverity,
-                  itemLabel: _severityLabel,
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Title'),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: controller.titleController,
-                hintText: 'Give a short summary (e.g. Search filters not working)',
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please describe the issue in a short title';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('What happened?'),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: controller.descriptionController,
-                hintText: 'Share what you expected and what you saw',
-                maxLines: 5,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please provide a short description of the problem';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Steps to reproduce (optional)'),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: controller.stepsController,
-                hintText: '1. Open the app\n2. Tap on ...',
-                maxLines: 4,
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Expected behaviour (optional)'),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: controller.expectedController,
-                hintText: 'Tell us what you expected to happen',
-                maxLines: 3,
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Actual behaviour (optional)'),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: controller.actualController,
-                hintText: 'Tell us what actually happened',
-                maxLines: 3,
-              ),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Tags (optional)'),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: controller.tagsController,
-                hintText: 'login, search, ios',
-                helperText: 'Separate tags using commas or new lines',
-              ),
-              const SizedBox(height: 28),
-              Obx(
-                () => SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: controller.isSubmitting.value ? null : controller.submitFeedback,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppDesign.buttonBackground,
-                      foregroundColor: AppDesign.buttonText,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: controller.isSubmitting.value
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: AppDesign.buttonText,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'sending_feedback'.tr,
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          )
-                        : Text(
-                            'send_feedback'.tr,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
+      body: Semantics(
+        label: 'qa.profile.feedback.screen',
+        identifier: 'qa.profile.feedback.screen',
+        child: KeyedSubtree(
+          key: const ValueKey('qa.profile.feedback.screen'),
+          child: Form(
+            key: controller.formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'feedback_subtitle'.tr,
+                    style: TextStyle(fontSize: 16, height: 1.5, color: AppDesign.textSecondary),
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle('issue_type'.tr),
+                  const SizedBox(height: 8),
+                  Obx(
+                    () => _buildDropdownField<BugType>(
+                      value: controller.selectedBugType.value,
+                      items: BugType.values,
+                      onChanged: controller.setBugType,
+                      itemLabel: _bugTypeLabel,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSectionTitle('severity_label'.tr),
+                  const SizedBox(height: 8),
+                  Obx(
+                    () => _buildDropdownField<BugSeverity>(
+                      value: controller.selectedSeverity.value,
+                      items: BugSeverity.values,
+                      onChanged: controller.setSeverity,
+                      itemLabel: _severityLabel,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle('title_label'.tr),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: controller.titleController,
+                    hintText: 'title_hint'.tr,
+                    qaKey: 'qa.profile.feedback.title_input',
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'title_validation'.tr;
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle('what_happened'.tr),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: controller.descriptionController,
+                    hintText: 'description_hint'.tr,
+                    qaKey: 'qa.profile.feedback.description_input',
+                    maxLines: 5,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'description_validation'.tr;
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle('steps_to_reproduce'.tr),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: controller.stepsController,
+                    hintText: 'steps_hint'.tr,
+                    maxLines: 4,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle('expected_behaviour'.tr),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: controller.expectedController,
+                    hintText: 'expected_hint'.tr,
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle('actual_behaviour'.tr),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: controller.actualController,
+                    hintText: 'actual_hint'.tr,
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSectionTitle('tags_optional'.tr),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: controller.tagsController,
+                    hintText: 'tags_hint'.tr,
+                    helperText: 'tags_helper'.tr,
+                  ),
+                  const SizedBox(height: 28),
+                  Obx(
+                    () => SizedBox(
+                      width: double.infinity,
+                      child: Semantics(
+                        label: 'qa.profile.feedback.submit',
+                        identifier: 'qa.profile.feedback.submit',
+                        child: ElevatedButton(
+                          key: const ValueKey('qa.profile.feedback.submit'),
+                          onPressed: controller.isSubmitting.value
+                              ? null
+                              : controller.submitFeedback,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppDesign.buttonBackground,
+                            foregroundColor: AppDesign.buttonText,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: controller.isSubmitting.value
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: AppDesign.buttonText,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'sending_feedback'.tr,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  'send_feedback'.tr,
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -161,44 +180,50 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
+    String? qaKey,
     String? helperText,
     String? Function(String?)? validator,
     int maxLines = 1,
   }) {
-    return TextFormField(
-      controller: controller,
-      validator: validator,
-      maxLines: maxLines,
-      minLines: maxLines > 1 ? 3 : 1,
-      style: TextStyle(color: AppDesign.textPrimary, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: hintText,
-        helperText: helperText,
-        helperStyle: TextStyle(color: AppDesign.textSecondary),
-        hintStyle: TextStyle(color: AppDesign.textSecondary),
-        filled: true,
-        fillColor: AppDesign.inputBackground,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+    return Semantics(
+      label: qaKey,
+      identifier: qaKey,
+      child: TextFormField(
+        key: qaKey != null ? ValueKey(qaKey) : null,
+        controller: controller,
+        validator: validator,
+        maxLines: maxLines,
+        minLines: maxLines > 1 ? 3 : 1,
+        style: TextStyle(color: AppDesign.textPrimary, fontSize: 15),
+        decoration: InputDecoration(
+          hintText: hintText,
+          helperText: helperText,
+          helperStyle: TextStyle(color: AppDesign.textSecondary),
+          hintStyle: TextStyle(color: AppDesign.textSecondary),
+          filled: true,
+          fillColor: AppDesign.inputBackground,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppDesign.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppDesign.primaryYellow, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppDesign.errorRed),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppDesign.errorRed, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppDesign.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppDesign.primaryYellow, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppDesign.errorRed),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppDesign.errorRed, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
@@ -241,30 +266,30 @@ class FeedbackView extends GetView<FeedbackController> with ThemeMixin {
   String _bugTypeLabel(BugType type) {
     switch (type) {
       case BugType.uiBug:
-        return 'UI bug';
+        return 'bug_type_ui'.tr;
       case BugType.functionalityBug:
-        return 'Functionality bug';
+        return 'bug_type_functionality'.tr;
       case BugType.performanceIssue:
-        return 'Performance issue';
+        return 'bug_type_performance'.tr;
       case BugType.crash:
-        return 'App crash';
+        return 'bug_type_crash'.tr;
       case BugType.featureRequest:
-        return 'Feature request';
+        return 'bug_type_feature'.tr;
       case BugType.other:
-        return 'Other';
+        return 'bug_type_other'.tr;
     }
   }
 
   String _severityLabel(BugSeverity severity) {
     switch (severity) {
       case BugSeverity.low:
-        return 'Low - minor inconvenience';
+        return 'severity_low'.tr;
       case BugSeverity.medium:
-        return 'Medium - impacts experience';
+        return 'severity_medium'.tr;
       case BugSeverity.high:
-        return 'High - major issue';
+        return 'severity_high'.tr;
       case BugSeverity.critical:
-        return 'Critical - blocking issue';
+        return 'severity_critical'.tr;
     }
   }
 }

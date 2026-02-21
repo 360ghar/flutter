@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_handler.dart';
 import 'package:ghar360/core/utils/formatters.dart';
@@ -52,7 +53,7 @@ class ForgotPasswordController extends GetxController {
       currentStep.value = 1; // Move to OTP step
       _startOtpCountdown();
 
-      Get.snackbar('otp_sent'.tr, 'password_reset_otp_sent'.tr, snackPosition: SnackPosition.TOP);
+      AppToast.success('otp_sent'.tr, 'password_reset_otp_sent'.tr);
 
       DebugLogger.success('Password reset OTP sent to $phone');
     } catch (e) {
@@ -121,11 +122,7 @@ class ForgotPasswordController extends GetxController {
     try {
       await _authRepository.updateUserPassword(newPassword);
 
-      Get.snackbar(
-        'success'.tr,
-        'password_updated_successfully'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
+      AppToast.success('success'.tr, 'password_updated_successfully'.tr);
 
       // Navigate to login screen
       Get.offAllNamed(AppRoutes.login);
@@ -148,7 +145,7 @@ class ForgotPasswordController extends GetxController {
         await _authRepository.sendPhoneOtp(phone);
 
         _startOtpCountdown();
-        Get.snackbar('otp_sent'.tr, 'otp_resent_message'.tr);
+        AppToast.success('otp_sent'.tr, 'otp_resent_message'.tr);
 
         DebugLogger.info('Password reset OTP resent to $phone');
       } catch (e) {

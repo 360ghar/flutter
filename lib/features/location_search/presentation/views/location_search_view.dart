@@ -12,11 +12,8 @@ class LocationSearchView extends GetView<LocationSearchController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('search_location'.tr),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-      ),
+      key: const ValueKey('qa.location_search.screen'),
+      appBar: AppBar(title: Text('search_location'.tr)),
       body: Column(
         children: [
           _buildSearchBar(context),
@@ -41,6 +38,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
         ],
       ),
       child: TextField(
+        key: const ValueKey('qa.location_search.search_input'),
         controller: controller.searchController,
         autofocus: true,
         decoration: InputDecoration(
@@ -77,6 +75,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
     return Obx(() {
       if (!locationController.hasLocation) {
         return ListTile(
+          key: const ValueKey('qa.location_search.use_current_location'),
           leading: const Icon(Icons.my_location, color: AppDesign.primaryYellow),
           title: Text('use_current_location'.tr),
           subtitle: Text('tap_to_get_current_location'.tr),
@@ -85,6 +84,7 @@ class LocationSearchView extends GetView<LocationSearchController> {
       }
 
       return ListTile(
+        key: const ValueKey('qa.location_search.use_current_location'),
         leading: const Icon(Icons.my_location, color: AppDesign.primaryYellow),
         title: Text('use_current_location'.tr),
         subtitle: Text(

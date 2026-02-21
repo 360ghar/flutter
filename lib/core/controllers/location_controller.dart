@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/controllers/auth_controller.dart';
 import 'package:ghar360/core/data/models/unified_filter_model.dart';
 import 'package:ghar360/core/services/google_places_service.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:http/http.dart' as http;
 
@@ -93,11 +94,7 @@ class LocationController extends GetxController {
       isLocationEnabled.value = await Geolocator.isLocationServiceEnabled();
       if (!isLocationEnabled.value) {
         locationError.value = 'location_services_disabled'.tr;
-        Get.snackbar(
-          'location_services'.tr,
-          'enable_location_services_message'.tr,
-          snackPosition: SnackPosition.TOP,
-        );
+        AppToast.warning('location_services'.tr, 'enable_location_services_message'.tr);
       }
     } catch (e, stackTrace) {
       locationError.value = 'failed_to_check_location_service'.tr;
@@ -129,22 +126,14 @@ class LocationController extends GetxController {
       if (permission == LocationPermission.deniedForever) {
         isLocationPermissionGranted.value = false;
         locationError.value = 'location_permission_permanently_denied'.tr;
-        Get.snackbar(
-          'location_permission'.tr,
-          'location_access_permanently_denied_message'.tr,
-          snackPosition: SnackPosition.TOP,
-        );
+        AppToast.warning('location_permission'.tr, 'location_access_permanently_denied_message'.tr);
         return;
       }
 
       if (permission == LocationPermission.denied) {
         isLocationPermissionGranted.value = false;
         locationError.value = 'location_permission_denied'.tr;
-        Get.snackbar(
-          'location_permission'.tr,
-          'location_access_required_message'.tr,
-          snackPosition: SnackPosition.TOP,
-        );
+        AppToast.warning('location_permission'.tr, 'location_access_required_message'.tr);
         return;
       }
 
@@ -320,21 +309,13 @@ class LocationController extends GetxController {
 
       if (resolved == null && currentPosition.value == null) {
         locationError.value = 'failed_to_get_current_location'.tr;
-        Get.snackbar(
-          'location_error'.tr,
-          'failed_to_get_location_message'.tr,
-          snackPosition: SnackPosition.TOP,
-        );
+        AppToast.error('location_error'.tr, 'failed_to_get_location_message'.tr);
       }
     } catch (e, stackTrace) {
       locationError.value = 'failed_to_get_current_location'.tr;
       DebugLogger.error('Error getting current location', e, stackTrace);
 
-      Get.snackbar(
-        'location_error'.tr,
-        'failed_to_get_location_message'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
+      AppToast.error('location_error'.tr, 'failed_to_get_location_message'.tr);
     } finally {
       isLoading.value = false;
     }
@@ -359,10 +340,13 @@ class LocationController extends GetxController {
         final placemark = placemarks.first;
         return _formatAddress(placemark);
       }
-      return 'Location (${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)})'; // Better fallback
+      return 'location_with_coords'.trParams({
+        'lat': latitude.toStringAsFixed(4),
+        'long': longitude.toStringAsFixed(4),
+      });
     } catch (e, stackTrace) {
       DebugLogger.error('Error getting address from coordinates', e, stackTrace);
-      return 'Location Coordinates'; // A better fallback than hardcoded text
+      return 'location_coordinates'.tr;
     }
   }
 
@@ -465,18 +449,14 @@ class LocationController extends GetxController {
       addressParts.add(placemark.administrativeArea!);
     }
 
-    return addressParts.isNotEmpty ? addressParts.join(', ') : 'Location';
+    return addressParts.isNotEmpty ? addressParts.join(', ') : 'location_fallback'.tr;
   }
 
   Future<void> openLocationSettings() async {
     try {
       await Geolocator.openLocationSettings();
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        'unable_to_open_location_settings'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
+      AppToast.error('error'.tr, 'unable_to_open_location_settings'.tr);
     }
   }
 
@@ -484,7 +464,7 @@ class LocationController extends GetxController {
     try {
       await Geolocator.openAppSettings();
     } catch (e) {
-      Get.snackbar('error'.tr, 'unable_to_open_app_settings'.tr, snackPosition: SnackPosition.TOP);
+      AppToast.error('error'.tr, 'unable_to_open_app_settings'.tr);
     }
   }
 

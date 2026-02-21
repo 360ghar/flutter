@@ -16,9 +16,10 @@ class LoginView extends GetView<LoginController> {
     final authController = Get.find<AuthController>();
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: AppDesign.background,
-      body: Stack(
+    return Semantics(
+      label: 'qa.auth.login.screen',
+      identifier: 'qa.auth.login.screen',
+      child: Stack(
         children: [
           AuthPremiumShell(
             title: 'welcome_back'.tr,
@@ -30,131 +31,38 @@ class LoginView extends GetView<LoginController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppDesign.inputBackground,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppDesign.border),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppDesign.primaryYellow.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.phone_outlined, color: AppDesign.primaryYellow),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Obx(
-                            () => Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'phone_number'.tr,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: AppDesign.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  controller.prefilledPhone.value.isNotEmpty
-                                      ? controller.prefilledPhone.value
-                                      : '+91 ${controller.phoneController.text}',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: AppDesign.textPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => Get.offNamed(AppRoutes.phoneEntry),
-                          child: Text('change'.tr),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildPhoneDisplay(theme),
                   const SizedBox(height: 16),
-                  Obx(
-                    () => TextFormField(
-                      controller: controller.passwordController,
-                      obscureText: !controller.isPasswordVisible.value,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => controller.signIn(),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'password_required'.tr;
-                        }
-                        if (value.length < 6) {
-                          return 'password_min_length'.tr;
-                        }
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        labelText: 'password'.tr,
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          onPressed: controller.togglePasswordVisibility,
-                          icon: Icon(
-                            controller.isPasswordVisible.value
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  _buildPasswordField(theme),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Get.toNamed(AppRoutes.forgotPassword),
-                      child: Text('forgot_password'.tr),
+                    child: Semantics(
+                      label: 'qa.auth.login.forgot_password',
+                      identifier: 'qa.auth.login.forgot_password',
+                      child: TextButton(
+                        key: const ValueKey('qa.auth.login.forgot_password'),
+                        onPressed: () => Get.toNamed(AppRoutes.forgotPassword),
+                        child: Text('forgot_password'.tr),
+                      ),
                     ),
                   ),
                   Obx(() => AuthInlineError(message: controller.errorMessage.value)),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    height: 54,
-                    child: Obx(
-                      () => FilledButton(
-                        onPressed: controller.isLoading.value ? null : controller.signIn,
-                        child: controller.isLoading.value
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2.2),
-                              )
-                            : Text(
-                                'sign_in'.tr,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: AppDesign.buttonText,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
+                  _buildSubmitButton(theme),
                   const SizedBox(height: 14),
                   TextButton(
                     onPressed: () => Get.offNamed(AppRoutes.phoneEntry),
                     child: RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
-                        style: theme.textTheme.bodyMedium,
+                        style: const TextStyle(color: Colors.white70, fontSize: 14),
                         children: [
                           TextSpan(text: 'dont_have_account'.tr),
                           TextSpan(
                             text: ' ${'sign_up'.tr}',
-                            style: theme.textTheme.bodyMedium?.copyWith(
+                            style: const TextStyle(
                               color: AppDesign.primaryYellow,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -172,18 +80,14 @@ class LoginView extends GetView<LoginController> {
             return Positioned.fill(
               child: Stack(
                 children: [
-                  ModalBarrier(
-                    dismissible: false,
-                    color: AppDesign.surface.withValues(alpha: 0.66),
-                  ),
+                  ModalBarrier(dismissible: false, color: Colors.black.withValues(alpha: 0.7)),
                   Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                       decoration: BoxDecoration(
-                        color: AppDesign.surface,
+                        color: Colors.white.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppDesign.border),
-                        boxShadow: AppDesign.getCardShadow(),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -191,13 +95,18 @@ class LoginView extends GetView<LoginController> {
                           const SizedBox(
                             height: 24,
                             width: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: AppDesign.primaryYellow,
+                            ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                           Text(
                             'loading'.tr,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: AppDesign.textPrimary,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -209,6 +118,130 @@ class LoginView extends GetView<LoginController> {
             );
           }),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPhoneDisplay(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppDesign.primaryYellow.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.phone_outlined, color: AppDesign.primaryYellow, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Obx(
+              () => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'phone_number'.tr,
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    controller.prefilledPhone.value.isNotEmpty
+                        ? controller.prefilledPhone.value
+                        : '+91 ${controller.phoneController.text}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Get.offNamed(AppRoutes.phoneEntry),
+            style: TextButton.styleFrom(
+              foregroundColor: AppDesign.primaryYellow,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+            child: Text('change'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPasswordField(ThemeData theme) {
+    return Obx(
+      () => Semantics(
+        label: 'qa.auth.login.password_input',
+        identifier: 'qa.auth.login.password_input',
+        child: TextFormField(
+          key: const ValueKey('qa.auth.login.password_input'),
+          controller: controller.passwordController,
+          autofocus: true,
+          obscureText: !controller.isPasswordVisible.value,
+          textInputAction: TextInputAction.done,
+          onFieldSubmitted: (_) => controller.signIn(),
+          style: const TextStyle(color: Colors.white),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'password_required'.tr;
+            }
+            if (value.length < 6) {
+              return 'password_min_length'.tr;
+            }
+            return null;
+          },
+          decoration: InputDecoration(
+            labelText: 'password'.tr,
+            prefixIcon: const Icon(Icons.lock_outline),
+            suffixIcon: IconButton(
+              onPressed: controller.togglePasswordVisibility,
+              icon: Icon(
+                controller.isPasswordVisible.value ? Icons.visibility_off : Icons.visibility,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton(ThemeData theme) {
+    return SizedBox(
+      height: 56,
+      child: Obx(
+        () => Semantics(
+          label: 'qa.auth.login.submit',
+          identifier: 'qa.auth.login.submit',
+          child: FilledButton(
+            key: const ValueKey('qa.auth.login.submit'),
+            onPressed: controller.isLoading.value ? null : controller.signIn,
+            child: controller.isLoading.value
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.2, color: Color(0xFF8C6B52)),
+                  )
+                : Text(
+                    'sign_in'.tr,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF8C6B52),
+                      fontSize: 16,
+                    ),
+                  ),
+          ),
+        ),
       ),
     );
   }

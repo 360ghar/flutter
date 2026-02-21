@@ -1,20 +1,25 @@
-# Maestro Flows for 360 Ghar App
+# Maestro Flows (360Ghar)
 
-## Prerequisites
+## Structure
 
-- iOS simulator or Android emulator running
-- Maestro CLI installed (`maestro --version`)
+- Shared subflows: `.maestro/_shared/`
+- Route/journey flows: `.maestro/auth`, `.maestro/dashboard`, `.maestro/discover`, `.maestro/explore`, `.maestro/likes`, `.maestro/visits`, `.maestro/profile`, `.maestro/tools`, `.maestro/deeplink`
+- Entrypoints:
+  - `.maestro/smoke.yaml`
+  - `.maestro/full.yaml`
 
-## Run all flows
+## Run
 
 ```bash
 cd /Users/sakshammittal/Documents/360ghar/github/360ghar/app
-maestro test .maestro
+./scripts/run_maestro_smoke.sh ios
+./scripts/run_maestro_full.sh ios
 ```
 
-## Run a single flow
+For Android:
 
 ```bash
 cd /Users/sakshammittal/Documents/360ghar/github/360ghar/app
-maestro test .maestro/onboarding_skip_to_phone_entry.yaml
+./scripts/run_maestro_smoke.sh android
+./scripts/run_maestro_full.sh android
 ```

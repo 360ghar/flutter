@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/features/assistant/presentation/bindings/assistant_binding.dart';
 import 'package:ghar360/features/dashboard/presentation/controllers/dashboard_controller.dart';
 import 'package:ghar360/features/discover/presentation/bindings/discover_binding.dart';
 import 'package:ghar360/features/explore/presentation/bindings/explore_binding.dart';
@@ -40,5 +41,6 @@ class DashboardBinding extends Bindings {
     DiscoverBinding().dependencies();
     LikesBinding().dependencies();
     VisitsBinding().dependencies();
+    AssistantBinding().dependencies();
   }
 }

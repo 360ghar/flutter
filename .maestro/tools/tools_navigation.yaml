@@ -1,0 +1,96 @@
+appId: com.the360ghar.ghar360
+---
+# Area Converter
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- tapOn:
+    id: qa.profile.menu.tools
+- assertVisible:
+    id: qa.tools.menu.area_converter
+- tapOn:
+    id: qa.tools.menu.area_converter
+- extendedWaitUntil:
+    visible:
+      id: qa.tools.area_converter.screen
+    timeout: 10000
+
+# Loan Eligibility
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- tapOn:
+    id: qa.profile.menu.tools
+- scrollUntilVisible:
+    element:
+      text: "Loan"
+- tapOn:
+    text: "Loan"
+- extendedWaitUntil:
+    visible:
+      id: qa.tools.loan_eligibility.screen
+    timeout: 10000
+
+# EMI Calculator
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- tapOn:
+    id: qa.profile.menu.tools
+- scrollUntilVisible:
+    element:
+      text: "EMI"
+- tapOn:
+    text: "EMI"
+- extendedWaitUntil:
+    visible:
+      id: qa.tools.emi.screen
+    timeout: 10000
+
+# Carpet Area
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- tapOn:
+    id: qa.profile.menu.tools
+- scrollUntilVisible:
+    element:
+      text: "Carpet"
+- tapOn:
+    text: "Carpet"
+- extendedWaitUntil:
+    visible:
+      id: qa.tools.carpet_area.screen
+    timeout: 10000
+
+# Document Checklist
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- tapOn:
+    id: qa.profile.menu.tools
+- scrollUntilVisible:
+    element:
+      text: "Document"
+- tapOn:
+    text: "Document"
+- extendedWaitUntil:
+    visible:
+      id: qa.tools.document_checklist.screen
+    timeout: 10000
+
+# Capital Gains
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- tapOn:
+    id: qa.profile.menu.tools
+- scrollUntilVisible:
+    element:
+      text: "Capital"
+- tapOn:
+    text: "Capital"
+- extendedWaitUntil:
+    visible:
+      id: qa.tools.capital_gains.screen
+    timeout: 10000

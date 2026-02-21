@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/null_check_trap.dart';
 import 'package:universal_io/io.dart';
@@ -245,13 +246,11 @@ class ErrorMapper {
       title = 'server_error'.tr;
     }
 
-    Get.snackbar(
-      title,
-      error.message,
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 4),
+    AppToast.custom(
+      title: title,
+      message: error.message,
       backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.9),
-      colorText: Get.theme.colorScheme.onError,
+      duration: const Duration(seconds: 4),
     );
 
     DebugLogger.error('❌ Error shown to user: title=$title, message=${error.message}');

@@ -1,0 +1,11 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.liked
+- assertVisible:
+    id: qa.likes.tab.liked
+- tapOn:
+    id: qa.likes.tab.passed
+- assertVisible:
+    id: qa.likes.tab.passed

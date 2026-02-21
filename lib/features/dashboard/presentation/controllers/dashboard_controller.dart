@@ -5,6 +5,7 @@ import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/error_mapper.dart';
 
@@ -94,11 +95,7 @@ class DashboardController extends GetxController {
       error.value = ErrorMapper.mapApiError('Failed to load dashboard data');
       DebugLogger.error('Error loading dashboard data', e, stackTrace);
 
-      Get.snackbar(
-        'dashboard_error_title'.tr,
-        'dashboard_error_message'.tr,
-        snackPosition: SnackPosition.TOP,
-      );
+      AppToast.error('dashboard_error_title'.tr, 'dashboard_error_message'.tr);
     } finally {
       isLoading.value = false;
     }
@@ -219,13 +216,17 @@ class DashboardController extends GetxController {
     return (propertiesLiked / propertiesViewed * 100).clamp(0.0, 100.0);
   }
 
-  String get userEngagementLevel {
+  /// Returns translation key for user engagement level
+  String get userEngagementLevelKey {
     final score = engagementScore;
-    if (score >= 80) return 'High';
-    if (score >= 50) return 'Medium';
-    if (score >= 20) return 'Low';
-    return 'Very Low';
+    if (score >= 80) return 'priority_high';
+    if (score >= 50) return 'priority_medium';
+    if (score >= 20) return 'priority_low';
+    return 'priority_very_low';
   }
+
+  @Deprecated('Use userEngagementLevelKey with .tr for localized text')
+  String get userEngagementLevel => userEngagementLevelKey;
 
   // Time-based insights
   String get timeSpentFormatted {
@@ -279,6 +280,8 @@ class DashboardController extends GetxController {
         break;
       case 4: // Visits (no associated PageType)
         break;
+      case 5: // Assistant (no associated PageType)
+        break;
     }
 
     if (pageType != null) {
@@ -304,6 +307,9 @@ class DashboardController extends GetxController {
         break;
       case AppRoutes.visits:
         currentIndex.value = 4; // VisitsView
+        break;
+      case AppRoutes.assistant:
+        currentIndex.value = 5; // AssistantView
         break;
       case AppRoutes.dashboard:
       case '/':

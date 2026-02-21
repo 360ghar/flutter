@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'package:ghar360/core/design/app_design_extensions.dart';
+import 'package:ghar360/core/design/app_design_tokens.dart';
+import 'package:ghar360/core/widgets/common/animated_tap_wrapper.dart';
 
 class ToolCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String description;
   final VoidCallback onTap;
+  final String? qaKey;
 
   const ToolCard({
     super.key,
@@ -14,55 +17,45 @@ class ToolCard extends StatelessWidget {
     required this.title,
     required this.description,
     required this.onTap,
+    this.qaKey,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: AppDesign.cardBackground,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppDesign.primaryYellow.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark
+        ? AppDesignTokens.brandGold.withValues(alpha: 0.08)
+        : AppDesignTokens.brandGoldSubtle;
+
+    return AnimatedTapWrapper(
+      onTap: onTap,
+      child: Semantics(
+        label: qaKey,
+        identifier: qaKey,
+        hint: description,
+        child: AspectRatio(
+          aspectRatio: 1.0,
+          child: Container(
+            key: qaKey != null ? ValueKey(qaKey) : null,
+            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(16)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 48, weight: 100, color: AppDesignTokens.brandGoldDark),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppDesign.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                child: Icon(icon, color: AppDesign.primaryYellow, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppDesign.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: TextStyle(fontSize: 13, color: AppDesign.textSecondary),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: AppDesign.textTertiary),
-            ],
+              ],
+            ),
           ),
         ),
       ),
