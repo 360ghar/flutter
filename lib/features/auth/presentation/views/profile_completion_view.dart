@@ -39,15 +39,18 @@ class ProfileCompletionView extends StatelessWidget {
                 ),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildProgress(theme, controller),
-                const SizedBox(height: 24),
-                _buildStepContent(context, theme, controller),
-                const SizedBox(height: 24),
-                _buildNavigationButtons(context, controller),
-              ],
+            child: Form(
+              key: controller.formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildProgress(theme, controller),
+                  const SizedBox(height: 24),
+                  _buildStepContent(context, theme, controller),
+                  const SizedBox(height: 24),
+                  _buildNavigationButtons(context, controller),
+                ],
+              ),
             ),
           ),
         );

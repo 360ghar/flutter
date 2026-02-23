@@ -50,6 +50,7 @@ void main() {
       AppRoutes.carpetArea,
       AppRoutes.documentChecklist,
       AppRoutes.capitalGains,
+      AppRoutes.assistant,
     };
 
     expect(registered, equals(expected));

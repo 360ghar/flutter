@@ -11,9 +11,8 @@ void main() {
         'user_id': 50,
         'status': 'scheduled',
         'created_at': '2025-01-15T10:00:00.000Z',
-        'visit_date': ?visitDate,
-        'visit_time': ?visitTime,
-        'scheduled_date': ?scheduledDate,
+        ...{'visit_date': visitDate, 'visit_time': visitTime, 'scheduled_date': scheduledDate}
+          ..removeWhere((k, v) => v == null),
       };
     }
 
@@ -155,11 +154,11 @@ void main() {
     });
 
     test('statusString returns readable text', () {
-      expect(make(status: VisitStatus.scheduled).statusString, 'Scheduled');
-      expect(make(status: VisitStatus.confirmed).statusString, 'Confirmed');
-      expect(make(status: VisitStatus.completed).statusString, 'Completed');
-      expect(make(status: VisitStatus.cancelled).statusString, 'Cancelled');
-      expect(make(status: VisitStatus.rescheduled).statusString, 'Rescheduled');
+      expect(make(status: VisitStatus.scheduled).statusString, 'visit_status_scheduled');
+      expect(make(status: VisitStatus.confirmed).statusString, 'visit_status_confirmed');
+      expect(make(status: VisitStatus.completed).statusString, 'visit_status_completed');
+      expect(make(status: VisitStatus.cancelled).statusString, 'visit_status_cancelled');
+      expect(make(status: VisitStatus.rescheduled).statusString, 'visit_status_rescheduled');
     });
   });
 
