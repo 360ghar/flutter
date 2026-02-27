@@ -18,6 +18,7 @@ import 'package:ghar360/features/property_details/presentation/widgets/property_
 import 'package:ghar360/features/property_details/presentation/widgets/property_details_visit_dialog.dart';
 import 'package:ghar360/features/property_details/presentation/widgets/property_media_hub.dart';
 import 'package:ghar360/features/visits/presentation/controllers/visits_controller.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -60,16 +61,24 @@ class PropertyDetailsView extends GetView<PropertyDetailsController> {
 }
 
 /// Encapsulates property content rendering.
-class _PropertyContentView extends StatelessWidget {
+class _PropertyContentView extends StatefulWidget {
   const _PropertyContentView({required this.property});
 
   final PropertyModel property;
 
   @override
+  State<_PropertyContentView> createState() => _PropertyContentViewState();
+}
+
+class _PropertyContentViewState extends State<_PropertyContentView> {
+  static const int _collapsedDescriptionLines = 4;
+  bool _isDescriptionExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final controller = Get.find<LikesController>();
     final visitsController = Get.find<VisitsController>();
-    final PropertyModel safeProperty = property;
+    final PropertyModel safeProperty = widget.property;
 
     return Semantics(
       label: 'qa.property_details.screen',
@@ -81,57 +90,36 @@ class _PropertyContentView extends StatelessWidget {
           slivers: [
             // App Bar with Image
             SliverAppBar(
-              expandedHeight: 300,
+              expandedHeight: 380,
               pinned: true,
               backgroundColor: AppDesign.appBarBackground,
-              leading: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppDesign.shadowColor.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onPrimary),
-                  onPressed: () => Get.back(),
-                ),
+              leading: _buildEditorialAppBarButton(
+                icon: Icon(Icons.arrow_back, color: AppDesign.textPrimary),
+                onPressed: Get.back,
               ),
               actions: [
-                Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppDesign.shadowColor.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Obx(
-                    () => IconButton(
-                      icon: Icon(
-                        controller.isFavourite(safeProperty.id)
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: controller.isFavourite(safeProperty.id)
-                            ? AppDesign.favoriteActive
-                            : Theme.of(context).colorScheme.onPrimary,
-                      ),
-                      onPressed: () {
-                        if (controller.isFavourite(safeProperty.id)) {
-                          controller.removeFromFavourites(safeProperty.id);
-                        } else {
-                          controller.addToFavourites(safeProperty.id);
-                        }
-                      },
+                Obx(
+                  () => _buildEditorialAppBarButton(
+                    icon: Icon(
+                      controller.isFavourite(safeProperty.id)
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: controller.isFavourite(safeProperty.id)
+                          ? AppDesign.favoriteActive
+                          : AppDesign.textPrimary,
                     ),
+                    onPressed: () {
+                      if (controller.isFavourite(safeProperty.id)) {
+                        controller.removeFromFavourites(safeProperty.id);
+                      } else {
+                        controller.addToFavourites(safeProperty.id);
+                      }
+                    },
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppDesign.shadowColor.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(Icons.share, color: Theme.of(context).colorScheme.onPrimary),
-                    onPressed: () => ShareUtils.shareProperty(safeProperty, context: context),
-                  ),
+                _buildEditorialAppBarButton(
+                  icon: Icon(Icons.share, color: AppDesign.textPrimary),
+                  onPressed: () => ShareUtils.shareProperty(safeProperty, context: context),
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(
@@ -151,9 +139,9 @@ class _PropertyContentView extends StatelessWidget {
                       // Price and Title
                       ScrollRevealWidget(
                         index: 0,
-                        child: _buildPriceTitleCard(context, safeProperty),
+                        child: _buildPriceTitleSection(context, safeProperty),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
                       if (safeProperty.hasAnyMedia) ...[
                         ScrollRevealWidget(
@@ -179,12 +167,15 @@ class _PropertyContentView extends StatelessWidget {
                       const SizedBox(height: 24),
 
                       // Description
-                      ScrollRevealWidget(index: 4, child: _buildDescriptionSection(safeProperty)),
+                      ScrollRevealWidget(
+                        index: 4,
+                        child: _buildDescriptionSection(context, safeProperty),
+                      ),
                       const SizedBox(height: 16),
 
                       // Highlights
                       if ((safeProperty.features?.isNotEmpty ?? false))
-                        ..._buildHighlightsSection(safeProperty),
+                        ..._buildHighlightsSection(context, safeProperty),
                       const SizedBox(height: 24),
 
                       // Property Information
@@ -211,11 +202,14 @@ class _PropertyContentView extends StatelessWidget {
                       ],
 
                       // Amenities
-                      ScrollRevealWidget(index: 8, child: _buildAmenitiesSection(safeProperty)),
+                      ScrollRevealWidget(
+                        index: 8,
+                        child: _buildAmenitiesSection(context, safeProperty),
+                      ),
                       const SizedBox(height: 24),
 
                       // Location + Directions
-                      if (safeProperty.hasLocation) ..._buildLocationSection(safeProperty),
+                      if (safeProperty.hasLocation) ..._buildLocationSection(context, safeProperty),
 
                       const SizedBox(height: 100),
                     ],
@@ -232,230 +226,198 @@ class _PropertyContentView extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceTitleCard(BuildContext context, PropertyModel property) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppDesign.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppDesign.getCardShadow(),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: property.formattedPrice,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: AppDesign.propertyCardPrice,
-                        ),
-                      ),
-                      if (property.purpose == PropertyPurpose.rent)
-                        TextSpan(
-                          text: 'per_month_short'.tr,
-                          style: TextStyle(
-                            color: AppDesign.textSecondary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      if (property.purpose == PropertyPurpose.shortStay)
-                        TextSpan(
-                          text: 'per_day_short'.tr,
-                          style: TextStyle(
-                            color: AppDesign.textSecondary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  property.title,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppDesign.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    if (property.pricePerSqft != null)
-                      _chip('₹${property.pricePerSqft!.toStringAsFixed(0)}/sqft'),
-                    if (property.securityDeposit != null)
-                      _chip(
-                        'security_deposit_amount'.trParams({
-                          'amount': property.securityDeposit!.toStringAsFixed(0),
-                        }),
-                      ),
-                    if (property.maintenanceCharges != null)
-                      _chip(
-                        'maintenance_amount'.trParams({
-                          'amount': property.maintenanceCharges!.toStringAsFixed(0),
-                        }),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppDesign.primaryYellow,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  property.propertyTypeString,
-                  style: TextStyle(color: AppDesign.buttonText, fontWeight: FontWeight.w600),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppDesign.inputBackground,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  property.purposeString,
-                  style: TextStyle(color: AppDesign.textPrimary, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildPriceTitleSection(BuildContext context, PropertyModel property) {
+    final theme = Theme.of(context);
 
-  Widget _buildDescriptionSection(PropertyModel property) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _buildEditorialChip(context, property.propertyTypeString),
+            _buildEditorialChip(context, property.purposeString),
+          ],
+        ),
+        const SizedBox(height: 14),
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: property.formattedPrice,
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 32,
+                  height: 1.1,
+                  fontWeight: FontWeight.w700,
+                  color: AppDesign.textPrimary,
+                ),
+              ),
+              if (property.purpose == PropertyPurpose.rent)
+                TextSpan(
+                  text: 'per_month_short'.tr,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppDesign.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              if (property.purpose == PropertyPurpose.shortStay)
+                TextSpan(
+                  text: 'per_day_short'.tr,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppDesign.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
         Text(
-          'description'.tr,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppDesign.textPrimary),
+          property.title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: AppDesign.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 12),
-        Text(
-          property.description ?? 'no_description_available'.tr,
-          style: TextStyle(fontSize: 16, color: AppDesign.textSecondary, height: 1.5),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (property.pricePerSqft != null)
+              _buildEditorialChip(context, '₹${property.pricePerSqft!.toStringAsFixed(0)}/sqft'),
+            if (property.securityDeposit != null)
+              _buildEditorialChip(
+                context,
+                'security_deposit_amount'.trParams({
+                  'amount': property.securityDeposit!.toStringAsFixed(0),
+                }),
+              ),
+            if (property.maintenanceCharges != null)
+              _buildEditorialChip(
+                context,
+                'maintenance_amount'.trParams({
+                  'amount': property.maintenanceCharges!.toStringAsFixed(0),
+                }),
+              ),
+          ],
         ),
       ],
     );
   }
 
-  List<Widget> _buildHighlightsSection(PropertyModel property) {
+  Widget _buildDescriptionSection(BuildContext context, PropertyModel property) {
+    final theme = Theme.of(context);
+    final String rawDescription = property.description?.trim() ?? '';
+    final bool hasDescription = rawDescription.isNotEmpty;
+    final bool canCollapse = hasDescription && rawDescription.length > 240;
+    final String description = hasDescription ? rawDescription : 'no_description_available'.tr;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildEditorialSectionHeader(context, 'description'.tr),
+        Text(
+          description,
+          maxLines: canCollapse && !_isDescriptionExpanded ? _collapsedDescriptionLines : null,
+          overflow: canCollapse && !_isDescriptionExpanded
+              ? TextOverflow.ellipsis
+              : TextOverflow.visible,
+          style: theme.textTheme.bodyLarge?.copyWith(color: AppDesign.textSecondary, height: 1.7),
+        ),
+        if (canCollapse) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _isDescriptionExpanded = !_isDescriptionExpanded;
+              });
+            },
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(0, 0),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              alignment: Alignment.centerLeft,
+            ),
+            child: Text(
+              _isDescriptionExpanded ? 'read_less'.tr : 'read_more'.tr,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: AppDesign.primaryYellow,
+                decoration: TextDecoration.underline,
+                decorationColor: AppDesign.primaryYellow,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<Widget> _buildHighlightsSection(BuildContext context, PropertyModel property) {
     return [
-      Text(
-        'highlights'.tr,
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppDesign.textPrimary),
-      ),
-      const SizedBox(height: 12),
+      _buildEditorialSectionHeader(context, 'highlights'.tr),
       Wrap(
         spacing: 8,
         runSpacing: 8,
         children: (property.features ?? [])
             .take(6)
-            .map(
-              (t) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppDesign.primaryYellow.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppDesign.primaryYellow.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  t,
-                  style: TextStyle(color: AppDesign.textPrimary, fontWeight: FontWeight.w500),
-                ),
-              ),
-            )
+            .map((feature) => _buildEditorialChip(context, feature))
             .toList(),
       ),
       const SizedBox(height: 24),
     ];
   }
 
-  Widget _buildAmenitiesSection(PropertyModel property) {
+  Widget _buildAmenitiesSection(BuildContext context, PropertyModel property) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'amenities'.tr,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppDesign.textPrimary),
-        ),
-        const SizedBox(height: 12),
+        _buildEditorialSectionHeader(context, 'amenities'.tr),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children:
-              property.amenities?.map((amenity) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppDesign.primaryYellow.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppDesign.primaryYellow.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (amenity.icon != null && amenity.icon!.startsWith('http')) ...[
-                        Image.network(
-                          amenity.icon!,
-                          width: 16,
-                          height: 16,
-                          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-                        ),
-                        const SizedBox(width: 6),
-                      ] else ...[
-                        Icon(Icons.check_circle_outline, size: 16, color: AppDesign.textSecondary),
-                        const SizedBox(width: 6),
-                      ],
-                      Text(
-                        amenity.title,
-                        style: TextStyle(color: AppDesign.textPrimary, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList() ??
+              property.amenities
+                  ?.map(
+                    (amenity) => _buildEditorialChip(
+                      context,
+                      amenity.title,
+                      leading: amenity.icon != null && amenity.icon!.startsWith('http')
+                          ? Image.network(
+                              amenity.icon!,
+                              width: 16,
+                              height: 16,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.check_circle_outline,
+                                size: 16,
+                                color: AppDesign.textSecondary,
+                              ),
+                            )
+                          : Icon(
+                              Icons.check_circle_outline,
+                              size: 16,
+                              color: AppDesign.textSecondary,
+                            ),
+                    ),
+                  )
+                  .toList() ??
               [],
         ),
       ],
     );
   }
 
-  List<Widget> _buildLocationSection(PropertyModel property) {
+  List<Widget> _buildLocationSection(BuildContext context, PropertyModel property) {
     final lat = property.latitude;
     final lng = property.longitude;
     if (lat == null || lng == null) return const [SizedBox.shrink()];
 
+    final theme = Theme.of(context);
+
     return [
       const SizedBox(height: 8),
-      Text(
-        'location'.tr,
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppDesign.textPrimary),
-      ),
-      const SizedBox(height: 12),
+      _buildEditorialSectionHeader(context, 'location'.tr),
       Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -470,7 +432,7 @@ class _PropertyContentView extends StatelessWidget {
             Expanded(
               child: Text(
                 property.shortAddressDisplay,
-                style: TextStyle(fontSize: 16, color: AppDesign.textSecondary),
+                style: theme.textTheme.bodyLarge?.copyWith(color: AppDesign.textSecondary),
               ),
             ),
           ],
@@ -478,7 +440,7 @@ class _PropertyContentView extends StatelessWidget {
       ),
       const SizedBox(height: 12),
       Container(
-        height: 220,
+        height: 260,
         decoration: BoxDecoration(
           color: AppDesign.surface,
           borderRadius: BorderRadius.circular(16),
@@ -512,18 +474,26 @@ class _PropertyContentView extends StatelessWidget {
           ],
         ),
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: 10),
       Align(
         alignment: Alignment.centerLeft,
-        child: OutlinedButton.icon(
+        child: TextButton(
           key: const ValueKey('qa.property_details.get_directions'),
           onPressed: () => _openGoogleMaps(lat, lng, property.title),
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppDesign.primaryYellow),
-            foregroundColor: AppDesign.textPrimary,
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: const Size(0, 0),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            foregroundColor: AppDesign.primaryYellow,
           ),
-          icon: const Icon(Icons.directions),
-          label: Text('get_directions'.tr),
+          child: Text(
+            'get_directions'.tr,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppDesign.primaryYellow,
+              decoration: TextDecoration.underline,
+              decorationColor: AppDesign.primaryYellow,
+            ),
+          ),
         ),
       ),
       const SizedBox(height: 12),
@@ -548,6 +518,9 @@ class _PropertyContentView extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppDesign.surface,
+          border: Border(
+            top: BorderSide(color: AppDesign.primaryYellow.withValues(alpha: 0.55), width: 0.8),
+          ),
           boxShadow: [
             BoxShadow(color: AppDesign.shadowColor, blurRadius: 10, offset: const Offset(0, -5)),
           ],
@@ -574,7 +547,12 @@ class _PropertyContentView extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppDesign.inputBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppDesign.border),
+        border: Border(
+          top: const BorderSide(color: AppDesign.primaryYellow, width: 1),
+          left: BorderSide(color: AppDesign.border.withValues(alpha: 0.65)),
+          right: BorderSide(color: AppDesign.border.withValues(alpha: 0.65)),
+          bottom: BorderSide(color: AppDesign.border.withValues(alpha: 0.65)),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -606,35 +584,91 @@ class _PropertyContentView extends StatelessWidget {
     PropertyModel property,
     VisitsController visitsController,
   ) {
-    return ElevatedButton.icon(
+    return ElevatedButton(
       key: const ValueKey('qa.property_details.schedule_visit'),
       onPressed: () => showBookVisitDialog(context, property, visitsController),
       style: ElevatedButton.styleFrom(
+        elevation: 0,
+        shadowColor: Colors.transparent,
         backgroundColor: AppDesign.primaryYellow,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        foregroundColor: AppDesign.buttonText,
         padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: AppDesign.primaryYellowDark.withValues(alpha: 0.45)),
+        ),
       ),
-      icon: const Icon(Icons.calendar_today),
-      label: Text(
+      child: Text(
         'schedule_visit'.tr,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: AppDesign.buttonText,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
 
-  Widget _chip(String text) {
+  Widget _buildEditorialSectionHeader(BuildContext context, String title) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.playfairDisplay(
+              textStyle: theme.textTheme.headlineSmall?.copyWith(
+                color: AppDesign.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(width: 56, height: 1, color: AppDesign.primaryYellow.withValues(alpha: 0.75)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditorialChip(BuildContext context, String text, {Widget? leading}) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppDesign.inputBackground,
+        color: isDark ? AppDesign.inputBackground : AppDesign.warmCream,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppDesign.border),
+        border: Border.all(color: AppDesign.primaryYellow.withValues(alpha: 0.35)),
       ),
-      child: Text(
-        text,
-        style: TextStyle(color: AppDesign.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (leading != null) ...[leading, const SizedBox(width: 6)],
+          Text(
+            text,
+            style: TextStyle(
+              color: isDark ? AppDesign.textPrimary : AppDesign.editorialInk,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildEditorialAppBarButton({required Widget icon, required VoidCallback onPressed}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppDesign.surface.withValues(alpha: 0.84),
+        shape: BoxShape.circle,
+        border: Border.all(color: AppDesign.primaryYellow.withValues(alpha: 0.65), width: 0.9),
+      ),
+      child: IconButton(onPressed: onPressed, icon: icon, splashRadius: 20),
     );
   }
 }

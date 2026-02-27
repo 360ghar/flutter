@@ -36,21 +36,26 @@ class PropertyMediaBadges extends StatelessWidget {
   }
 
   Widget _badge({required IconData icon, required String label}) {
+    final bool isDark = Get.isDarkMode;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppDesign.inputBackground,
+        color: isDark ? AppDesign.inputBackground : AppDesign.warmCream,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppDesign.border),
+        border: Border.all(color: AppDesign.primaryYellow.withValues(alpha: 0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppDesign.textSecondary),
+          Icon(icon, size: 14, color: isDark ? AppDesign.textSecondary : AppDesign.editorialInk),
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(color: AppDesign.textPrimary, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: isDark ? AppDesign.textPrimary : AppDesign.editorialInk,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
