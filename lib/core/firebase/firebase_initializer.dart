@@ -142,8 +142,12 @@ class FirebaseInitializer {
         } else {
           final debugMode = _envFlag('FIREBASE_APPCHECK_DEBUG', fallback: !kReleaseMode);
           await FirebaseAppCheck.instance.activate(
-            androidProvider: debugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-            appleProvider: debugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+            providerAndroid: debugMode
+                ? const AndroidDebugProvider()
+                : const AndroidPlayIntegrityProvider(),
+            providerApple: debugMode
+                ? const AppleDebugProvider()
+                : const AppleDeviceCheckProvider(),
           );
           await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
           DebugLogger.startup('Firebase App Check activated (debugMode=$debugMode)');
