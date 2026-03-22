@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
 
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/utils/app_spacing.dart';
 import 'package:ghar360/core/widgets/common/shake_widget.dart';
 import 'package:ghar360/features/auth/presentation/controllers/phone_entry_controller.dart';
@@ -43,7 +44,7 @@ class PhoneEntryView extends GetView<PhoneEntryController> {
                       boxShadow: isFocused
                           ? [
                               BoxShadow(
-                                color: Colors.white.withValues(alpha: 0.15),
+                                color: AppDesign.overlayLight.withValues(alpha: 0.15),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -68,7 +69,7 @@ class PhoneEntryView extends GetView<PhoneEntryController> {
                         validator: controller.validatePhone,
                         onFieldSubmitted: (_) => controller.checkAndNavigate(),
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppDesign.overlayLight,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.5,
@@ -85,7 +86,7 @@ class PhoneEntryView extends GetView<PhoneEntryController> {
                                 Text(
                                   'india_code'.tr,
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: AppDesign.overlayLight,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -94,7 +95,7 @@ class PhoneEntryView extends GetView<PhoneEntryController> {
                                   margin: const EdgeInsets.only(left: 10),
                                   width: 1,
                                   height: 24,
-                                  color: Colors.white.withValues(alpha: 0.25),
+                                  color: AppDesign.overlayLight.withValues(alpha: 0.25),
                                 ),
                               ],
                             ),

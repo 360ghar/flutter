@@ -20,6 +20,10 @@ import 'package:latlong2/latlong.dart';
 enum ExploreState { initial, loading, loaded, empty, error, loadingMore }
 
 class ExploreController extends GetxController {
+  static const LatLng _defaultCenter = LatLng(28.6139, 77.2090);
+  static const String _defaultCenterName = 'Delhi';
+  static const double _defaultZoom = 12.0;
+
   final SwipesRepository _swipesRepository = Get.find<SwipesRepository>();
   final LocationController _locationController = Get.find<LocationController>();
   final PageStateService _pageStateService = Get.find<PageStateService>();
@@ -40,8 +44,8 @@ class ExploreController extends GetxController {
   Timer? _retryTimer;
 
   // Map state
-  final Rx<LatLng> currentCenter = const LatLng(28.6139, 77.2090).obs; // Default: Delhi
-  final RxDouble currentZoom = 12.0.obs;
+  final Rx<LatLng> currentCenter = _defaultCenter.obs;
+  final RxDouble currentZoom = _defaultZoom.obs;
   final RxDouble currentRadius = 5.0.obs;
 
   // Search
@@ -216,8 +220,7 @@ class ExploreController extends GetxController {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         try {
           // Check if current center is still the default location
-          final defaultCenter = const LatLng(28.6139, 77.2090); // Default: Delhi
-          if (currentCenter.value == defaultCenter) {
+          if (currentCenter.value == _defaultCenter) {
             DebugLogger.info(
               '📍 Map ready but still showing default location - waiting for user location',
             );
@@ -340,8 +343,8 @@ class ExploreController extends GetxController {
   Future<void> _initializeMapAndLoadProperties() async {
     try {
       DebugLogger.info('🗺️ Initializing map and loading properties...');
-      LatLng initialCenter = const LatLng(28.6139, 77.2090); // Default to Delhi
-      double initialZoom = 12.0;
+      LatLng initialCenter = _defaultCenter;
+      double initialZoom = _defaultZoom;
 
       // Prioritize location from PageStateService if available
       if (_pageStateService.exploreState.value.hasLocation) {
@@ -383,7 +386,7 @@ class ExploreController extends GetxController {
             final ipLoc = await _locationController.getIpLocation();
             if (ipLoc != null) {
               initialCenter = LatLng(ipLoc.latitude, ipLoc.longitude);
-              initialZoom = 12.0;
+              initialZoom = _defaultZoom;
               DebugLogger.info(
                 '🗺️ Using IP-based location: $initialCenter (lat: ${ipLoc.latitude}, lng: ${ipLoc.longitude})',
               );
@@ -456,9 +459,12 @@ class ExploreController extends GetxController {
           source: 'gps',
         );
       } else {
-        DebugLogger.warning('⚠️ LocationController returned null position, using default location');
-        // Use default location (Delhi) if location is not available
-        _updateMapCenter(const LatLng(28.6139, 77.2090), 12.0);
+        DebugLogger.warning(
+          '⚠️ LocationController returned null position, '
+          'using default location',
+        );
+        // Use default location if location is not available
+        _updateMapCenter(_defaultCenter, _defaultZoom);
         // Update radius if needed
         final currentFilters = _pageStateService.getCurrentPageState().filters;
         final updatedFilters = currentFilters.copyWith(radiusKm: currentRadius.value);
@@ -466,15 +472,22 @@ class ExploreController extends GetxController {
 
         await _pageStateService.updateLocationForPage(
           PageType.explore,
-          const LocationData(name: 'Delhi', latitude: 28.6139, longitude: 77.2090),
+          LocationData(
+            name: _defaultCenterName,
+            latitude: _defaultCenter.latitude,
+            longitude: _defaultCenter.longitude,
+          ),
           source: 'fallback',
         );
       }
     } catch (e) {
       DebugLogger.warning('⚠️ Could not get current location: $e');
       // Always fallback to default location
-      DebugLogger.info('🗺️ Falling back to default location (Delhi)');
-      _updateMapCenter(const LatLng(28.6139, 77.2090), 12.0);
+      DebugLogger.info(
+        '🗺️ Falling back to default location '
+        '($_defaultCenterName)',
+      );
+      _updateMapCenter(_defaultCenter, _defaultZoom);
       // Update radius if needed
       final currentFilters = _pageStateService.getCurrentPageState().filters;
       final updatedFilters = currentFilters.copyWith(radiusKm: currentRadius.value);
@@ -482,7 +495,11 @@ class ExploreController extends GetxController {
 
       await _pageStateService.updateLocationForPage(
         PageType.explore,
-        const LocationData(name: 'Delhi', latitude: 28.6139, longitude: 77.2090),
+        LocationData(
+          name: _defaultCenterName,
+          latitude: _defaultCenter.latitude,
+          longitude: _defaultCenter.longitude,
+        ),
         source: 'fallback',
       );
     }

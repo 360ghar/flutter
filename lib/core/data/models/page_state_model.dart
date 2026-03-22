@@ -15,7 +15,7 @@ const _unset = _Unset();
 
 /// Lightweight data structure for persisting only essential state to storage.
 /// Does NOT include properties list to avoid large disk writes and storage bloat.
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class PageStateSnapshot {
   final String pageType;
   final LocationData? selectedLocation;
@@ -41,7 +41,7 @@ class PageStateSnapshot {
   Map<String, dynamic> toJson() => _$PageStateSnapshotToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class PageStateModel {
   // Page identification
   final PageType pageType;

@@ -515,6 +515,7 @@ class ErrorStates {
     VoidCallback? onRetry,
     VoidCallback? onSignOut,
     String? customMessage,
+    bool isRetrying = false,
   }) {
     return Builder(
       builder: (context) {
@@ -551,7 +552,23 @@ class ErrorStates {
                 const SizedBox(height: 24),
                 Column(
                   children: [
-                    if (onRetry != null) ...[
+                    if (isRetrying) ...[
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'retrying'.tr,
+                        style:
+                            textTheme.bodySmall?.copyWith(
+                              color: onSurface.withValues(alpha: 0.7),
+                            ) ??
+                            TextStyle(fontSize: 12, color: onSurface.withValues(alpha: 0.7)),
+                      ),
+                      const SizedBox(height: 12),
+                    ] else if (onRetry != null) ...[
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(

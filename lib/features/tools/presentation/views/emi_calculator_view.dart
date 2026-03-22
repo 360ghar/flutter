@@ -11,40 +11,113 @@ class EmiCalculatorView extends GetView<EmiCalculatorController> {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: 'qa.tools.emi.screen',
-      identifier: 'qa.tools.emi.screen',
-      child: Scaffold(
-        key: const ValueKey('qa.tools.emi.screen'),
-        backgroundColor: AppDesign.background,
-        appBar: AppBar(
-          backgroundColor: AppDesign.appBarBackground,
-          elevation: 0,
-          title: Text(
-            'emi_calculator'.tr,
-            style: TextStyle(
-              color: AppDesign.appBarText,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
-            onPressed: () => Get.back(),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.refresh, color: AppDesign.iconColor),
-              onPressed: controller.clear,
-            ),
-          ],
+    return Scaffold(
+      key: const ValueKey('qa.tools.emi.screen'),
+      backgroundColor: AppDesign.background,
+      appBar: AppBar(
+        backgroundColor: AppDesign.appBarBackground,
+        elevation: 0,
+        title: Text(
+          'emi_calculator'.tr,
+          style: TextStyle(color: AppDesign.appBarText, fontSize: 20, fontWeight: FontWeight.w600),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
+          onPressed: () => Get.back(),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: AppDesign.iconColor),
+            onPressed: controller.clear,
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              color: AppDesign.cardBackground,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTextField(
+                      label: 'loan_amount'.tr,
+                      controller: controller.principalController,
+                      prefix: '₹',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      label: 'interest_rate'.tr,
+                      controller: controller.rateController,
+                      suffix: '%',
+                      hint: 'annual_rate'.tr,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildTextField(
+                            label: 'tenure'.tr,
+                            controller: controller.tenureController,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Obx(
+                          () => Column(
+                            children: [
+                              const SizedBox(height: 24),
+                              SegmentedButton<bool>(
+                                segments: [
+                                  ButtonSegment(value: true, label: Text('years'.tr)),
+                                  ButtonSegment(value: false, label: Text('months'.tr)),
+                                ],
+                                selected: {controller.tenureInYears.value},
+                                onSelectionChanged: (value) {
+                                  controller.tenureInYears.value = value.first;
+                                },
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                                    if (states.contains(WidgetState.selected)) {
+                                      return AppDesign.primaryYellow;
+                                    }
+                                    return AppDesign.inputBackground;
+                                  }),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: Semantics(
+                label: 'qa.tools.emi.calculate',
+                identifier: 'qa.tools.emi.calculate',
+                child: FilledButton(
+                  key: const ValueKey('qa.tools.emi.calculate'),
+                  onPressed: controller.calculate,
+                  child: Text('calculate'.tr),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Obx(() {
+              if (!controller.hasCalculated.value) {
+                return const SizedBox.shrink();
+              }
+              return Card(
                 color: AppDesign.cardBackground,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: Padding(
@@ -52,134 +125,54 @@ class EmiCalculatorView extends GetView<EmiCalculatorController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildTextField(
-                        label: 'loan_amount'.tr,
-                        controller: controller.principalController,
-                        prefix: '₹',
+                      Text(
+                        'emi_result'.tr,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppDesign.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              'monthly_emi'.tr,
+                              style: TextStyle(fontSize: 14, color: AppDesign.textSecondary),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '₹${_formatCurrency(controller.monthlyEmi.value)}',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: AppDesign.primaryYellow,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Divider(),
+                      const SizedBox(height: 16),
+                      _buildResultRow(
+                        'total_interest'.tr,
+                        '₹${_formatCurrency(controller.totalInterest.value)}',
+                      ),
+                      const SizedBox(height: 12),
+                      _buildResultRow(
+                        'total_payment'.tr,
+                        '₹${_formatCurrency(controller.totalPayment.value)}',
                       ),
                       const SizedBox(height: 16),
-                      _buildTextField(
-                        label: 'interest_rate'.tr,
-                        controller: controller.rateController,
-                        suffix: '%',
-                        hint: 'annual_rate'.tr,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              label: 'tenure'.tr,
-                              controller: controller.tenureController,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Obx(
-                            () => Column(
-                              children: [
-                                const SizedBox(height: 24),
-                                SegmentedButton<bool>(
-                                  segments: [
-                                    ButtonSegment(value: true, label: Text('years'.tr)),
-                                    ButtonSegment(value: false, label: Text('months'.tr)),
-                                  ],
-                                  selected: {controller.tenureInYears.value},
-                                  onSelectionChanged: (value) {
-                                    controller.tenureInYears.value = value.first;
-                                  },
-                                  style: ButtonStyle(
-                                    backgroundColor: WidgetStateProperty.resolveWith((states) {
-                                      if (states.contains(WidgetState.selected)) {
-                                        return AppDesign.primaryYellow;
-                                      }
-                                      return AppDesign.inputBackground;
-                                    }),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildBreakdownChart(),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: Semantics(
-                  label: 'qa.tools.emi.calculate',
-                  identifier: 'qa.tools.emi.calculate',
-                  child: FilledButton(
-                    key: const ValueKey('qa.tools.emi.calculate'),
-                    onPressed: controller.calculate,
-                    child: Text('calculate'.tr),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Obx(() {
-                if (!controller.hasCalculated.value) {
-                  return const SizedBox.shrink();
-                }
-                return Card(
-                  color: AppDesign.cardBackground,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'emi_result'.tr,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppDesign.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Center(
-                          child: Column(
-                            children: [
-                              Text(
-                                'monthly_emi'.tr,
-                                style: TextStyle(fontSize: 14, color: AppDesign.textSecondary),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '₹${_formatCurrency(controller.monthlyEmi.value)}',
-                                style: const TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppDesign.primaryYellow,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        const Divider(),
-                        const SizedBox(height: 16),
-                        _buildResultRow(
-                          'total_interest'.tr,
-                          '₹${_formatCurrency(controller.totalInterest.value)}',
-                        ),
-                        const SizedBox(height: 12),
-                        _buildResultRow(
-                          'total_payment'.tr,
-                          '₹${_formatCurrency(controller.totalPayment.value)}',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildBreakdownChart(),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
+              );
+            }),
+          ],
         ),
       ),
     );

@@ -43,90 +43,93 @@ class LikesView extends GetView<LikesController> {
           onSearchChanged: controller.updateSearchQuery,
           onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'likes'),
         ),
-        body: Semantics(
-          label: 'qa.likes.screen',
-          identifier: 'qa.likes.screen',
-          child: Column(
-            children: [
-              Obx(() {
-                if (!pageStateService.likesState.value.isRefreshing) {
-                  return const SizedBox.shrink();
-                }
-                return LinearProgressIndicator(
-                  minHeight: 2,
-                  backgroundColor: AppDesign.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                );
-              }),
-              Container(
-                color: AppDesign.appBarBackground,
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding,
-                  AppSpacing.sm,
-                  AppSpacing.screenPadding,
-                  AppSpacing.md,
-                ),
-                child: Obx(
-                  () => SegmentedControl(
-                    selectedIndex: controller.currentSegment.value == LikesSegment.liked ? 0 : 1,
-                    segments: [
-                      SegmentItem(
-                        label: 'liked'.tr,
-                        badge:
-                            controller.currentSegment.value == LikesSegment.liked &&
-                                controller.hasCurrentProperties
-                            ? controller.currentProperties.length
-                            : null,
-                        semanticsLabel: 'qa.likes.tab.liked',
-                        semanticsIdentifier: 'qa.likes.tab.liked',
-                      ),
-                      SegmentItem(
-                        label: 'passed'.tr,
-                        badge:
-                            controller.currentSegment.value == LikesSegment.passed &&
-                                controller.hasCurrentProperties
-                            ? controller.currentProperties.length
-                            : null,
-                        semanticsLabel: 'qa.likes.tab.passed',
-                        semanticsIdentifier: 'qa.likes.tab.passed',
-                      ),
-                    ],
-                    onSegmentChanged: (index) {
-                      final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
-                      controller.switchToSegment(segment);
-                    },
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Obx(() {
-                  final Widget child;
-                  final Key key;
-
-                  if (controller.isCurrentLoading) {
-                    key = const ValueKey('loading');
-                    child = _buildResponsiveGridSkeleton(context);
-                  } else if (controller.hasCurrentError) {
-                    key = const ValueKey('error');
-                    child = _buildErrorState();
-                  } else if (controller.isCurrentEmpty) {
-                    key = const ValueKey('empty');
-                    final isLiked = controller.currentSegment.value == LikesSegment.liked;
-                    child = _buildEmptyState(isLiked);
-                  } else {
-                    key = const ValueKey('grid');
-                    child = _buildPropertyGrid(context);
+        body: SafeArea(
+          top: false,
+          child: Semantics(
+            label: 'qa.likes.screen',
+            identifier: 'qa.likes.screen',
+            child: Column(
+              children: [
+                Obx(() {
+                  if (!pageStateService.likesState.value.isRefreshing) {
+                    return const SizedBox.shrink();
                   }
-
-                  return AnimatedSwitcher(
-                    duration: AppDurations.contentFade,
-                    transitionBuilder: (child, animation) =>
-                        FadeTransition(opacity: animation, child: child),
-                    child: KeyedSubtree(key: key, child: child),
+                  return LinearProgressIndicator(
+                    minHeight: 2,
+                    backgroundColor: AppDesign.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
                   );
                 }),
-              ),
-            ],
+                Container(
+                  color: AppDesign.appBarBackground,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.screenPadding,
+                    AppSpacing.sm,
+                    AppSpacing.screenPadding,
+                    AppSpacing.md,
+                  ),
+                  child: Obx(
+                    () => SegmentedControl(
+                      selectedIndex: controller.currentSegment.value == LikesSegment.liked ? 0 : 1,
+                      segments: [
+                        SegmentItem(
+                          label: 'liked'.tr,
+                          badge:
+                              controller.currentSegment.value == LikesSegment.liked &&
+                                  controller.hasCurrentProperties
+                              ? controller.currentProperties.length
+                              : null,
+                          semanticsLabel: 'qa.likes.tab.liked',
+                          semanticsIdentifier: 'qa.likes.tab.liked',
+                        ),
+                        SegmentItem(
+                          label: 'passed'.tr,
+                          badge:
+                              controller.currentSegment.value == LikesSegment.passed &&
+                                  controller.hasCurrentProperties
+                              ? controller.currentProperties.length
+                              : null,
+                          semanticsLabel: 'qa.likes.tab.passed',
+                          semanticsIdentifier: 'qa.likes.tab.passed',
+                        ),
+                      ],
+                      onSegmentChanged: (index) {
+                        final segment = index == 0 ? LikesSegment.liked : LikesSegment.passed;
+                        controller.switchToSegment(segment);
+                      },
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Obx(() {
+                    final Widget child;
+                    final Key key;
+
+                    if (controller.isCurrentLoading) {
+                      key = const ValueKey('loading');
+                      child = _buildResponsiveGridSkeleton(context);
+                    } else if (controller.hasCurrentError) {
+                      key = const ValueKey('error');
+                      child = _buildErrorState();
+                    } else if (controller.isCurrentEmpty) {
+                      key = const ValueKey('empty');
+                      final isLiked = controller.currentSegment.value == LikesSegment.liked;
+                      child = _buildEmptyState(isLiked);
+                    } else {
+                      key = const ValueKey('grid');
+                      child = _buildPropertyGrid(context);
+                    }
+
+                    return AnimatedSwitcher(
+                      duration: AppDurations.contentFade,
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: KeyedSubtree(key: key, child: child),
+                    );
+                  }),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -196,9 +199,7 @@ class LikesView extends GetView<LikesController> {
 
                   if (index == properties.length) {
                     if (controller.currentHasMore && !controller.isCurrentLoadingMore) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        controller.loadMoreCurrentSegment();
-                      });
+                      controller.loadMoreCurrentSegment();
                     }
 
                     return controller.isCurrentLoadingMore

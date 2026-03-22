@@ -140,7 +140,6 @@ class ProfileRepository extends GetxService {
       throw const FormatException('Unexpected user response payload');
     }
 
-    payload['email'] ??= '';
     payload['phone'] ??= '';
     if (payload['preferences'] is! Map<String, dynamic>) {
       payload['preferences'] = <String, dynamic>{};

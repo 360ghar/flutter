@@ -50,10 +50,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   late double _maxPrice;
   late int _minBedrooms;
   late int _maxBedrooms;
-  late String _propertyType;
+  late List<String> _selectedPropertyTypes;
   late List<String> _selectedAmenities;
+  late String _selectedGenderPreference;
+  late String _selectedSharingType;
 
-  final List<String> purposes = ['buy', 'rent'];
+  final List<String> purposes = ['buy', 'rent', 'short_stay'];
 
   final List<String> propertyTypes = [
     'all',
@@ -67,9 +69,12 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     'penthouse',
     'studio',
     'loft',
+    'pg',
+    'flatmate',
+    'office',
+    'shop',
+    'warehouse',
   ];
-
-  // Short-stay specific types removed
 
   final List<String> amenitiesList = [
     'Gym',
@@ -114,12 +119,18 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     );
     _minBedrooms = (currentFilter.bedroomsMin ?? 0).clamp(0, 10);
     _maxBedrooms = (currentFilter.bedroomsMax ?? 10).clamp(0, 10);
-    _propertyType =
-        UnifiedFilterModel.normalizePropertyTypeToken(
-          currentFilter.propertyType?.isNotEmpty == true ? currentFilter.propertyType!.first : null,
-        ) ??
-        'all';
+    _selectedPropertyTypes = UnifiedFilterModel.normalizePropertyTypes(
+      currentFilter.propertyType ?? const <String>[],
+    );
     _selectedAmenities = List<String>.from(currentFilter.amenities ?? []);
+    _selectedGenderPreference =
+        UnifiedFilterModel.normalizeGenderPreferenceToken(currentFilter.genderPreference) ?? '';
+    _selectedSharingType =
+        UnifiedFilterModel.normalizeSharingTypeToken(currentFilter.sharingType) ?? '';
+    if (!_hasPgOrFlatmateSelection) {
+      _selectedGenderPreference = '';
+      _selectedSharingType = '';
+    }
   }
 
   void _initializeFiltersWithDefaults() {
@@ -129,8 +140,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     _maxPrice = _getPriceMax('buy');
     _minBedrooms = 0;
     _maxBedrooms = 10;
-    _propertyType = 'all';
+    _selectedPropertyTypes = <String>[];
     _selectedAmenities = <String>[];
+    _selectedGenderPreference = '';
+    _selectedSharingType = '';
   }
 
   String _mapPurpose(String purpose) {
@@ -139,13 +152,54 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         return 'buy';
       case 'rent':
         return 'rent';
+      case 'short_stay':
+        return 'short_stay';
       default:
         return 'buy';
     }
   }
 
   String _mapPurposeToApi(String purpose) {
-    return purpose; // already 'buy' or 'rent'
+    return purpose;
+  }
+
+  bool get _hasPgOrFlatmateSelection =>
+      _selectedPropertyTypes.any((type) => type == 'pg' || type == 'flatmate');
+
+  bool _isPropertyTypeSelected(String type) {
+    if (type == 'all') {
+      return _selectedPropertyTypes.isEmpty;
+    }
+    return _selectedPropertyTypes.contains(type);
+  }
+
+  void _togglePropertyType(String type) {
+    setState(() {
+      if (type == 'all') {
+        _selectedPropertyTypes = <String>[];
+        _selectedGenderPreference = '';
+        _selectedSharingType = '';
+        return;
+      }
+
+      final nextTypes = List<String>.from(_selectedPropertyTypes);
+      if (nextTypes.contains(type)) {
+        nextTypes.remove(type);
+      } else {
+        if ((type == 'pg' || type == 'flatmate') && _selectedPurpose != 'rent') {
+          _selectedPurpose = 'rent';
+          _minPrice = _getPriceMin('rent');
+          _maxPrice = _getPriceMax('rent');
+        }
+        nextTypes.add(type);
+      }
+
+      _selectedPropertyTypes = nextTypes;
+      if (!_hasPgOrFlatmateSelection) {
+        _selectedGenderPreference = '';
+        _selectedSharingType = '';
+      }
+    });
   }
 
   @override
@@ -176,6 +230,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   const SizedBox(height: 30),
                   _buildPropertyTypeFilter(),
                   const SizedBox(height: 30),
+                  if (_hasPgOrFlatmateSelection) ...[
+                    _buildListingPreferencesFilter(),
+                    const SizedBox(height: 30),
+                  ],
                   _buildAmenitiesFilter(),
                   const SizedBox(height: 30),
                 ],
@@ -232,8 +290,13 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   // Update price range based on new purpose
                   _minPrice = _getPriceMin(_mapPurposeToApi(purpose));
                   _maxPrice = _getPriceMax(_mapPurposeToApi(purpose));
-                  // Reset property type
-                  _propertyType = 'all';
+                  if (purpose != 'rent') {
+                    _selectedPropertyTypes.removeWhere(
+                      (type) => type == 'pg' || type == 'flatmate',
+                    );
+                    _selectedGenderPreference = '';
+                    _selectedSharingType = '';
+                  }
                 });
               },
               child: Container(
@@ -263,7 +326,11 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   Widget _buildPriceFilter() {
-    final priceLabel = _selectedPurpose == 'rent' ? 'price_per_month'.tr : 'property_price'.tr;
+    final priceLabel = _selectedPurpose == 'rent'
+        ? 'price_per_month'.tr
+        : _selectedPurpose == 'short_stay'
+        ? 'daily_rate'.tr
+        : 'property_price'.tr;
     final minRange = _getPriceMin(_mapPurposeToApi(_selectedPurpose));
     final maxRange = _getPriceMax(_mapPurposeToApi(_selectedPurpose));
 
@@ -419,7 +486,6 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
   }
 
   Widget _buildPropertyTypeFilter() {
-    // Single property type set for buy/rent
     final typesToShow = propertyTypes;
 
     return Column(
@@ -434,13 +500,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
           spacing: 12,
           runSpacing: 12,
           children: typesToShow.map((type) {
-            final isSelected = _propertyType == type;
+            final isSelected = _isPropertyTypeSelected(type);
             return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _propertyType = type;
-                });
-              },
+              onTap: () => _togglePropertyType(type),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
@@ -461,6 +523,63 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
               ),
             );
           }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListingPreferencesFilter() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'pg_flatmate_preferences'.tr,
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppDesign.textPrimary),
+        ),
+        const SizedBox(height: 15),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedGenderPreference.isNotEmpty ? _selectedGenderPreference : null,
+          decoration: InputDecoration(
+            labelText: 'gender_preference'.tr,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppDesign.border),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          items: [
+            DropdownMenuItem<String>(value: '', child: Text('any_gender'.tr)),
+            DropdownMenuItem<String>(value: 'any', child: Text('open_to_all'.tr)),
+            DropdownMenuItem<String>(value: 'male', child: Text('male_only'.tr)),
+            DropdownMenuItem<String>(value: 'female', child: Text('female_only'.tr)),
+          ],
+          onChanged: (value) {
+            setState(() {
+              _selectedGenderPreference = value ?? '';
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedSharingType.isNotEmpty ? _selectedSharingType : null,
+          decoration: InputDecoration(
+            labelText: 'room_type'.tr,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppDesign.border),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          items: [
+            DropdownMenuItem<String>(value: '', child: Text('any_room_type'.tr)),
+            DropdownMenuItem<String>(value: 'private_room', child: Text('private_room'.tr)),
+            DropdownMenuItem<String>(value: 'shared_room', child: Text('shared_room'.tr)),
+          ],
+          onChanged: (value) {
+            setState(() {
+              _selectedSharingType = value ?? '';
+            });
+          },
         ),
       ],
     );
@@ -586,8 +705,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       _maxPrice = _getPriceMax(p);
       _minBedrooms = 0;
       _maxBedrooms = 10;
-      _propertyType = 'all';
+      _selectedPropertyTypes = <String>[];
       _selectedAmenities.clear();
+      _selectedGenderPreference = '';
+      _selectedSharingType = '';
     });
   }
 
@@ -603,8 +724,10 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
         priceMax: _maxPrice,
         bedroomsMin: _minBedrooms,
         bedroomsMax: _maxBedrooms,
-        propertyType: _propertyType != 'all' ? [_propertyType] : [],
+        propertyType: List<String>.from(_selectedPropertyTypes),
         amenities: _selectedAmenities,
+        genderPreference: _hasPgOrFlatmateSelection ? _selectedGenderPreference : '',
+        sharingType: _hasPgOrFlatmateSelection ? _selectedSharingType : '',
       );
 
       pageStateService.updatePageFilters(currentPageType, updatedFilters);
@@ -630,6 +753,11 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       case 'villa':
       case 'studio':
       case 'loft':
+      case 'pg':
+      case 'flatmate':
+      case 'office':
+      case 'shop':
+      case 'warehouse':
       case 'room':
       case 'plot':
         return type.tr;
@@ -669,6 +797,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     switch (purpose) {
       case 'rent':
         return 5000.0; // ₹5K per month
+      case 'short_stay':
+        return 500.0; // ₹500 per day
       case 'buy':
       default:
         return 500000.0; // ₹5L
@@ -679,6 +809,8 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
     switch (purpose) {
       case 'rent':
         return 500000.0; // ₹5L per month
+      case 'short_stay':
+        return 50000.0; // ₹50K per day
       case 'buy':
       default:
         return 150000000.0; // ₹15Cr

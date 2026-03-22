@@ -16,121 +16,124 @@ class ProfileView extends GetView<AuthController> with ThemeMixin {
   Widget build(BuildContext context) {
     return buildThemeAwareScaffold(
       title: 'profile'.tr,
-      body: Semantics(
-        label: 'qa.profile.screen',
-        identifier: 'qa.profile.screen',
-        child: Obx(() {
-          final Widget child;
-          final Key key;
+      body: SafeArea(
+        top: false,
+        child: Semantics(
+          label: 'qa.profile.screen',
+          identifier: 'qa.profile.screen',
+          child: Obx(() {
+            final Widget child;
+            final Key key;
 
-          if (controller.isLoading.value) {
-            key = const ValueKey('loading');
-            child = Center(child: CircularProgressIndicator(color: AppDesign.loadingIndicator));
-          } else {
-            final user = controller.currentUser.value;
-            if (user == null) {
-              key = const ValueKey('empty');
-              child = Center(
-                child: Text(
-                  'no_user_data_available'.tr,
-                  style: TextStyle(color: AppDesign.textSecondary),
-                ),
-              );
+            if (controller.isLoading.value) {
+              key = const ValueKey('loading');
+              child = Center(child: CircularProgressIndicator(color: AppDesign.loadingIndicator));
             } else {
-              key = const ValueKey('content');
-              child = SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildProfileHeader(context, user),
-                    const SizedBox(height: 32),
+              final user = controller.currentUser.value;
+              if (user == null) {
+                key = const ValueKey('empty');
+                child = Center(
+                  child: Text(
+                    'no_user_data_available'.tr,
+                    style: TextStyle(color: AppDesign.textSecondary),
+                  ),
+                );
+              } else {
+                key = const ValueKey('content');
+                child = SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildProfileHeader(context, user),
+                      const SizedBox(height: 32),
 
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeader(context, 'account_section'.tr),
-                          const SizedBox(height: 8),
-                          Column(
-                            children: [
-                              _buildMenuItem(
-                                context: context,
-                                icon: Icons.favorite_outline,
-                                title: 'my_preferences'.tr,
-                                subtitle: 'property_preferences_filters'.tr,
-                                qaKey: 'qa.profile.menu.preferences',
-                                onTap: () => Get.toNamed(AppRoutes.preferences),
-                                showDivider: true,
-                              ),
-                              _buildMenuItem(
-                                context: context,
-                                icon: Icons.calculate_outlined,
-                                title: 'tools_calculators'.tr,
-                                subtitle: 'tools_calculators_subtitle'.tr,
-                                qaKey: 'qa.profile.menu.tools',
-                                onTap: () => Get.toNamed(AppRoutes.tools),
-                                showDivider: false,
-                              ),
-                            ],
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader(context, 'account_section'.tr),
+                            const SizedBox(height: 8),
+                            Column(
+                              children: [
+                                _buildMenuItem(
+                                  context: context,
+                                  icon: Icons.favorite_outline,
+                                  title: 'my_preferences'.tr,
+                                  subtitle: 'property_preferences_filters'.tr,
+                                  qaKey: 'qa.profile.menu.preferences',
+                                  onTap: () => Get.toNamed(AppRoutes.preferences),
+                                  showDivider: true,
+                                ),
+                                _buildMenuItem(
+                                  context: context,
+                                  icon: Icons.calculate_outlined,
+                                  title: 'tools_calculators'.tr,
+                                  subtitle: 'tools_calculators_subtitle'.tr,
+                                  qaKey: 'qa.profile.menu.tools',
+                                  onTap: () => Get.toNamed(AppRoutes.tools),
+                                  showDivider: false,
+                                ),
+                              ],
+                            ),
 
-                          const SizedBox(height: 32),
+                            const SizedBox(height: 32),
 
-                          _buildSectionHeader(context, 'support_section'.tr),
-                          const SizedBox(height: 8),
-                          Column(
-                            children: [
-                              _buildMenuItem(
-                                context: context,
-                                icon: Icons.security,
-                                title: 'privacy_security'.tr,
-                                subtitle: 'account_security_settings'.tr,
-                                qaKey: 'qa.profile.menu.privacy',
-                                onTap: () => Get.toNamed(AppRoutes.privacy),
-                                showDivider: true,
-                              ),
-                              _buildMenuItem(
-                                context: context,
-                                icon: Icons.help_outline,
-                                title: 'help'.tr,
-                                subtitle: 'get_help_contact_support'.tr,
-                                qaKey: 'qa.profile.menu.help',
-                                onTap: () => Get.toNamed(AppRoutes.help),
-                                showDivider: true,
-                              ),
-                              _buildMenuItem(
-                                context: context,
-                                icon: Icons.info_outline,
-                                title: 'about'.tr,
-                                subtitle: 'app_version_information'.tr,
-                                qaKey: 'qa.profile.menu.about',
-                                onTap: () => Get.toNamed(AppRoutes.about),
-                                showDivider: false,
-                              ),
-                            ],
-                          ),
+                            _buildSectionHeader(context, 'support_section'.tr),
+                            const SizedBox(height: 8),
+                            Column(
+                              children: [
+                                _buildMenuItem(
+                                  context: context,
+                                  icon: Icons.security,
+                                  title: 'privacy_security'.tr,
+                                  subtitle: 'account_security_settings'.tr,
+                                  qaKey: 'qa.profile.menu.privacy',
+                                  onTap: () => Get.toNamed(AppRoutes.privacy),
+                                  showDivider: true,
+                                ),
+                                _buildMenuItem(
+                                  context: context,
+                                  icon: Icons.help_outline,
+                                  title: 'help'.tr,
+                                  subtitle: 'get_help_contact_support'.tr,
+                                  qaKey: 'qa.profile.menu.help',
+                                  onTap: () => Get.toNamed(AppRoutes.help),
+                                  showDivider: true,
+                                ),
+                                _buildMenuItem(
+                                  context: context,
+                                  icon: Icons.info_outline,
+                                  title: 'about'.tr,
+                                  subtitle: 'app_version_information'.tr,
+                                  qaKey: 'qa.profile.menu.about',
+                                  onTap: () => Get.toNamed(AppRoutes.about),
+                                  showDivider: false,
+                                ),
+                              ],
+                            ),
 
-                          const SizedBox(height: 48),
+                            const SizedBox(height: 48),
 
-                          _buildLogoutButton(context),
-                          const SizedBox(height: 48),
-                        ],
+                            _buildLogoutButton(context),
+                            const SizedBox(height: 48),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
+                    ],
+                  ),
+                );
+              }
             }
-          }
 
-          return AnimatedSwitcher(
-            duration: AppDurations.contentFade,
-            transitionBuilder: (child, animation) =>
-                FadeTransition(opacity: animation, child: child),
-            child: KeyedSubtree(key: key, child: child),
-          );
-        }),
+            return AnimatedSwitcher(
+              duration: AppDurations.contentFade,
+              transitionBuilder: (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+              child: KeyedSubtree(key: key, child: child),
+            );
+          }),
+        ),
       ),
     );
   }

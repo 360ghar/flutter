@@ -43,13 +43,39 @@ class AuthController extends GetxController {
   DateTime? _lastUnauthorizedHandledAt;
   String? _lastRegisteredNotificationToken;
   String? _lastRegisteredNotificationUserId;
-  static const Duration _tokenWaitTimeout = Duration(seconds: 3);
+  int _authProcessingGeneration = 0;
+  Timer? _authResolvingTimeoutTimer;
+  static const Duration _authResolvingMaxDuration = Duration(seconds: 60);
+  static const Duration _tokenWaitTimeout = Duration(seconds: 10);
   static const Duration _initialProfileLoadTimeout = Duration(seconds: 50);
   static const Duration _profileRetryCooldown = Duration(seconds: 2);
   static const Duration _unauthorizedHandleCooldown = Duration(seconds: 8);
   static const Duration _authStateDebounce = Duration(
     milliseconds: 300,
   ); // Increased from 100ms for Supabase propagation
+  static const int _maxBootRetries = 3;
+  static const Duration _initialRetryDelay = Duration(seconds: 2);
+
+  void _setAuthResolving(bool value) {
+    isAuthResolving.value = value;
+    _authResolvingTimeoutTimer?.cancel();
+    if (value) {
+      _authResolvingTimeoutTimer = Timer(_authResolvingMaxDuration, () {
+        if (isAuthResolving.value) {
+          DebugLogger.error(
+            '⏰ isAuthResolving stuck true for '
+            '${_authResolvingMaxDuration.inSeconds}s. '
+            'Forcing recovery.',
+          );
+          isAuthResolving.value = false;
+          if (authStatus.value != AuthStatus.authenticated &&
+              authStatus.value != AuthStatus.unauthenticated) {
+            _handleProfileLoadFailure(userMessage: 'auth_resolving_timeout'.tr);
+          }
+        }
+      });
+    }
+  }
 
   @override
   void onInit() {
@@ -121,10 +147,20 @@ class AuthController extends GetxController {
       ErrorHandler.showInfo('session_expired_message'.tr);
       await _authRepository.signOut();
     } catch (e, st) {
-      DebugLogger.error('🔐 [AUTH] Failed to resolve critical unauthorized response', e, st);
+      DebugLogger.error(
+        '🔐 [AUTH] Failed to resolve critical '
+        'unauthorized response',
+        e,
+        st,
+      );
       currentUser.value = null;
-      authStatus.value = AuthStatus.unauthenticated;
-      isAuthResolving.value = false;
+      _setAuthResolving(false);
+      // Delay to allow stream listener to handle state first
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (authStatus.value != AuthStatus.unauthenticated) {
+          authStatus.value = AuthStatus.unauthenticated;
+        }
+      });
     } finally {
       _isHandlingUnauthorized = false;
     }
@@ -142,7 +178,7 @@ class AuthController extends GetxController {
       _processAuthStateChange(supabaseUser).catchError((Object error, StackTrace stackTrace) {
         DebugLogger.error('Unhandled error while processing auth state change', error, stackTrace);
         authStatus.value = AuthStatus.error;
-        isAuthResolving.value = false;
+        _setAuthResolving(false);
       });
     });
   }
@@ -165,6 +201,7 @@ class AuthController extends GetxController {
     }
 
     _lastProcessedAuthFingerprint = fingerprint;
+    final generation = ++_authProcessingGeneration;
 
     if (supabaseUser == null) {
       // --- USER IS SIGNED OUT ---
@@ -172,7 +209,7 @@ class AuthController extends GetxController {
       authErrorMessage.value = null;
       currentUser.value = null;
       authStatus.value = AuthStatus.unauthenticated;
-      isAuthResolving.value = false;
+      _setAuthResolving(false);
       _profileRetryInFlight = false;
       _lastRegisteredNotificationToken = null;
       _lastRegisteredNotificationUserId = null;
@@ -183,45 +220,76 @@ class AuthController extends GetxController {
       } catch (_) {}
     } else {
       // --- USER IS SIGNED IN ---
-      DebugLogger.auth('Auth state changed: User is signed in. UID: ${supabaseUser.id}');
+      DebugLogger.auth(
+        'Auth state changed: User is signed in. '
+        'UID: ${supabaseUser.id}',
+      );
       authErrorMessage.value = null;
-      isAuthResolving.value = true;
+      _setAuthResolving(true);
       try {
         // Set analytics/Crashlytics user context
+        if (_authProcessingGeneration != generation) return;
         try {
           await AnalyticsService.setUserId(supabaseUser.id);
           await FirebaseCrashlytics.instance.setUserIdentifier(supabaseUser.id);
         } catch (_) {}
 
-        // Ensure access token is available before calling our backend
+        // Ensure access token is available before backend call
+        if (_authProcessingGeneration != generation) return;
         await _ensureTokenThenLoadProfile();
       } finally {
-        isAuthResolving.value = false;
+        _setAuthResolving(false);
         DebugLogger.debug('🔐 [AUTH_BOOT] Auth bootstrap flow finished.');
       }
     }
   }
 
   Future<void> _ensureTokenThenLoadProfile() async {
-    try {
-      DebugLogger.auth('🔐 [AUTH_BOOT] Waiting for access token');
-
-      final token = await _authRepository.waitForAccessToken(
-        timeout: _tokenWaitTimeout,
-        minTtlSeconds: 45,
-      );
-      if (token.isEmpty) {
-        throw Exception('Access token is empty after wait');
+    int attempt = 0;
+    while (true) {
+      try {
+        DebugLogger.auth(
+          '🔐 [AUTH_BOOT] Waiting for access token '
+          '(attempt ${attempt + 1}/$_maxBootRetries)',
+        );
+        final token = await _authRepository.waitForAccessToken(
+          timeout: _tokenWaitTimeout,
+          minTtlSeconds: 45,
+        );
+        if (token.isEmpty) {
+          throw Exception('Access token is empty after wait');
+        }
+        DebugLogger.auth(
+          '🔐 [AUTH_BOOT] Access token ready '
+          '(length: ${token.length}). '
+          'Loading user profile...',
+        );
+        await _loadUserProfile();
+        return; // Success
+      } catch (e, st) {
+        attempt++;
+        if (attempt >= _maxBootRetries || !_isTransientError(e)) {
+          DebugLogger.error('🔐 [AUTH_BOOT] Failed after $attempt attempt(s)', e, st);
+          _handleProfileLoadFailure(userMessage: 'profile_load_error_user'.tr);
+          return;
+        }
+        final delay = _initialRetryDelay * (1 << (attempt - 1));
+        DebugLogger.warning(
+          '🔐 [AUTH_BOOT] Attempt $attempt failed, '
+          'retrying in ${delay.inSeconds}s...',
+        );
+        await Future.delayed(delay);
       }
-
-      DebugLogger.auth(
-        '🔐 [AUTH_BOOT] Access token ready (length: ${token.length}). Loading user profile...',
-      );
-      await _loadUserProfile();
-    } catch (e, st) {
-      DebugLogger.error('🔐 [AUTH_BOOT] Failed to obtain access token.', e, st);
-      authStatus.value = AuthStatus.error;
     }
+  }
+
+  bool _isTransientError(Object error) {
+    if (error is TimeoutException) return true;
+    final msg = error.toString().toLowerCase();
+    return msg.contains('timeout') ||
+        msg.contains('network') ||
+        msg.contains('socket') ||
+        msg.contains('connection');
   }
 
   /// Fetches the user profile from our backend and updates the app's auth status.
@@ -295,17 +363,28 @@ class AuthController extends GetxController {
       return;
     }
 
-    try {
-      final registered = await _notificationsDatasource.registerDeviceToken(
-        token: token,
-        userId: resolvedUserId,
-      );
-      if (registered) {
-        _lastRegisteredNotificationToken = token;
-        _lastRegisteredNotificationUserId = resolvedUserId;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final registered = await _notificationsDatasource.registerDeviceToken(
+          token: token,
+          userId: resolvedUserId,
+        );
+        if (registered) {
+          _lastRegisteredNotificationToken = token;
+          _lastRegisteredNotificationUserId = resolvedUserId;
+        }
+        return; // Success
+      } catch (e, st) {
+        DebugLogger.warning(
+          '🔔 Notification token registration '
+          'attempt ${attempt + 1} failed',
+          e,
+          st,
+        );
+        if (attempt == 0) {
+          await Future.delayed(const Duration(seconds: 5));
+        }
       }
-    } catch (e, st) {
-      DebugLogger.warning('🔔 Failed deferred notification token registration', e, st);
     }
   }
 
@@ -362,18 +441,19 @@ class AuthController extends GetxController {
       if (lastRetryAttemptAt != null &&
           now.difference(lastRetryAttemptAt) < _profileRetryCooldown) {
         DebugLogger.debug('Retry profile load ignored: cooldown active.');
+        AppToast.info('retry_cooldown_title'.tr, 'retry_cooldown_message'.tr);
         return;
       }
 
       _profileRetryInFlight = true;
       _lastProfileRetryAttemptAt = now;
       DebugLogger.info('Retrying user profile load...');
-      isAuthResolving.value = true;
+      _setAuthResolving(true);
       try {
         await _ensureTokenThenLoadProfile();
       } finally {
         _profileRetryInFlight = false;
-        isAuthResolving.value = false;
+        _setAuthResolving(false);
       }
     }
   }
@@ -433,6 +513,7 @@ class AuthController extends GetxController {
   void onClose() {
     _authSubscription?.cancel();
     _debounceTimer?.cancel();
+    _authResolvingTimeoutTimer?.cancel();
     _crashlyticsWorker?.dispose();
     ApiClient.onUnauthorized = null;
     super.onClose();

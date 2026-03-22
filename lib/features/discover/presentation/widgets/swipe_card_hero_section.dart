@@ -91,7 +91,7 @@ class SwipeCardHeroSection extends StatelessWidget {
                   const Icon(Icons.apartment, color: AppDesign.darkTextPrimary, size: 16),
                   const SizedBox(width: 6),
                   Text(
-                    property.propertyTypeString,
+                    property.propertyTypeTranslationKey.tr,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: AppDesign.darkTextPrimary,
                       fontWeight: FontWeight.w700,
@@ -225,7 +225,7 @@ class SwipeCardHeroSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            property.purposeString,
+            property.listingTranslationKey.tr,
             style: theme.textTheme.labelSmall?.copyWith(
               color: colorScheme.onPrimary,
               fontWeight: FontWeight.bold,

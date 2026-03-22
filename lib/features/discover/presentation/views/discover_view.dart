@@ -29,50 +29,53 @@ class DiscoverView extends GetView<DiscoverController> {
         appBar: DiscoverTopBar(
           onFilterTap: () => showPropertyFilterBottomSheet(context, pageType: 'discover'),
         ),
-        body: Column(
-          children: [
-            // Subtle refresh indicator (reactive only)
-            Obx(() {
-              final isRefreshing = pageStateService.discoverState.value.isRefreshing;
-              if (!isRefreshing) return const SizedBox.shrink();
-              return const LinearProgressIndicator(
-                minHeight: 2,
-                backgroundColor: AppDesign.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
-              );
-            }),
-            // Main content (reacts only to state)
-            Expanded(
-              child: Obx(() {
-                final Widget child;
-                final Key key;
-                switch (controller.state.value) {
-                  case DiscoverState.loading:
-                    key = const ValueKey('loading');
-                    child = _buildLoadingState();
-                  case DiscoverState.error:
-                    key = const ValueKey('error');
-                    child = _buildErrorState();
-                  case DiscoverState.empty:
-                    key = const ValueKey('empty');
-                    child = _buildEmptyState(context);
-                  case DiscoverState.loaded:
-                  case DiscoverState.prefetching:
-                    key = const ValueKey('loaded');
-                    child = _buildSwipeInterface(context);
-                  default:
-                    key = const ValueKey('loading');
-                    child = _buildLoadingState();
-                }
-                return AnimatedSwitcher(
-                  duration: AppDurations.contentFade,
-                  transitionBuilder: (child, animation) =>
-                      FadeTransition(opacity: animation, child: child),
-                  child: KeyedSubtree(key: key, child: child),
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              // Subtle refresh indicator (reactive only)
+              Obx(() {
+                final isRefreshing = pageStateService.discoverState.value.isRefreshing;
+                if (!isRefreshing) return const SizedBox.shrink();
+                return const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: AppDesign.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
                 );
               }),
-            ),
-          ],
+              // Main content (reacts only to state)
+              Expanded(
+                child: Obx(() {
+                  final Widget child;
+                  final Key key;
+                  switch (controller.state.value) {
+                    case DiscoverState.loading:
+                      key = const ValueKey('loading');
+                      child = _buildLoadingState();
+                    case DiscoverState.error:
+                      key = const ValueKey('error');
+                      child = _buildErrorState();
+                    case DiscoverState.empty:
+                      key = const ValueKey('empty');
+                      child = _buildEmptyState(context);
+                    case DiscoverState.loaded:
+                    case DiscoverState.prefetching:
+                      key = const ValueKey('loaded');
+                      child = _buildSwipeInterface(context);
+                    default:
+                      key = const ValueKey('loading');
+                      child = _buildLoadingState();
+                  }
+                  return AnimatedSwitcher(
+                    duration: AppDurations.contentFade,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: KeyedSubtree(key: key, child: child),
+                  );
+                }),
+              ),
+            ],
+          ),
         ),
       ),
     );

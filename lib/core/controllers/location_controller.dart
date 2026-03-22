@@ -33,7 +33,8 @@ class LocationController extends GetxController {
 
   static const Duration _currentPositionStaleThreshold = Duration(minutes: 2);
   static const Duration _lastKnownMaxAge = Duration(minutes: 10);
-  static const Duration _currentPositionTimeout = Duration(seconds: 12);
+  static const Duration _currentPositionTimeout = Duration(seconds: 25);
+  static const Duration _currentPositionFallbackTimeout = Duration(seconds: 10);
   static const Duration _backendSyncMinInterval = Duration(minutes: 2);
   static const double _backendSyncMinDistanceMeters = 250;
   static const Duration _geocodeMinInterval = Duration(minutes: 2);
@@ -170,7 +171,7 @@ class LocationController extends GetxController {
 
   Future<void> _refreshAddressForPosition(Position position, {bool force = false}) async {
     if (!force && !_shouldRefreshGeocode(position)) return;
-    await _getAddressFromCoordinates(position.latitude, position.longitude);
+    await _updateCurrentAddress(position.latitude, position.longitude);
     _lastGeocodeAt = DateTime.now();
     _lastGeocodePosition = position;
   }
@@ -219,6 +220,7 @@ class LocationController extends GetxController {
   }
 
   Future<Position?> _getCurrentPositionWithTimeout() async {
+    // Primary attempt: high accuracy
     try {
       return await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -226,11 +228,32 @@ class LocationController extends GetxController {
           distanceFilter: 10,
         ),
       ).timeout(_currentPositionTimeout);
+    } on TimeoutException {
+      DebugLogger.warning(
+        'High-accuracy GPS timed out after ${_currentPositionTimeout.inSeconds}s, '
+        'retrying at medium accuracy…',
+      );
+    } catch (e, stackTrace) {
+      DebugLogger.error('Failed to get high-accuracy GPS position', e, stackTrace);
+      return null;
+    }
+
+    // Fallback: medium accuracy with shorter timeout
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          distanceFilter: 50,
+        ),
+      ).timeout(_currentPositionFallbackTimeout);
     } on TimeoutException catch (e) {
-      DebugLogger.warning('Current position request timed out', e);
+      DebugLogger.warning(
+        'Medium-accuracy GPS also timed out after ${_currentPositionFallbackTimeout.inSeconds}s',
+        e,
+      );
       return null;
     } catch (e, stackTrace) {
-      DebugLogger.error('Failed to get current position', e, stackTrace);
+      DebugLogger.error('Failed to get medium-accuracy GPS position', e, stackTrace);
       return null;
     }
   }
@@ -323,7 +346,7 @@ class LocationController extends GetxController {
     await _startPositionStream();
   }
 
-  Future<void> _getAddressFromCoordinates(double latitude, double longitude) async {
+  Future<void> _updateCurrentAddress(double latitude, double longitude) async {
     try {
       final address = await getAddressFromCoordinates(latitude, longitude);
       currentAddress.value = address;

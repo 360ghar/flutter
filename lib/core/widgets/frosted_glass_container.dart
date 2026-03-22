@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import 'package:ghar360/core/design/app_design_extensions.dart';
+
 class FrostedGlassContainer extends StatelessWidget {
   const FrostedGlassContainer({
     super.key,
@@ -33,7 +35,7 @@ class FrostedGlassContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultTint = isDark ? Colors.white : Colors.black;
+    final defaultTint = isDark ? AppDesign.overlayLight : AppDesign.overlayDark;
     final effectiveTintColor = tintColor ?? defaultTint;
     final effectiveBorderOpacity = borderOpacity.clamp(0.0, 1.0);
 
@@ -49,7 +51,7 @@ class FrostedGlassContainer extends StatelessWidget {
             color: effectiveTintColor.withValues(alpha: opacity),
             borderRadius: BorderRadius.circular(borderRadius),
             border: Border.all(
-              color: (isDark ? Colors.white : Colors.white).withValues(
+              color: (isDark ? AppDesign.overlayLight : AppDesign.overlayDark).withValues(
                 alpha: effectiveBorderOpacity,
               ),
               width: 1,

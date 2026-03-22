@@ -465,7 +465,7 @@ class _VisitsContentState extends State<_VisitsContent> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppDesign.overlayLight),
                         ),
                       )
                     : Text('reschedule'.tr),
@@ -544,7 +544,7 @@ class _VisitsContentState extends State<_VisitsContent> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppDesign.overlayLight),
                         ),
                       )
                     : Text('yes_cancel'.tr),

@@ -57,62 +57,59 @@ class ToolsView extends GetView<ToolsController> {
       ),
     ];
 
-    return Semantics(
-      label: 'qa.tools.screen',
-      identifier: 'qa.tools.screen',
-      child: Scaffold(
-        key: const ValueKey('qa.tools.screen'),
-        backgroundColor: AppDesign.background,
-        appBar: AppBar(
-          backgroundColor: AppDesign.appBarBackground,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
-            onPressed: () => Get.back(),
-          ),
+    return Scaffold(
+      key: const ValueKey('qa.tools.screen'),
+      backgroundColor: AppDesign.background,
+      appBar: AppBar(
+        backgroundColor: AppDesign.appBarBackground,
+        elevation: 0,
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
+          onPressed: () => Get.back(),
         ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'tools_calculators'.tr,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: AppDesign.textPrimary,
-                    fontWeight: FontWeight.w600,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'tools_calculators'.tr,
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  color: AppDesign.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'tools_subtitle'.tr,
+                style: TextStyle(fontSize: 14, color: AppDesign.textSecondary),
+              ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.0,
                   ),
+                  itemCount: tools.length,
+                  itemBuilder: (context, index) {
+                    final tool = tools[index];
+                    return ToolCard(
+                      icon: tool.icon,
+                      title: tool.title,
+                      description: tool.description,
+                      qaKey: tool.qaKey,
+                      onTap: () => Get.toNamed(tool.route),
+                    );
+                  },
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'tools_subtitle'.tr,
-                  style: TextStyle(fontSize: 14, color: AppDesign.textSecondary),
-                ),
-                const SizedBox(height: 24),
-                Expanded(
-                  child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: tools.length,
-                    itemBuilder: (context, index) {
-                      final tool = tools[index];
-                      return ToolCard(
-                        icon: tool.icon,
-                        title: tool.title,
-                        description: tool.description,
-                        qaKey: tool.qaKey,
-                        onTap: () => Get.toNamed(tool.route),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

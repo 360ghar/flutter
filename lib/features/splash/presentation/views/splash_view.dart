@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/design/app_design_tokens.dart';
 import 'package:ghar360/core/utils/app_spacing.dart';
 import 'package:ghar360/core/widgets/frosted_glass_container.dart';
@@ -18,7 +19,7 @@ class SplashView extends GetView<SplashController> {
 
     return Scaffold(
       key: const ValueKey('qa.splash.screen'),
-      backgroundColor: Colors.black,
+      backgroundColor: AppDesign.overlayDark,
       body: Stack(
         children: [
           PageView.builder(
@@ -41,13 +42,16 @@ class SplashView extends GetView<SplashController> {
                 key: const ValueKey('qa.splash.skip'),
                 onPressed: controller.skipToHome,
                 style: TextButton.styleFrom(
-                  backgroundColor: Colors.black.withValues(alpha: 0.3),
+                  backgroundColor: AppDesign.overlayDark.withValues(alpha: 0.3),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
                 child: Text(
                   'skip'.tr,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    color: AppDesign.overlayLight,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -146,7 +150,7 @@ class _OnboardingSlideCard extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: [
                 slide.accentColor.withValues(alpha: 0.3),
-                Colors.black.withValues(alpha: 0.6),
+                AppDesign.overlayDark.withValues(alpha: 0.6),
               ],
             ),
           ),
@@ -164,10 +168,10 @@ class _OnboardingSlideCard extends StatelessWidget {
             end: Alignment.bottomCenter,
             stops: const [0.0, 0.35, 0.65, 1.0],
             colors: [
-              Colors.black.withValues(alpha: 0.15),
-              Colors.transparent,
-              Colors.black.withValues(alpha: 0.4),
-              Colors.black.withValues(alpha: 0.7),
+              AppDesign.overlayDark.withValues(alpha: 0.15),
+              AppDesign.transparent,
+              AppDesign.overlayDark.withValues(alpha: 0.4),
+              AppDesign.overlayDark.withValues(alpha: 0.7),
             ],
           ),
         ),
@@ -212,7 +216,7 @@ class _OnboardingSlideCard extends StatelessWidget {
       child: Text(
         slide.chipLabelKey.tr,
         style: const TextStyle(
-          color: Colors.black,
+          color: AppDesign.overlayDark,
           fontSize: 12,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -225,7 +229,7 @@ class _OnboardingSlideCard extends StatelessWidget {
     return Text(
       slide.titleKey.tr,
       style: const TextStyle(
-        color: Colors.white,
+        color: AppDesign.overlayLight,
         fontSize: 32,
         fontWeight: FontWeight.w700,
         height: 1.15,
@@ -238,7 +242,7 @@ class _OnboardingSlideCard extends StatelessWidget {
     return Text(
       slide.descriptionKey.tr,
       style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.85),
+        color: AppDesign.overlayLight.withValues(alpha: 0.85),
         fontSize: 15,
         fontWeight: FontWeight.w400,
         height: 1.5,
@@ -280,7 +284,7 @@ class _OnboardingSlideCard extends StatelessWidget {
             child: Text(
               pointKey.tr,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.95),
+                color: AppDesign.overlayLight.withValues(alpha: 0.95),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 height: 1.4,
@@ -308,9 +312,9 @@ class _FrostedBottomDock extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: AppDesign.overlayLight.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+            border: Border.all(color: AppDesign.overlayLight.withValues(alpha: 0.2), width: 1),
           ),
           child: Obx(() {
             final currentStep = controller.currentStep.value;
@@ -340,7 +344,9 @@ class _FrostedBottomDock extends StatelessWidget {
           height: 2,
           width: selected ? 40 : 24,
           decoration: BoxDecoration(
-            color: selected ? AppDesignTokens.brandGold : Colors.white.withValues(alpha: 0.35),
+            color: selected
+                ? AppDesignTokens.brandGold
+                : AppDesign.overlayLight.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(1),
           ),
         );
@@ -381,7 +387,7 @@ class _FrostedBottomDock extends StatelessWidget {
               onPressed: controller.nextStep,
               style: FilledButton.styleFrom(
                 backgroundColor: AppDesignTokens.brandGold,
-                foregroundColor: Colors.black,
+                foregroundColor: AppDesign.overlayDark,
                 minimumSize: const Size(0, 48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -419,9 +425,9 @@ class _FrostedOutlinedButton extends StatelessWidget {
       key: key,
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.white,
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
-        backgroundColor: Colors.white.withValues(alpha: 0.1),
+        foregroundColor: AppDesign.overlayLight,
+        side: BorderSide(color: AppDesign.overlayLight.withValues(alpha: 0.4), width: 1.5),
+        backgroundColor: AppDesign.overlayLight.withValues(alpha: 0.1),
         minimumSize: const Size(0, 48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

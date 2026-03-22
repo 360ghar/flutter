@@ -56,7 +56,7 @@ class AmenityModel {
   String get categoryDisplay => category ?? 'General';
 }
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class PropertyAmenityModel {
   final int id;
   @JsonKey(name: 'property_id')

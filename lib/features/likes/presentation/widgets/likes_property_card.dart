@@ -113,7 +113,7 @@ class LikesPropertyCard extends StatelessWidget {
                         ],
                       ),
                       child: Text(
-                        property.propertyTypeString.toUpperCase(),
+                        property.propertyTypeTranslationKey.tr.toUpperCase(),
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,

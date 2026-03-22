@@ -116,7 +116,7 @@ class AuthRepository extends GetxService {
 
     int refreshAttempts = 0;
     int pollCount = 0;
-    const maxRefreshAttempts = 4;
+    const maxRefreshAttempts = 6;
     while (DateTime.now().isBefore(deadline)) {
       // Attempt periodic refreshes (throttled) to ensure token is ready
       if (refreshAttempts < maxRefreshAttempts) {
@@ -130,7 +130,7 @@ class AuthRepository extends GetxService {
         }
         refreshAttempts++;
       }
-      await Future.delayed(const Duration(milliseconds: 150));
+      await Future.delayed(const Duration(milliseconds: 200));
       pollCount++;
 
       session = _supabase.auth.currentSession;

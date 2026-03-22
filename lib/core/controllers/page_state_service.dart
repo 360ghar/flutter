@@ -454,8 +454,14 @@ class PageStateService extends GetxController {
       return;
     }
 
+    // Reuse any location already in storage — only fetch GPS/IP when storage is empty
+    final existingLocation =
+        exploreState.value.selectedLocation ??
+        discoverState.value.selectedLocation ??
+        likesState.value.selectedLocation;
+
     try {
-      final initialLocation = await _locationController.getInitialLocation();
+      final initialLocation = existingLocation ?? await _locationController.getInitialLocation();
 
       if (!exploreState.value.hasLocation) {
         await _locationManager.updateLocationForPage(

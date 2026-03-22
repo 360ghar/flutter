@@ -32,6 +32,19 @@ void main() {
       expect(model.scheduledDate.year, 2025);
       expect(model.scheduledDate.month, 4);
       expect(model.scheduledDate.day, 10);
+      expect(model.scheduledDate.isUtc, true);
+    });
+
+    test('prefers scheduled_date when both scheduled_date and visit_date/time exist', () {
+      final model = VisitModel.fromJson(
+        baseJson(
+          visitDate: '2025-03-20',
+          visitTime: '14:30:00',
+          scheduledDate: '2025-04-10T09:00:00+00:00',
+        ),
+      );
+
+      expect(model.scheduledDate.toIso8601String(), '2025-04-10T09:00:00.000Z');
     });
 
     test('falls back to just visit_date when time parse fails', () {
@@ -41,6 +54,14 @@ void main() {
       expect(model.scheduledDate.year, 2025);
       expect(model.scheduledDate.month, 5);
       expect(model.scheduledDate.day, 15);
+      expect(model.scheduledDate.isUtc, true);
+    });
+
+    test('parses aware scheduled_date values with +00:00 offsets', () {
+      final model = VisitModel.fromJson(baseJson(scheduledDate: '2025-04-10T09:00:00+00:00'));
+
+      expect(model.scheduledDate.isUtc, true);
+      expect(model.scheduledDate.toIso8601String(), '2025-04-10T09:00:00.000Z');
     });
 
     test('falls back to DateTime.now when no date fields present', () {

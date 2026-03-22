@@ -23,7 +23,12 @@ class PropertyDetailsInfoSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildEditorialSectionHeader(context, 'property_information'.tr),
-          buildInfoRow('purpose'.tr, property.purposeString),
+          buildInfoRow('property_type'.tr, property.propertyTypeTranslationKey.tr),
+          buildInfoRow('purpose'.tr, property.purposeTranslationKey.tr),
+          if (property.genderPreferenceTranslationKey != null)
+            buildInfoRow('gender_preference'.tr, property.genderPreferenceTranslationKey!.tr),
+          if (property.sharingTypeTranslationKey != null)
+            buildInfoRow('room_type'.tr, property.sharingTypeTranslationKey!.tr),
           if (property.ageText.isNotEmpty) buildInfoRow('age'.tr, property.ageText),
         ],
       ),

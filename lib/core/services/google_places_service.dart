@@ -75,7 +75,7 @@ class GooglePlacesService extends GetxService {
         queryParams,
       );
 
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await _getWithRetry(url);
 
       if (response.statusCode != 200) {
         DebugLogger.error('Google Places API request failed: ${response.statusCode}');
@@ -157,7 +157,7 @@ class GooglePlacesService extends GetxService {
         'key': apiKey,
       });
 
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await _getWithRetry(url);
 
       if (response.statusCode != 200) {
         DebugLogger.error('Google Places Details API request failed: ${response.statusCode}');
@@ -266,6 +266,28 @@ class GooglePlacesService extends GetxService {
       DebugLogger.error('Error getting place details for placeId: $placeId', e, stackTrace);
       return null;
     }
+  }
+
+  /// Performs an HTTP GET with retry on timeout.
+  Future<http.Response> _getWithRetry(
+    Uri url, {
+    int maxRetries = 1,
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    for (var attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await http.get(url).timeout(timeout);
+      } on TimeoutException {
+        if (attempt == maxRetries) rethrow;
+        DebugLogger.warning(
+          '🌍 Places API timeout (attempt ${attempt + 1}), '
+          'retrying...',
+        );
+        await Future.delayed(const Duration(seconds: 2));
+      }
+    }
+    // Should not reach here, but satisfy analyzer
+    throw TimeoutException('Request timed out after retries');
   }
 
   void clearPlaceSuggestions() {

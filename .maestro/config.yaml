@@ -1,3 +1,2 @@
 flows:
-  - smoke.yaml
-  - full.yaml
+  - e2e_full.yaml

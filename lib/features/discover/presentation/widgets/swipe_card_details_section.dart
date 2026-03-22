@@ -287,13 +287,21 @@ class SwipeCardDetailsSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          _buildDetailRow(context, 'property_type'.tr, property.propertyTypeString),
-          _buildDetailRow(context, 'purpose'.tr, property.purposeString),
+          _buildDetailRow(context, 'property_type'.tr, property.propertyTypeTranslationKey.tr),
+          _buildDetailRow(context, 'purpose'.tr, property.purposeTranslationKey.tr),
           if (property.bedrooms != null)
             _buildDetailRow(context, 'bedrooms'.tr, '${property.bedrooms}'),
           if (property.bathrooms != null)
             _buildDetailRow(context, 'bathrooms'.tr, '${property.bathrooms}'),
           if (property.areaSqft != null) _buildDetailRow(context, 'area'.tr, property.areaText),
+          if (property.genderPreferenceTranslationKey != null)
+            _buildDetailRow(
+              context,
+              'gender_preference'.tr,
+              property.genderPreferenceTranslationKey!.tr,
+            ),
+          if (property.sharingTypeTranslationKey != null)
+            _buildDetailRow(context, 'room_type'.tr, property.sharingTypeTranslationKey!.tr),
           if (property.floorText.isNotEmpty)
             _buildDetailRow(context, 'floor'.tr, property.floorText),
           if (property.ageText.isNotEmpty) _buildDetailRow(context, 'age'.tr, property.ageText),

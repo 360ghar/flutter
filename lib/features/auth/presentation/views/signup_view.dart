@@ -44,7 +44,10 @@ class SignUpView extends GetView<SignUpController> {
                       onPressed: () => Get.offNamed(AppRoutes.phoneEntry),
                       child: RichText(
                         text: TextSpan(
-                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                          style: TextStyle(
+                            color: AppDesign.overlayLight.withValues(alpha: 0.7),
+                            fontSize: 14,
+                          ),
                           children: [
                             TextSpan(text: 'already_have_account'.tr),
                             TextSpan(
@@ -78,14 +81,17 @@ class SignUpView extends GetView<SignUpController> {
             return Positioned.fill(
               child: Stack(
                 children: [
-                  ModalBarrier(dismissible: false, color: Colors.black.withValues(alpha: 0.7)),
+                  ModalBarrier(
+                    dismissible: false,
+                    color: AppDesign.overlayDark.withValues(alpha: 0.7),
+                  ),
                   Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: AppDesign.overlayLight.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                        border: Border.all(color: AppDesign.overlayLight.withValues(alpha: 0.18)),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -102,7 +108,7 @@ class SignUpView extends GetView<SignUpController> {
                           Text(
                             'loading'.tr,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppDesign.overlayLight,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -132,7 +138,7 @@ class SignUpView extends GetView<SignUpController> {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              backgroundColor: AppDesign.overlayLight.withValues(alpha: 0.2),
               valueColor: const AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
             ),
           ),
@@ -147,14 +153,17 @@ class SignUpView extends GetView<SignUpController> {
                     ? 'security_step'.tr
                     : 'verify_step'.tr,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: AppDesign.overlayLight.withValues(alpha: 0.7),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 'step_of'.trParams({'step': '${step + 1}', 'total': '3'}),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                style: TextStyle(
+                  color: AppDesign.overlayLight.withValues(alpha: 0.5),
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -179,9 +188,9 @@ class SignUpView extends GetView<SignUpController> {
               margin: const EdgeInsets.only(bottom: 14),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
+                color: AppDesign.overlayLight.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                border: Border.all(color: AppDesign.overlayLight.withValues(alpha: 0.15)),
               ),
               child: Row(
                 children: [
@@ -203,7 +212,7 @@ class SignUpView extends GetView<SignUpController> {
                     child: Text(
                       controller.prefilledPhone.value,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppDesign.overlayLight,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -228,7 +237,7 @@ class SignUpView extends GetView<SignUpController> {
               key: const ValueKey('qa.auth.signup.full_name_input'),
               controller: controller.fullNameController,
               textInputAction: TextInputAction.next,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppDesign.overlayLight),
               decoration: InputDecoration(
                 labelText: 'full_name'.tr,
                 prefixIcon: const Icon(Icons.person_outline),
@@ -250,7 +259,7 @@ class SignUpView extends GetView<SignUpController> {
               controller: controller.emailController,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppDesign.overlayLight),
               decoration: InputDecoration(
                 labelText: 'email_address'.tr,
                 prefixIcon: const Icon(Icons.email_outlined),
@@ -275,7 +284,7 @@ class SignUpView extends GetView<SignUpController> {
               controller: controller.dateOfBirthController,
               readOnly: true,
               onTap: controller.selectDateOfBirth,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppDesign.overlayLight),
               decoration: InputDecoration(
                 labelText: 'date_of_birth'.tr,
                 hintText: 'dob_format_hint'.tr,
@@ -330,7 +339,7 @@ class SignUpView extends GetView<SignUpController> {
                 controller: controller.passwordController,
                 obscureText: !controller.isPasswordVisible.value,
                 textInputAction: TextInputAction.next,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppDesign.overlayLight),
                 decoration: InputDecoration(
                   labelText: 'password'.tr,
                   prefixIcon: const Icon(Icons.lock_outline),
@@ -365,7 +374,7 @@ class SignUpView extends GetView<SignUpController> {
                 controller: controller.confirmPasswordController,
                 obscureText: !controller.isConfirmPasswordVisible.value,
                 textInputAction: TextInputAction.done,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppDesign.overlayLight),
                 decoration: InputDecoration(
                   labelText: 'confirm_password'.tr,
                   prefixIcon: const Icon(Icons.lock_outline),
@@ -403,7 +412,10 @@ class SignUpView extends GetView<SignUpController> {
                 children: [
                   Text(
                     'i_agree_to_the'.tr,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                    style: TextStyle(
+                      color: AppDesign.overlayLight.withValues(alpha: 0.7),
+                      fontSize: 13,
+                    ),
                   ),
                   GestureDetector(
                     onTap: _openTerms,
@@ -472,7 +484,7 @@ class SignUpView extends GetView<SignUpController> {
       children: [
         Text(
           'enter_otp_subtitle'.tr,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+          style: TextStyle(color: AppDesign.overlayLight.withValues(alpha: 0.7), fontSize: 14),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
@@ -486,7 +498,7 @@ class SignUpView extends GetView<SignUpController> {
             maxLength: 6,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppDesign.overlayLight,
               letterSpacing: 8,
               fontWeight: FontWeight.w700,
               fontSize: 24,
@@ -539,7 +551,7 @@ class SignUpView extends GetView<SignUpController> {
             style: TextButton.styleFrom(
               foregroundColor: controller.canResendOtp.value
                   ? AppDesign.primaryYellow
-                  : Colors.white38,
+                  : AppDesign.overlayLight.withValues(alpha: 0.38),
             ),
             child: Text(
               controller.canResendOtp.value
@@ -583,17 +595,17 @@ class _PasswordStrengthBar extends StatelessWidget {
 
     switch (strength) {
       case 1:
-        color = Colors.red.shade400;
+        color = AppDesign.errorRed;
         text = 'password_strength_weak'.tr;
         value = 0.33;
         break;
       case 2:
-        color = Colors.orange.shade400;
+        color = AppDesign.warningAmber;
         text = 'password_strength_medium'.tr;
         value = 0.66;
         break;
       default:
-        color = Colors.green.shade400;
+        color = AppDesign.successGreen;
         text = 'password_strength_strong'.tr;
         value = 1.0;
     }
@@ -606,7 +618,7 @@ class _PasswordStrengthBar extends StatelessWidget {
             child: LinearProgressIndicator(
               value: value,
               minHeight: 5,
-              backgroundColor: Colors.white.withValues(alpha: 0.15),
+              backgroundColor: AppDesign.overlayLight.withValues(alpha: 0.15),
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),

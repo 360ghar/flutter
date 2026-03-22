@@ -20,9 +20,9 @@ PageStateSnapshot _$PageStateSnapshotFromJson(Map<String, dynamic> json) => Page
 
 Map<String, dynamic> _$PageStateSnapshotToJson(PageStateSnapshot instance) => <String, dynamic>{
   'pageType': instance.pageType,
-  'selectedLocation': instance.selectedLocation,
+  'selectedLocation': instance.selectedLocation?.toJson(),
   'locationSource': instance.locationSource,
-  'filters': instance.filters,
+  'filters': instance.filters.toJson(),
   'searchQuery': instance.searchQuery,
   'additionalData': instance.additionalData,
   'lastFetched': instance.lastFetched?.toIso8601String(),
@@ -51,11 +51,11 @@ PageStateModel _$PageStateModelFromJson(Map<String, dynamic> json) => PageStateM
 
 Map<String, dynamic> _$PageStateModelToJson(PageStateModel instance) => <String, dynamic>{
   'pageType': _$PageTypeEnumMap[instance.pageType]!,
-  'selectedLocation': instance.selectedLocation,
+  'selectedLocation': instance.selectedLocation?.toJson(),
   'locationSource': instance.locationSource,
-  'filters': instance.filters,
+  'filters': instance.filters.toJson(),
   'searchQuery': instance.searchQuery,
-  'properties': instance.properties,
+  'properties': instance.properties.map((e) => e.toJson()).toList(),
   'currentPage': instance.currentPage,
   'totalPages': instance.totalPages,
   'hasMore': instance.hasMore,

@@ -91,6 +91,10 @@ class AppDesign {
   static const Color warningAmber = AppDesignTokens.warning;
   static const Color errorRed = AppDesignTokens.error;
 
+  /// Overlay colors for dark photo backgrounds (auth/splash screens)
+  static const Color overlayLight = Color(0xFFFFFFFF);
+  static const Color overlayDark = Color(0xFF000000);
+
   static const Color transparent = Colors.transparent;
   static const Color primaryColor = primaryYellow;
 

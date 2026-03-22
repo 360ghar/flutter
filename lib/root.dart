@@ -44,6 +44,7 @@ class Root extends StatelessWidget {
             customMessage: authController.authErrorMessage.value,
             onRetry: isAuthResolving ? null : () => authController.retryProfileLoad(),
             onSignOut: () => authController.signOut(),
+            isRetrying: isAuthResolving,
           );
       }
     });

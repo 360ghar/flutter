@@ -221,7 +221,10 @@ class _PropertyContentViewState extends State<_PropertyContentView> {
         ),
 
         // Bottom Action Buttons
-        bottomNavigationBar: _buildBottomBar(context, safeProperty, visitsController),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: _buildBottomBar(context, safeProperty, visitsController),
+        ),
       ),
     );
   }
@@ -236,8 +239,8 @@ class _PropertyContentViewState extends State<_PropertyContentView> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _buildEditorialChip(context, property.propertyTypeString),
-            _buildEditorialChip(context, property.purposeString),
+            _buildEditorialChip(context, property.propertyTypeTranslationKey.tr),
+            _buildEditorialChip(context, property.listingTranslationKey.tr),
           ],
         ),
         const SizedBox(height: 14),
@@ -684,6 +687,7 @@ class _PropertyLoadingScaffold extends StatelessWidget {
         backgroundColor: AppDesign.appBarBackground,
         elevation: 0,
         leading: IconButton(
+          tooltip: 'Back',
           icon: Icon(Icons.arrow_back, color: AppDesign.appBarIcon),
           onPressed: () => Get.back(),
         ),
@@ -710,6 +714,7 @@ class _PropertyErrorScaffold extends StatelessWidget {
         backgroundColor: AppDesign.appBarBackground,
         elevation: 0,
         leading: IconButton(
+          tooltip: 'Back',
           icon: Icon(Icons.arrow_back, color: AppDesign.appBarIcon),
           onPressed: () => Get.back(),
         ),

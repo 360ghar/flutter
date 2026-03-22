@@ -59,6 +59,17 @@ void main() {
       );
       expect(PropertyModel.fromJson({'property_type': 'studio'}).propertyType, PropertyType.studio);
       expect(PropertyModel.fromJson({'property_type': 'loft'}).propertyType, PropertyType.loft);
+      expect(PropertyModel.fromJson({'property_type': 'pg'}).propertyType, PropertyType.pg);
+      expect(
+        PropertyModel.fromJson({'property_type': 'flatmate'}).propertyType,
+        PropertyType.flatmate,
+      );
+      expect(PropertyModel.fromJson({'property_type': 'office'}).propertyType, PropertyType.office);
+      expect(PropertyModel.fromJson({'property_type': 'shop'}).propertyType, PropertyType.shop);
+      expect(
+        PropertyModel.fromJson({'property_type': 'warehouse'}).propertyType,
+        PropertyType.warehouse,
+      );
     });
 
     test('falls back to house for unknown property_type', () {
@@ -113,6 +124,17 @@ void main() {
       expect(model.amenities!.length, 2);
       expect(model.amenities![0].title, 'Swimming Pool');
       expect(model.amenities![1].icon, 'http://example.com/gym.png');
+    });
+
+    test('parses listing preferences', () {
+      final model = PropertyModel.fromJson({
+        'listing_preferences': {'gender_preference': 'female', 'sharing_type': 'shared_room'},
+      });
+
+      expect(model.listingPreferences?.genderPreference, ListingGenderPreference.female);
+      expect(model.listingPreferences?.sharingType, ListingSharingType.sharedRoom);
+      expect(model.genderPreferenceTranslationKey, 'female_only');
+      expect(model.sharingTypeTranslationKey, 'shared_room');
     });
   });
 
@@ -236,12 +258,37 @@ void main() {
       expect(PropertyModel.fromJson({'property_type': 'villa'}).propertyTypeString, 'Villa');
       expect(PropertyModel.fromJson({'property_type': 'condo'}).propertyTypeString, 'Condo');
       expect(PropertyModel.fromJson({'property_type': 'studio'}).propertyTypeString, 'Studio');
+      expect(PropertyModel.fromJson({'property_type': 'pg'}).propertyTypeString, 'PG');
+      expect(PropertyModel.fromJson({'property_type': 'office'}).propertyTypeString, 'Office');
       expect(PropertyModel.fromJson({}).propertyTypeString, 'Property');
+    });
+
+    test('listingTranslationKey prioritizes pg and flatmate labels', () {
+      expect(
+        PropertyModel.fromJson({'property_type': 'pg', 'purpose': 'rent'}).listingTranslationKey,
+        'pg',
+      );
+      expect(
+        PropertyModel.fromJson({
+          'property_type': 'flatmate',
+          'purpose': 'rent',
+        }).listingTranslationKey,
+        'flatmate',
+      );
+      expect(
+        PropertyModel.fromJson({
+          'property_type': 'apartment',
+          'purpose': 'short_stay',
+        }).listingTranslationKey,
+        'short_stay',
+      );
     });
 
     test('wire value helpers use canonical backend tokens', () {
       expect(PropertyType.builderFloor.wireValue, 'builder_floor');
       expect(PropertyType.penthouse.wireValue, 'penthouse');
+      expect(PropertyType.pg.wireValue, 'pg');
+      expect(PropertyType.warehouse.wireValue, 'warehouse');
       expect(PropertyPurpose.shortStay.wireValue, 'short_stay');
     });
 

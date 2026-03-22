@@ -10,40 +10,176 @@ class LoanEligibilityView extends GetView<LoanEligibilityController> {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: 'qa.tools.loan_eligibility.screen',
-      identifier: 'qa.tools.loan_eligibility.screen',
-      child: Scaffold(
-        key: const ValueKey('qa.tools.loan_eligibility.screen'),
-        backgroundColor: AppDesign.background,
-        appBar: AppBar(
-          backgroundColor: AppDesign.appBarBackground,
-          elevation: 0,
-          title: Text(
-            'loan_eligibility'.tr,
-            style: TextStyle(
-              color: AppDesign.appBarText,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
-            onPressed: () => Get.back(),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.refresh, color: AppDesign.iconColor),
-              onPressed: controller.clear,
-            ),
-          ],
+    return Scaffold(
+      key: const ValueKey('qa.tools.loan_eligibility.screen'),
+      backgroundColor: AppDesign.background,
+      appBar: AppBar(
+        backgroundColor: AppDesign.appBarBackground,
+        elevation: 0,
+        title: Text(
+          'loan_eligibility'.tr,
+          style: TextStyle(color: AppDesign.appBarText, fontSize: 20, fontWeight: FontWeight.w600),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
+          onPressed: () => Get.back(),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: AppDesign.iconColor),
+            onPressed: controller.clear,
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              color: AppDesign.cardBackground,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTextField(
+                      label: 'monthly_income'.tr,
+                      controller: controller.incomeController,
+                      prefix: '₹',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      label: 'your_age'.tr,
+                      controller: controller.ageController,
+                      suffix: 'years'.tr,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      label: 'existing_emi'.tr,
+                      controller: controller.existingEmiController,
+                      prefix: '₹',
+                      hint: 'optional'.tr,
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'credit_score'.tr,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppDesign.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Obx(
+                      () => Column(
+                        children: [
+                          Slider(
+                            value: controller.creditScore.value,
+                            min: 300,
+                            max: 900,
+                            divisions: 60,
+                            activeColor: AppDesign.primaryYellow,
+                            inactiveColor: AppDesign.inputBackground,
+                            label: controller.creditScore.value.toInt().toString(),
+                            onChanged: (value) => controller.creditScore.value = value,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '300',
+                                style: TextStyle(fontSize: 12, color: AppDesign.textTertiary),
+                              ),
+                              Text(
+                                controller.creditScore.value.toInt().toString(),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppDesign.primaryYellow,
+                                ),
+                              ),
+                              Text(
+                                '900',
+                                style: TextStyle(fontSize: 12, color: AppDesign.textTertiary),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'interest_rate'.tr,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppDesign.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Obx(
+                      () => Column(
+                        children: [
+                          Slider(
+                            value: controller.interestRate.value,
+                            min: 6.0,
+                            max: 15.0,
+                            divisions: 90,
+                            activeColor: AppDesign.primaryYellow,
+                            inactiveColor: AppDesign.inputBackground,
+                            label: '${controller.interestRate.value.toStringAsFixed(1)}%',
+                            onChanged: (value) => controller.interestRate.value = value,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '6%',
+                                style: TextStyle(fontSize: 12, color: AppDesign.textTertiary),
+                              ),
+                              Text(
+                                '${controller.interestRate.value.toStringAsFixed(1)}%',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppDesign.primaryYellow,
+                                ),
+                              ),
+                              Text(
+                                '15%',
+                                style: TextStyle(fontSize: 12, color: AppDesign.textTertiary),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: Semantics(
+                label: 'qa.tools.loan_eligibility.calculate',
+                identifier: 'qa.tools.loan_eligibility.calculate',
+                child: FilledButton(
+                  key: const ValueKey('qa.tools.loan_eligibility.calculate'),
+                  onPressed: controller.calculate,
+                  child: Text('calculate'.tr),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Obx(() {
+              if (!controller.hasCalculated.value) {
+                return const SizedBox.shrink();
+              }
+              return Card(
                 color: AppDesign.cardBackground,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: Padding(
@@ -51,114 +187,46 @@ class LoanEligibilityView extends GetView<LoanEligibilityController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildTextField(
-                        label: 'monthly_income'.tr,
-                        controller: controller.incomeController,
-                        prefix: '₹',
+                      Text(
+                        'eligibility_result'.tr,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppDesign.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      _buildTextField(
-                        label: 'your_age'.tr,
-                        controller: controller.ageController,
-                        suffix: 'years'.tr,
+                      _buildResultRow(
+                        'max_loan_amount'.tr,
+                        '₹${_formatCurrency(controller.maxLoanAmount.value)}',
+                        isHighlight: true,
+                      ),
+                      const Divider(height: 24),
+                      _buildResultRow(
+                        'eligible_emi'.tr,
+                        '₹${_formatCurrency(controller.eligibleEmi.value)}/mo',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildResultRow(
+                        'max_tenure'.tr,
+                        '${controller.maxTenure.value} ${'years'.tr}',
                       ),
                       const SizedBox(height: 16),
-                      _buildTextField(
-                        label: 'existing_emi'.tr,
-                        controller: controller.existingEmiController,
-                        prefix: '₹',
-                        hint: 'optional'.tr,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'credit_score'.tr,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppDesign.textSecondary,
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppDesign.accentBlue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Obx(
-                        () => Column(
+                        child: Row(
                           children: [
-                            Slider(
-                              value: controller.creditScore.value,
-                              min: 300,
-                              max: 900,
-                              divisions: 60,
-                              activeColor: AppDesign.primaryYellow,
-                              inactiveColor: AppDesign.inputBackground,
-                              label: controller.creditScore.value.toInt().toString(),
-                              onChanged: (value) => controller.creditScore.value = value,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '300',
-                                  style: TextStyle(fontSize: 12, color: AppDesign.textTertiary),
-                                ),
-                                Text(
-                                  controller.creditScore.value.toInt().toString(),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppDesign.primaryYellow,
-                                  ),
-                                ),
-                                Text(
-                                  '900',
-                                  style: TextStyle(fontSize: 12, color: AppDesign.textTertiary),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'interest_rate'.tr,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppDesign.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Obx(
-                        () => Column(
-                          children: [
-                            Slider(
-                              value: controller.interestRate.value,
-                              min: 6.0,
-                              max: 15.0,
-                              divisions: 90,
-                              activeColor: AppDesign.primaryYellow,
-                              inactiveColor: AppDesign.inputBackground,
-                              label: '${controller.interestRate.value.toStringAsFixed(1)}%',
-                              onChanged: (value) => controller.interestRate.value = value,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '6%',
-                                  style: TextStyle(fontSize: 12, color: AppDesign.textTertiary),
-                                ),
-                                Text(
-                                  '${controller.interestRate.value.toStringAsFixed(1)}%',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppDesign.primaryYellow,
-                                  ),
-                                ),
-                                Text(
-                                  '15%',
-                                  style: TextStyle(fontSize: 12, color: AppDesign.textTertiary),
-                                ),
-                              ],
+                            const Icon(Icons.info_outline, color: AppDesign.accentBlue, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'loan_eligibility_note'.tr,
+                                style: const TextStyle(fontSize: 12, color: AppDesign.accentBlue),
+                              ),
                             ),
                           ],
                         ),
@@ -166,84 +234,9 @@ class LoanEligibilityView extends GetView<LoanEligibilityController> {
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: Semantics(
-                  label: 'qa.tools.loan_eligibility.calculate',
-                  identifier: 'qa.tools.loan_eligibility.calculate',
-                  child: FilledButton(
-                    key: const ValueKey('qa.tools.loan_eligibility.calculate'),
-                    onPressed: controller.calculate,
-                    child: Text('calculate'.tr),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Obx(() {
-                if (!controller.hasCalculated.value) {
-                  return const SizedBox.shrink();
-                }
-                return Card(
-                  color: AppDesign.cardBackground,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'eligibility_result'.tr,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppDesign.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildResultRow(
-                          'max_loan_amount'.tr,
-                          '₹${_formatCurrency(controller.maxLoanAmount.value)}',
-                          isHighlight: true,
-                        ),
-                        const Divider(height: 24),
-                        _buildResultRow(
-                          'eligible_emi'.tr,
-                          '₹${_formatCurrency(controller.eligibleEmi.value)}/mo',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildResultRow(
-                          'max_tenure'.tr,
-                          '${controller.maxTenure.value} ${'years'.tr}',
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppDesign.accentBlue.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.info_outline, color: AppDesign.accentBlue, size: 20),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'loan_eligibility_note'.tr,
-                                  style: const TextStyle(fontSize: 12, color: AppDesign.accentBlue),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
+              );
+            }),
+          ],
         ),
       ),
     );

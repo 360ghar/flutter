@@ -55,7 +55,10 @@ class LoginView extends GetView<LoginController> {
                     child: RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
-                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        style: TextStyle(
+                          color: AppDesign.overlayLight.withValues(alpha: 0.7),
+                          fontSize: 14,
+                        ),
                         children: [
                           TextSpan(text: 'dont_have_account'.tr),
                           TextSpan(
@@ -80,14 +83,17 @@ class LoginView extends GetView<LoginController> {
             return Positioned.fill(
               child: Stack(
                 children: [
-                  ModalBarrier(dismissible: false, color: Colors.black.withValues(alpha: 0.7)),
+                  ModalBarrier(
+                    dismissible: false,
+                    color: AppDesign.overlayDark.withValues(alpha: 0.7),
+                  ),
                   Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: AppDesign.overlayLight.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                        border: Border.all(color: AppDesign.overlayLight.withValues(alpha: 0.18)),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -104,7 +110,7 @@ class LoginView extends GetView<LoginController> {
                           Text(
                             'loading'.tr,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppDesign.overlayLight,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -126,9 +132,9 @@ class LoginView extends GetView<LoginController> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
+        color: AppDesign.overlayLight.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+        border: Border.all(color: AppDesign.overlayLight.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
@@ -149,7 +155,10 @@ class LoginView extends GetView<LoginController> {
                 children: [
                   Text(
                     'phone_number'.tr,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+                    style: TextStyle(
+                      color: AppDesign.overlayLight.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -157,7 +166,7 @@ class LoginView extends GetView<LoginController> {
                         ? controller.prefilledPhone.value
                         : '+91 ${controller.phoneController.text}',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppDesign.overlayLight,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -191,7 +200,7 @@ class LoginView extends GetView<LoginController> {
           obscureText: !controller.isPasswordVisible.value,
           textInputAction: TextInputAction.done,
           onFieldSubmitted: (_) => controller.signIn(),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppDesign.overlayLight),
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'password_required'.tr;

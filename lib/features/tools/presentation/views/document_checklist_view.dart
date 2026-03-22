@@ -11,96 +11,89 @@ class DocumentChecklistView extends GetView<DocumentChecklistController> {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: 'qa.tools.document_checklist.screen',
-      identifier: 'qa.tools.document_checklist.screen',
-      child: Scaffold(
-        key: const ValueKey('qa.tools.document_checklist.screen'),
-        backgroundColor: AppDesign.background,
-        appBar: AppBar(
-          backgroundColor: AppDesign.appBarBackground,
-          elevation: 0,
-          title: Text(
-            'document_checklist'.tr,
-            style: TextStyle(
-              color: AppDesign.appBarText,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
-            onPressed: () => Get.back(),
-          ),
-          actions: [
-            Semantics(
-              label: 'qa.tools.document_checklist.reset',
-              identifier: 'qa.tools.document_checklist.reset',
-              child: IconButton(
-                key: const ValueKey('qa.tools.document_checklist.reset'),
-                icon: Icon(Icons.refresh, color: AppDesign.iconColor),
-                onPressed: () => _showResetDialog(context),
-              ),
-            ),
-          ],
+    return Scaffold(
+      key: const ValueKey('qa.tools.document_checklist.screen'),
+      backgroundColor: AppDesign.background,
+      appBar: AppBar(
+        backgroundColor: AppDesign.appBarBackground,
+        elevation: 0,
+        title: Text(
+          'document_checklist'.tr,
+          style: TextStyle(color: AppDesign.appBarText, fontSize: 20, fontWeight: FontWeight.w600),
         ),
-        body: Column(
-          children: [
-            Obx(
-              () => Container(
-                padding: const EdgeInsets.all(16),
-                color: AppDesign.cardBackground,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'progress'.tr,
-                          style: TextStyle(fontSize: 14, color: AppDesign.textSecondary),
-                        ),
-                        Text(
-                          '${controller.checkedItems.value}/${controller.totalItems.value}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppDesign.primaryYellow,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: controller.progress,
-                        backgroundColor: AppDesign.inputBackground,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          controller.progress == 1.0
-                              ? AppDesign.accentGreen
-                              : AppDesign.primaryYellow,
-                        ),
-                        minHeight: 8,
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: Icon(Icons.arrow_back, color: AppDesign.iconColor),
+          onPressed: () => Get.back(),
+        ),
+        actions: [
+          Semantics(
+            label: 'qa.tools.document_checklist.reset',
+            identifier: 'qa.tools.document_checklist.reset',
+            child: IconButton(
+              key: const ValueKey('qa.tools.document_checklist.reset'),
+              icon: Icon(Icons.refresh, color: AppDesign.iconColor),
+              onPressed: () => _showResetDialog(context),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Obx(
+            () => Container(
+              padding: const EdgeInsets.all(16),
+              color: AppDesign.cardBackground,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'progress'.tr,
+                        style: TextStyle(fontSize: 14, color: AppDesign.textSecondary),
                       ),
+                      Text(
+                        '${controller.checkedItems.value}/${controller.totalItems.value}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppDesign.primaryYellow,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: controller.progress,
+                      backgroundColor: AppDesign.inputBackground,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        controller.progress == 1.0
+                            ? AppDesign.accentGreen
+                            : AppDesign.primaryYellow,
+                      ),
+                      minHeight: 8,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              child: Obx(
-                () => ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: controller.categories.length,
-                  itemBuilder: (context, index) {
-                    final category = controller.categories[index];
-                    return _buildCategorySection(category);
-                  },
-                ),
+          ),
+          Expanded(
+            child: Obx(
+              () => ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: controller.categories.length,
+                itemBuilder: (context, index) {
+                  final category = controller.categories[index];
+                  return _buildCategorySection(category);
+                },
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

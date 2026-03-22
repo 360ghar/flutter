@@ -21,8 +21,8 @@ class PushNotificationsService {
   static String? _currentToken;
   static Future<String?>? _tokenRequestInFlight;
 
-  static const int _maxApnsReadyChecks = 5;
-  static const Duration _apnsReadyCheckDelay = Duration(milliseconds: 600);
+  static const int _maxApnsReadyChecks = 8;
+  static const Duration _apnsReadyCheckDelay = Duration(milliseconds: 800);
 
   /// Callback to handle notification taps
   static NotificationTapCallback? onNotificationTap;

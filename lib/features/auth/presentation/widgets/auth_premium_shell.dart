@@ -30,7 +30,7 @@ class AuthPremiumShell extends StatelessWidget {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppDesign.overlayDark,
       body: Stack(
         children: [
           Positioned.fill(child: _buildBackgroundImage()),
@@ -88,10 +88,10 @@ class AuthPremiumShell extends StatelessWidget {
           icon: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: AppDesign.overlayDark.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+            child: const Icon(Icons.arrow_back, color: AppDesign.overlayLight, size: 20),
           ),
         ),
       ),
@@ -127,9 +127,9 @@ class AuthPremiumShell extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: 0.2),
-            Colors.black.withValues(alpha: 0.35),
-            Colors.black.withValues(alpha: 0.5),
+            AppDesign.overlayDark.withValues(alpha: 0.2),
+            AppDesign.overlayDark.withValues(alpha: 0.35),
+            AppDesign.overlayDark.withValues(alpha: 0.5),
           ],
           stops: const [0.0, 0.5, 1.0],
         ),
@@ -143,7 +143,7 @@ class AuthPremiumShell extends StatelessWidget {
       style: const TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.w400,
-        color: Colors.white,
+        color: AppDesign.overlayLight,
         letterSpacing: 1.5,
       ),
     );
@@ -158,7 +158,7 @@ class AuthPremiumShell extends StatelessWidget {
         style: const TextStyle(
           fontSize: 26,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          color: AppDesign.overlayLight,
           height: 1.25,
           letterSpacing: -0.3,
         ),
@@ -177,14 +177,14 @@ class AuthPremiumShell extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 440),
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
+              color: AppDesign.overlayLight.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1),
+              border: Border.all(color: AppDesign.overlayLight.withValues(alpha: 0.18), width: 1),
             ),
             child: Theme(
               data: _buildGlassTheme(theme),
               child: DefaultTextStyle(
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppDesign.overlayLight),
                 child: child,
               ),
             ),
@@ -195,14 +195,14 @@ class AuthPremiumShell extends StatelessWidget {
   }
 
   ThemeData _buildGlassTheme(ThemeData base) {
-    final white70 = Colors.white.withValues(alpha: 0.7);
-    final white50 = Colors.white.withValues(alpha: 0.5);
-    final white25 = Colors.white.withValues(alpha: 0.25);
+    final white70 = AppDesign.overlayLight.withValues(alpha: 0.7);
+    final white50 = AppDesign.overlayLight.withValues(alpha: 0.5);
+    final white25 = AppDesign.overlayLight.withValues(alpha: 0.25);
 
     return base.copyWith(
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.08),
+        fillColor: AppDesign.overlayLight.withValues(alpha: 0.08),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -232,14 +232,14 @@ class AuthPremiumShell extends StatelessWidget {
         iconColor: white70,
       ),
       textTheme: base.textTheme.copyWith(
-        bodyLarge: base.textTheme.bodyLarge?.copyWith(color: Colors.white),
+        bodyLarge: base.textTheme.bodyLarge?.copyWith(color: AppDesign.overlayLight),
         bodyMedium: base.textTheme.bodyMedium?.copyWith(color: white70),
         bodySmall: base.textTheme.bodySmall?.copyWith(color: white50),
-        labelLarge: base.textTheme.labelLarge?.copyWith(color: Colors.white),
+        labelLarge: base.textTheme.labelLarge?.copyWith(color: AppDesign.overlayLight),
         labelMedium: base.textTheme.labelMedium?.copyWith(color: white70),
         labelSmall: base.textTheme.labelSmall?.copyWith(color: white50),
-        titleLarge: base.textTheme.titleLarge?.copyWith(color: Colors.white),
-        titleMedium: base.textTheme.titleMedium?.copyWith(color: Colors.white),
+        titleLarge: base.textTheme.titleLarge?.copyWith(color: AppDesign.overlayLight),
+        titleMedium: base.textTheme.titleMedium?.copyWith(color: AppDesign.overlayLight),
         titleSmall: base.textTheme.titleSmall?.copyWith(color: white70),
       ),
       checkboxTheme: CheckboxThemeData(
@@ -247,7 +247,7 @@ class AuthPremiumShell extends StatelessWidget {
           if (states.contains(WidgetState.selected)) {
             return AppDesign.primaryYellow;
           }
-          return Colors.white.withValues(alpha: 0.2);
+          return AppDesign.overlayLight.withValues(alpha: 0.2);
         }),
         checkColor: WidgetStateProperty.all(AppDesign.textDark),
         side: BorderSide(color: white25, width: 1.5),
@@ -261,7 +261,7 @@ class AuthPremiumShell extends StatelessWidget {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.white,
+          foregroundColor: AppDesign.overlayLight,
           side: BorderSide(color: white25, width: 1.5),
           minimumSize: const Size(0, 52),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -311,14 +311,17 @@ class AuthPremiumShell extends StatelessWidget {
               (chip) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: AppDesign.overlayLight.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.18), width: 1),
+                  border: Border.all(
+                    color: AppDesign.overlayLight.withValues(alpha: 0.18),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
                   chip,
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: AppDesign.overlayLight.withValues(alpha: 0.85),
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
                   ),
@@ -334,7 +337,11 @@ class AuthPremiumShell extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: DefaultTextStyle(
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12, height: 1.5),
+        style: TextStyle(
+          color: AppDesign.overlayLight.withValues(alpha: 0.6),
+          fontSize: 12,
+          height: 1.5,
+        ),
         textAlign: TextAlign.center,
         child: footer!,
       ),

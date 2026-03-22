@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:ghar360/core/data/models/app_update_models.dart';
 import 'package:ghar360/core/design/app_design_tokens.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
@@ -15,13 +16,28 @@ import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// Result of attempting the native Android in-app update flow.
+enum _NativeUpdateResult {
+  /// Native update flow was successfully initiated (immediate or flexible).
+  handled,
+
+  /// Play Store confirmed no update is available (version not yet published).
+  notOnStore,
+
+  /// Native in-app update API is not supported (sideloaded, debug build, etc.).
+  unsupported,
+}
+
 /// Controller for managing app update checks and prompts.
 ///
 /// Uses Firebase Remote Config for version checking and in_app_update for
-/// Android's native Play Store update flow. Shows update popup on every app
-/// open until the user updates, even if they click "Skip".
+/// Android's native Play Store update flow. Mandatory updates always show;
+/// optional updates are suppressed once the user skips a given version.
 class AppUpdateController extends GetxService with WidgetsBindingObserver {
   static const String _appIdentifier = 'user';
+  static const String _skippedVersionKey = 'skipped_app_version';
+  static const Duration _checkThrottle = Duration(minutes: 5);
+  static const Duration _postActionCooldown = Duration(minutes: 30);
 
   final AppUpdateRepository _repository = Get.find();
 
@@ -29,6 +45,8 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
 
   bool _isDialogVisible = false;
   AppVersionInfo? _currentVersionInfo;
+  DateTime? _lastCheckAt;
+  DateTime? _lastUpdateActionAt;
 
   @override
   void onInit() {
@@ -49,11 +67,25 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
     super.onClose();
   }
 
-  /// Triggered when app comes to foreground - check for updates every time
+  /// Triggered when app comes to foreground - throttled check
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Check for updates every time app resumes (no throttling)
+      final now = DateTime.now();
+      if (_lastCheckAt != null && now.difference(_lastCheckAt!) < _checkThrottle) {
+        return;
+      }
+      // Enforce a longer cooldown after the user already acted on an update
+      // prompt to prevent the dialog re-appearing immediately when returning
+      // from the Play Store (where the version may not yet be live).
+      if (_lastUpdateActionAt != null &&
+          now.difference(_lastUpdateActionAt!) < _postActionCooldown) {
+        DebugLogger.debug(
+          'Skipping update check: user acted on update prompt '
+          '${now.difference(_lastUpdateActionAt!).inMinutes}m ago',
+        );
+        return;
+      }
       unawaited(_checkForUpdates());
     }
   }
@@ -87,16 +119,46 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
       isChecking.value = true;
       final response = await _repository.checkForUpdates(request);
 
+      _lastCheckAt = DateTime.now();
+
       if (!response.updateAvailable) {
         DebugLogger.debug('App is up to date (${versionInfo.version})');
         return;
       }
 
+      // Clear skipped version when a mandatory update is detected
+      if (response.isMandatory) {
+        GetStorage().remove(_skippedVersionKey);
+      }
+
+      // Skip dialog for non-mandatory updates the user already dismissed
+      if (!response.isMandatory) {
+        final skippedVersion = GetStorage().read<String>(_skippedVersionKey);
+        if (skippedVersion == response.latestVersion) {
+          DebugLogger.debug(
+            'Skipping update dialog - user previously '
+            'dismissed v${response.latestVersion}',
+          );
+          return;
+        }
+      }
+
       // Try native in-app update for Android first
       if (GetPlatform.isAndroid) {
-        final usedNativeUpdate = await _tryNativeAndroidUpdate(response.isMandatory);
-        if (usedNativeUpdate) {
-          return; // Native update flow handled it
+        final nativeResult = await _tryNativeAndroidUpdate(response.isMandatory);
+        switch (nativeResult) {
+          case _NativeUpdateResult.handled:
+            return; // Native update flow handled it
+          case _NativeUpdateResult.notOnStore:
+            // Play Store authoritatively says no update exists — Remote Config
+            // is ahead of what's been published. Do not show a custom dialog.
+            DebugLogger.info(
+              'Remote Config reports v${response.latestVersion} but '
+              'Play Store has no update available. Skipping dialog.',
+            );
+            return;
+          case _NativeUpdateResult.unsupported:
+            break; // Fall through to custom dialog (sideloaded / debug build)
         }
       }
 
@@ -109,9 +171,12 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
     }
   }
 
-  /// Try to use Android's native in-app update API
-  /// Returns true if native update flow was used, false otherwise
-  Future<bool> _tryNativeAndroidUpdate(bool isMandatory) async {
+  /// Try to use Android's native in-app update API.
+  /// Returns a [_NativeUpdateResult] distinguishing between:
+  /// - [_NativeUpdateResult.handled]: native flow used successfully
+  /// - [_NativeUpdateResult.notOnStore]: Play Store confirmed no update exists
+  /// - [_NativeUpdateResult.unsupported]: native API unavailable (sideloaded/debug)
+  Future<_NativeUpdateResult> _tryNativeAndroidUpdate(bool isMandatory) async {
     try {
       final updateInfo = await InAppUpdate.checkForUpdate();
       DebugLogger.debug(
@@ -121,33 +186,34 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
       );
 
       if (updateInfo.updateAvailability != UpdateAvailability.updateAvailable) {
-        // No update available via Play Store yet (might be recently published)
+        // Play Store explicitly says no update is available.
+        // This means Remote Config may be ahead of what's been published.
         DebugLogger.debug('No update available via Play Store native API');
-        return false;
+        return _NativeUpdateResult.notOnStore;
       }
 
       if (isMandatory && updateInfo.immediateUpdateAllowed) {
         // Mandatory update: Use immediate flow (blocks the app)
         DebugLogger.info('Starting immediate (mandatory) update');
         await InAppUpdate.performImmediateUpdate();
-        return true;
+        return _NativeUpdateResult.handled;
       } else if (updateInfo.flexibleUpdateAllowed) {
         // Optional update: Use flexible flow (downloads in background)
         DebugLogger.info('Starting flexible update');
         await InAppUpdate.startFlexibleUpdate();
         // Complete the update when ready
         await InAppUpdate.completeFlexibleUpdate();
-        return true;
+        return _NativeUpdateResult.handled;
       }
 
-      return false;
+      return _NativeUpdateResult.unsupported;
     } on PlatformException catch (e) {
       // in_app_update not supported (e.g., not installed from Play Store)
       DebugLogger.debug('Native in-app update not available: ${e.message}');
-      return false;
+      return _NativeUpdateResult.unsupported;
     } catch (e, stackTrace) {
       DebugLogger.warning('Native in-app update failed', e, stackTrace);
-      return false;
+      return _NativeUpdateResult.unsupported;
     }
   }
 
@@ -208,25 +274,31 @@ class AppUpdateController extends GetxService with WidgetsBindingObserver {
 
       if (response.isMandatory) {
         if (action == AppUpdateAction.update) {
+          _lastUpdateActionAt = DateTime.now();
           await _openDownloadUrl(response.downloadUrl);
-        } else {
-          // Mandatory dialog dismissed somehow - show it again
-          _isDialogVisible = false;
-          await _showUpdateDialog(response, versionInfo);
         }
+        // Do not recursively re-show. The lifecycle observer
+        // (didChangeAppLifecycleState) will re-trigger the check when the
+        // user returns from the store, subject to _postActionCooldown.
         return;
       }
 
       // Optional update handling
       switch (action) {
         case AppUpdateAction.update:
+          _lastUpdateActionAt = DateTime.now();
           await _openDownloadUrl(response.downloadUrl);
           break;
         case AppUpdateAction.remindLater:
         case null:
-          // User clicked "Skip" or dismissed - popup will show again next time
-          // (No longer storing dismissed version)
-          DebugLogger.debug('User skipped optional update - will show again on next app open');
+          // Store skipped version so we don't prompt again
+          if (response.latestVersion != null) {
+            GetStorage().write(_skippedVersionKey, response.latestVersion);
+          }
+          DebugLogger.debug(
+            'User skipped optional update '
+            'v${response.latestVersion}',
+          );
           break;
       }
     } finally {

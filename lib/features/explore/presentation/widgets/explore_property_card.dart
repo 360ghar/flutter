@@ -99,7 +99,7 @@ class ExplorePropertyCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppBorderRadius.chip),
                         ),
                         child: Text(
-                          property.propertyTypeString.toUpperCase(),
+                          property.propertyTypeTranslationKey.tr.toUpperCase(),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,

@@ -199,7 +199,7 @@ class VisitCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      visit.property!.purposeString,
+                      visit.property!.listingTranslationKey.tr,
                       style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w600,

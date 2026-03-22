@@ -128,14 +128,27 @@ void main() {
       );
     });
 
-    test('isProfileComplete requires email, fullName, dateOfBirth', () {
+    test('isProfileComplete requires only fullName and dateOfBirth', () {
       expect(make(fullName: 'Alice', dateOfBirth: '1990-01-01').isProfileComplete, true);
       expect(make(fullName: 'Alice').isProfileComplete, false, reason: 'Missing dateOfBirth');
       expect(make(dateOfBirth: '1990-01-01').isProfileComplete, false, reason: 'Missing fullName');
       expect(
-        make(email: '', fullName: 'Alice', dateOfBirth: '1990-01-01').isProfileComplete,
+        make(fullName: '', dateOfBirth: '1990-01-01').isProfileComplete,
         false,
-        reason: 'Empty email',
+        reason: 'Empty fullName',
+      );
+      expect(
+        make(fullName: 'Alice', dateOfBirth: '').isProfileComplete,
+        false,
+        reason: 'Empty dateOfBirth',
+      );
+    });
+
+    test('isProfileComplete does not require email', () {
+      expect(
+        make(email: '', fullName: 'Alice', dateOfBirth: '1990-01-01').isProfileComplete,
+        true,
+        reason: 'Email should not affect profile completion',
       );
     });
 

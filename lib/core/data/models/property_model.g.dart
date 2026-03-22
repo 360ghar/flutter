@@ -20,6 +20,35 @@ Map<String, dynamic> _$PropertyAmenityToJson(PropertyAmenity instance) => <Strin
   'category': instance.category,
 };
 
+ListingPreferences _$ListingPreferencesFromJson(Map<String, dynamic> json) => ListingPreferences(
+  genderPreference: $enumDecodeNullable(
+    _$ListingGenderPreferenceEnumMap,
+    json['gender_preference'],
+    unknownValue: ListingGenderPreference.any,
+  ),
+  sharingType: $enumDecodeNullable(
+    _$ListingSharingTypeEnumMap,
+    json['sharing_type'],
+    unknownValue: ListingSharingType.privateRoom,
+  ),
+);
+
+Map<String, dynamic> _$ListingPreferencesToJson(ListingPreferences instance) => <String, dynamic>{
+  'gender_preference': _$ListingGenderPreferenceEnumMap[instance.genderPreference],
+  'sharing_type': _$ListingSharingTypeEnumMap[instance.sharingType],
+};
+
+const _$ListingGenderPreferenceEnumMap = {
+  ListingGenderPreference.any: 'any',
+  ListingGenderPreference.male: 'male',
+  ListingGenderPreference.female: 'female',
+};
+
+const _$ListingSharingTypeEnumMap = {
+  ListingSharingType.privateRoom: 'private_room',
+  ListingSharingType.sharedRoom: 'shared_room',
+};
+
 PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) => $checkedCreate(
   'PropertyModel',
   json,
@@ -77,6 +106,10 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) => $checkedCrea
       features: $checkedConvert(
         'features',
         (v) => (v as List<dynamic>?)?.map((e) => e as String).toList(),
+      ),
+      listingPreferences: $checkedConvert(
+        'listing_preferences',
+        (v) => v == null ? null : ListingPreferences.fromJson(v as Map<String, dynamic>),
       ),
       mainImageUrl: $checkedConvert('main_image_url', (v) => v as String?),
       images: $checkedConvert(
@@ -146,6 +179,7 @@ PropertyModel _$PropertyModelFromJson(Map<String, dynamic> json) => $checkedCrea
     'ageOfProperty': 'age_of_property',
     'maxOccupancy': 'max_occupancy',
     'minimumStayDays': 'minimum_stay_days',
+    'listingPreferences': 'listing_preferences',
     'mainImageUrl': 'main_image_url',
     'videoTourUrl': 'video_tour_url',
     'videoUrls': 'video_urls',
@@ -206,6 +240,7 @@ Map<String, dynamic> _$PropertyModelToJson(PropertyModel instance) => <String, d
   'minimum_stay_days': instance.minimumStayDays,
   'amenities': instance.amenities?.map((e) => e.toJson()).toList(),
   'features': instance.features,
+  'listing_preferences': instance.listingPreferences?.toJson(),
   'main_image_url': instance.mainImageUrl,
   'images': instance.images?.map((e) => e.toJson()).toList(),
   'video_tour_url': instance.videoTourUrl,
@@ -243,6 +278,11 @@ const _$PropertyTypeEnumMap = {
   PropertyType.penthouse: 'penthouse',
   PropertyType.studio: 'studio',
   PropertyType.loft: 'loft',
+  PropertyType.pg: 'pg',
+  PropertyType.flatmate: 'flatmate',
+  PropertyType.office: 'office',
+  PropertyType.shop: 'shop',
+  PropertyType.warehouse: 'warehouse',
 };
 
 const _$PropertyPurposeEnumMap = {
