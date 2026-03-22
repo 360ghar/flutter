@@ -1,0 +1,14 @@
+appId: com.the360ghar.ghar360
+---
+- extendedWaitUntil:
+    visible:
+      id: qa.dashboard.nav.discover
+    timeout: 30000
+- assertVisible:
+    id: qa.dashboard.nav.profile
+- assertVisible:
+    id: qa.dashboard.nav.explore_properties
+- assertVisible:
+    id: qa.dashboard.nav.liked
+- assertVisible:
+    id: qa.dashboard.nav.visits

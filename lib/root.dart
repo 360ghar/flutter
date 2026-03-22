@@ -17,24 +17,34 @@ class Root extends StatelessWidget {
     final authController = Get.find<AuthController>();
     return Obx(() {
       final currentStatus = authController.authStatus.value;
+      final isAuthResolving = authController.isAuthResolving.value;
       DebugLogger.info('🏠 Root widget rebuilding with authStatus: $currentStatus');
 
       switch (currentStatus) {
         case AuthStatus.initial:
+          // Only show loading during initial auth check
+          // AuthNavigationService will handle navigation once state is determined
+          DebugLogger.debug('📱 Root: Showing loading state for initial auth check');
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
         case AuthStatus.unauthenticated:
         case AuthStatus.requiresProfileCompletion:
         case AuthStatus.authenticated:
-          // For all normal states, show a loading indicator while navigation worker handles routing
-          // Navigation is now handled by the AuthController navigation worker, not in build method
-          DebugLogger.debug('📱 Root: Showing loading state for $currentStatus');
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          // AuthNavigationService handles navigation for these states
+          // Return empty scaffold while navigation is in progress
+          DebugLogger.debug(
+            '📱 Root: Auth state resolved to $currentStatus, navigation handled by AuthNavigationService',
+          );
+          return const Scaffold(body: SizedBox.shrink());
 
         case AuthStatus.error:
           DebugLogger.debug('📱 Root: Showing error state');
           // User authentication error - show retry/logout options
           return ErrorStates.profileLoadError(
-            onRetry: () => authController.retryProfileLoad(),
+            customMessage: authController.authErrorMessage.value,
+            onRetry: isAuthResolving ? null : () => authController.retryProfileLoad(),
             onSignOut: () => authController.signOut(),
+            isRetrying: isAuthResolving,
           );
       }
     });

@@ -161,7 +161,7 @@ class BugReportResponse {
   final String? appVersion;
   final List<String> mediaUrls;
   final List<String> tags;
-  final String? assignedTo;
+  final int? assignedTo;
   final String? resolution;
   final DateTime? resolvedAt;
   final DateTime? createdAt;

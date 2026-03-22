@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/utils/image_cache_service.dart';
 
 class ImageLoadingService {
@@ -118,12 +118,12 @@ class RobustNetworkImage extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      color: AppColors.inputBackground,
+      color: AppDesign.inputBackground,
       child: Center(
         child: SizedBox(
           width: 24,
           height: 24,
-          child: CircularProgressIndicator(color: AppColors.loadingIndicator, strokeWidth: 2),
+          child: CircularProgressIndicator(color: AppDesign.loadingIndicator, strokeWidth: 2),
         ),
       ),
     );
@@ -138,11 +138,11 @@ class RobustNetworkImage extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primaryYellow.withValues(alpha: 0.1),
-            AppColors.primaryYellow.withValues(alpha: 0.05),
+            AppDesign.primaryYellow.withValues(alpha: 0.1),
+            AppDesign.primaryYellow.withValues(alpha: 0.05),
           ],
         ),
-        border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.3), width: 1),
+        border: Border.all(color: AppDesign.primaryYellow.withValues(alpha: 0.3), width: 1),
       ),
       child: Center(
         child: Column(
@@ -151,12 +151,12 @@ class RobustNetworkImage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primaryYellow.withValues(alpha: 0.2),
+                color: AppDesign.primaryYellow.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.home_outlined,
-                color: AppColors.primaryYellow,
+                color: AppDesign.primaryYellow,
                 size: width != null && width! < 100 ? 20 : 32,
               ),
             ),
@@ -165,7 +165,7 @@ class RobustNetworkImage extends StatelessWidget {
               Text(
                 'property_image'.tr,
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: AppDesign.textSecondary,
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
@@ -215,16 +215,16 @@ extension RobustNetworkImageExtension on RobustNetworkImage {
             Container(
               width: size,
               height: size,
-              color: AppColors.inputBackground,
-              child: Icon(Icons.person, color: AppColors.textSecondary),
+              color: AppDesign.inputBackground,
+              child: Icon(Icons.person, color: AppDesign.textSecondary),
             ),
         errorWidget:
             errorWidget ??
             Container(
               width: size,
               height: size,
-              color: AppColors.inputBackground,
-              child: Icon(Icons.person, color: AppColors.textSecondary),
+              color: AppDesign.inputBackground,
+              child: Icon(Icons.person, color: AppDesign.textSecondary),
             ),
       ),
     );

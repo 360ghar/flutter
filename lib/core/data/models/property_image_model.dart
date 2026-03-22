@@ -40,7 +40,7 @@ class PropertyImageModel {
   bool get isValid =>
       imageUrl.isNotEmpty && imageUrl != 'https://via.placeholder.com/400x300?text=No+Image';
 
-  /// Payload-friendly map keeping both legacy and new main flags
+  /// Payload-friendly map that keeps both main-image flags in sync.
   Map<String, dynamic> toApiJson() {
     final payload = toJson();
     payload['is_main'] = isMain || isMainImage;

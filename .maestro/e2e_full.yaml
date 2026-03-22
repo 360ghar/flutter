@@ -1,0 +1,373 @@
+appId: com.the360ghar.ghar360
+---
+# ================================================================
+# E2E Full Flow — single login, exercises all major features
+# ================================================================
+
+# ----------------------------------------------------------------
+# 1. LOGIN (once for the entire test)
+# ----------------------------------------------------------------
+- runFlow: _shared/login.yaml
+
+# ----------------------------------------------------------------
+# 2. DISCOVER TAB (default tab after login)
+# ----------------------------------------------------------------
+- assertVisible:
+    id: qa.location.selector.trigger.discover
+
+# Swipe left (pass) on a property card
+- swipe:
+    start: 80%,70%
+    end: 20%,70%
+    duration: 400
+
+# Swipe right (like) on a property card
+- swipe:
+    start: 20%,70%
+    end: 80%,70%
+    duration: 400
+
+# ----------------------------------------------------------------
+# 3. EXPLORE TAB
+# ----------------------------------------------------------------
+- tapOn:
+    id: qa.dashboard.nav.explore_properties
+- extendedWaitUntil:
+    visible:
+      id: qa.location.selector.trigger.explore
+    timeout: 30000
+
+# Open the location selector modal and verify its contents
+- tapOn:
+    id: qa.location.selector.trigger.explore
+- runFlow:
+    when:
+      visible:
+        id: qa.location.selector.modal.explore
+    commands:
+      - assertVisible:
+          id: qa.location.selector.search_input.explore
+      - assertVisible:
+          id: qa.location.selector.use_current_location.explore
+      # Dismiss modal by tapping the dimmed area above
+      - tapOn:
+          point: "50%,15%"
+
+# ----------------------------------------------------------------
+# 4. LIKES TAB
+# ----------------------------------------------------------------
+- extendedWaitUntil:
+    visible:
+      id: qa.dashboard.nav.liked
+    timeout: 15000
+- tapOn:
+    id: qa.dashboard.nav.liked
+- assertVisible:
+    id: qa.likes.tab.liked
+
+# Switch to Passed tab
+- tapOn:
+    id: qa.likes.tab.passed
+- assertVisible:
+    id: qa.likes.tab.passed
+
+# Switch back to Liked tab
+- tapOn:
+    id: qa.likes.tab.liked
+- assertVisible:
+    id: qa.likes.tab.liked
+
+# ----------------------------------------------------------------
+# 5. VISITS TAB
+# ----------------------------------------------------------------
+- tapOn:
+    id: qa.dashboard.nav.visits
+- assertVisible:
+    id: qa.visits.tab.scheduled
+
+# Switch to Past tab
+- tapOn:
+    id: qa.visits.tab.past
+- assertVisible:
+    id: qa.visits.tab.past
+
+# Switch back to Scheduled tab
+- tapOn:
+    id: qa.visits.tab.scheduled
+- assertVisible:
+    id: qa.visits.tab.scheduled
+
+# Reschedule dialog (only if a visit card with Reschedule exists)
+- tapOn:
+    text: "Reschedule"
+    optional: true
+- runFlow:
+    when:
+      visible:
+        text: "Reschedule Visit"
+    commands:
+      - assertVisible: "Reschedule Visit"
+      - tapOn:
+          text: "Cancel"
+          optional: true
+      - back:
+          optional: true
+
+# Cancel dialog (only if a visit card with Cancel exists)
+- tapOn:
+    text: "Cancel"
+    optional: true
+- runFlow:
+    when:
+      visible:
+        text: "Cancel Visit"
+    commands:
+      - assertVisible: "Cancel Visit"
+      - back
+
+# ----------------------------------------------------------------
+# 6. PROFILE TAB + SUB-SCREENS
+# ----------------------------------------------------------------
+- tapOn:
+    id: qa.dashboard.nav.profile
+- assertVisible:
+    id: qa.profile.menu.preferences
+
+# --- 6a. Edit Profile ---
+- tapOn:
+    id: qa.profile.menu.edit_profile
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.edit.screen
+    timeout: 15000
+- assertVisible:
+    id: qa.profile.edit.save
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.menu.preferences
+    timeout: 15000
+
+# --- 6b. Preferences (with dialog interactions) ---
+- tapOn:
+    id: qa.profile.menu.preferences
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.preferences.screen
+    timeout: 15000
+- assertVisible:
+    id: qa.profile.preferences.theme_selector
+- assertVisible:
+    id: qa.profile.preferences.language_selector
+
+# Open theme selector dialog and dismiss
+- tapOn:
+    id: qa.profile.preferences.theme_selector
+- assertVisible:
+    text: "Light"
+    optional: true
+- tapOn:
+    text: "Cancel"
+    optional: true
+- back:
+    optional: true
+
+# Open language selector dialog and dismiss
+- tapOn:
+    id: qa.profile.preferences.language_selector
+- assertVisible:
+    text: "English"
+    optional: true
+- tapOn:
+    text: "Cancel"
+    optional: true
+- tapOn:
+    text: "cancel"
+    optional: true
+- back:
+    optional: true
+
+# Back to profile
+- tapOn: "Back"
+
+# --- 6c. Tools — all 6 calculators ---
+- tapOn:
+    id: qa.profile.menu.tools
+- extendedWaitUntil:
+    visible:
+      id: qa.tools.menu.area_converter
+    timeout: 15000
+
+# Area Converter
+- tapOn:
+    id: qa.tools.menu.area_converter
+- tapOn:
+    id: qa.tools.area_converter.input
+- inputText: "1000"
+- tapOn: "Back"
+
+# Loan Eligibility
+- tapOn:
+    id: qa.tools.menu.loan_eligibility
+- tapOn:
+    point: "50%,22%"
+- inputText: "120000"
+- tapOn:
+    point: "50%,34%"
+- inputText: "30"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: "Calculate"
+- tapOn: "Calculate"
+- tapOn: "Back"
+
+# EMI Calculator
+- tapOn:
+    id: qa.tools.menu.emi_calculator
+- tapOn:
+    point: "50%,22%"
+- inputText: "5000000"
+- tapOn:
+    point: "50%,34%"
+- inputText: "9"
+- tapOn:
+    point: "50%,46%"
+- inputText: "20"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: "Calculate"
+- tapOn: "Calculate"
+- tapOn: "Back"
+
+# Carpet Area Calculator
+- tapOn:
+    id: qa.tools.menu.carpet_area
+- tapOn:
+    point: "50%,22%"
+- inputText: "1200"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: "Calculate"
+- tapOn: "Calculate"
+- tapOn: "Back"
+
+# Document Checklist
+- tapOn:
+    id: qa.tools.menu.document_checklist
+- tapOn:
+    id: qa.tools.document_checklist.reset
+    optional: true
+- runFlow:
+    when:
+      visible:
+        text: "Reset Checklist"
+    commands:
+      - tapOn: "Cancel"
+- tapOn: "Back"
+
+# Capital Gains
+- tapOn:
+    id: qa.tools.menu.capital_gains
+- tapOn:
+    point: "50%,22%"
+- inputText: "3500000"
+- tapOn:
+    point: "50%,34%"
+- inputText: "6500000"
+- tapOn:
+    point: "50%,62%"
+- tapOn: "Back"
+
+# Back from Tools to Profile
+- tapOn: "Back"
+
+# --- 6d. Privacy ---
+- scrollUntilVisible:
+    element:
+      id: qa.profile.menu.privacy
+- tapOn:
+    id: qa.profile.menu.privacy
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.privacy.screen
+    timeout: 15000
+- assertVisible:
+    id: qa.profile.privacy.change_password
+- tapOn: "Back"
+
+# --- 6e. Help → Feedback ---
+- scrollUntilVisible:
+    element:
+      id: qa.profile.menu.help
+- tapOn:
+    id: qa.profile.menu.help
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.help.screen
+    timeout: 15000
+
+# Navigate to Send Feedback screen
+- scrollUntilVisible:
+    element:
+      text: "Send Feedback"
+- tapOn:
+    text: "Send Feedback"
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.feedback.screen
+    timeout: 15000
+
+# Tap submit without filling form to trigger validation
+- scrollUntilVisible:
+    element:
+      text: "Send Feedback"
+- tapOn:
+    text: "Send Feedback"
+- assertVisible:
+    text: "Please describe the issue in a short title"
+    optional: true
+
+# Back to Help, then back to Profile
+- tapOn: "Back"
+- tapOn: "Back"
+
+# --- 6f. About ---
+- scrollUntilVisible:
+    element:
+      id: qa.profile.menu.about
+- tapOn:
+    id: qa.profile.menu.about
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.about.screen
+    timeout: 15000
+- tapOn: "Back"
+
+# ----------------------------------------------------------------
+# 7. DEEP LINK — open a property via short URL
+# ----------------------------------------------------------------
+- runScript: scripts/get_property_id.js
+- openLink: "https://ghar.sale/p/${output.propertyId}"
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: qa.property_details.screen
+    timeout: 25000
+# ----------------------------------------------------------------
+# 8. FINAL HEALTH CHECK — return to Discover
+# ----------------------------------------------------------------
+- launchApp:
+    appId: com.the360ghar.ghar360
+- extendedWaitUntil:
+    visible:
+      id: qa.dashboard.nav.discover
+    timeout: 15000
+- tapOn:
+    id: qa.dashboard.nav.discover
+- assertVisible:
+    id: qa.location.selector.trigger.discover

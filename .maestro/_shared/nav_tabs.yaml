@@ -1,0 +1,28 @@
+appId: com.the360ghar.ghar360
+---
+- tapOn:
+    id: qa.dashboard.nav.profile
+- assertVisible:
+    id: qa.profile.menu.preferences
+- tapOn:
+    id: qa.dashboard.nav.explore_properties
+- extendedWaitUntil:
+    visible:
+      id: qa.location.selector.trigger.explore
+    timeout: 30000
+- tapOn:
+    id: qa.dashboard.nav.discover
+- assertVisible:
+    id: qa.location.selector.trigger.discover
+- tapOn:
+    id: qa.dashboard.nav.liked
+- assertVisible:
+    id: qa.likes.tab.liked
+- tapOn:
+    id: qa.dashboard.nav.visits
+- assertVisible:
+    id: qa.visits.tab.scheduled
+- tapOn:
+    id: qa.dashboard.nav.discover
+- assertVisible:
+    id: qa.location.selector.trigger.discover

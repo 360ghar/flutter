@@ -1,4 +1,6 @@
 import 'package:ghar360/core/data/models/property_model.dart';
+import 'package:ghar360/core/utils/api_date_time.dart';
+import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'visit_model.g.dart';
@@ -36,7 +38,7 @@ class VisitAgentInfo {
   Map<String, dynamic> toJson() => _$VisitAgentInfoToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class VisitModel {
   final int id;
   @JsonKey(name: 'property_id')
@@ -105,37 +107,38 @@ class VisitModel {
   });
 
   factory VisitModel.fromJson(Map<String, dynamic> json) {
-    // Combine date and time into a single DateTime object
     final dateStr = json['visit_date'] as String?;
     final timeStr = json['visit_time'] as String?;
-    DateTime? scheduledDateTime;
+    final scheduledDateValue = json['scheduled_date'];
+    DateTime? scheduledDateTime = parseApiDateTime(scheduledDateValue);
 
-    if (dateStr != null && timeStr != null) {
-      try {
-        scheduledDateTime = DateTime.parse('$dateStr $timeStr');
-      } catch (e) {
-        // Handle potential format errors - fall back to just date
-        try {
-          scheduledDateTime = DateTime.parse(dateStr);
-        } catch (e2) {
-          // If all parsing fails, use current time as fallback
-          scheduledDateTime = DateTime.now();
-        }
-      }
-    } else if (json['scheduled_date'] != null) {
-      // Fall back to the standard scheduled_date field if available
-      try {
-        scheduledDateTime = DateTime.parse(json['scheduled_date']);
-      } catch (e) {
-        scheduledDateTime = DateTime.now();
-      }
-    } else {
-      scheduledDateTime = DateTime.now();
+    if (scheduledDateTime == null && dateStr != null) {
+      scheduledDateTime = combineUtcDateAndTime(dateStr, timeStr) ?? parseApiDateTime(dateStr);
     }
 
-    // Create a modified JSON with the combined scheduled_date
+    if (scheduledDateTime == null) {
+      DebugLogger.error(
+        '⚠️ VisitModel: No date fields found. '
+        'Keys: ${json.keys.where((k) => k.contains('date') || k.contains('time')).toList()} '
+        'visitId=${json['id']}',
+      );
+      scheduledDateTime = DateTime.now().toUtc();
+    } else if (scheduledDateValue != null && parseApiDateTime(scheduledDateValue) == null) {
+      DebugLogger.error(
+        '⚠️ VisitModel: Failed to parse scheduled_date. '
+        'Raw: "${json['scheduled_date']}" visitId=${json['id']}',
+      );
+    } else if (dateStr != null &&
+        scheduledDateValue == null &&
+        combineUtcDateAndTime(dateStr, timeStr) == null) {
+      DebugLogger.error(
+        '⚠️ VisitModel: Failed to parse date+time. '
+        'Raw: date="$dateStr" time="$timeStr" visitId=${json['id']}',
+      );
+    }
+
     final modifiedJson = Map<String, dynamic>.from(json);
-    modifiedJson['scheduled_date'] = scheduledDateTime.toIso8601String();
+    modifiedJson['scheduled_date'] = toApiUtcInstant(scheduledDateTime);
 
     // Call the generated fromJson with the modified data
     return _$VisitModelFromJson(modifiedJson);
@@ -157,21 +160,24 @@ class VisitModel {
   bool get isCompleted => status == VisitStatus.completed;
   bool get isCancelled => status == VisitStatus.cancelled;
 
-  // Helper methods for status
-  String get statusString {
+  // Helper methods for status - returns translation keys
+  String get statusStringKey {
     switch (status) {
       case VisitStatus.scheduled:
-        return 'Scheduled';
+        return 'visit_status_scheduled';
       case VisitStatus.confirmed:
-        return 'Confirmed';
+        return 'visit_status_confirmed';
       case VisitStatus.completed:
-        return 'Completed';
+        return 'visit_status_completed';
       case VisitStatus.cancelled:
-        return 'Cancelled';
+        return 'visit_status_cancelled';
       case VisitStatus.rescheduled:
-        return 'Rescheduled';
+        return 'visit_status_rescheduled';
     }
   }
+
+  @Deprecated('Use statusStringKey with .tr for localized text')
+  String get statusString => statusStringKey;
 
   bool get canReschedule =>
       status == VisitStatus.scheduled ||

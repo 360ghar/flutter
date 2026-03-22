@@ -24,6 +24,8 @@ UnifiedFilterModel _$UnifiedFilterModelFromJson(Map<String, dynamic> json) => Un
   ageMax: (json['age_max'] as num?)?.toInt(),
   amenities: (json['amenities'] as List<dynamic>?)?.map((e) => e as String).toList(),
   features: (json['features'] as List<dynamic>?)?.map((e) => e as String).toList(),
+  genderPreference: json['gender_preference'] as String?,
+  sharingType: json['sharing_type'] as String?,
   availableFrom: json['available_from'] == null
       ? null
       : DateTime.parse(json['available_from'] as String),
@@ -58,6 +60,8 @@ Map<String, dynamic> _$UnifiedFilterModelToJson(UnifiedFilterModel instance) => 
   'age_max': instance.ageMax,
   'amenities': instance.amenities,
   'features': instance.features,
+  'gender_preference': instance.genderPreference,
+  'sharing_type': instance.sharingType,
   'available_from': instance.availableFrom?.toIso8601String(),
   'check_in_date': instance.checkInDate?.toIso8601String(),
   'check_out_date': instance.checkOutDate?.toIso8601String(),

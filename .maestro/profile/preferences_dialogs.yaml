@@ -1,0 +1,32 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- tapOn:
+    id: qa.profile.menu.preferences
+- extendedWaitUntil:
+    visible:
+      id: qa.profile.preferences.screen
+    timeout: 15000
+- tapOn:
+    id: qa.profile.preferences.theme_selector
+- assertVisible:
+    text: "Light"
+    optional: true
+- tapOn:
+    text: "Cancel"
+    optional: true
+- back:
+    optional: true
+- tapOn:
+    id: qa.profile.preferences.language_selector
+- assertVisible:
+    text: "English"
+    optional: true
+- tapOn:
+    text: "cancel"
+    optional: true
+- tapOn:
+    text: "Cancel"
+    optional: true

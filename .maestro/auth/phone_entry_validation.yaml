@@ -1,0 +1,23 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/launch_clean.yaml
+- runFlow: ../_shared/skip_onboarding.yaml
+- runFlow:
+    when:
+      visible:
+        id: qa.auth.login.password_input
+    commands:
+      - tapOn: "Change"
+- extendedWaitUntil:
+    visible:
+      id: qa.auth.phone_entry.phone_input
+    timeout: 20000
+- tapOn:
+    id: qa.auth.phone_entry.continue
+- assertVisible: "Please enter your phone number"
+- tapOn:
+    id: qa.auth.phone_entry.phone_input
+- inputText: "1234"
+- tapOn:
+    id: qa.auth.phone_entry.continue
+- assertVisible: "Enter 10 digits or +91 followed by 10 digits"

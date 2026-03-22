@@ -43,7 +43,7 @@ Map<String, dynamic> _$PropertyAmenityModelToJson(PropertyAmenityModel instance)
       'property_id': instance.propertyId,
       'amenity_id': instance.amenityId,
       'created_at': instance.createdAt.toIso8601String(),
-      'amenity': instance.amenity,
+      'amenity': instance.amenity?.toJson(),
     };
 
 PropertyAmenityResponse _$PropertyAmenityResponseFromJson(Map<String, dynamic> json) =>

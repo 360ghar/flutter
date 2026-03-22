@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 
+/// Debug-only diagnostic for tracking null-check operator exceptions.
+/// All methods are no-ops in release builds.
 class NullCheckTrap {
   static bool _fired = false;
   static bool _stringFired = false;
@@ -12,6 +14,7 @@ class NullCheckTrap {
   static bool get hasFired => _fired;
 
   static void _logCommonContext({String source = 'unknown'}) {
+    if (!kDebugMode) return;
     try {
       DebugLogger.error('🚨 [NULL_CHECK_TRAP] SOURCE: $source');
       DebugLogger.error('🚨 [NULL_CHECK_TRAP] Current route: ${Get.currentRoute}');
@@ -47,7 +50,7 @@ class NullCheckTrap {
   }
 
   static void capture(dynamic error, StackTrace stack, {String source = 'zone'}) {
-    if (_fired) return;
+    if (!kDebugMode || _fired) return;
     final text = error?.toString() ?? '';
     if (!text.contains('Null check operator used on a null value')) return;
     _fired = true;
@@ -61,7 +64,7 @@ class NullCheckTrap {
   }
 
   static void captureFlutterError(FlutterErrorDetails details) {
-    if (_fired) return;
+    if (!kDebugMode || _fired) return;
     final text = details.exception.toString();
     if (!text.contains('Null check operator used on a null value')) return;
     _fired = true;
@@ -81,7 +84,7 @@ class NullCheckTrap {
   // e.g., when UI passes error text into an error mapper. This logs the current
   // stack to pinpoint call sites even without a thrown exception.
   static void captureStringOccurrence(String message, {String source = 'mapper'}) {
-    if (_stringFired) return;
+    if (!kDebugMode || _stringFired) return;
     if (!message.contains('Null check operator used on a null value')) return;
     _stringFired = true;
 

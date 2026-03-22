@@ -1,0 +1,15 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.discover
+- assertVisible:
+    id: qa.location.selector.trigger.discover
+- swipe:
+    start: 80%,70%
+    end: 20%,70%
+    duration: 400
+- swipe:
+    start: 20%,70%
+    end: 80%,70%
+    duration: 400

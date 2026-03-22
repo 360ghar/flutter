@@ -1,0 +1,30 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: auth/onboarding_skip_to_phone_entry.yaml
+- runFlow: auth/onboarding_next_get_started.yaml
+- runFlow: auth/phone_entry_validation.yaml
+- runFlow: auth/login_success.yaml
+- runFlow: auth/login_invalid_password.yaml
+- runFlow: auth/forgot_password_validation.yaml
+- runFlow: auth/signup_validation.yaml
+- runFlow: dashboard/nav_tabs.yaml
+- runFlow: discover/discover_render.yaml
+- runFlow: explore/explore_render.yaml
+- runFlow: explore/location_selector_modal.yaml
+- runFlow: likes/likes_tabs.yaml
+- runFlow: visits/visits_tabs.yaml
+- runFlow: visits/visits_reschedule_cancel_dialog.yaml
+- runFlow: profile/profile_navigation.yaml
+- runFlow: profile/edit_profile_open.yaml
+- runFlow: profile/preferences_dialogs.yaml
+- runFlow: profile/feedback_validation.yaml
+- runFlow: tools/tools_navigation.yaml
+- runFlow: tools/calculators_actions.yaml
+- runFlow:
+    file: deeplink/deeplink_short.yaml
+    env:
+      API_BASE_URL: ${API_BASE_URL}
+- runFlow:
+    file: deeplink/deeplink_full.yaml
+    env:
+      API_BASE_URL: ${API_BASE_URL}

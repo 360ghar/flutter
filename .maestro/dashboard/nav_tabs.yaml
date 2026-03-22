@@ -1,0 +1,4 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- runFlow: ../_shared/nav_tabs.yaml

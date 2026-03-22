@@ -16,7 +16,7 @@ class AnimatedContentSwitcher extends StatelessWidget {
     required this.isLoading,
     required this.loadingWidget,
     required this.contentWidget,
-    this.duration = AppDurations.normal,
+    this.duration = AppDurations.contentFade,
     this.switchInCurve = Curves.easeOut,
     this.switchOutCurve = Curves.easeIn,
   });
@@ -57,7 +57,7 @@ class AnimatedStateBuilder<T> extends StatelessWidget {
     required this.errorBuilder,
     required this.contentBuilder,
     this.emptyBuilder,
-    this.duration = AppDurations.normal,
+    this.duration = AppDurations.contentFade,
   });
 
   @override

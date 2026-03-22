@@ -6,7 +6,6 @@ abstract class AppRoutes {
   static const forgotPassword = '/forgot-password';
   static const profileCompletion = '/profile-completion';
   static const dashboard = '/dashboard';
-  static const home = '/discover'; // standardize legacy home to discover
   static const discover = '/discover'; // Swipe deck interface
   static const propertyDetails = '/property-details';
   // Deep link routes for property sharing
@@ -32,4 +31,5 @@ abstract class AppRoutes {
   static const carpetArea = '/tools/carpet-area';
   static const documentChecklist = '/tools/document-checklist';
   static const capitalGains = '/tools/capital-gains';
+  static const assistant = '/assistant';
 }

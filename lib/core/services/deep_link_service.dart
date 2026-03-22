@@ -1,23 +1,21 @@
 import 'dart:async';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:ghar360/core/routes/app_routes.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
-import 'package:uni_links/uni_links.dart';
 
 class DeepLinkService extends GetxService {
   StreamSubscription? _sub;
+  final AppLinks _appLinks = AppLinks();
 
   @override
   void onInit() {
     super.onInit();
-    // Handle initial link (Cold Start)
-    _initInitialLink();
-    // Handle incoming links (Background/Warm Start)
-    _initIncomingLinks();
+    _initDeepLinks();
   }
 
   @override
@@ -26,37 +24,30 @@ class DeepLinkService extends GetxService {
     super.onClose();
   }
 
-  /// Handles the link that opened the app (Cold Start)
-  Future<void> _initInitialLink() async {
+  Future<void> _initDeepLinks() async {
+    if (kIsWeb) return;
+
     try {
-      final initialUri = await getInitialUri();
+      final initialUri = await _appLinks.getInitialLink();
       if (initialUri != null) {
-        // Wait for app routes and controllers to be ready
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _handleDeepLink(initialUri);
         });
       }
     } on PlatformException catch (e) {
       DebugLogger.warning('Failed to get initial deep link: $e');
-    } on FormatException catch (e) {
-      DebugLogger.warning('Bad parse of initial deep link: $e');
     }
-  }
 
-  /// Listens for new links while app is running (Warm Start)
-  void _initIncomingLinks() {
-    if (!kIsWeb) {
-      _sub = uriLinkStream.listen(
-        (Uri? uri) {
-          if (uri != null) {
-            _handleDeepLink(uri);
-          }
-        },
-        onError: (Object err) {
-          DebugLogger.error('Deep link stream error: $err');
-        },
-      );
-    }
+    _sub = _appLinks.uriLinkStream.listen(
+      (Uri? uri) {
+        if (uri != null) {
+          _handleDeepLink(uri);
+        }
+      },
+      onError: (Object err) {
+        DebugLogger.error('Deep link stream error: $err');
+      },
+    );
   }
 
   void _handleDeepLink(Uri uri) {

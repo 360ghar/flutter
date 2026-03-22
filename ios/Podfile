@@ -43,5 +43,14 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
     end
+
+    next unless target.name == 'geocoding_ios'
+
+    target.source_build_phase.files.each do |build_file|
+      file_ref = build_file.file_ref
+      next unless file_ref&.path&.end_with?('PrivacyInfo.xcprivacy')
+
+      target.source_build_phase.remove_build_file(build_file)
+    end
   end
 end

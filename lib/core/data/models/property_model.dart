@@ -17,6 +17,24 @@ enum PropertyType {
   villa,
   @JsonValue('plot')
   plot,
+  @JsonValue('condo')
+  condo,
+  @JsonValue('penthouse')
+  penthouse,
+  @JsonValue('studio')
+  studio,
+  @JsonValue('loft')
+  loft,
+  @JsonValue('pg')
+  pg,
+  @JsonValue('flatmate')
+  flatmate,
+  @JsonValue('office')
+  office,
+  @JsonValue('shop')
+  shop,
+  @JsonValue('warehouse')
+  warehouse,
 }
 
 enum PropertyPurpose {
@@ -26,6 +44,56 @@ enum PropertyPurpose {
   rent,
   @JsonValue('short_stay')
   shortStay,
+}
+
+extension PropertyTypeWireValue on PropertyType {
+  String get wireValue {
+    switch (this) {
+      case PropertyType.house:
+        return 'house';
+      case PropertyType.apartment:
+        return 'apartment';
+      case PropertyType.builderFloor:
+        return 'builder_floor';
+      case PropertyType.room:
+        return 'room';
+      case PropertyType.villa:
+        return 'villa';
+      case PropertyType.plot:
+        return 'plot';
+      case PropertyType.condo:
+        return 'condo';
+      case PropertyType.penthouse:
+        return 'penthouse';
+      case PropertyType.studio:
+        return 'studio';
+      case PropertyType.loft:
+        return 'loft';
+      case PropertyType.pg:
+        return 'pg';
+      case PropertyType.flatmate:
+        return 'flatmate';
+      case PropertyType.office:
+        return 'office';
+      case PropertyType.shop:
+        return 'shop';
+      case PropertyType.warehouse:
+        return 'warehouse';
+    }
+  }
+}
+
+extension PropertyPurposeWireValue on PropertyPurpose {
+  String get wireValue {
+    switch (this) {
+      case PropertyPurpose.buy:
+        return 'buy';
+      case PropertyPurpose.rent:
+        return 'rent';
+      case PropertyPurpose.shortStay:
+        return 'short_stay';
+    }
+  }
 }
 
 enum PropertyStatus {
@@ -41,6 +109,22 @@ enum PropertyStatus {
   maintenance,
 }
 
+enum ListingGenderPreference {
+  @JsonValue('any')
+  any,
+  @JsonValue('male')
+  male,
+  @JsonValue('female')
+  female,
+}
+
+enum ListingSharingType {
+  @JsonValue('private_room')
+  privateRoom,
+  @JsonValue('shared_room')
+  sharedRoom,
+}
+
 @JsonSerializable()
 class PropertyAmenity {
   @JsonKey(defaultValue: -1)
@@ -54,6 +138,20 @@ class PropertyAmenity {
 
   factory PropertyAmenity.fromJson(Map<String, dynamic> json) => _$PropertyAmenityFromJson(json);
   Map<String, dynamic> toJson() => _$PropertyAmenityToJson(this);
+}
+
+@JsonSerializable()
+class ListingPreferences {
+  @JsonKey(name: 'gender_preference', unknownEnumValue: ListingGenderPreference.any)
+  final ListingGenderPreference? genderPreference;
+  @JsonKey(name: 'sharing_type', unknownEnumValue: ListingSharingType.privateRoom)
+  final ListingSharingType? sharingType;
+
+  const ListingPreferences({this.genderPreference, this.sharingType});
+
+  factory ListingPreferences.fromJson(Map<String, dynamic> json) =>
+      _$ListingPreferencesFromJson(json);
+  Map<String, dynamic> toJson() => _$ListingPreferencesToJson(this);
 }
 
 @JsonSerializable(explicitToJson: true, checked: true)
@@ -127,6 +225,8 @@ class PropertyModel {
   // Features and amenities
   final List<PropertyAmenity>? amenities;
   final List<String>? features;
+  @JsonKey(name: 'listing_preferences')
+  final ListingPreferences? listingPreferences;
   // Media
   @JsonKey(name: 'main_image_url')
   final String? mainImageUrl;
@@ -227,6 +327,7 @@ class PropertyModel {
     this.minimumStayDays,
     this.amenities,
     this.features,
+    this.listingPreferences,
     this.mainImageUrl,
     this.images,
     this.videoTourUrl,
@@ -307,8 +408,63 @@ class PropertyModel {
         return 'Villa';
       case PropertyType.plot:
         return 'Plot';
+      case PropertyType.condo:
+        return 'Condo';
+      case PropertyType.penthouse:
+        return 'Penthouse';
+      case PropertyType.studio:
+        return 'Studio';
+      case PropertyType.loft:
+        return 'Loft';
+      case PropertyType.pg:
+        return 'PG';
+      case PropertyType.flatmate:
+        return 'Flatmate';
+      case PropertyType.office:
+        return 'Office';
+      case PropertyType.shop:
+        return 'Shop';
+      case PropertyType.warehouse:
+        return 'Warehouse';
       default:
         return 'Property';
+    }
+  }
+
+  String get propertyTypeTranslationKey {
+    switch (propertyType) {
+      case PropertyType.house:
+        return 'house';
+      case PropertyType.apartment:
+        return 'apartment';
+      case PropertyType.builderFloor:
+        return 'builder_floor';
+      case PropertyType.room:
+        return 'room';
+      case PropertyType.villa:
+        return 'villa';
+      case PropertyType.plot:
+        return 'plot';
+      case PropertyType.condo:
+        return 'condo';
+      case PropertyType.penthouse:
+        return 'penthouse';
+      case PropertyType.studio:
+        return 'studio';
+      case PropertyType.loft:
+        return 'loft';
+      case PropertyType.pg:
+        return 'pg';
+      case PropertyType.flatmate:
+        return 'flatmate';
+      case PropertyType.office:
+        return 'office';
+      case PropertyType.shop:
+        return 'shop';
+      case PropertyType.warehouse:
+        return 'warehouse';
+      default:
+        return 'property';
     }
   }
 
@@ -322,6 +478,54 @@ class PropertyModel {
         return 'Short Stay';
       default:
         return 'For Sale';
+    }
+  }
+
+  String get purposeTranslationKey {
+    switch (purpose) {
+      case PropertyPurpose.buy:
+        return 'buy';
+      case PropertyPurpose.rent:
+        return 'rent';
+      case PropertyPurpose.shortStay:
+        return 'short_stay';
+      default:
+        return 'sale';
+    }
+  }
+
+  String get listingTranslationKey {
+    switch (propertyType) {
+      case PropertyType.pg:
+        return 'pg';
+      case PropertyType.flatmate:
+        return 'flatmate';
+      default:
+        return purposeTranslationKey;
+    }
+  }
+
+  String? get genderPreferenceTranslationKey {
+    switch (listingPreferences?.genderPreference) {
+      case ListingGenderPreference.any:
+        return 'open_to_all';
+      case ListingGenderPreference.male:
+        return 'male_only';
+      case ListingGenderPreference.female:
+        return 'female_only';
+      default:
+        return null;
+    }
+  }
+
+  String? get sharingTypeTranslationKey {
+    switch (listingPreferences?.sharingType) {
+      case ListingSharingType.privateRoom:
+        return 'private_room';
+      case ListingSharingType.sharedRoom:
+        return 'shared_room';
+      default:
+        return null;
     }
   }
 

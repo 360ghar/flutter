@@ -22,10 +22,21 @@ class AuthMiddleware extends GetMiddleware {
     }
 
     final authController = Get.find<AuthController>();
+    final currentStatus = authController.authStatus.value;
 
-    // If the user is authenticated, allow access.
-    if (authController.authStatus.value == AuthStatus.authenticated) {
+    // If the user is fully authenticated, allow access.
+    if (currentStatus == AuthStatus.authenticated) {
       return null;
+    }
+
+    // If the user needs to complete their profile, redirect to profile completion
+    // unless they're already on that route.
+    if (currentStatus == AuthStatus.requiresProfileCompletion) {
+      if (route == AppRoutes.profileCompletion) {
+        return null; // Already on profile completion page
+      }
+      DebugLogger.info('🔒 User requires profile completion, redirecting from $route');
+      return const RouteSettings(name: AppRoutes.profileCompletion);
     }
 
     // Store the attempted route for post-login navigation

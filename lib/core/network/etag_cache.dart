@@ -7,20 +7,22 @@ import 'package:ghar360/core/utils/debug_logger.dart';
 
 /// Simple ETag-based response cache.
 class ETagCache {
-  final GetStorage _storage = GetStorage();
+  GetStorage? _storage;
   static const String _cachePrefix = 'etag_cache_';
   static const int _maxCacheAge = 5 * 60 * 1000; // 5 minutes in ms
+
+  GetStorage get _box => _storage ??= GetStorage();
 
   /// Gets the cached ETag for a given key.
   String? getETag(String key) {
     try {
-      final cached = _storage.read('$_cachePrefix$key');
+      final cached = _box.read('$_cachePrefix$key');
       if (cached == null) return null;
 
       final entry = cached as Map<String, dynamic>;
       final timestamp = entry['timestamp'] as int?;
       if (timestamp != null && DateTime.now().millisecondsSinceEpoch - timestamp > _maxCacheAge) {
-        _storage.remove('$_cachePrefix$key');
+        _box.remove('$_cachePrefix$key');
         return null;
       }
 
@@ -34,13 +36,13 @@ class ETagCache {
   /// Gets the cached response body for a given key.
   String? getCachedBody(String key) {
     try {
-      final cached = _storage.read('$_cachePrefix$key');
+      final cached = _box.read('$_cachePrefix$key');
       if (cached == null) return null;
 
       final entry = cached as Map<String, dynamic>;
       final timestamp = entry['timestamp'] as int?;
       if (timestamp != null && DateTime.now().millisecondsSinceEpoch - timestamp > _maxCacheAge) {
-        _storage.remove('$_cachePrefix$key');
+        _box.remove('$_cachePrefix$key');
         return null;
       }
 
@@ -66,7 +68,7 @@ class ETagCache {
         return;
       }
 
-      _storage.write('$_cachePrefix$key', {
+      _box.write('$_cachePrefix$key', {
         'etag': etag,
         'body': bodyStr,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
@@ -80,9 +82,9 @@ class ETagCache {
   /// Clears all cached entries.
   void clear() {
     try {
-      final keys = _storage.getKeys().where((k) => k.startsWith(_cachePrefix));
+      final keys = _box.getKeys().where((k) => k.startsWith(_cachePrefix));
       for (final key in keys) {
-        _storage.remove(key);
+        _box.remove(key);
       }
       DebugLogger.info('🗑️ Cleared ETag cache');
     } catch (e) {

@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 
 import 'package:ghar360/core/controllers/page_state_service.dart';
 import 'package:ghar360/core/data/models/page_state_model.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 import 'package:ghar360/core/widgets/common/location_selector.dart';
 import 'package:ghar360/core/widgets/common/property_filter_widget.dart';
 
@@ -33,50 +33,50 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final theme = Theme.of(context);
-      // Determine bottom search row visibility
-      final bool supportsSearch = showSearch && _shouldShowSearch();
-      final bool searchVisible = supportsSearch && controller.isSearchVisible(pageType);
+    final theme = Theme.of(context);
+    final bool supportsSearch = showSearch && _shouldShowSearch();
 
-      final PreferredSizeWidget? bottomWidget = searchVisible
-          ? _buildBottomSearchBar(controller)
-          : bottom; // fallback to injected bottom
+    if (supportsSearch) {
+      // Reactive: toggle bottom search bar based on isSearchVisible
+      return Obx(() {
+        final bool searchVisible = controller.isSearchVisible(pageType);
+        return _buildAppBar(context, theme, supportsSearch, searchVisible);
+      });
+    }
 
-      return AppBar(
-        backgroundColor: AppColors.appBarBackground,
-        elevation: 8,
-        shadowColor: AppColors.shadowColor,
-        automaticallyImplyLeading: false,
-        toolbarHeight: kToolbarHeight,
-        titleSpacing: 16,
-        // Avoid setting statusBarColor to prevent deprecated Android 15 APIs.
-        systemOverlayStyle: theme.brightness == Brightness.dark
-            ? const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.light)
-            : const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark),
-        title: Row(
-          children: [
-            // Location selector
-            LocationSelector(pageType: pageType),
+    // Non-reactive: no search support, no reactive state needed at this level
+    return _buildAppBar(context, theme, false, false);
+  }
 
-            const Spacer(),
+  AppBar _buildAppBar(
+    BuildContext context,
+    ThemeData theme,
+    bool supportsSearch,
+    bool searchVisible,
+  ) {
+    final PreferredSizeWidget? bottomWidget = searchVisible
+        ? _buildBottomSearchBar(controller)
+        : bottom;
 
-            // Search toggle (only for Explore and Likes)
-            if (supportsSearch) _buildSearchToggle(controller),
-
-            // Refreshing spinner (small)
-            _buildRefreshIndicator(controller),
-
-            // Filter button
-            _buildFilterButton(context, controller),
-
-            // Additional actions
-            if (additionalActions != null) ...additionalActions!,
-          ],
-        ),
-        bottom: bottomWidget,
-      );
-    });
+    return AppBar(
+      automaticallyImplyLeading: false,
+      toolbarHeight: kToolbarHeight,
+      titleSpacing: 16,
+      systemOverlayStyle: theme.brightness == Brightness.dark
+          ? const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.light)
+          : const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark),
+      title: Row(
+        children: [
+          LocationSelector(pageType: pageType),
+          const Spacer(),
+          if (supportsSearch) _buildSearchToggle(controller),
+          _buildRefreshIndicator(controller),
+          _buildFilterButton(context, controller),
+          if (additionalActions != null) ...additionalActions!,
+        ],
+      ),
+      bottom: bottomWidget,
+    );
   }
 
   bool _shouldShowSearch() {
@@ -90,36 +90,37 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
       child: Obx(() {
         final currentState = _getCurrentPageState(pageStateService);
         final searchQuery = currentState.searchQuery ?? '';
+        final searchController = pageStateService.getOrCreateSearchController(
+          pageType,
+          seedText: searchQuery,
+        );
         return Container(
           alignment: Alignment.center,
           padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-          color: AppColors.appBarBackground,
+          color: AppDesign.appBarBackground,
           child: Container(
             height: 38,
             decoration: BoxDecoration(
-              color: AppColors.inputBackground,
+              color: AppDesign.inputBackground,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.divider, width: 0.5),
+              border: Border.all(color: AppDesign.divider, width: 0.5),
             ),
             child: TextField(
+              key: ValueKey('qa.topbar.search_input.${pageType.name}'),
               onChanged: (value) {
-                pageStateService.updatePageSearch(pageType, value);
                 onSearchChanged?.call(value);
               },
-              controller: pageStateService.getOrCreateSearchController(
-                pageType,
-                seedText: searchQuery,
-              ),
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              controller: searchController,
+              style: TextStyle(color: AppDesign.textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 hintText: _getSearchHint(),
-                hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: AppColors.iconColor, size: 18),
+                hintStyle: TextStyle(color: AppDesign.textSecondary, fontSize: 14),
+                prefixIcon: Icon(Icons.search, color: AppDesign.iconColor, size: 18),
                 suffixIcon: searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: Icon(Icons.clear, color: AppColors.iconColor, size: 18),
+                        icon: Icon(Icons.clear, color: AppDesign.iconColor, size: 18),
                         onPressed: () {
-                          pageStateService.clearPageSearch(pageType);
+                          searchController.clear();
                           onSearchClear?.call();
                         },
                       )
@@ -141,9 +142,10 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
       final activeFiltersCount = currentState.activeFiltersCount;
 
       return IconButton(
+        key: ValueKey('qa.topbar.filter.${pageType.name}'),
         icon: Stack(
           children: [
-            Icon(Icons.tune, color: AppColors.iconColor, size: 24),
+            Icon(Icons.tune, color: AppDesign.iconColor, size: 24),
             if (activeFiltersCount > 0)
               Positioned(
                 right: 0,
@@ -151,7 +153,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryYellow,
+                    color: AppDesign.primaryYellow,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
@@ -178,7 +180,8 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
     return Obx(() {
       final visible = pageStateService.isSearchVisible(pageType);
       return IconButton(
-        icon: Icon(visible ? Icons.search_off : Icons.search, color: AppColors.iconColor, size: 22),
+        key: ValueKey('qa.topbar.search_toggle.${pageType.name}'),
+        icon: Icon(visible ? Icons.search_off : Icons.search, color: AppDesign.iconColor, size: 22),
         onPressed: () => pageStateService.toggleSearch(pageType),
       );
     });
@@ -195,7 +198,7 @@ class UnifiedTopBar extends GetView<PageStateService> implements PreferredSizeWi
           height: 18,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+            valueColor: AlwaysStoppedAnimation<Color>(AppDesign.primaryYellow),
           ),
         ),
       );

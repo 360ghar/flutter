@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 
 // 360 Tour Illustration with rotating animation
 class Tour360Illustration extends StatelessWidget {
@@ -36,7 +36,7 @@ class Tour360Illustration extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppColors.primaryYellow.withValues(alpha: 0.3),
+                      color: AppDesign.primaryYellow.withValues(alpha: 0.3),
                       width: 3,
                     ),
                   ),
@@ -53,7 +53,7 @@ class Tour360Illustration extends StatelessWidget {
                             height: 12,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.accentBlue.withValues(alpha: 0.7),
+                              color: AppDesign.accentBlue.withValues(alpha: 0.7),
                             ),
                           ),
                         );
@@ -68,10 +68,10 @@ class Tour360Illustration extends StatelessWidget {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primaryYellow,
+                  color: AppDesign.primaryYellow,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryYellow.withValues(alpha: 0.3),
+                      color: AppDesign.primaryYellow.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -85,7 +85,7 @@ class Tour360Illustration extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.accentBlue,
+                    color: AppDesign.accentBlue,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -138,7 +138,7 @@ class VirtualToursIllustration extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.shadowColor,
+                      color: AppDesign.shadowColor,
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -154,7 +154,7 @@ class VirtualToursIllustration extends StatelessWidget {
                       bottom: 20,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: AppDesign.surface,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Stack(
@@ -167,13 +167,13 @@ class VirtualToursIllustration extends StatelessWidget {
                               height: 120,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: AppColors.accentBlue.withValues(alpha: 0.3),
+                                  color: AppDesign.accentBlue.withValues(alpha: 0.3),
                                   borderRadius: const BorderRadius.all(Radius.circular(12)),
                                 ),
                                 child: const Icon(
                                   Icons.apartment,
                                   size: 40,
-                                  color: AppColors.accentBlue,
+                                  color: AppDesign.accentBlue,
                                 ),
                               ),
                             ),
@@ -186,7 +186,7 @@ class VirtualToursIllustration extends StatelessWidget {
                                 height: 50,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.primaryYellow,
+                                  color: AppDesign.primaryYellow,
                                 ),
                                 child: Icon(
                                   Icons.play_arrow,
@@ -215,7 +215,7 @@ class VirtualToursIllustration extends StatelessWidget {
                   ),
                   child: const _FloatingIcon(
                     icon: Icons.access_time,
-                    color: AppColors.accentGreen,
+                    color: AppDesign.accentGreen,
                     delay: 0,
                   ),
                 ),
@@ -232,7 +232,7 @@ class VirtualToursIllustration extends StatelessWidget {
                   ),
                   child: const _FloatingIcon(
                     icon: Icons.location_on,
-                    color: AppColors.accentOrange,
+                    color: AppDesign.accentOrange,
                     delay: 500,
                   ),
                 ),
@@ -249,7 +249,7 @@ class VirtualToursIllustration extends StatelessWidget {
                   ),
                   child: const _FloatingIcon(
                     icon: Icons.home_work,
-                    color: AppColors.accentBlue,
+                    color: AppDesign.accentBlue,
                     delay: 1000,
                   ),
                 ),
@@ -292,11 +292,11 @@ class VerifiedListingIllustration extends StatelessWidget {
                   width: 220,
                   height: 280,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: AppDesign.surface,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.shadowColor,
+                        color: AppDesign.shadowColor,
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -309,11 +309,11 @@ class VerifiedListingIllustration extends StatelessWidget {
                       Container(
                         height: 100,
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: AppDesign.background,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
-                          child: Icon(Icons.image, size: 30, color: AppColors.textSecondary),
+                          child: Icon(Icons.image, size: 30, color: AppDesign.textSecondary),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -328,7 +328,7 @@ class VerifiedListingIllustration extends StatelessWidget {
                                 height: 20,
                                 decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.successGreen,
+                                  color: AppDesign.successGreen,
                                 ),
                                 child: Icon(Icons.check, size: 14, color: colorScheme.onPrimary),
                               ),
@@ -337,7 +337,7 @@ class VerifiedListingIllustration extends StatelessWidget {
                                 child: Container(
                                   height: 8,
                                   decoration: BoxDecoration(
-                                    color: AppColors.background,
+                                    color: AppDesign.background,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -358,10 +358,10 @@ class VerifiedListingIllustration extends StatelessWidget {
                     height: 60,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.successGreen,
+                      color: AppDesign.successGreen,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.successGreen.withValues(alpha: 0.3),
+                          color: AppDesign.successGreen.withValues(alpha: 0.3),
                           blurRadius: 15,
                           spreadRadius: 2,
                         ),
@@ -406,7 +406,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.successGreen.withValues(alpha: 0.1),
+                  color: AppDesign.successGreen.withValues(alpha: 0.1),
                 ),
                 child: Stack(
                   alignment: Alignment.center,
@@ -417,10 +417,10 @@ class LowBrokerageIllustration extends StatelessWidget {
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.successGreen,
+                        color: AppDesign.successGreen,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.successGreen.withValues(alpha: 0.3),
+                            color: AppDesign.successGreen.withValues(alpha: 0.3),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -439,7 +439,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.accentOrange,
+                          color: AppDesign.accentOrange,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -476,7 +476,7 @@ class LowBrokerageIllustration extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.accentBlue.withValues(alpha: 0.8),
+                      color: AppDesign.accentBlue.withValues(alpha: 0.8),
                     ),
                     child: Icon(
                       icons[index],

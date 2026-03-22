@@ -8,6 +8,18 @@ enum AppThemeMode { light, dark, system }
 class ThemeController extends GetxController with WidgetsBindingObserver {
   final GetStorage _storage = GetStorage();
 
+  static const _themeModeMap = {
+    AppThemeMode.light: ThemeMode.light,
+    AppThemeMode.dark: ThemeMode.dark,
+    AppThemeMode.system: ThemeMode.system,
+  };
+
+  static const _themeNameMap = {
+    AppThemeMode.light: 'Light',
+    AppThemeMode.dark: 'Dark',
+    AppThemeMode.system: 'System',
+  };
+
   final Rx<AppThemeMode> _themeMode = AppThemeMode.system.obs;
   final RxBool isDarkMode = false.obs;
 
@@ -31,16 +43,9 @@ class ThemeController extends GetxController with WidgetsBindingObserver {
     final storedThemeMode = _storage.read('themeMode');
     if (storedThemeMode != null) {
       try {
-        // Try to parse as .name first (preferred format)
         _themeMode.value = AppThemeMode.values.firstWhere(
           (mode) => mode.name == storedThemeMode,
-          orElse: () {
-            // Fallback: try legacy .toString() format
-            return AppThemeMode.values.firstWhere(
-              (mode) => mode.toString() == storedThemeMode,
-              orElse: () => AppThemeMode.system,
-            );
-          },
+          orElse: () => AppThemeMode.system,
         );
       } catch (e) {
         _themeMode.value = AppThemeMode.system;
@@ -95,19 +100,7 @@ class ThemeController extends GetxController with WidgetsBindingObserver {
   }
 
   void _updateAppTheme() {
-    ThemeMode flutterThemeMode;
-    switch (_themeMode.value) {
-      case AppThemeMode.light:
-        flutterThemeMode = ThemeMode.light;
-        break;
-      case AppThemeMode.dark:
-        flutterThemeMode = ThemeMode.dark;
-        break;
-      case AppThemeMode.system:
-        flutterThemeMode = ThemeMode.system;
-        break;
-    }
-    Get.changeThemeMode(flutterThemeMode);
+    Get.changeThemeMode(_themeModeMap[_themeMode.value]!);
   }
 
   void _saveThemeToStorage() {
@@ -134,27 +127,9 @@ class ThemeController extends GetxController with WidgetsBindingObserver {
     handleSystemThemeChange();
   }
 
-  ThemeMode get themeMode {
-    switch (_themeMode.value) {
-      case AppThemeMode.light:
-        return ThemeMode.light;
-      case AppThemeMode.dark:
-        return ThemeMode.dark;
-      case AppThemeMode.system:
-        return ThemeMode.system;
-    }
-  }
+  ThemeMode get themeMode => _themeModeMap[_themeMode.value]!;
 
-  String get currentThemeName {
-    switch (_themeMode.value) {
-      case AppThemeMode.light:
-        return 'Light';
-      case AppThemeMode.dark:
-        return 'Dark';
-      case AppThemeMode.system:
-        return 'System';
-    }
-  }
+  String get currentThemeName => _themeNameMap[_themeMode.value]!;
 
   bool get isSystemMode => _themeMode.value == AppThemeMode.system;
 }
