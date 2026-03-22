@@ -1,9 +1,8 @@
 import 'package:get/get.dart';
 
-import 'package:ghar360/core/controllers/localization_controller.dart';
-import 'package:ghar360/core/data/providers/api_service.dart';
+import 'package:ghar360/core/network/api_client.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
-import 'package:ghar360/features/visits/controllers/visits_controller.dart';
+import 'package:ghar360/features/visits/presentation/controllers/visits_controller.dart';
 
 class DependencyManager {
   static final Map<String, bool> _initializedServices = {};
@@ -23,7 +22,8 @@ class DependencyManager {
     try {
       // Clean up controllers by type instead of tag since they are registered without tags
       _cleanupController<VisitsController>('VisitsController');
-      _cleanupController<LocalizationController>('LocalizationController');
+      // Note: LocalizationController is registered as permanent in InitialBinding
+      // and should not be cleaned up here to avoid "not found" errors on hot reload
     } catch (e, stackTrace) {
       DebugLogger.error('Error during dependency cleanup', e, stackTrace);
     }
@@ -55,7 +55,7 @@ class DependencyManager {
   /// Check if critical services are available
   static bool areCriticalServicesAvailable() {
     try {
-      return Get.isRegistered<ApiService>();
+      return Get.isRegistered<ApiClient>();
     } catch (e, stackTrace) {
       DebugLogger.error('Error checking critical services', e, stackTrace);
       return false;

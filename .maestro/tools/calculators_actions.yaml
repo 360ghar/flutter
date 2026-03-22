@@ -1,0 +1,93 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.profile
+- tapOn:
+    id: qa.profile.menu.tools
+- extendedWaitUntil:
+    visible:
+      id: qa.tools.menu.area_converter
+    timeout: 15000
+
+# Area converter
+- tapOn:
+    id: qa.tools.menu.area_converter
+- tapOn:
+    id: qa.tools.area_converter.input
+- inputText: "1000"
+- assertVisible:
+    id: qa.tools.area_converter.screen
+- back
+
+# Loan eligibility
+- scrollUntilVisible:
+    element:
+      text: "Loan Eligibility"
+- tapOn: "Loan Eligibility"
+- tapOn: "Monthly Income"
+- inputText: "120000"
+- tapOn: "Your Age"
+- inputText: "30"
+- tapOn:
+    id: qa.tools.loan_eligibility.calculate
+- assertVisible:
+    id: qa.tools.loan_eligibility.screen
+- back
+
+# EMI calculator
+- scrollUntilVisible:
+    element:
+      text: "EMI Calculator"
+- tapOn: "EMI Calculator"
+- tapOn: "Loan Amount"
+- inputText: "5000000"
+- tapOn: "Interest Rate"
+- inputText: "9"
+- tapOn: "Tenure"
+- inputText: "20"
+- tapOn:
+    id: qa.tools.emi.calculate
+- assertVisible:
+    id: qa.tools.emi.screen
+- back
+
+# Carpet area
+- scrollUntilVisible:
+    element:
+      text: "Carpet Area Calculator"
+- tapOn: "Carpet Area Calculator"
+- tapOn: "Built-up Area"
+- inputText: "1200"
+- tapOn:
+    id: qa.tools.carpet_area.calculate
+- assertVisible:
+    id: qa.tools.carpet_area.screen
+- back
+
+# Document checklist reset dialog
+- scrollUntilVisible:
+    element:
+      text: "Document Checklist"
+- tapOn: "Document Checklist"
+- tapOn:
+    id: qa.tools.document_checklist.reset
+- assertVisible: "Reset Checklist"
+- tapOn:
+    id: qa.tools.document_checklist.reset_confirm
+    optional: true
+- back
+
+# Capital gains
+- scrollUntilVisible:
+    element:
+      text: "Capital Gains"
+- tapOn: "Capital Gains"
+- tapOn: "Purchase Price"
+- inputText: "3500000"
+- tapOn: "Sale Price"
+- inputText: "6500000"
+- tapOn:
+    id: qa.tools.capital_gains.calculate
+- assertVisible:
+    id: qa.tools.capital_gains.screen

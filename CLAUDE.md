@@ -344,7 +344,7 @@ API_TIMEOUT_SECONDS=15  # Optional: override HTTP client timeout
 
 # Supabase Configuration
 SUPABASE_URL=your_supabase_project_url_here
-SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key_here
 
 # Google Places API Key
 GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
@@ -513,9 +513,50 @@ void loadProperties() async {
 The app uses centralized error handling:
 - **ErrorHandler** utility in `lib/core/utils/error_handler.dart`
 - **Custom exceptions** for different error types
-- **User-friendly error messages** with Get.snackbar
+- **User-friendly error messages** with AppToast
 - **DebugLogger** for development logging and debugging (`lib/core/utils/debug_logger.dart`)
 - **Graceful fallbacks** for network and API failures
+
+### AppToast - Notification System
+
+**ALWAYS use `AppToast` for all notifications/toasts** - Never use `Get.snackbar()` directly.
+
+Located in `lib/core/utils/app_toast.dart`:
+- **Position**: All toasts appear at `SnackPosition.TOP` (never bottom)
+- **Minimal styling**: Compact padding, 8px border radius, 3s duration
+- **Consistent appearance**: Unified colors via `AppDesign` tokens
+
+#### Usage Examples:
+```dart
+// Success message
+AppToast.success('Profile saved', 'Your changes have been saved');
+
+// Error message
+AppToast.error('Error', 'Failed to load data');
+
+// Warning message
+AppToast.warning('Warning', 'Please check your connection');
+
+// Info message
+AppToast.info('Info', 'New features available');
+
+// Custom styling (rarely needed)
+AppToast.custom(
+  title: 'Custom',
+  message: 'Your message here',
+  backgroundColor: AppDesign.primaryYellow,
+  duration: const Duration(seconds: 2),
+);
+```
+
+#### Migration from Get.snackbar:
+```dart
+// ❌ DON'T use Get.snackbar directly
+Get.snackbar('Error', 'Failed to load', snackPosition: SnackPosition.BOTTOM);
+
+// ✅ DO use AppToast
+AppToast.error('Error', 'Failed to load');
+```
 
 ### Dependency Management
 Use `DependencyManager` in `lib/core/utils/dependency_manager.dart`:

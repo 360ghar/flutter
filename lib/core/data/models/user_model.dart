@@ -143,7 +143,7 @@ class UserModel {
 
   bool get hasLocation => currentLatitude != null && currentLongitude != null;
 
-  // Convenience getters for backward compatibility
+  // Convenience getters for UI consumption.
   String get name => fullName ?? 'Unknown User';
   String? get profileImage => profileImageUrl;
   DateTime get lastLogin => updatedAt ?? createdAt;
@@ -166,11 +166,8 @@ class UserModel {
 
   // Check if profile is complete
   bool get isProfileComplete {
-    // Align with Profile Completion flow: require these core fields
-    final hasEmail = email.isNotEmpty;
     final hasName = fullName != null && fullName!.isNotEmpty;
     final hasDob = dateOfBirth != null && dateOfBirth!.isNotEmpty;
-
-    return hasEmail && hasName && hasDob;
+    return hasName && hasDob;
   }
 }

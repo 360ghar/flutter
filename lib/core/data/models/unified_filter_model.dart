@@ -1,4 +1,5 @@
 import 'package:ghar360/core/data/models/api_response_models.dart';
+import 'package:ghar360/core/utils/api_date_time.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'unified_filter_model.g.dart';
@@ -42,6 +43,10 @@ class UnifiedFilterModel {
   final int? ageMax;
   final List<String>? amenities;
   final List<String>? features;
+  @JsonKey(name: 'gender_preference')
+  final String? genderPreference;
+  @JsonKey(name: 'sharing_type')
+  final String? sharingType;
 
   // Availability & sorting
   @JsonKey(name: 'available_from')
@@ -82,6 +87,8 @@ class UnifiedFilterModel {
     this.ageMax,
     this.amenities,
     this.features,
+    this.genderPreference,
+    this.sharingType,
     this.availableFrom,
     this.checkInDate,
     this.checkOutDate,
@@ -108,18 +115,177 @@ class UnifiedFilterModel {
   factory UnifiedFilterModel.fromJson(Map<String, dynamic> json) =>
       _$UnifiedFilterModelFromJson(json);
 
+  static const Set<String> _canonicalPropertyTypes = <String>{
+    'house',
+    'apartment',
+    'builder_floor',
+    'room',
+    'villa',
+    'plot',
+    'condo',
+    'penthouse',
+    'studio',
+    'loft',
+    'pg',
+    'flatmate',
+    'office',
+    'shop',
+    'warehouse',
+  };
+
+  static const Map<String, List<String>> _propertyTypeAliases = <String, List<String>>{
+    'builderfloor': <String>['builder_floor'],
+    'builder_floor': <String>['builder_floor'],
+    'builder-floor': <String>['builder_floor'],
+    'flat': <String>['apartment'],
+    'flats': <String>['apartment'],
+    'apartments': <String>['apartment'],
+    'apartment_flat': <String>['apartment'],
+    'independent_house': <String>['house'],
+    'independent-house': <String>['house'],
+    'plots': <String>['plot'],
+    'land': <String>['plot'],
+    'office_space': <String>['office'],
+    'office-space': <String>['office'],
+    'showroom': <String>['shop'],
+    'roommate': <String>['flatmate'],
+  };
+
+  static List<String> normalizePropertyTypeTokens(String? rawValue) {
+    if (rawValue == null) return const <String>[];
+    final normalized = rawValue.trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+    if (normalized.isEmpty || normalized == 'all') return const <String>[];
+
+    final mapped = _propertyTypeAliases[normalized] ?? <String>[normalized];
+    return mapped.where(_canonicalPropertyTypes.contains).toList();
+  }
+
+  static String? normalizePropertyTypeToken(String? rawValue) {
+    final normalized = normalizePropertyTypeTokens(rawValue);
+    return normalized.isNotEmpty ? normalized.first : null;
+  }
+
+  static List<String> normalizePropertyTypes(Iterable<String>? values) {
+    if (values == null) return const <String>[];
+    return values.expand(normalizePropertyTypeTokens).toSet().toList();
+  }
+
+  static String? normalizePurposeToken(String? rawValue) {
+    if (rawValue == null) return null;
+    final normalized = rawValue.trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+    if (normalized.isEmpty) return null;
+
+    switch (normalized) {
+      case 'buy':
+      case 'rent':
+      case 'short_stay':
+      case 'shortstay':
+        return normalized == 'shortstay' ? 'short_stay' : normalized;
+      case 'pg':
+        return 'rent';
+      case 'investment':
+        // Legacy UI option: closest supported backend value.
+        return 'buy';
+      default:
+        return null;
+    }
+  }
+
+  static String? normalizeGenderPreferenceToken(String? rawValue) {
+    if (rawValue == null) return null;
+    final normalized = rawValue.trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+    switch (normalized) {
+      case 'any':
+      case 'male':
+      case 'female':
+        return normalized;
+      default:
+        return null;
+    }
+  }
+
+  static String? normalizeSharingTypeToken(String? rawValue) {
+    if (rawValue == null) return null;
+    final normalized = rawValue.trim().toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+    if (normalized.isEmpty) return null;
+    switch (normalized) {
+      case 'private_room':
+      case 'shared_room':
+        return normalized;
+      default:
+        return null;
+    }
+  }
+
+  Map<String, dynamic> toApiQueryParams() {
+    final json = toJson();
+    final mapped = <String, dynamic>{};
+
+    json.forEach((key, value) {
+      if (value == null) return;
+
+      switch (key) {
+        case 'property_type':
+          if (value is List) {
+            final normalized = normalizePropertyTypes(value.map((item) => item?.toString() ?? ''));
+            if (normalized.isNotEmpty) {
+              mapped[key] = normalized;
+            }
+          }
+          return;
+        case 'purpose':
+          final normalizedPurpose = normalizePurposeToken(value.toString());
+          if (normalizedPurpose != null) {
+            mapped['purpose'] = normalizedPurpose;
+          }
+          return;
+        case 'check_in_date':
+          mapped['check_in'] = value;
+          return;
+        case 'check_out_date':
+          mapped['check_out'] = value;
+          return;
+        case 'search_query':
+          mapped['q'] = value;
+          return;
+        case 'gender_preference':
+          final normalizedGender = normalizeGenderPreferenceToken(value.toString());
+          if (normalizedGender != null) {
+            mapped[key] = normalizedGender;
+          }
+          return;
+        case 'sharing_type':
+          final normalizedSharing = normalizeSharingTypeToken(value.toString());
+          if (normalizedSharing != null) {
+            mapped[key] = normalizedSharing;
+          }
+          return;
+        case 'property_ids':
+          if (value is List && value.isNotEmpty) {
+            mapped['ids'] = value;
+          }
+          return;
+        default:
+          mapped[key] = value;
+      }
+    });
+
+    return mapped;
+  }
+
   Map<String, dynamic> toJson() {
     final json = _$UnifiedFilterModelToJson(this);
 
     // Handle DateTime serialization properly for API
     if (availableFrom != null) {
-      json['available_from'] = availableFrom!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+      json['available_from'] = formatDateOnlyForApi(availableFrom); // YYYY-MM-DD format
     }
     if (checkInDate != null) {
-      json['check_in_date'] = checkInDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+      json['check_in_date'] = formatDateOnlyForApi(checkInDate); // YYYY-MM-DD format
     }
     if (checkOutDate != null) {
-      json['check_out_date'] = checkOutDate!.toIso8601String().split('T')[0]; // YYYY-MM-DD format
+      json['check_out_date'] = formatDateOnlyForApi(checkOutDate); // YYYY-MM-DD format
     }
 
     // Ensure numeric values are within valid ranges
@@ -183,6 +349,8 @@ class UnifiedFilterModel {
     int? ageMax,
     List<String>? amenities,
     List<String>? features,
+    String? genderPreference,
+    String? sharingType,
     DateTime? availableFrom,
     DateTime? checkInDate,
     DateTime? checkOutDate,
@@ -210,6 +378,8 @@ class UnifiedFilterModel {
       ageMax: ageMax ?? this.ageMax,
       amenities: amenities ?? this.amenities,
       features: features ?? this.features,
+      genderPreference: genderPreference ?? this.genderPreference,
+      sharingType: sharingType ?? this.sharingType,
       availableFrom: availableFrom ?? this.availableFrom,
       checkInDate: checkInDate ?? this.checkInDate,
       checkOutDate: checkOutDate ?? this.checkOutDate,
@@ -229,6 +399,8 @@ class UnifiedFilterModel {
     if (bathroomsMin != null || bathroomsMax != null) count++;
     if (areaMin != null || areaMax != null) count++;
     if (propertyType != null && propertyType!.isNotEmpty) count++;
+    if (genderPreference != null && genderPreference!.isNotEmpty) count++;
+    if (sharingType != null && sharingType!.isNotEmpty) count++;
     if (amenities != null && amenities!.isNotEmpty) count++;
     if (features != null && features!.isNotEmpty) count++;
     if (parkingSpacesMin != null) count++;

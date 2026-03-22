@@ -1,0 +1,9 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- runScript: ../scripts/get_property_id.js
+- openLink: "https://ghar.sale/property/${output.propertyId}"
+- extendedWaitUntil:
+    visible:
+      id: qa.property_details.screen
+    timeout: 25000

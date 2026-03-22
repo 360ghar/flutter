@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:ghar360/core/network/api_client.dart';
+import 'package:ghar360/core/network/api_paths.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -17,6 +18,11 @@ class NotificationsRemoteDatasource {
   /// Endpoint: POST /api/v1/notifications/devices/register
   /// If the caller is authenticated, the token will be associated with the user.
   Future<bool> registerDeviceToken({required String token, String? userId}) async {
+    if (userId == null || userId.isEmpty) {
+      DebugLogger.warning('🔑 Skipping device token registration: no authenticated user id');
+      return false;
+    }
+
     try {
       // Get app version and locale
       String appVersion = 'unknown';
@@ -35,12 +41,9 @@ class NotificationsRemoteDatasource {
         platform = 'android';
       } else if (Platform.isIOS) {
         platform = 'ios';
-      } else if (Platform.isMacOS) {
-        platform = 'macos';
-      } else if (Platform.isWindows) {
-        platform = 'windows';
-      } else if (Platform.isLinux) {
-        platform = 'linux';
+      } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+        // Backend accepts android/ios/web only; map desktop clients to web.
+        platform = 'web';
       }
 
       // Get locale
@@ -53,15 +56,12 @@ class NotificationsRemoteDatasource {
         'locale': locale,
       };
 
-      // Only include user_id if provided (backend requires auth for this)
-      if (userId != null && userId.isNotEmpty) {
-        body['user_id'] = userId;
-      }
+      body['user_id'] = userId;
 
       DebugLogger.info('🔑 Registering device token with backend...');
       DebugLogger.debug('🔑 Platform: $platform, Version: $appVersion, Locale: $locale');
 
-      final response = await _apiClient.post('/api/v1/notifications/devices/register', body: body);
+      final response = await _apiClient.post(ApiPaths.notificationsDeviceRegister, body: body);
 
       if (response.isSuccess) {
         DebugLogger.success('🔑 Device token registered successfully');
@@ -83,7 +83,7 @@ class NotificationsRemoteDatasource {
       DebugLogger.info('🔑 Unregistering device token...');
 
       final response = await _apiClient.delete(
-        '/api/v1/notifications/devices/unregister',
+        ApiPaths.notificationsDeviceUnregister,
         queryParams: {'token': token},
       );
 

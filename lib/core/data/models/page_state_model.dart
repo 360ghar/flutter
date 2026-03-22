@@ -7,9 +7,15 @@ part 'page_state_model.g.dart';
 
 enum PageType { explore, discover, likes }
 
+class _Unset {
+  const _Unset();
+}
+
+const _unset = _Unset();
+
 /// Lightweight data structure for persisting only essential state to storage.
 /// Does NOT include properties list to avoid large disk writes and storage bloat.
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class PageStateSnapshot {
   final String pageType;
   final LocationData? selectedLocation;
@@ -35,7 +41,7 @@ class PageStateSnapshot {
   Map<String, dynamic> toJson() => _$PageStateSnapshotToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class PageStateModel {
   // Page identification
   final PageType pageType;
@@ -98,10 +104,10 @@ class PageStateModel {
 
   PageStateModel copyWith({
     PageType? pageType,
-    LocationData? selectedLocation,
-    String? locationSource,
+    Object? selectedLocation = _unset,
+    Object? locationSource = _unset,
     UnifiedFilterModel? filters,
-    String? searchQuery,
+    Object? searchQuery = _unset,
     List<PropertyModel>? properties,
     int? currentPage,
     int? totalPages,
@@ -109,16 +115,20 @@ class PageStateModel {
     bool? isLoading,
     bool? isLoadingMore,
     bool? isRefreshing,
-    AppException? error,
-    DateTime? lastFetched,
-    Map<String, dynamic>? additionalData,
+    Object? error = _unset,
+    Object? lastFetched = _unset,
+    Object? additionalData = _unset,
   }) {
     return PageStateModel(
       pageType: pageType ?? this.pageType,
-      selectedLocation: selectedLocation ?? this.selectedLocation,
-      locationSource: locationSource ?? this.locationSource,
+      selectedLocation: identical(selectedLocation, _unset)
+          ? this.selectedLocation
+          : selectedLocation as LocationData?,
+      locationSource: identical(locationSource, _unset)
+          ? this.locationSource
+          : locationSource as String?,
       filters: filters ?? this.filters,
-      searchQuery: searchQuery ?? this.searchQuery,
+      searchQuery: identical(searchQuery, _unset) ? this.searchQuery : searchQuery as String?,
       properties: properties ?? this.properties,
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
@@ -126,9 +136,11 @@ class PageStateModel {
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
-      error: error ?? this.error,
-      lastFetched: lastFetched ?? this.lastFetched,
-      additionalData: additionalData ?? this.additionalData,
+      error: identical(error, _unset) ? this.error : error as AppException?,
+      lastFetched: identical(lastFetched, _unset) ? this.lastFetched : lastFetched as DateTime?,
+      additionalData: identical(additionalData, _unset)
+          ? this.additionalData
+          : additionalData as Map<String, dynamic>?,
     );
   }
 
@@ -209,6 +221,7 @@ class PageStateModel {
       isLoadingMore: false,
       isRefreshing: false,
       error: null,
+      lastFetched: null,
     );
   }
 

@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:ghar360/core/data/models/property_image_model.dart';
 import 'package:ghar360/core/data/models/property_model.dart';
-import 'package:ghar360/core/data/repositories/properties_repository.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
+import 'package:ghar360/features/properties/data/properties_repository.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_compress/video_compress.dart';
@@ -34,6 +34,11 @@ class MediaUploadService {
   final SupabaseClient _client = Supabase.instance.client;
   final String _bucket;
 
+  static const int _maxImageBytes = 10 * 1024 * 1024; // 10 MB
+  static const int _maxVideoBytes = 100 * 1024 * 1024; // 100 MB
+  static const _allowedImageExtensions = {'jpg', 'jpeg', 'png', 'webp', 'heic'};
+  static const _allowedVideoExtensions = {'mp4', 'mov', 'avi', 'webm'};
+
   Future<MediaUploadResult?> pickAndUploadImage({
     required int propertyId,
     bool markAsMain = false,
@@ -46,8 +51,21 @@ class MediaUploadService {
     final file = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 88);
     if (file == null) return null;
 
-    final bytes = await file.readAsBytes();
     final ext = _fileExtension(file.path, fallback: 'jpg');
+    if (!_allowedImageExtensions.contains(ext)) {
+      DebugLogger.warning('Rejected image with disallowed extension: $ext');
+      return null;
+    }
+
+    final bytes = await file.readAsBytes();
+    if (bytes.lengthInBytes > _maxImageBytes) {
+      DebugLogger.warning(
+        'Rejected image exceeding size limit: '
+        '${(bytes.lengthInBytes / 1024 / 1024).toStringAsFixed(1)} MB',
+      );
+      return null;
+    }
+
     final path = _buildPath(propertyId, ext, category: category);
 
     final upload = await _uploadBytes(bytes, path: path, contentType: 'image/$ext');
@@ -75,6 +93,12 @@ class MediaUploadService {
     );
     if (file == null) return null;
 
+    final rawExt = _fileExtension(file.path, fallback: 'mp4');
+    if (!_allowedVideoExtensions.contains(rawExt)) {
+      DebugLogger.warning('Rejected video with disallowed extension: $rawExt');
+      return null;
+    }
+
     XFile uploadFile = file;
     Duration? duration;
     try {
@@ -94,6 +118,14 @@ class MediaUploadService {
     }
 
     final bytes = await uploadFile.readAsBytes();
+    if (bytes.lengthInBytes > _maxVideoBytes) {
+      DebugLogger.warning(
+        'Rejected video exceeding size limit: '
+        '${(bytes.lengthInBytes / 1024 / 1024).toStringAsFixed(1)} MB',
+      );
+      return null;
+    }
+
     final ext = _fileExtension(uploadFile.path, fallback: 'mp4');
     final path = _buildPath(propertyId, ext, category: 'videos');
 
@@ -166,11 +198,7 @@ class MediaUploadService {
     try {
       await _client.storage
           .from(_bucket)
-          .uploadBinary(
-            path,
-            data,
-            fileOptions: FileOptions(contentType: contentType, upsert: true),
-          );
+          .uploadBinary(path, data, fileOptions: FileOptions(contentType: contentType));
       final publicUrl = _client.storage.from(_bucket).getPublicUrl(path);
       DebugLogger.success('Uploaded media to $publicUrl');
       return publicUrl;

@@ -1,0 +1,17 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.visits
+- assertVisible:
+    id: qa.visits.tab.scheduled
+- tapOn:
+    text: "Reschedule"
+    optional: true
+- assertVisible:
+    text: "Reschedule Visit"
+- tapOn:
+    text: "Cancel"
+    optional: true
+- assertVisible:
+    text: "Cancel Visit"

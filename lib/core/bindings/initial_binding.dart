@@ -8,45 +8,95 @@ import 'package:ghar360/core/controllers/localization_controller.dart';
 import 'package:ghar360/core/controllers/location_controller.dart';
 import 'package:ghar360/core/controllers/offline_queue_service.dart';
 import 'package:ghar360/core/controllers/theme_controller.dart';
-import 'package:ghar360/core/data/providers/api_service.dart';
-import 'package:ghar360/core/data/repositories/app_update_repository.dart';
-import 'package:ghar360/core/data/repositories/profile_repository.dart';
-import 'package:ghar360/core/di/service_locator.dart';
+import 'package:ghar360/core/network/api_client.dart';
+import 'package:ghar360/core/network/auth_header_provider.dart';
+import 'package:ghar360/core/network/etag_cache.dart';
+import 'package:ghar360/core/network/sse_client.dart';
+import 'package:ghar360/core/services/auth_navigation_service.dart';
 import 'package:ghar360/core/services/deep_link_service.dart';
+import 'package:ghar360/core/services/google_places_service.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/features/auth/data/auth_repository.dart';
+import 'package:ghar360/features/notifications/data/datasources/notifications_remote_datasource.dart';
+import 'package:ghar360/features/profile/data/profile_repository.dart';
+import 'package:ghar360/features/profile/data/static_page_repository.dart';
+import 'package:ghar360/features/properties/data/datasources/properties_remote_datasource.dart';
+import 'package:ghar360/features/splash/data/app_update_repository.dart';
+import 'package:ghar360/features/swipes/data/datasources/swipes_remote_datasource.dart';
+import 'package:ghar360/features/visits/data/datasources/visits_remote_datasource.dart';
 
 class InitialBinding extends Bindings {
   @override
   void dependencies() {
-    DebugLogger.info('🔧 InitialBinding: Starting dependency injection...');
+    // ── CRITICAL: Network layer (needed immediately for auth) ──
+    Get.put<AuthHeaderProvider>(AuthHeaderProvider(), permanent: true);
+    Get.put<ETagCache>(ETagCache(), permanent: true);
+    Get.put<ApiClient>(
+      ApiClient(authProvider: Get.find<AuthHeaderProvider>(), etagCache: Get.find<ETagCache>()),
+      permanent: true,
+    );
 
-    // Register ApiService before ServiceLocator (ServiceLocator dependencies require it)
-    Get.put<ApiService>(ApiService());
-    DebugLogger.success('✅ ApiService registered');
+    // ── SSE client (uses same auth provider) ──
+    Get.put<SseClient>(SseClient(authProvider: Get.find<AuthHeaderProvider>()), permanent: true);
 
-    // Initialize new clean architecture services
-    ServiceLocator.init();
-    DebugLogger.success('✅ ServiceLocator initialized');
+    // ── CRITICAL: Auth repository (needed for login) ──
+    Get.put<AuthRepository>(AuthRepository(), permanent: true);
 
-    // NEW: Register AuthRepository
-    Get.put<AuthRepository>(AuthRepository());
-    DebugLogger.success('✅ AuthRepository registered');
-
-    Get.put<AppUpdateRepository>(AppUpdateRepository(), permanent: true);
-    DebugLogger.success('✅ AppUpdateRepository registered');
-
-    // Register ProfileRepository for AuthController
-    Get.put<ProfileRepository>(ProfileRepository());
-    DebugLogger.success('✅ ProfileRepository registered');
-
-    // Test API connection
-    _initializeApiService();
-
-    // Register Core Controllers in proper order
+    // ── CRITICAL: Core controllers only ──
     _initializeCoreControllers();
 
-    // Initialize offline queue early (connectivity listener + storage)
+    // ── DEFER NON-CRITICAL INIT TO POST-FRAME ──
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeDeferredServices();
+    });
+  }
+
+  void _initializeCoreControllers() {
+    // ── CRITICAL: These must be registered BEFORE AuthController ──
+    // AuthController has field initializers that synchronously access these
+    Get.put<ProfileRepository>(ProfileRepository(), permanent: true);
+    final apiClient = Get.find<ApiClient>();
+    Get.put<NotificationsRemoteDatasource>(
+      NotificationsRemoteDatasource(apiClient),
+      permanent: true,
+    );
+
+    // ── CRITICAL: GooglePlacesService must be registered BEFORE LocationController ──
+    // LocationController accesses it in onInit()
+    Get.put<GooglePlacesService>(GooglePlacesService(), permanent: true);
+
+    // ── CRITICAL: AppUpdateRepository must be registered BEFORE AppUpdateController ──
+    // AppUpdateController has a field initializer that synchronously accesses it
+    Get.put<AppUpdateRepository>(AppUpdateRepository(), permanent: true);
+
+    // Register only essential controllers that don't make API calls on init
+    Get.put<AuthController>(AuthController(), permanent: true);
+    Get.put<AuthNavigationService>(AuthNavigationService(), permanent: true);
+    Get.put<LocationController>(LocationController(), permanent: true);
+    Get.put<LocalizationController>(LocalizationController(), permanent: true);
+    Get.put<ThemeController>(ThemeController(), permanent: true);
+    Get.put<AppUpdateController>(AppUpdateController(), permanent: true);
+  }
+
+  void _initializeDeferredServices() {
+    DebugLogger.info('🔧 InitialBinding: Initializing deferred services...');
+
+    // ── Datasources (only needed after auth) ──
+    final apiClient = Get.find<ApiClient>();
+    Get.put<PropertiesRemoteDatasource>(PropertiesRemoteDatasource(apiClient), permanent: true);
+    Get.put<VisitsRemoteDatasource>(VisitsRemoteDatasource(apiClient), permanent: true);
+    Get.put<SwipesRemoteDatasource>(SwipesRemoteDatasource(apiClient), permanent: true);
+    // NotificationsRemoteDatasource is registered in _initializeCoreControllers (before AuthController)
+
+    // ── Other repositories ──
+    // AppUpdateRepository is registered in _initializeCoreControllers (before AppUpdateController)
+    // ProfileRepository is registered in _initializeCoreControllers (before AuthController)
+    Get.put<StaticPageRepository>(StaticPageRepository(), permanent: true);
+
+    // ── Services ──
+    // GooglePlacesService is registered in _initializeCoreControllers (before LocationController)
+
+    // ── Offline queue ──
     try {
       Get.put<OfflineQueueService>(OfflineQueueService(), permanent: true).init();
       DebugLogger.success('✅ OfflineQueueService registered');
@@ -54,70 +104,29 @@ class InitialBinding extends Bindings {
       DebugLogger.error('💥 Failed to initialize OfflineQueueService: $e');
     }
 
-    // Register Deep Link Service LAST
-    // It depends on AuthController, so it must be registered after it.
+    // ── Deep link service ──
     Get.put<DeepLinkService>(DeepLinkService());
-    DebugLogger.success('✅ DeepLinkService registered');
 
-    // Note: Repositories and feature controllers will be initialized
-    // in route-specific bindings to prevent unauthorized API calls
+    DebugLogger.success('✅ InitialBinding: Deferred services registered');
 
-    DebugLogger.success('✅ InitialBinding: Core dependencies registered successfully');
-  }
-
-  void _initializeApiService() {
-    try {
-      // Defer backend connection test until after first frame
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _testBackendConnection();
-      });
-    } catch (e) {
-      DebugLogger.error('💥 Failed to initialize ApiService: $e');
-      throw Exception('Critical error: Cannot initialize API service');
-    }
-  }
-
-  void _initializeCoreControllers() {
-    // Register only essential controllers that don't make API calls on init
-    try {
-      Get.put<AuthController>(AuthController(), permanent: true);
-      DebugLogger.success('✅ AuthController registered');
-
-      Get.put<LocationController>(LocationController(), permanent: true);
-      DebugLogger.success('✅ LocationController registered');
-
-      Get.put<LocalizationController>(LocalizationController(), permanent: true);
-      DebugLogger.success('✅ LocalizationController registered');
-
-      Get.put<ThemeController>(ThemeController(), permanent: true);
-      DebugLogger.success('✅ ThemeController registered');
-
-      Get.put<AppUpdateController>(AppUpdateController(), permanent: true);
-      DebugLogger.success('✅ AppUpdateController registered');
-
-      // Note: PageStateService and repositories (PropertiesRepository, SwipesRepository)
-      // are now registered in DashboardBinding to prevent unauthorized API calls
-      // and ensure proper lifecycle management
-    } catch (e) {
-      DebugLogger.error('💥 Error initializing core controllers: $e');
-      rethrow;
-    }
+    // Backend health check (lowest priority - delayed)
+    Future.delayed(const Duration(seconds: 2), _testBackendConnection);
   }
 
   void _testBackendConnection() async {
     try {
-      if (Get.isRegistered<ApiService>()) {
-        final apiService = Get.find<ApiService>();
-        final isConnected = await apiService.testConnection();
-        if (isConnected) {
-          DebugLogger.success('🎉 Backend connection test successful!');
-        } else {
-          DebugLogger.warning('❌ Backend connection test failed');
-          DebugLogger.info('💡 Make sure your backend server is running');
-        }
-      }
+      if (!Get.isRegistered<ApiClient>()) return;
+
+      final apiClient = Get.find<ApiClient>();
+      await apiClient.get(
+        '${apiClient.baseUrl}/health',
+        useCache: false,
+        requireAuth: false,
+        notifyUnauthorized: false,
+      );
+      DebugLogger.success('🎉 Backend connection test successful!');
     } catch (e) {
-      DebugLogger.error('💥 Backend connection test error: $e');
+      DebugLogger.warning('💥 Backend connection test failed: $e');
     }
   }
 }

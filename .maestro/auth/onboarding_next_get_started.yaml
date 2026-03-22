@@ -1,0 +1,20 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/launch_clean.yaml
+- tapOn:
+    id: qa.splash.next
+    optional: true
+- tapOn:
+    id: qa.splash.next
+    optional: true
+- tapOn:
+    id: qa.splash.get_started
+    optional: true
+- tapOn:
+    id: qa.splash.skip
+    optional: true
+- assertVisible:
+    id: qa.auth.phone_entry.phone_input
+- assertVisible:
+    id: qa.auth.login.password_input
+    optional: true

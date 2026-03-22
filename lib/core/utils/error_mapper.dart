@@ -1,8 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:ghar360/core/data/providers/api_service.dart';
 import 'package:ghar360/core/utils/app_exceptions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:ghar360/core/utils/null_check_trap.dart';
 import 'package:universal_io/io.dart';
@@ -10,72 +11,14 @@ import 'package:universal_io/io.dart';
 class ErrorMapper {
   // Map API errors to user-friendly messages
   static AppException mapApiError(Object error, [StackTrace? stackTrace]) {
-    // Log the incoming error being normalized to an AppException (informational, not a failure)
-    DebugLogger.info(
-      '🗺️ [ERROR_MAPPER] Mapping incoming error: type=${error.runtimeType}, error=$error',
-      error,
-      stackTrace,
-    );
+    DebugLogger.debug('🗺️ [ERROR_MAPPER] Mapping error: type=${error.runtimeType}');
 
-    // Special handling for null check operator errors
-    // Only emit deep stack analysis for non-String errors to reduce log noise
-    if (error.toString().contains('Null check operator used on a null value')) {
+    // Deep null-check analysis only in debug builds
+    if (kDebugMode && error.toString().contains('Null check operator used on a null value')) {
       if (error is String) {
-        // Capture a one-time stack to identify where this mapping is triggered
         NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError');
       } else if (error is Error || error is Exception) {
-        DebugLogger.error('🚨 [ERROR_MAPPER] NULL CHECK OPERATOR ERROR DETECTED!');
-        DebugLogger.error('🚨 [ERROR_MAPPER] Error type: ${error.runtimeType}');
-        DebugLogger.error('🚨 [ERROR_MAPPER] Error string: ${error.toString()}');
-
-        // CRITICAL: Get the current stack trace to see where this error is coming from
-        DebugLogger.error(
-          '🚨 [ERROR_MAPPER] CURRENT STACK TRACE (where ErrorMapper.map was called):',
-        );
-        final currentStackTrace = StackTrace.current;
-        DebugLogger.error('🚨 [ERROR_MAPPER] ${currentStackTrace.toString()}');
-
-        // Try to get original stack trace if available
-        try {
-          if (error is Error) {
-            DebugLogger.error('🚨 [ERROR_MAPPER] ORIGINAL ERROR STACK TRACE:');
-            DebugLogger.error('🚨 [ERROR_MAPPER] ${error.stackTrace}');
-          }
-        } catch (e) {
-          DebugLogger.error('🚨 [ERROR_MAPPER] Could not get original stack trace: $e');
-        }
-
-        // Log error source analysis
-        final stackString = currentStackTrace.toString();
-        if (stackString.contains('property_model.g.dart')) {
-          DebugLogger.error(
-            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_model.g.dart (generated code)',
-          );
-        } else if (stackString.contains('property_image_model.g.dart')) {
-          DebugLogger.error(
-            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: property_image_model.g.dart (generated code)',
-          );
-        } else if (stackString.contains('explore_controller.dart')) {
-          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: explore_controller.dart');
-        } else if (stackString.contains('likes_controller.dart')) {
-          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: likes_controller.dart');
-        } else if (stackString.contains('page_state_service.dart')) {
-          DebugLogger.error('🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: page_state_service.dart');
-        } else {
-          DebugLogger.error(
-            '🚨 [ERROR_MAPPER] ERROR ORIGINATES FROM: Unknown location - check full stack trace above',
-          );
-        }
-
-        // Extract and log the specific lines from the stack trace
-        final lines = stackString.split('\n');
-        DebugLogger.error('🚨 [ERROR_MAPPER] STACK TRACE ANALYSIS:');
-        for (int i = 0; i < lines.length && i < 10; i++) {
-          final line = lines[i].trim();
-          if (line.contains('.dart')) {
-            DebugLogger.error('🚨 [ERROR_MAPPER] [$i] $line');
-          }
-        }
+        _logNullCheckAnalysis(error, stackTrace);
       }
     }
 
@@ -83,8 +26,9 @@ class ErrorMapper {
     if (error is String) {
       // Check if it's a specific error pattern
       if (error.contains('Null check operator used on a null value')) {
-        // Also ensure the one-time string trap captures the call site
-        NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError(String)');
+        if (kDebugMode) {
+          NullCheckTrap.captureStringOccurrence(error, source: 'ErrorMapper.mapApiError(String)');
+        }
         return NetworkException(
           'A data processing error occurred. Please try again.',
           details: error,
@@ -125,15 +69,6 @@ class ErrorMapper {
       return _mapApiException(error);
     }
 
-    // Supabase auth failure propagated from ApiService
-    if (error is ApiAuthException) {
-      return AuthenticationException(
-        'Your session has expired. Please log in again.',
-        code: 'UNAUTHORIZED',
-        details: error.toString(),
-      );
-    }
-
     // Handle wrapped ApiException (Exception: ApiException: ...)
     if (error is Exception && error.toString().contains('ApiException:')) {
       final errorString = error.toString();
@@ -144,15 +79,6 @@ class ErrorMapper {
         return _mapHttpStatusCode(statusCode, message);
       }
       return NetworkException('API error occurred. Please try again.', details: error.toString());
-    }
-
-    // Handle wrapped ApiAuthException (Exception: ApiAuthException: ...)
-    if (error is Exception && error.toString().contains('ApiAuthException:')) {
-      return AuthenticationException(
-        'Your session has expired. Please log in again.',
-        code: 'UNAUTHORIZED',
-        details: error.toString(),
-      );
     }
 
     if (error is AppException) {
@@ -306,53 +232,47 @@ class ErrorMapper {
 
   // Show user-friendly error messages
   static void showErrorSnackbar(AppException error) {
-    String title = 'Error';
+    String title = 'error'.tr;
 
     if (error is NetworkException) {
-      title = 'Connection Error';
+      title = 'connection_error_title'.tr;
     } else if (error is AuthenticationException) {
-      title = 'Authentication Error';
+      title = 'authentication_error'.tr;
     } else if (error is ValidationException) {
-      title = 'Validation Error';
+      title = 'validation_error'.tr;
     } else if (error is NotFoundException) {
-      title = 'Not Found';
+      title = 'not_found'.tr;
     } else if (error is ServerException) {
-      title = 'Server Error';
+      title = 'server_error'.tr;
     }
 
-    Get.snackbar(
-      title,
-      error.message,
-      snackPosition: SnackPosition.TOP,
-      duration: const Duration(seconds: 4),
+    AppToast.custom(
+      title: title,
+      message: error.message,
       backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.9),
-      colorText: Get.theme.colorScheme.onError,
+      duration: const Duration(seconds: 4),
     );
 
-    // Log the full error for debugging
     DebugLogger.error('❌ Error shown to user: title=$title, message=${error.message}');
-    if (error.details != null) {
-      DebugLogger.error('Details: ${error.details}');
-    }
   }
 
   // Get appropriate retry action text
   static String getRetryActionText(AppException error) {
     if (error is NetworkException) {
       if (error.code == 'CONNECTION_ERROR' || error.code == 'TIMEOUT') {
-        return 'Check Connection & Retry';
+        return 'check_connection_and_retry'.tr;
       }
     }
 
     if (error is ServerException) {
-      return 'Try Again Later';
+      return 'try_again_later'.tr;
     }
 
     if (error is AuthenticationException) {
-      return 'Log In Again';
+      return 'log_in_again'.tr;
     }
 
-    return 'Try Again';
+    return 'try_again'.tr;
   }
 
   // Check if error should trigger authentication flow
@@ -379,6 +299,19 @@ class ErrorMapper {
     }
 
     return true; // Default to retryable
+  }
+
+  /// Deep stack analysis for null-check errors (debug only).
+  static void _logNullCheckAnalysis(Object error, StackTrace? stackTrace) {
+    DebugLogger.error('🚨 NULL CHECK ERROR: ${error.runtimeType}');
+    final st = stackTrace ?? StackTrace.current;
+    final lines = st.toString().split('\n');
+    for (int i = 0; i < lines.length && i < 5; i++) {
+      final line = lines[i].trim();
+      if (line.contains('.dart')) {
+        DebugLogger.error('🚨 [$i] $line');
+      }
+    }
   }
 
   // Get error icon for UI

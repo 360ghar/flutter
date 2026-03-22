@@ -50,7 +50,7 @@ BugReportResponse _$BugReportResponseFromJson(Map<String, dynamic> json) => BugR
   mediaUrls: (json['media_urls'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
   tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
   userId: (json['user_id'] as num?)?.toInt(),
-  assignedTo: json['assigned_to'] as String?,
+  assignedTo: (json['assigned_to'] as num?)?.toInt(),
   resolution: json['resolution'] as String?,
   resolvedAt: json['resolved_at'] == null ? null : DateTime.parse(json['resolved_at'] as String),
   createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at'] as String),

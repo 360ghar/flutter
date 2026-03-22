@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
+import 'package:ghar360/core/utils/app_toast.dart';
 import 'package:ghar360/core/utils/debug_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ErrorHandler {
-  /// Safely gets a context for UI operations, preferring overlay context for reliability
-  static BuildContext? _getSafeContext() {
-    return Get.overlayContext ?? Get.context;
-  }
-
   static void handleAuthError(dynamic error, {VoidCallback? onRetry, StackTrace? stackTrace}) {
-    // Enhanced error logging with stack trace preservation
     DebugLogger.logDetailedError(
       operation: 'handleAuthError',
       error: error,
@@ -20,68 +15,66 @@ class ErrorHandler {
     );
 
     String message;
-    String title = 'Error';
-    Color backgroundColor = AppColors.errorRed;
+    String title = 'error'.tr;
+    Color backgroundColor = AppDesign.errorRed;
 
     if (error is AuthException) {
-      title = 'Authentication Error';
+      title = 'auth_error_title'.tr;
       final msg = error.message;
       String code = '';
       try {
-        // AuthApiException has a code field
         // ignore: invalid_use_of_visible_for_testing_member
         code = (error as dynamic).code ?? '';
       } catch (_) {}
       switch (msg) {
         case 'Invalid login credentials':
-          message = 'Invalid phone or password. Please check your credentials.';
+          message = 'invalid_phone_password'.tr;
           break;
         case 'Email not confirmed':
         case 'Phone not confirmed':
         case 'User not confirmed':
-          message = 'Please verify your phone number before signing in.';
-          backgroundColor = AppColors.warningAmber;
+          message = 'verify_phone_first'.tr;
+          backgroundColor = AppDesign.warningAmber;
           break;
         case 'User already registered':
-          message = 'An account with this phone already exists. Please sign in instead.';
+          message = 'account_exists_signin'.tr;
           break;
         case 'Password should be at least 6 characters':
-          message = 'Password must be at least 6 characters long.';
+          message = 'password_min_chars'.tr;
           break;
         case 'Invalid email':
-          message = 'Please enter a valid email address.';
+          message = 'enter_valid_email_error'.tr;
           break;
         case 'Invalid phone':
         case 'Invalid phone number':
-          message = 'Please enter a valid phone number.';
+          message = 'enter_valid_phone_error'.tr;
           break;
         case 'Signup disabled':
-          message = 'New user registration is currently disabled.';
+          message = 'registration_disabled'.tr;
           break;
         case 'User not found':
-          message = 'No account found with this phone number.';
+          message = 'no_account_found_error'.tr;
           break;
         case 'Wrong password':
         case 'Incorrect password':
-          message = 'Password is incorrect. Please try again or reset your password.';
+          message = 'incorrect_password'.tr;
           break;
         case 'Email rate limit exceeded':
         case 'SMS rate limit exceeded':
-          message = 'Too many attempts. Please wait before trying again.';
-          backgroundColor = AppColors.warningAmber;
+          message = 'too_many_attempts'.tr;
+          backgroundColor = AppDesign.warningAmber;
           break;
         case 'Token has expired or is invalid':
-          message = 'OTP has expired or is invalid. Please request a new code.';
-          backgroundColor = AppColors.warningAmber;
+          message = 'otp_expired_request_new'.tr;
+          backgroundColor = AppDesign.warningAmber;
           break;
         case 'Session not found':
-          message = 'Your session has expired. Please sign in again.';
+          message = 'session_expired_signin'.tr;
           break;
         default:
-          // Map by code if available
           if (code == 'otp_expired') {
-            message = 'OTP has expired. Please request a new code.';
-            backgroundColor = AppColors.warningAmber;
+            message = 'otp_expired_request_new'.tr;
+            backgroundColor = AppDesign.warningAmber;
           } else {
             message = msg;
           }
@@ -89,36 +82,24 @@ class ErrorHandler {
     } else if (error is Exception) {
       message = error.toString().replaceAll('Exception: ', '');
     } else {
-      message = 'An unexpected error occurred. Please try again.';
+      message = 'something_went_wrong'.tr;
     }
 
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing auth error snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.TOP,
+    AppToast.custom(
+      title: title,
+      message: message,
       backgroundColor: backgroundColor,
-      colorText: Theme.of(context).colorScheme.onError,
       duration: const Duration(seconds: 4),
       mainButton: onRetry != null
           ? TextButton(
               onPressed: onRetry,
-              child: Text(
-                'retry'.tr,
-                style: TextStyle(color: Theme.of(context).colorScheme.onError),
-              ),
+              child: Text('retry'.tr, style: const TextStyle(color: AppDesign.darkTextPrimary)),
             )
           : null,
     );
   }
 
   static void handleNetworkError(dynamic error, {VoidCallback? onRetry, StackTrace? stackTrace}) {
-    // Enhanced error logging with stack trace preservation
     DebugLogger.logDetailedError(
       operation: 'handleNetworkError',
       error: error,
@@ -130,95 +111,45 @@ class ErrorHandler {
 
     if (error.toString().contains('SocketException') ||
         error.toString().contains('TimeoutException')) {
-      message = 'No internet connection. Please check your network and try again.';
+      message = 'no_internet_connection'.tr;
     } else if (error.toString().contains('Connection refused')) {
-      message = 'Unable to connect to server. Please try again later.';
+      message = 'server_unavailable'.tr;
     } else if (error.toString().contains('401')) {
-      message = 'Authentication failed. Please sign in again.';
+      message = 'auth_failed_signin'.tr;
     } else if (error.toString().contains('403')) {
-      message = 'Access denied. Please check your permissions.';
+      message = 'access_denied'.tr;
     } else if (error.toString().contains('404')) {
-      message = 'Requested resource not found.';
+      message = 'resource_not_found'.tr;
     } else if (error.toString().contains('500')) {
-      message = 'Server error. Please try again later.';
+      message = 'server_error_generic'.tr;
     } else {
-      message = 'Network error occurred. Please try again.';
+      message = 'network_error_generic'.tr;
     }
 
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing network error snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      'network_error'.tr,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.warningAmber,
-      colorText: Theme.of(context).colorScheme.onError,
+    AppToast.custom(
+      title: 'network_error'.tr,
+      message: message,
+      backgroundColor: AppDesign.warningAmber,
       duration: const Duration(seconds: 4),
       mainButton: onRetry != null
           ? TextButton(
               onPressed: onRetry,
-              child: Text(
-                'retry'.tr,
-                style: TextStyle(color: Theme.of(context).colorScheme.onError),
-              ),
+              child: Text('retry'.tr, style: const TextStyle(color: AppDesign.darkTextPrimary)),
             )
           : null,
     );
   }
 
   static void handleValidationError(String field, String message) {
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing validation error snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      'validation_error'.tr,
-      '$field: $message',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.warningAmber,
-      colorText: Theme.of(context).colorScheme.onError,
-      duration: const Duration(seconds: 3),
-    );
+    AppToast.warning(field, message);
   }
 
   static void showSuccess(String message) {
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing success snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      'success'.tr,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.successGreen,
-      colorText: Theme.of(context).colorScheme.onError,
-      duration: const Duration(seconds: 3),
-    );
+    AppToast.success('success'.tr, message);
   }
 
   static void showInfo(String message) {
-    final context = _getSafeContext();
-    if (context == null) {
-      DebugLogger.warning('No context available for showing info snackbar');
-      return;
-    }
-
-    Get.snackbar(
-      'info'.tr,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.accentBlue,
-      colorText: Theme.of(context).colorScheme.onError,
-      duration: const Duration(seconds: 3),
-    );
+    AppToast.info('info'.tr, message);
   }
 
   static Widget buildErrorWidget(String error, {VoidCallback? onRetry}) {
@@ -393,16 +324,16 @@ class ApiErrorHandler {
 
     if (error.contains("'int' is not a subtype of type 'String'")) {
       DebugLogger.info('Solution: Backend is returning integer where string is expected');
-      return 'Data format mismatch - contact support';
+      return 'data_format_mismatch'.tr;
     } else if (error.contains("'List<dynamic>' is not a subtype of type 'Map<String, dynamic>'")) {
       DebugLogger.info('Solution: Backend is returning array where object is expected');
-      return 'Data structure mismatch - please try again';
+      return 'data_structure_mismatch'.tr;
     } else if (error.contains("'String' is not a subtype of type 'int'")) {
       DebugLogger.info('Solution: Backend is returning string where number is expected');
-      return 'Numeric data format issue - please try again';
+      return 'numeric_format_issue'.tr;
     }
 
-    return 'Data format error - please try again';
+    return 'data_format_error'.tr;
   }
 
   static String _handleNetworkError(String error, String? context) {
@@ -411,30 +342,30 @@ class ApiErrorHandler {
       'Solutions: 1. Check backend server 2. Verify connectivity 3. Check firewall',
     );
 
-    return 'Unable to connect to server - please try again later';
+    return 'unable_connect_server'.tr;
   }
 
   static String _handleHttpError(int statusCode, String? context) {
     switch (statusCode) {
       case 401:
         DebugLogger.warning('Authentication error: invalid or expired token');
-        return 'Please log in again';
+        return 'please_login_again'.tr;
 
       case 403:
         DebugLogger.warning('Authorization error: insufficient permissions');
-        return 'Access denied - insufficient permissions';
+        return 'insufficient_permissions'.tr;
 
       case 404:
         DebugLogger.warning('Resource not found');
-        return 'Requested data not found';
+        return 'requested_data_not_found'.tr;
 
       case 500:
         DebugLogger.error('Server error: backend is experiencing issues');
-        return 'Server error - please try again later';
+        return 'server_error_later'.tr;
 
       default:
         DebugLogger.error('HTTP Error $statusCode');
-        return 'Server responded with error $statusCode';
+        return 'server_responded_error'.trParams({'statusCode': statusCode.toString()});
     }
   }
 
@@ -442,21 +373,21 @@ class ApiErrorHandler {
     DebugLogger.warning('JSON parsing error: invalid response format');
     DebugLogger.debug('Check backend response format and verify valid JSON');
 
-    return 'Invalid data format received - please try again';
+    return 'invalid_data_format'.tr;
   }
 
   static String _handleAuthError(String error, String? context) {
     DebugLogger.warning('Authentication failed');
     DebugLogger.debug('Verify credentials and account status');
 
-    return 'Authentication failed - please check credentials';
+    return 'auth_failed_credentials'.tr;
   }
 
   static String _handleGenericError(String error, String? context) {
     DebugLogger.error('Unhandled error type: $error');
     DebugLogger.debug('Request failed - please retry');
 
-    return 'Unexpected error occurred - please try again later';
+    return 'unexpected_error_later'.tr;
   }
 
   /// Logs detailed error information for debugging

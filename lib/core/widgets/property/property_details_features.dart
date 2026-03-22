@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:ghar360/core/data/models/property_model.dart';
-import 'package:ghar360/core/utils/app_colors.dart';
+import 'package:ghar360/core/design/app_design_extensions.dart';
 
 class PropertyDetailsFeatures extends StatelessWidget {
   final PropertyModel property;
@@ -18,7 +18,7 @@ class PropertyDetailsFeatures extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: AppColors.getCardShadow(),
+        boxShadow: AppDesign.getCardShadow(),
       ),
       child: Column(
         children: [
@@ -67,20 +67,20 @@ class PropertyDetailsFeatures extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: AppColors.iconColor, size: 20),
+            Icon(icon, color: AppDesign.iconColor, size: 20),
             const SizedBox(width: 6),
             Text(
               value,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: AppDesign.textPrimary,
               ),
             ),
           ],
         ),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        Text(label, style: TextStyle(fontSize: 12, color: AppDesign.textSecondary)),
       ],
     );
   }

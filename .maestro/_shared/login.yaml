@@ -1,0 +1,39 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: launch_clean.yaml
+- runFlow: skip_onboarding.yaml
+
+# If phone entry is present, submit test phone.
+- runFlow:
+    when:
+      visible:
+        id: qa.auth.phone_entry.phone_input
+    commands:
+      - tapOn:
+          id: qa.auth.phone_entry.phone_input
+      - inputText: "${TEST_PHONE}"
+      - tapOn:
+          id: qa.auth.phone_entry.continue
+
+# If login is present, submit credentials.
+- runFlow:
+    when:
+      visible:
+        id: qa.auth.login.password_input
+    commands:
+      - tapOn:
+          id: qa.auth.login.password_input
+      - inputText: "${TEST_PASSWORD}"
+      - tapOn:
+          id: qa.auth.login.submit
+
+# If profile completion appears, skip to home.
+- runFlow:
+    when:
+      visible:
+        id: qa.auth.profile_completion.screen
+    commands:
+      - tapOn:
+          id: qa.auth.profile_completion.skip
+
+- runFlow: assert_dashboard_ready.yaml

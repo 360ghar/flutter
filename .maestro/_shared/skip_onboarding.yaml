@@ -1,0 +1,17 @@
+appId: com.the360ghar.ghar360
+---
+- tapOn:
+    id: qa.splash.skip
+    optional: true
+- tapOn:
+    id: qa.splash.next
+    optional: true
+- tapOn:
+    id: qa.splash.next
+    optional: true
+- tapOn:
+    id: qa.splash.get_started
+    optional: true
+- tapOn:
+    id: qa.splash.skip
+    optional: true

@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
+import 'package:ghar360/core/utils/app_toast.dart';
+
 class LocalizationController extends GetxController {
   final GetStorage _storage = GetStorage();
 
@@ -66,12 +68,7 @@ class LocalizationController extends GetxController {
     // Update GetX locale
     Get.updateLocale(newLocale);
 
-    Get.snackbar(
-      'language_changed'.tr,
-      'language_changed_message'.tr,
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
-    );
+    AppToast.success('language_changed'.tr, 'language_changed_message'.tr);
   }
 
   String getCurrentLanguageName() {

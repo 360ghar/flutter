@@ -1,0 +1,20 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: ../_shared/login.yaml
+- tapOn:
+    id: qa.dashboard.nav.explore_properties
+- extendedWaitUntil:
+    visible:
+      id: qa.location.selector.trigger.explore
+    timeout: 30000
+- tapOn:
+    id: qa.location.selector.trigger.explore
+- runFlow:
+    when:
+      visible:
+        id: qa.location.selector.modal.explore
+    commands:
+      - assertVisible:
+          id: qa.location.selector.search_input.explore
+      - assertVisible:
+          id: qa.location.selector.use_current_location.explore

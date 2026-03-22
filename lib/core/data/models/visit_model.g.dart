@@ -70,8 +70,8 @@ Map<String, dynamic> _$VisitModelToJson(VisitModel instance) => <String, dynamic
   'rescheduled_from': instance.rescheduledFrom?.toIso8601String(),
   'created_at': instance.createdAt.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
-  'property': instance.property,
-  'agents': instance.agents,
+  'property': instance.property?.toJson(),
+  'agents': instance.agents?.toJson(),
   'property_title': instance.propertyTitleApi,
   'agent_name': instance.agentNameApi,
 };

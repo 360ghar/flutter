@@ -1,0 +1,5 @@
+appId: com.the360ghar.ghar360
+---
+- runFlow: auth/login_success.yaml
+- runFlow: dashboard/nav_tabs.yaml
+- runFlow: explore/location_selector_modal.yaml

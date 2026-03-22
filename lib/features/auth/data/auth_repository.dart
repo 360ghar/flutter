@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository extends GetxService {
   final _supabase = Supabase.instance.client;
+  static const int _defaultMinTokenTtlSeconds = 45;
 
   // --- STREAMS & GETTERS ---
 
@@ -88,29 +89,83 @@ class AuthRepository extends GetxService {
 
   /// Waits for a valid access token to become available with robust retries.
   /// Useful immediately after signup/OTP verification where the session may lag.
-  Future<String> waitForAccessToken({Duration timeout = const Duration(seconds: 8)}) async {
+  Future<String> waitForAccessToken({
+    Duration timeout = const Duration(seconds: 8),
+    int minTtlSeconds = _defaultMinTokenTtlSeconds,
+  }) async {
+    final effectiveMinTtlSeconds = minTtlSeconds < 0 ? 0 : minTtlSeconds;
     final deadline = DateTime.now().add(timeout);
+
+    // Check immediately first
     Session? session = _supabase.auth.currentSession;
+    if (_hasUsableAccessToken(session, minTtlSeconds: effectiveMinTtlSeconds)) {
+      DebugLogger.auth(
+        'Access token available immediately (length: ${session!.accessToken.length}, '
+        'expiresIn: ${_sessionExpiresInSeconds(session)}s)',
+      );
+      return session.accessToken;
+    }
+    final immediateTtl = _sessionExpiresInSeconds(session);
     if (session?.accessToken.isNotEmpty == true) {
-      return session!.accessToken;
+      DebugLogger.warning(
+        'Access token present but stale/near expiry '
+        '(expiresIn: ${immediateTtl ?? 'unknown'}s, '
+        'minTtlRequired: ${effectiveMinTtlSeconds}s). Refreshing...',
+      );
     }
 
     int refreshAttempts = 0;
+    int pollCount = 0;
+    const maxRefreshAttempts = 6;
     while (DateTime.now().isBefore(deadline)) {
-      // Attempt periodic refreshes (throttled)
-      if (refreshAttempts < 3) {
+      // Attempt periodic refreshes (throttled) to ensure token is ready
+      if (refreshAttempts < maxRefreshAttempts) {
         try {
-          DebugLogger.auth('Attempting session refresh while waiting for access token');
+          DebugLogger.auth(
+            'Attempting session refresh while waiting for access token (attempt ${refreshAttempts + 1})',
+          );
           await _supabase.auth.refreshSession();
-        } catch (_) {}
+        } catch (e) {
+          DebugLogger.debug('Session refresh attempt failed: $e');
+        }
         refreshAttempts++;
       }
-      await Future.delayed(const Duration(milliseconds: 150));
+      await Future.delayed(const Duration(milliseconds: 200));
+      pollCount++;
+
       session = _supabase.auth.currentSession;
-      if (session?.accessToken.isNotEmpty == true) {
-        return session!.accessToken;
+      if (_hasUsableAccessToken(session, minTtlSeconds: effectiveMinTtlSeconds)) {
+        DebugLogger.auth(
+          'Access token obtained after $pollCount polls (length: ${session!.accessToken.length}, '
+          'expiresIn: ${_sessionExpiresInSeconds(session)}s)',
+        );
+        return session.accessToken;
       }
     }
+
+    DebugLogger.error(
+      'Access token not available or still stale after ${timeout.inSeconds}s '
+      'and $pollCount polls',
+    );
     throw const AuthException('Access token not available in time');
+  }
+
+  bool _hasUsableAccessToken(Session? session, {required int minTtlSeconds}) {
+    final token = session?.accessToken;
+    if (token == null || token.isEmpty) return false;
+
+    final expiresIn = _sessionExpiresInSeconds(session);
+    if (expiresIn == null) {
+      // If SDK doesn't expose expiry, treat token as usable and rely on server checks.
+      return true;
+    }
+    return expiresIn > minTtlSeconds;
+  }
+
+  int? _sessionExpiresInSeconds(Session? session) {
+    final expiresAt = session?.expiresAt;
+    if (expiresAt == null) return null;
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return expiresAt - now;
   }
 }
